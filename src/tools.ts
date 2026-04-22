@@ -14,6 +14,7 @@ import { TrustedFoldersTool } from './tools/TrustedFoldersTool/TrustedFoldersToo
 import { ShellModeTool } from './tools/ShellModeTool/ShellModeTool.js'
 import { MCPManageTool } from './tools/MCPManageTool/MCPManageTool.js'
 import { DeskDevTool } from './tools/DeskDevTool/DeskDevTool.js'
+import { DesktopControlTool } from './tools/DesktopControlTool/DesktopControlTool.js'
 import { OrchestrateTool } from './tools/OrchestrateTool/OrchestrateTool.js'
 import { DecreeTool } from './tools/DecreeTool/DecreeTool.js'
 import { ConfirmTool } from './tools/ConfirmTool/ConfirmTool.js'
@@ -230,6 +231,7 @@ export function getAllBaseTools(): Tools {
     ShellModeTool,
     MCPManageTool,
     DeskDevTool,
+    DesktopControlTool,
     OrchestrateTool,
     DecreeTool,
     ConfirmTool,

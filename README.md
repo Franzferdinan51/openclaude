@@ -120,6 +120,59 @@ DuckHive automatically finds and loads the nearest `DUCK.md` up the directory tr
 
 ---
 
+### Desktop Control
+
+DuckHive has full macOS desktop automation via the `desktop_control` tool and `/desktop` command, powered by [desktop-control-lobster-edition-skill](https://github.com/Franzferdinan51/desktop-control-lobster-edition-skill). Mouse, keyboard, screenshot, OCR, window management, app launching, and AI vision — all from the CLI.
+
+**Setup (one-time):**
+```bash
+pip3 install --break-system-packages -r ~/.openclaw/workspace/desktop-control-lobster-edition-skill/requirements.txt
+```
+
+**Screenshot, OCR, windows (safe — no approval needed):**
+```
+desktop_control screenshot
+desktop_control get_screen_size
+desktop_control get_pixel_color x=100 y=200
+desktop_control ocr_text_from_region region=[0,0,800,600]
+desktop_control find_text_on_screen search_text="Submit"
+desktop_control get_all_windows
+desktop_control get_active_window
+```
+
+**Mouse + keyboard (approval required):**
+```
+desktop_control move_mouse x=500 y=400
+desktop_control click x=500 y=400
+desktop_control double_click x=800 y=300
+desktop_control type_text text="Hello World" paste=true
+desktop_control hotkey keys=["cmd","s"]
+desktop_control press key="enter"
+```
+
+**App control (approval required):**
+```
+desktop_control open_app app_name="Safari"
+desktop_control run_applescript script="tell application \"Finder\" to activate"
+desktop_control browser_navigate url="https://github.com"
+```
+
+**Workflow + evidence:**
+```
+desktop_control capture_evidence evidence_prefix="bug-report"
+desktop_control annotate_screenshot image_path="/tmp/screen.png" annotation_text="BUG HERE"
+desktop_control compare_screenshots before_file="/tmp/before.png" after_file="/tmp/after.png"
+desktop_control get_action_log
+```
+
+**AI vision assist:**
+```
+desktop_control vision_assist vision_prompt="What buttons are visible on screen?"
+desktop_control set_resource_broker vision_endpoint="http://localhost:1234" vision_model="qwen3.5-9b"
+```
+
+---
+
 ### Agent Teams
 
 Spawn multi-agent crews that work in parallel on complex tasks. DuckHive integrates Agent Teams for structured delegation.

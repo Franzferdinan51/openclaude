@@ -313,6 +313,7 @@ const COMMANDS = memoize((): Command[] => [
   mcpManage,
   mmx,
   shellMode,
+  desktop,
   trustedFolders,
 
   ide,
