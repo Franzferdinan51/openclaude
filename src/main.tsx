@@ -804,10 +804,19 @@ export async function main() {
   const hasInitOnlyFlag = cliArgs.includes('--init-only');
   const hasSdkUrl = cliArgs.some(arg => arg.startsWith('--sdk-url'));
   const isNonInteractive = hasPrintFlag || hasInitOnlyFlag || hasSdkUrl || !process.stdout.isTTY;
+  console.error('[DEBUG] stdin.isTTY:', process.stdin.isTTY, 'stdout.isTTY:', process.stdout.isTTY);
   // Stop capturing early input for non-interactive modes
   if (isNonInteractive) {
     stopCapturingEarlyInput();
   }
+  // DEBUG: check stdin state
+  const stdinState = { 
+    isTTY: process.stdin.isTTY, 
+    readableHighWaterMark: process.stdin.readableHighWaterMark,
+    readableFlowing: (process.stdin as any)._readableState?.flowing,
+    refCount: (process.stdin as any)._handle?.refCount?.() ?? 'no handle'
+  };
+  console.error('[STDIN] state:', JSON.stringify(stdinState));
 
   // Set simplified tracking fields
   const isInteractive = !isNonInteractive;
