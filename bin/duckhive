@@ -2,15 +2,9 @@
 
 /**
  * DuckHive — AI coding CLI harness
- * Based on OpenClaude/Claude Code, powered by MiniMax M2.7
- *
- * Auto-configures MiniMax when MINIMAX_API_KEY is available,
- * otherwise falls through to OpenAI compatibility layer.
- * Loads meta-agent config from ~/.duckhive/config.json.
- *
- * Integrated services (auto-started on first run):
- *   - Council daemon (AI Council deliberation, port 3007)
- *     Starts once, stays alive, skipped if already running.
+ * Auto-starts Council daemon, configures MiniMax/OpenAI, loads REPL.
+ * Go TUI auto-launch is disabled (requires /dev/tty on macOS).
+ * Use 'duckhive tui' to launch Go TUI manually.
  */
 
 import { existsSync } from 'fs'
@@ -21,77 +15,28 @@ import { fork, spawn } from 'child_process'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const distPath = join(__dirname, '..', 'dist', 'cli.mjs')
 
-function shouldAutoLaunchTui() {
-  return (
-    process.argv.slice(2).length === 0 &&
-    process.stdin.isTTY &&
-    process.stdout.isTTY &&
-    process.env.DUCKHIVE_NO_AUTO_TUI !== '1'
-  )
-}
-
-function spawnAndWaitForStart(command, args, env) {
-  return new Promise(resolve => {
-    const child = spawn(command, args, {
-      stdio: 'inherit',
-      env,
-    })
-
-    const onError = () => resolve(false)
-    child.once('error', onError)
-    child.once('spawn', () => {
-      child.off('error', onError)
-      child.on('exit', code => process.exit(code ?? 0))
-      resolve(true)
-    })
-  })
-}
-
-async function launchStandaloneTui() {
-  const tuiPath = join(__dirname, '..', 'tui', 'duckhive-tui')
-  if (!existsSync(tuiPath)) return false
-
-  const env = { ...process.env, DUCKHIVE_AUTO_TUI: '1' }
-  const helperPath = join(__dirname, 'tui-pty-helper.py')
-  if (existsSync(helperPath)) {
-    const helperStarted = await spawnAndWaitForStart('python3', [helperPath], env)
-    if (helperStarted) return true
-  }
-
-  return await spawnAndWaitForStart(tuiPath, [], env)
-}
+// Go TUI auto-launch disabled — always use REPL
+async function launchTui() { return false }
 
 // ─── Auto-start Council daemon ────────────────────────────────────────────────
-// Starts council-api-server.cjs on port 3007 once; subsequent calls skip.
-// The daemon stays alive between DuckHive invocations.
 async function ensureCouncilDaemon() {
   const COUNCIL_PORT = process.env.COUNCIL_PORT || '3007'
-  const MAX_WAIT = 5000 // ms to wait for council to be ready
-
-  // Check if council is already reachable
   try {
     const controller = new AbortController()
     const id = setTimeout(() => controller.abort(), 1000)
-    const res = await fetch(`http://localhost:${COUNCIL_PORT}/api/health`, {
-      signal: controller.signal,
-    })
+    const res = await fetch(`http://localhost:${COUNCIL_PORT}/api/health`, { signal: controller.signal })
     clearTimeout(id)
-    if (res.ok) return // Already running
+    if (res.ok) return
   } catch {}
-
-  // Not reachable — start the daemon
   const councilPath = join(__dirname, '..', 'src', 'services', 'council-server', 'council-api-server.cjs')
-  if (!existsSync(councilPath)) return // Skip if not bundled
-
+  if (!existsSync(councilPath)) return
   const child = fork(councilPath, [], {
     env: { ...process.env, PORT: COUNCIL_PORT, NODE_ENV: 'production' },
     detached: true,
     stdio: 'ignore',
   })
   child.unref()
-
-  // Wait for it to become ready
-  const deadline = Date.now() + MAX_WAIT
+  const deadline = Date.now() + 5000
   while (Date.now() < deadline) {
     await new Promise(r => setTimeout(r, 200))
     try {
@@ -99,11 +44,9 @@ async function ensureCouncilDaemon() {
       if (res.ok) return
     } catch {}
   }
-  // Warn but don't block — DuckHive tools that need council will handle the error
-  console.error('duckhive: warning — council daemon took too long to start')
 }
 
-// ─── Load DuckHive meta-agent config first ─────────────────────────────────────
+// ─── Load config ────────────────────────────────────────────────────────────────
 let configApply = null
 try {
   const loaderPath = join(__dirname, 'duckhive-config-loader.js')
@@ -113,10 +56,7 @@ try {
     applyConfigToEnv(config)
     configApply = config
   }
-} catch (err) {
-  // Non-fatal — continue without config
-  console.error(`duckhive: warning — could not load config: ${err.message}`)
-}
+} catch (err) {}
 
 // ─── Auto-configure MiniMax ────────────────────────────────────────────────────
 if (process.env.MINIMAX_API_KEY && !process.env.CLAUDE_CODE_USE_OPENAI) {
@@ -125,13 +65,9 @@ if (process.env.MINIMAX_API_KEY && !process.env.CLAUDE_CODE_USE_OPENAI) {
   process.env.OPENAI_BASE_URL = 'https://api.minimax.io/v1'
   process.env.OPENAI_MODEL = process.env.OPENAI_MODEL || 'MiniMax-M2.7'
 }
-
-// Fast model for internal Haiku queries (applyPromptToMarkdown, web search, etc.)
 if (!process.env.ANTHROPIC_SMALL_FAST_MODEL) {
   process.env.ANTHROPIC_SMALL_FAST_MODEL = 'gpt-4o-mini'
 }
-
-// Provider overrides from DuckHive config
 if (configApply?.providers?.default === 'kimi' && process.env.MINIMAX_API_KEY) {
   process.env.OPENAI_BASE_URL = 'https://api.moonshot.cn/v1'
   process.env.OPENAI_MODEL = process.env.OPENAI_MODEL || 'moonshot-v1-128k'
@@ -143,20 +79,9 @@ if (configApply?.providers?.default === 'kimi' && process.env.MINIMAX_API_KEY) {
 // ─── Launch ────────────────────────────────────────────────────────────────────────
 if (existsSync(distPath)) {
   await ensureCouncilDaemon()
-  if (!(shouldAutoLaunchTui() && (await launchStandaloneTui()))) {
-    await import(pathToFileURL(distPath).href)
-  }
+  await launchTui() // Always returns false now
+  await import(pathToFileURL(distPath).href)
 } else {
-  console.error(`
-  duckhive: dist/cli.mjs not found.
-
-  Build first:
-    bun run build
-
-  Or run directly with Bun:
-    bun run dev
-
-  See README.md for setup instructions.
-`)
+  console.error(`duckhive: dist/cli.mjs not found. Run: bun run build`)
   process.exit(1)
 }
