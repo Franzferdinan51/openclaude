@@ -282,6 +282,63 @@ export DUCK_CHAT_MODEL=MiniMax-M2.7
 
 See `~/.openclaw/` for full configuration options.
 
+### Meta-Agent Configuration
+
+Configure meta-agent models, features, and limits in `~/.duckhive/config.json`:
+
+```bash
+# Initialize default config
+duckhive config init
+
+# View current config
+duckhive config show
+
+# Find config file path
+duckhive config path
+```
+
+**Config schema:**
+
+```json
+{
+  "meta": {
+    "enabled": true,              // enable/disable meta-agent orchestration
+    "complexityThreshold": 4,      // complexity level that triggers meta-agent (1-10)
+    "models": {
+      "orchestrator": "auto",     // model for task routing (auto, minimax/MiniMax-M2.7, etc.)
+      "fast": "auto",              // model for simple tasks (complexity 1-3)
+      "standard": "auto",           // model for medium tasks (complexity 4-6)
+      "complex": "auto",           // model for complex tasks (complexity 7-10)
+      "android": "auto",           // model for Android control tasks
+      "vision": "auto",            // model for vision/screenshot analysis
+      "coding": "auto"             // model for code generation tasks
+    },
+    "features": {
+      "councilEnabled": true,      // enable AI Council deliberation
+      "fallbackEnabled": true,     // enable automatic model fallback
+      "selfHealing": true,         // enable self-healing on failures
+      "learning": true              // enable learning from feedback
+    },
+    "limits": {
+      "maxConcurrent": 3,          // max parallel sub-agents
+      "maxRetries": 3,             // max retry attempts per task
+      "timeoutMs": 60000           // default task timeout in ms
+    }
+  },
+  "providers": {
+    "default": "minimax",          // default provider (minimax, kimi, openai, lmstudio)
+    "fallback": "openrouter"       // fallback provider
+  }
+}
+```
+
+**Model alias examples:**
+- `"auto"` — use DuckHive's default routing
+- `"minimax/MiniMax-M2.7"` — specific provider/model
+- `"kimi/kimi-k2.5"` — Kimi vision model
+- `"local/qwen3.5-9b"` — local via LM Studio
+- `"free"` — OpenRouter free tier
+
 ---
 
 ## Usage
