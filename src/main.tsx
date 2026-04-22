@@ -1002,14 +1002,20 @@ async function run(): Promise<CommanderCommand> {
   .option('--plugin-dir <path>', 'Load plugins from a directory for this session only (repeatable: --plugin-dir A --plugin-dir B)', (val: string, prev: string[]) => [...prev, val], [] as string[]).option('--disable-slash-commands', 'Disable all skills', () => true).option('--chrome', 'Enable Claude in Chrome integration').option('--no-chrome', 'Disable Claude in Chrome integration').option('--file <specs...>', 'File resources to download at startup. Format: file_id:relative_path (e.g., --file file_abc:doc.txt file_def:img.png)').action(async (prompt, options) => {
     // Launch Go TUI by default when no prompt provided (TTY mode only)
     if (!prompt && process.stdout.isTTY) {
+      console.error('[DuckHive] Launching TUI...')
       const tuiPath = join(__dirname, '..', 'tui', 'duckhive-tui')
       const { spawn } = await import('child_process')
-      const child = spawn('script', ['-q', '/dev/null', tuiPath], {
+      const child = spawn(tuiPath, [], {
         stdio: 'inherit',
         env: { ...process.env },
       })
       child.on('exit', (code) => process.exit(code ?? 0))
       return
+    }
+
+    // Fall through to REPL if not TTY mode
+    if (!prompt) {
+      console.error('[DuckHive] Non-TTY mode — skipping TUI, loading REPL...')
     }
     profileCheckpoint('action_handler_start');
 
@@ -4374,11 +4380,11 @@ async function run(): Promise<CommanderCommand> {
 
   // duckhive tui — launch the Bubble Tea TUI
   program.command('tui').description('Launch the DuckHive terminal UI').action(async () => {
-    const path = join(__dirname, '..', 'tui', 'duckhive-tui')
+    const tuiPath = join(__dirname, '..', 'tui', 'duckhive-tui')
     const { spawn } = await import('child_process')
-    const child = spawn(path, [], {
+    const child = spawn(tuiPath, [], {
       stdio: 'inherit',
-      env: { ...process.env, DUCKHIVE_BRIDGE_SOCKET: process.env.DUCKHIVE_BRIDGE_SOCKET || '' },
+      env: { ...process.env },
     })
     child.on('exit', (code) => process.exit(code ?? 0))
   });
