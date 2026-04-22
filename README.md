@@ -36,6 +36,31 @@ DuckHive is an AI coding CLI agent harness built on [OpenClaw](https://github.co
 
 ## Features
 
+### Experimental Bubble Tea TUI
+
+DuckHive now includes an additive Go/Bubble Tea shell under `duckhive tui`. This TUI is being shaped as a capability-first surface that can absorb features from Codex, Gemini CLI, Kimi CLI, OpenClaw, duck-cli, MiniMax Agent CLI, and mercury-agent without replacing the current harness.
+
+Current TUI foundations:
+
+- Welcome screen that highlights imported feature pillars
+- Agent, Shell, Council, and Media composer modes
+- Kimi-style `Ctrl-X` shell toggle inside the TUI
+- Session rail for bridge state, checkpoints, context files, and imported capability status
+- Transcript rail toggle and tracked TUI backlog files
+
+TUI tracking docs live in:
+
+- `tui/TODO.md`
+- `tui/KANBAN.md`
+- `tui/FEATURE_MATRIX.md`
+
+Validation for the Go shell:
+
+```bash
+cd tui
+go test ./...
+```
+
 ### Getting Started
 
 **Option 1 — npm global install (recommended):**

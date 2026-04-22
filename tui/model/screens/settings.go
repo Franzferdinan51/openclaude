@@ -43,7 +43,7 @@ func (m *SettingsScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 // View renders the settings screen.
 func (m *SettingsScreen) View() string {
 	if m.width == 0 {
-		return "loading..."
+		m.width = 100
 	}
 
 	s := m.state
@@ -53,14 +53,24 @@ func (m *SettingsScreen) View() string {
 		tui.HeaderSubtitle.Render("Model"),
 		fmt.Sprintf("  Current: %s", s.Model),
 		fmt.Sprintf("  Mode: %s", modeStr(s.IsFastMode)),
+		fmt.Sprintf("  Composer: %s", s.InputMode.String()),
 		"",
 		tui.HeaderSubtitle.Render("Costs"),
 		fmt.Sprintf("  Total: $%.4f", s.TotalCostUSD),
 		fmt.Sprintf("  Input tokens: %d", s.TokenUsage.InputTokens),
 		fmt.Sprintf("  Output tokens: %d", s.TokenUsage.OutputTokens),
 		"",
+		tui.HeaderSubtitle.Render("Imported Capability Goals"),
+		"  Codex: repo instructions and local coding loop",
+		"  Gemini: checkpoints and resume",
+		"  Kimi: shell mode and ACP",
+		"  OpenClaw: voice, channels, and multi-agent routing",
+		"  duck-cli: council, orchestration, Android/phone workflows",
+		"  MiniMax + Mercury: multimodal media, budgets, daemon posture",
+		"",
 		tui.HeaderSubtitle.Render("Keybindings"),
 		"  ctrl+c  interrupt",
+		"  ctrl+x  toggle shell mode",
 		"  ctrl+o  toggle transcript",
 		"  ctrl+t  toggle todos",
 		"  ctrl+r  search history",

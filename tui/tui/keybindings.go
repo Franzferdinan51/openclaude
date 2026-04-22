@@ -9,7 +9,7 @@ import (
 // KeyMap holds all keyboard shortcuts, organized by context.
 type KeyMap struct {
 	// Global — always active
-	Interrupt         key.Binding
+	Interrupt        key.Binding
 	Exit             key.Binding
 	Redraw           key.Binding
 	ToggleTranscript key.Binding
@@ -22,6 +22,7 @@ type KeyMap struct {
 	HistoryDown     key.Binding
 	Cancel          key.Binding
 	CycleMode       key.Binding
+	ToggleShellMode key.Binding
 	ModelPicker     key.Binding
 	FastMode        key.Binding
 	ThinkingToggle  key.Binding
@@ -31,11 +32,11 @@ type KeyMap struct {
 	Stash           key.Binding
 
 	// Navigation within message list
-	MsgPageUp  key.Binding
+	MsgPageUp   key.Binding
 	MsgPageDown key.Binding
-	MsgTop     key.Binding
-	MsgBottom  key.Binding
-	MsgSelect  key.Binding
+	MsgTop      key.Binding
+	MsgBottom   key.Binding
+	MsgSelect   key.Binding
 
 	// Confirmation dialog
 	ConfirmYes key.Binding
@@ -104,9 +105,13 @@ func DefaultKeyMap() KeyMap {
 			key.WithKeys("ctrl+k"),
 			key.WithHelp("ctrl+k", "thinking"),
 		),
+		ToggleShellMode: key.NewBinding(
+			key.WithKeys("ctrl+x"),
+			key.WithHelp("ctrl+x", "shell mode"),
+		),
 		ExternalEditor: key.NewBinding(
-			key.WithKeys("ctrl+x", "ctrl+e"),
-			key.WithHelp("ctrl+x ctrl+e", "edit"),
+			key.WithKeys("ctrl+e"),
+			key.WithHelp("ctrl+e", "edit"),
 		),
 		Undo: key.NewBinding(
 			key.WithKeys("ctrl+_"),
@@ -161,7 +166,7 @@ func ActiveBindings(km KeyMap, ctx string) []key.Binding {
 	case "Chat":
 		return []key.Binding{
 			km.Submit, km.HistoryUp, km.HistoryDown, km.Cancel,
-			km.CycleMode, km.FastMode, km.ThinkingToggle,
+			km.CycleMode, km.ToggleShellMode, km.FastMode, km.ThinkingToggle,
 			km.ExternalEditor, km.Undo, km.Stash,
 		}
 	case "Confirmation":
@@ -224,11 +229,13 @@ func applyBinding(msg tea.KeyMsg, b key.Binding, ctx string) (model.OutMsg, bool
 		return model.MsgPopDialog{}, true
 	case "shift+tab":
 		return model.MsgCycleMode{}, true
+	case "ctrl+x":
+		return model.MsgToggleShellMode{}, true
 	case "ctrl+p":
 		return model.MsgModelPicker{}, true
 	case "ctrl+f":
 		return model.MsgToggleFastMode{}, true
-	case "ctrl+x":
+	case "ctrl+e":
 		return model.MsgExternalEditor{}, true
 	case "ctrl+z":
 		return model.MsgSuspend{}, true

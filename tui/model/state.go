@@ -8,7 +8,7 @@ import (
 type MessageType int
 
 const (
-	MsgTypeUser       MessageType = iota
+	MsgTypeUser MessageType = iota
 	MsgTypeAssistant
 	MsgTypeSystem
 	MsgTypeToolUse
@@ -28,21 +28,21 @@ type ToolCall struct {
 type ToolStatus int
 
 const (
-	ToolStatusPending   ToolStatus = iota
+	ToolStatusPending ToolStatus = iota
 	ToolStatusCompleted
 	ToolStatusFailed
 )
 
 // Message represents a single message in the conversation.
 type Message struct {
-	ID         string
-	Type       MessageType
-	Content    string
-	Timestamp  time.Time
-	Model      string // e.g. "claude-opus-4.6"
-	ToolCalls  []ToolCall
+	ID          string
+	Type        MessageType
+	Content     string
+	Timestamp   time.Time
+	Model       string // e.g. "claude-opus-4.6"
+	ToolCalls   []ToolCall
 	IsStreaming bool
-	IsError    bool
+	IsError     bool
 }
 
 // AppContext is the active keybinding context.
@@ -58,11 +58,47 @@ const (
 	CtxHistorySearch
 )
 
+// InputMode controls how the composer interprets submitted input.
+type InputMode int
+
+const (
+	InputModeAgent InputMode = iota
+	InputModeShell
+	InputModeCouncil
+	InputModeMedia
+)
+
+func (m InputMode) String() string {
+	switch m {
+	case InputModeShell:
+		return "SHELL"
+	case InputModeCouncil:
+		return "COUNCIL"
+	case InputModeMedia:
+		return "MEDIA"
+	default:
+		return "AGENT"
+	}
+}
+
+func (m InputMode) Next() InputMode {
+	switch m {
+	case InputModeAgent:
+		return InputModeShell
+	case InputModeShell:
+		return InputModeCouncil
+	case InputModeCouncil:
+		return InputModeMedia
+	default:
+		return InputModeAgent
+	}
+}
+
 // Screen identifies the active full-screen view.
 type Screen int
 
 const (
-	ScreenREPL       Screen = iota
+	ScreenREPL Screen = iota
 	ScreenWelcome
 	ScreenResume
 	ScreenDoctor
@@ -107,34 +143,35 @@ type AppState struct {
 	ProjectRoot string
 
 	// Messages
-	Messages       []Message
+	Messages      []Message
 	PendingStream *Message // partial assistant message being streamed
-	InputHistory   []string
+	InputHistory  []string
 	HistoryIndex  int
 
 	// Input
 	InputText string
+	InputMode InputMode
 
 	// UI
-	ActiveScreen  Screen
-	DialogOpen    bool
-	IsLoading     bool
-	IsCancelled   bool
-	IsThinking    bool
-	IsSuspended   bool
-	IsFastMode    bool
-	IsVimMode     bool
+	ActiveScreen Screen
+	DialogOpen   bool
+	IsLoading    bool
+	IsCancelled  bool
+	IsThinking   bool
+	IsSuspended  bool
+	IsFastMode   bool
+	IsVimMode    bool
 
 	// Permissions
-	PermissionMode     PermissionMode
+	PermissionMode    PermissionMode
 	PendingPermission *PermissionRequest
 
 	// Model
-	Model string
+	Model         string
 	ModelNickname string
 
 	// Status
-	FooterItems  []FooterItem
+	FooterItems []FooterItem
 	StatusMsg   string
 
 	// Cost
@@ -152,19 +189,20 @@ type AppState struct {
 // NewAppState creates the default app state.
 func NewAppState() AppState {
 	return AppState{
-		ActiveScreen:     ScreenREPL,
-		PermissionMode:   PermModeReviewTools,
-		Model:            "claude-opus-4.6",
-		Messages:         []Message{},
-		InputHistory:     []string{},
-		FooterItems:      []FooterItem{},
-		BridgeConnected:  false,
-		IsLoading:        false,
-		IsThinking:       false,
-		IsSuspended:      false,
-		IsFastMode:       false,
-		IsVimMode:        false,
-		DialogOpen:       false,
-		IsCancelled:      false,
+		ActiveScreen:    ScreenREPL,
+		PermissionMode:  PermModeReviewTools,
+		Model:           "claude-opus-4.6",
+		Messages:        []Message{},
+		InputHistory:    []string{},
+		FooterItems:     []FooterItem{},
+		BridgeConnected: false,
+		InputMode:       InputModeAgent,
+		IsLoading:       false,
+		IsThinking:      false,
+		IsSuspended:     false,
+		IsFastMode:      false,
+		IsVimMode:       false,
+		DialogOpen:      false,
+		IsCancelled:     false,
 	}
 }

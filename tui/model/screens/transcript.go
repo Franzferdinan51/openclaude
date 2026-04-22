@@ -30,6 +30,16 @@ func (m *TranscriptPanel) SetMessages(msgs []model.Message) {
 	m.messages = msgs
 }
 
+// SetSize updates the panel dimensions.
+func (m *TranscriptPanel) SetSize(width, height int) {
+	if width > 0 {
+		m.width = width
+	}
+	if height > 0 {
+		m.height = height
+	}
+}
+
 // Init implements tea.Model.
 func (m TranscriptPanel) Init() tea.Cmd {
 	return nil
@@ -64,18 +74,28 @@ func (m *TranscriptPanel) View() string {
 		return ""
 	}
 
-	header := tui.DialogTitle.Render("Transcript")
-
 	var lines []string
-	for i, msg := range m.messages {
+	limit := len(m.messages)
+	if m.height > 0 && limit > m.height-4 {
+		limit = m.height - 4
+	}
+	start := len(m.messages) - limit
+	if start < 0 {
+		start = 0
+	}
+	for i, msg := range m.messages[start:] {
 		prefix := "  "
 		style := tui.DimText
-		if i == m.selected {
+		if start+i == m.selected {
 			prefix = tui.Accent.Render("▶ ")
 			style = tui.ModeIndicator
 		}
 		marker := msgMarker(msg.Type)
-		lines = append(lines, style.Render(prefix+marker+" "+truncate(msg.Content, 40)))
+		maxWidth := 40
+		if m.width > 12 {
+			maxWidth = m.width - 8
+		}
+		lines = append(lines, style.Render(prefix+marker+" "+truncate(msg.Content, maxWidth)))
 	}
 	if len(lines) == 0 {
 		lines = append(lines, tui.DimText.Render("  (no messages)"))
@@ -84,15 +104,7 @@ func (m *TranscriptPanel) View() string {
 	content := lipgloss.JoinVertical(0, lines...)
 	footer := tui.DimText.Render("↑↓ navigate  esc/ctrl+o close")
 
-	panel := lipgloss.JoinVertical(0,
-		header,
-		"",
-		content,
-		"",
-		footer,
-	)
-
-	return tui.Dialog.Render(panel)
+	return lipgloss.JoinVertical(0, content, "", footer)
 }
 
 // IsVisible returns whether the panel is shown.

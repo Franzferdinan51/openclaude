@@ -78,16 +78,12 @@ func (m *WelcomeModel) execute() tea.Cmd {
 // View renders the welcome screen.
 func (m *WelcomeModel) View() string {
 	if m.width == 0 {
-		return "loading..."
+		m.width = 100
 	}
 
-	// Render DuckHive logo / header
 	logo := tui.Header.Render("DuckHive")
+	tagline := tui.DimText.Render("Capability-first TUI for coding, shell, council, media, MCP, ACP, and multi-agent workflows.")
 
-	// Tagline
-	tagline := tui.DimText.Render("AI coding assistant  •  press ↑↓ navigate  •  enter select")
-
-	// Menu choices
 	var items []string
 	for i, c := range m.choices {
 		prefix := "  "
@@ -100,17 +96,26 @@ func (m *WelcomeModel) View() string {
 	}
 	menu := lipgloss.JoinVertical(0, items...)
 
-	// System info
 	wd, _ := os.Getwd()
 	sysInfo := tui.DimText.Render(fmt.Sprintf("working: %s", wd))
+	features := lipgloss.JoinVertical(0,
+		tui.CardTitle.Render("Imported Pillars"),
+		tui.CardMuted.Render("Codex: local agent + repo instructions"),
+		tui.CardMuted.Render("Gemini: checkpoints + context files"),
+		tui.CardMuted.Render("Kimi: shell mode + ACP"),
+		tui.CardMuted.Render("OpenClaw: voice + multi-agent surfaces"),
+		tui.CardMuted.Render("duck-cli: council + orchestration"),
+		tui.CardMuted.Render("MiniMax + Mercury: media + budgets + daemon posture"),
+	)
 
 	return lipgloss.JoinVertical(0,
 		logo,
 		"",
 		tagline,
 		"",
-		menu,
+		tui.Card.Render(menu),
 		"",
+		tui.Card.Render(features),
 		"",
 		sysInfo,
 	)

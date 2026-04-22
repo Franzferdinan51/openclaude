@@ -244,7 +244,9 @@ func (a *Adapter) handleFrame(raw []byte) {
 			msg = model.MsgStreamDelta{MessageID: d.ID, Delta: d.Delta}
 		}
 	case "stream_end":
-		var d struct{ ID string `json:"id"` }
+		var d struct {
+			ID string `json:"id"`
+		}
 		if err := json.Unmarshal(raw, &d); err == nil {
 			msg = model.MsgStreamEnd{MessageID: d.ID}
 		}
@@ -258,12 +260,16 @@ func (a *Adapter) handleFrame(raw []byte) {
 			msg = model.MsgPermissionRequest{Request: req}
 		}
 	case "error":
-		var e struct{ Err string `json:"error"` }
+		var e struct {
+			Err string `json:"error"`
+		}
 		if err := json.Unmarshal(raw, &e); err == nil {
-			msg = model.MsgError{Err: fmt.Errorf(e.Err)}
+			msg = model.MsgError{Err: fmt.Errorf("%s", e.Err)}
 		}
 	case "cost":
-		var c struct{ Cost float64 `json:"cost"` }
+		var c struct {
+			Cost float64 `json:"cost"`
+		}
 		if err := json.Unmarshal(raw, &c); err == nil {
 			msg = model.MsgCostReceived{Cost: c.Cost}
 		}

@@ -9,39 +9,39 @@ import (
 
 var (
 	// Base
-	ColorBG        = lipgloss.Color("#16161E")
-	ColorSurface   = lipgloss.Color("#1E1E2E")
-	ColorSurface2  = lipgloss.Color("#252535")
-	ColorBorder    = lipgloss.Color("#3D3D5C")
-	ColorText      = lipgloss.Color("#E0E0E0")
-	ColorDim       = lipgloss.Color("#4A4A6A")
+	ColorBG       = lipgloss.Color("#16161E")
+	ColorSurface  = lipgloss.Color("#1E1E2E")
+	ColorSurface2 = lipgloss.Color("#252535")
+	ColorBorder   = lipgloss.Color("#3D3D5C")
+	ColorText     = lipgloss.Color("#E0E0E0")
+	ColorDim      = lipgloss.Color("#4A4A6A")
 	ColorMuted    = lipgloss.Color("#8792A6")
 
 	// Brand
-	ColorAccent    = lipgloss.Color("#FFCB6B") // gold
-	ColorDuck      = lipgloss.Color("#4FC3F7") // blue
+	ColorAccent = lipgloss.Color("#FFCB6B") // gold
+	ColorDuck   = lipgloss.Color("#4FC3F7") // blue
 
 	// Semantic
-	ColorError     = lipgloss.Color("#FF5370")
-	ColorSuccess   = lipgloss.Color("#81C784")
-	ColorThinking  = lipgloss.Color("#CE93D8")
+	ColorError    = lipgloss.Color("#FF5370")
+	ColorSuccess  = lipgloss.Color("#81C784")
+	ColorThinking = lipgloss.Color("#CE93D8")
+	ColorWarning  = lipgloss.Color("#FFCB6B")
 
 	// Header / footer
-	ColorHeaderBG  = lipgloss.Color("#1A1A2E")
+	ColorHeaderBG = lipgloss.Color("#1A1A2E")
 
 	// Message bubbles
-	ColorUserBubble   = lipgloss.Color("#2D5A8A")
-	ColorAssistantBG  = lipgloss.Color("#1E1E2E")
-	ColorSystemBG     = lipgloss.Color("#1A1A2E")
-	ColorToolBG       = lipgloss.Color("#252535")
+	ColorUserBubble  = lipgloss.Color("#2D5A8A")
+	ColorAssistantBG = lipgloss.Color("#1E1E2E")
+	ColorSystemBG    = lipgloss.Color("#1A1A2E")
+	ColorToolBG      = lipgloss.Color("#252535")
 )
 
 // Header renders the top bar with logo, session info, and model name.
 var Header = lipgloss.NewStyle().
 	Background(ColorHeaderBG).
 	Foreground(ColorText).
-	Padding(0, 1).
-	Width(MaxWidth)
+	Padding(0, 1)
 
 var HeaderTitle = lipgloss.NewStyle().
 	Foreground(ColorAccent).
@@ -106,6 +106,36 @@ var StatusBar = lipgloss.NewStyle().
 	Background(ColorHeaderBG).
 	Foreground(ColorMuted).
 	Padding(0, 2)
+
+var Card = lipgloss.NewStyle().
+	Background(ColorSurface).
+	Border(lipgloss.RoundedBorder()).
+	BorderForeground(ColorBorder).
+	Padding(0, 1)
+
+var CardTitle = lipgloss.NewStyle().
+	Foreground(ColorAccent).
+	Bold(true)
+
+var CardMuted = lipgloss.NewStyle().
+	Foreground(ColorMuted)
+
+var GoodBadge = lipgloss.NewStyle().
+	Foreground(ColorBG).
+	Background(ColorSuccess).
+	Padding(0, 1).
+	Bold(true)
+
+var WarnBadge = lipgloss.NewStyle().
+	Foreground(ColorBG).
+	Background(ColorWarning).
+	Padding(0, 1).
+	Bold(true)
+
+var SoftBadge = lipgloss.NewStyle().
+	Foreground(ColorAccent).
+	Background(ColorHeaderBG).
+	Padding(0, 1)
 
 var SpinnerStyle = lipgloss.NewStyle().
 	Foreground(ColorAccent)

@@ -37,6 +37,19 @@ func (m *MessageListModel) SetMessages(msgs []model.Message) {
 	m.update()
 }
 
+// SetSize updates the viewport dimensions.
+func (m *MessageListModel) SetSize(width, height int) {
+	if width > 0 {
+		m.width = width
+		m.viewport.Width = width
+	}
+	if height > 0 {
+		m.height = height
+		m.viewport.Height = height
+	}
+	m.update()
+}
+
 // AppendMessage adds a single message and scrolls to bottom.
 func (m *MessageListModel) AppendMessage(msg model.Message) {
 	m.messages = append(m.messages, msg)
@@ -183,10 +196,9 @@ func formatMessage(msg model.Message, width int, selected bool) string {
 		style = tui.ErrorText
 	}
 
-	// Truncate long lines to fit width
 	maxContentWidth := width - 10
-	if len(content) > maxContentWidth {
-		content = content[:maxContentWidth] + "..."
+	if maxContentWidth < 20 {
+		maxContentWidth = 20
 	}
 
 	var sb strings.Builder
@@ -203,5 +215,5 @@ func formatMessage(msg model.Message, width int, selected bool) string {
 		sb.WriteString(tui.Accent.Render("◀"))
 	}
 
-	return style.Render(sb.String())
+	return style.MaxWidth(maxContentWidth).Render(sb.String())
 }

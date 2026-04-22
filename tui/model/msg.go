@@ -60,6 +60,9 @@ type MsgToggleTranscript struct{}
 // MsgToggleFastMode (ctrl+shift+f) toggles fast (speculative) mode.
 type MsgToggleFastMode struct{}
 
+// MsgToggleShellMode (ctrl+x) toggles the shell composer mode.
+type MsgToggleShellMode struct{}
+
 // MsgConfirmYes is used in confirmation dialogs (enter/y).
 type MsgConfirmYes struct{}
 
@@ -198,22 +201,23 @@ func (MsgPopDialog) outMsg()          {}
 func (MsgInputChanged) outMsg()       {}
 func (MsgInputSubmitted) outMsg()     {}
 func (MsgHistoryUp) outMsg()          {}
-func (MsgHistoryDown) outMsg()         {}
-func (MsgCancelInput) outMsg()         {}
-func (MsgInterrupt) outMsg()           {}
+func (MsgHistoryDown) outMsg()        {}
+func (MsgCancelInput) outMsg()        {}
+func (MsgInterrupt) outMsg()          {}
 func (MsgExit) outMsg()               {}
 func (MsgRedraw) outMsg()             {}
 func (MsgToggleTodos) outMsg()        {}
 func (MsgToggleTranscript) outMsg()   {}
-func (MsgToggleFastMode) outMsg()      {}
-func (MsgConfirmYes) outMsg()          {}
-func (MsgConfirmNo) outMsg()           {}
+func (MsgToggleFastMode) outMsg()     {}
+func (MsgToggleShellMode) outMsg()    {}
+func (MsgConfirmYes) outMsg()         {}
+func (MsgConfirmNo) outMsg()          {}
 func (MsgSuspend) outMsg()            {}
 func (MsgPageUp) outMsg()             {}
 func (MsgPageDown) outMsg()           {}
-func (MsgModelPicker) outMsg()         {}
+func (MsgModelPicker) outMsg()        {}
 func (MsgCycleMode) outMsg()          {}
-func (MsgExternalEditor) outMsg()      {}
+func (MsgExternalEditor) outMsg()     {}
 func (MsgUndo) outMsg()               {}
 func (MsgSelectMessage) outMsg()      {}
 func (MsgMessageAction) outMsg()      {}
@@ -224,16 +228,16 @@ func (MsgBridgeConnected) inMsg()    {}
 func (MsgBridgeDisconnected) inMsg() {}
 func (MsgMessageReceived) inMsg()    {}
 func (MsgStreamDelta) inMsg()        {}
-func (MsgStreamEnd) inMsg()           {}
+func (MsgStreamEnd) inMsg()          {}
 func (MsgThinkingStarted) inMsg()    {}
-func (MsgThinkingEnded) inMsg()       {}
-func (MsgPermissionRequest) inMsg()   {}
-func (MsgStatusUpdate) inMsg()        {}
-func (MsgError) inMsg()               {}
+func (MsgThinkingEnded) inMsg()      {}
+func (MsgPermissionRequest) inMsg()  {}
+func (MsgStatusUpdate) inMsg()       {}
+func (MsgError) inMsg()              {}
 func (MsgTaskStarted) inMsg()        {}
-func (MsgTaskEnded) inMsg()           {}
-func (MsgTokensReceived) inMsg()      {}
-func (MsgCostReceived) inMsg()        {}
+func (MsgTaskEnded) inMsg()          {}
+func (MsgTokensReceived) inMsg()     {}
+func (MsgCostReceived) inMsg()       {}
 
 // compile-time interface compliance checks
 var (
