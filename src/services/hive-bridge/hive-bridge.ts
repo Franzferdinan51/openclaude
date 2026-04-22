@@ -27,8 +27,8 @@ const DEFAULT_CONFIG: HiveConfig = {
 }
 
 const DEFAULT_OPTIONS: IntegrationOptions = {
-  autoConsultCouncil: false,
-  councilThreshold: 7,
+  autoConsultCouncil: true,
+  councilThreshold: 6,
   showCouncilInRepl: true,
   cacheCouncilResults: true,
 }

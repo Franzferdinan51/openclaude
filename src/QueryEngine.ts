@@ -6,6 +6,8 @@ import {
   getSessionId,
   isSessionPersistenceDisabled,
 } from 'src/bootstrap/state.js'
+import { checkAndFireCouncil } from 'src/orchestrator/hybrid/index.js'
+import { getContentText } from 'src/utils/messages.js'
 import type {
   PermissionMode,
   SDKCompactBoundaryMessage,
@@ -672,6 +674,17 @@ export class QueryEngine {
     const initialStructuredOutputCalls = jsonSchema
       ? countToolCalls(this.mutableMessages, SYNTHETIC_OUTPUT_TOOL_NAME)
       : 0
+
+    // Auto-council: check if task complexity warrants AI council deliberation
+    // Fire-and-forget — council results are advisory; query proceeds in parallel
+    const promptText = typeof prompt === 'string' ? prompt
+      : Array.isArray(prompt) ? prompt.map(p => 'content' in p && typeof p.content === 'string' ? p.content : '').join(' ')
+      : ''
+    const historyForCouncil = this.mutableMessages
+      .filter(m => m.type === 'user' || m.type === 'assistant')
+      .map(m => ({ role: m.type === 'user' ? 'user' : 'assistant', content: getContentText(m.message.content as any) }))
+    void checkAndFireCouncil(promptText, historyForCouncil, tools.map(t => t.name))
+      .catch(() => {}) // non-blocking — council failure doesn't halt query
 
     for await (const message of query({
       messages,
