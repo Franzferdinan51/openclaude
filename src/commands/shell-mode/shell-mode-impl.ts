@@ -1,4 +1,3 @@
-import { spawn } from 'child_process'
 import type { LocalCommandCall } from '../../types/command.js'
 
 export const call: LocalCommandCall = async (_args: string) => {

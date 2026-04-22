@@ -127,7 +127,7 @@ test('unknown openai-compatible models use the 128k fallback window (not 8k, see
   expect(getContextWindowForModel('some-unknown-3p-model')).toBe(128_000)
 })
 
-test('MiniMax-M2.5 and M2.1 use explicit provider-specific context and output caps', () => {
+test('MiniMax-M2.7, M2.5 and M2.1 use explicit provider-specific context and output caps', () => {
   process.env.CLAUDE_CODE_USE_OPENAI = '1'
   delete process.env.CLAUDE_CODE_MAX_OUTPUT_TOKENS
   delete process.env.OPENAI_MODEL

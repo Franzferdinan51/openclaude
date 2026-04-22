@@ -37,7 +37,7 @@ export interface RouteResult {
 
 const MODEL_CATALOG: ModelInfo[] = [
   { provider: 'minimax', model: 'minimax-portal/MiniMax-M2.7', contextWindow: 1000000, costPer1MInput: 0.05, costPer1MOutput: 0.10, speed: 'fast', strengths: ['agents', 'reasoning', 'coding'], vision: false, functionCalling: true },
-  { provider: 'minimax', model: 'minimax-portal/MiniMax-M2.5', contextWindow: 1000000, costPer1MInput: 0.02, costPer1MOutput: 0.05, speed: 'fast', strengths: ['fast', 'free'], vision: false, functionCalling: true },
+  { provider: 'minimax', model: 'minimax-portal/MiniMax-M2.7', contextWindow: 204800, costPer1MInput: 0, costPer1MOutput: 0, speed: 'fast', strengths: ['fast', 'free', 'reasoning', 'coding'], vision: true, functionCalling: true },
   { provider: 'kimi', model: 'kimi/kimi-k2.5', contextWindow: 256000, costPer1MInput: 0.12, costPer1MOutput: 0.12, speed: 'medium', strengths: ['vision', 'coding', 'humaneval'], vision: true, functionCalling: true },
   { provider: 'openai', model: 'gpt-4o', contextWindow: 128000, costPer1MInput: 2.50, costPer1MOutput: 10.00, speed: 'medium', strengths: ['reasoning', 'coding', 'vision'], vision: true, functionCalling: true },
   { provider: 'openai', model: 'gpt-4o-mini', contextWindow: 128000, costPer1MInput: 0.15, costPer1MOutput: 0.60, speed: 'fast', strengths: ['fast', 'cheap', 'coding'], vision: true, functionCalling: true },

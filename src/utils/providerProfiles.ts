@@ -282,7 +282,7 @@ export function getProviderPresetDefaults(
         provider: 'openai',
         name: 'MiniMax',
         baseUrl: 'https://api.minimax.io/v1',
-        model: 'MiniMax-M2.5',
+        model: 'MiniMax-M2.7',
         apiKey: process.env.MINIMAX_API_KEY ?? '',
         requiresApiKey: true,
       }

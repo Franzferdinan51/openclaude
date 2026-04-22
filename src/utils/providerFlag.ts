@@ -145,7 +145,7 @@ export function applyProviderFlag(
     case 'minimax':
       process.env.CLAUDE_CODE_USE_OPENAI = '1'
       process.env.OPENAI_BASE_URL ??= 'https://api.minimax.io/v1'
-      process.env.OPENAI_MODEL ??= 'MiniMax-M2.5'
+      process.env.OPENAI_MODEL ??= 'MiniMax-M2.7'
       if (model) process.env.OPENAI_MODEL = model
       break
   }

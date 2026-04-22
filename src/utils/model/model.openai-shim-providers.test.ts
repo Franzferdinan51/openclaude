@@ -89,10 +89,10 @@ test('minimax provider reads OPENAI_MODEL, not stale settings.model', () => {
   saveGlobalConfig(current => ({ ...current, model: 'kimi-k2.6' }))
   process.env.MINIMAX_API_KEY = 'minimax-test'
   process.env.CLAUDE_CODE_USE_OPENAI = '1'
-  process.env.OPENAI_MODEL = 'MiniMax-M2.5'
+  process.env.OPENAI_MODEL = 'MiniMax-M2.7'
 
   const model = getUserSpecifiedModelSetting()
-  expect(model).toBe('MiniMax-M2.5')
+  expect(model).toBe('MiniMax-M2.7')
 })
 
 test('openai provider still reads OPENAI_MODEL (regression guard)', () => {
