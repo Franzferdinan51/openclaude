@@ -21,6 +21,7 @@ import { MemoryTool } from './tools/MemoryTool/MemoryTool.js'
 import { VisionTool } from './tools/VisionTool/VisionTool.js'
 import { StatusBarTool } from './tools/StatusBarTool/StatusBarTool.js'
 import { StreamTool } from './tools/StreamTool/StreamTool.js'
+import { REPLPanelTool } from './tools/REPLPanelTool/REPLPanelTool.js'
 import { BashTool } from './tools/BashTool/BashTool.js'
 import { FileEditTool } from './tools/FileEditTool/FileEditTool.js'
 import { FileReadTool } from './tools/FileReadTool/FileReadTool.js'
@@ -231,6 +232,7 @@ export function getAllBaseTools(): Tools {
     VisionTool,
     StatusBarTool,
     StreamTool,
+    REPLPanelTool,
     TaskStopTool,
     AskUserQuestionTool,
     SkillTool,

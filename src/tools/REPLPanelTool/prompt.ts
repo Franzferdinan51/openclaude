@@ -1,0 +1,1 @@
+export const DESCRIPTION = 'Bubble Tea panel renderer — bordered boxes, tables, vote tally panels for REPL. Render structured data (council results, team status) as styled terminal output with ANSI borders.'
