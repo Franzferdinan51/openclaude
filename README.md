@@ -140,4 +140,4 @@ duckhive                    # (if ~/.local/bin is in PATH)
 - **Commits**: 15+ pushed
 - **Repo**: https://github.com/Franzferdinan51/DuckHive
 
-*Built on OpenClaw by GitLawB · Powered by MiniMax M2.7 · duck-cli DNA*
+*Built on GitLawB OpenClaw by GitLawB · Powered by MiniMax M2.7 · duck-cli DNA*
