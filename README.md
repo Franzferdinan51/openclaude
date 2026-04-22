@@ -17,7 +17,7 @@
 
 ## What is DuckHive?
 
-DuckHive merges the **best features from 8 AI/CLI systems** into one unified harness on OpenClaw:
+DuckHive merges the **best features from 8 AI/CLI systems** into one unified harness on OpenClaw by GitLawB:
 
 ```bash
 git clone https://github.com/Franzferdinan51/DuckHive.git
@@ -81,7 +81,7 @@ cd DuckHive && bun install && bun run build
 | **Charm.sh** | Bubble Tea TUI, Gum prompts, ANSI styling |
 | **Kimi CLI** | ACP protocol, shell mode, Ctrl-X |
 | **Gemini CLI** | Checkpoints, trusted folders, GEMINI.md context |
-| **Codex** | Via OpenClaw IDE patterns |
+| **Codex** | Via OpenClaw by GitLawB IDE patterns |
 | **Crush** | Multi-model routing, context per project |
 
 ---
@@ -89,7 +89,7 @@ cd DuckHive && bun install && bun run build
 ## Architecture
 
 ```
-DuckHive v0.6.0 (OpenClaw 2026.4.x)
+DuckHive v0.6.0 (OpenClaw by GitLawB 2026.4.x)
 ├── Hybrid Orchestrator
 │   ├── TaskComplexityClassifier (1-10)
 │   ├── ModelRouter (Gemma 4 Android, Kimi K2.5 vision, MiniMax M2.7 reasoning)
@@ -140,4 +140,4 @@ duckhive                    # (if ~/.local/bin is in PATH)
 - **Commits**: 15+ pushed
 - **Repo**: https://github.com/Franzferdinan51/DuckHive
 
-*Built on OpenClaw · Powered by MiniMax M2.7 · duck-cli DNA*
+*Built on OpenClaw by GitLawB · Powered by MiniMax M2.7 · duck-cli DNA*
