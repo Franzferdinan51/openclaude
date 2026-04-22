@@ -1004,11 +1004,8 @@ async function run(): Promise<CommanderCommand> {
     const stdinTTY = process.stdin.isTTY
     const stdoutTTY = process.stdout.isTTY
     const autoTui = shouldAutoLaunchStandaloneTui(args)
-    console.error('[DEBUG duckhive] prompt:', prompt, 'stdinTTY:', stdinTTY, 'stdoutTTY:', stdoutTTY, 'args:', args.length, 'autoTui:', autoTui)
     if (!prompt && autoTui) {
-      console.error('[DEBUG duckhive] launching TUI...')
       const launched = await launchStandaloneTui(join(__dirname, '..'))
-      console.error('[DEBUG duckhive] TUI launched:', launched)
       if (launched) return
     }
     profileCheckpoint('action_handler_start');
