@@ -1,0 +1,1 @@
+export const DESCRIPTION = 'Initialize a project with AI-ready workspace files (AGENTS.md, SOUL.md, TOOLS.md, DuckHive config). Actions: detect (show what would be created), setup (create all files), config (manage DuckHive settings).'

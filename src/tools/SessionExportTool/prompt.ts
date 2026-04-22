@@ -1,0 +1,1 @@
+export const DESCRIPTION = 'Export or import a DuckHive session as a portable zip package. Actions: export (zip session), import (unzip into workspace), list (show exports), share (create shareable package).'

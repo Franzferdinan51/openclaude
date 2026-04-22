@@ -10,6 +10,8 @@ import { HiveCouncilTool } from './tools/HiveCouncilTool/HiveCouncilTool.js'
 import { HiveSenateTool } from './tools/HiveSenateTool/HiveSenateTool.js'
 import { HiveTeamTool } from './tools/HiveTeamTool/HiveTeamTool.js'
 import { CheckpointTool } from './tools/CheckpointTool/CheckpointTool.js'
+import { InitTool } from './tools/InitTool/InitTool.js'
+import { SessionExportTool } from './tools/SessionExportTool/SessionExportTool.js'
 import { TrustedFoldersTool } from './tools/TrustedFoldersTool/TrustedFoldersTool.js'
 import { ShellModeTool } from './tools/ShellModeTool/ShellModeTool.js'
 import { MCPManageTool } from './tools/MCPManageTool/MCPManageTool.js'
@@ -227,6 +229,8 @@ export function getAllBaseTools(): Tools {
     HiveSenateTool,
     HiveTeamTool,
     CheckpointTool,
+    InitTool,
+    SessionExportTool,
     TrustedFoldersTool,
     ShellModeTool,
     MCPManageTool,
