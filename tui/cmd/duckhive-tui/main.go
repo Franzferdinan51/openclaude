@@ -116,12 +116,19 @@ func (m *MainModel) Init() tea.Cmd {
 	m.cap = detectWorkspaceCapabilities(wd)
 	m.updateComposer()
 
+	if m.width == 0 || m.height == 0 {
+		m.width, m.height = 120, 40
+	}
+	m.msgList = components.NewMessageList(m.width, m.height-6)
+	m.input = components.NewInputArea(m.width, 3)
+
 	cmds := []tea.Cmd{
 		m.msgList.Init(),
 		m.input.Init(),
 		m.welcome.Init(),
 		m.transcript.Init(),
 		m.settings.Init(),
+		func() tea.Msg { return tea.WindowSizeMsg{Width: m.width, Height: m.height} },
 	}
 
 	if m.bridge != nil {
