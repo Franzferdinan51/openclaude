@@ -1,0 +1,7 @@
+{
+  "name": "@openclaude/hive-bridge",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Hive Nation integration for OpenClaude",
+  "main": "index.ts"
+}

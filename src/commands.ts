@@ -137,6 +137,17 @@ import hooks from './commands/hooks/index.js'
 import files from './commands/files/index.js'
 import branch from './commands/branch/index.js'
 import agents from './commands/agents/index.js'
+
+// Hive Nation Integration (Phase 1: AI Council + Senate + Teams)
+import hiveCouncil from './commands/hive-council/index.js'
+import hiveSenate from './commands/hive-senate/index.js'
+import hiveTeam from './commands/hive-team/index.js'
+import hiveDecree from './commands/hive-decree/index.js'
+import hiveOrchestrate from './commands/hive-orchestrate/index.js'
+import shellMode from './commands/shell-mode/index.js'
+import checkpoint from './commands/checkpoint/index.js'
+import trustedFolders from './commands/trusted-folders/index.js'
+import mcpManage from './commands/mcp-manage/index.js'
 import autoFix from './commands/auto-fix.js'
 import plugin from './commands/plugin/index.js'
 import reloadPlugins from './commands/reload-plugins/index.js'
@@ -289,6 +300,18 @@ const COMMANDS = memoize((): Command[] => [
   files,
   heapDump,
   help,
+
+  // Hive Nation Integration — AI Council, Senate, Teams
+  hiveCouncil,
+  hiveDecree,
+  hiveOrchestrate,
+  hiveSenate,
+  hiveTeam,
+  checkpoint,
+  mcpManage,
+  shellMode,
+  trustedFolders,
+
   ide,
   init,
   keybindings,
