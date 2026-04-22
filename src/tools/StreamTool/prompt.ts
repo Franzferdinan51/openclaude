@@ -1,0 +1,1 @@
+export const DESCRIPTION = 'Progressive streaming output — animated spinners, thinking dots, progress bars for long operations. Gum-style loading states. Use /stream progress 1/5 through /stream done.'

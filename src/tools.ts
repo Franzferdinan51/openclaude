@@ -19,6 +19,8 @@ import { DecreeTool } from './tools/DecreeTool/DecreeTool.js'
 import { ConfirmTool } from './tools/ConfirmTool/ConfirmTool.js'
 import { MemoryTool } from './tools/MemoryTool/MemoryTool.js'
 import { VisionTool } from './tools/VisionTool/VisionTool.js'
+import { StatusBarTool } from './tools/StatusBarTool/StatusBarTool.js'
+import { StreamTool } from './tools/StreamTool/StreamTool.js'
 import { BashTool } from './tools/BashTool/BashTool.js'
 import { FileEditTool } from './tools/FileEditTool/FileEditTool.js'
 import { FileReadTool } from './tools/FileReadTool/FileReadTool.js'
@@ -227,6 +229,8 @@ export function getAllBaseTools(): Tools {
     ConfirmTool,
     MemoryTool,
     VisionTool,
+    StatusBarTool,
+    StreamTool,
     TaskStopTool,
     AskUserQuestionTool,
     SkillTool,

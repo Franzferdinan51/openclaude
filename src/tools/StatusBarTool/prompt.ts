@@ -1,0 +1,1 @@
+export const DESCRIPTION = 'Bubble Tea style status bar — renders colored session info (model, tokens, mode, cost) with Lip Gloss ANSI styling for REPL. Use /statusbar render to display current status.'
