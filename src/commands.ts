@@ -143,6 +143,7 @@ import agents from './commands/agents/index.js'
 import hiveCouncil from './commands/hive-council/index.js'
 import hiveSenate from './commands/hive-senate/index.js'
 import hiveTeam from './commands/hive-team/index.js'
+import lmstudioInit from './commands/lmstudio-init/index.js'
 import hiveDecree from './commands/hive-decree/index.js'
 import hiveOrchestrate from './commands/hive-orchestrate/index.js'
 import shellMode from './commands/shell-mode/index.js'
@@ -318,6 +319,7 @@ const COMMANDS = memoize((): Command[] => [
 
   ide,
   init,
+  lmstudioInit,
   keybindings,
   installGitHubApp,
   installSlackApp,
