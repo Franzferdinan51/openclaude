@@ -2,9 +2,7 @@
 
 /**
  * DuckHive — AI coding CLI harness
- * Auto-starts Council daemon, configures MiniMax/OpenAI, loads REPL.
- * Go TUI auto-launch is disabled (requires /dev/tty on macOS).
- * Use 'duckhive tui' to launch Go TUI manually.
+ * Auto-starts Council daemon, configures MiniMax/OpenAI, launches REPL TUI.
  */
 
 import { existsSync } from 'fs'
@@ -15,8 +13,14 @@ import { fork, spawn } from 'child_process'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const distPath = join(__dirname, '..', 'dist', 'cli.mjs')
 
-// Go TUI auto-launch disabled — always use REPL
-async function launchTui() { return false }
+function shouldAutoLaunchRepl() {
+  return (
+    process.argv.slice(2).length === 0 &&
+    process.stdin.isTTY &&
+    process.stdout.isTTY &&
+    process.env.DUCKHIVE_NO_AUTO_TUI !== '1'
+  )
+}
 
 // ─── Auto-start Council daemon ────────────────────────────────────────────────
 async function ensureCouncilDaemon() {
@@ -79,8 +83,15 @@ if (configApply?.providers?.default === 'kimi' && process.env.MINIMAX_API_KEY) {
 // ─── Launch ────────────────────────────────────────────────────────────────────────
 if (existsSync(distPath)) {
   await ensureCouncilDaemon()
-  await launchTui() // Always returns false now
-  await import(pathToFileURL(distPath).href)
+  
+  // Auto-launch REPL TUI when run from a real terminal (TTY stdin + stdout)
+  if (shouldAutoLaunchRepl()) {
+    // Launch REPL directly — the Ink REPL IS the TUI
+    await import(pathToFileURL(distPath).href)
+  } else {
+    // Headless mode: run with a prompt argument or --print
+    await import(pathToFileURL(distPath).href)
+  }
 } else {
   console.error(`duckhive: dist/cli.mjs not found. Run: bun run build`)
   process.exit(1)
