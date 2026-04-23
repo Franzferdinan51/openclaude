@@ -18,7 +18,6 @@ interface DiffStats {
 interface SizeClassification {
   label: string
   emoji: string
-  color: string
 }
 
 const SIZE_THRESHOLDS = {
@@ -29,11 +28,11 @@ const SIZE_THRESHOLDS = {
 }
 
 const SIZE_MAP: Record<string, SizeClassification> = {
-  xs: { label: 'XS (tiny)', emoji: '🐣', color: '32m' },
-  small: { label: 'Small', emoji: '🟢', color: '32m' },
-  medium: { label: 'Medium', emoji: '🟡', color: '33m' },
-  large: { label: 'Large', emoji: '🟠', color: '33m' },
-  xl: { label: 'XL (massive)', emoji: '🔴', color: '31m' },
+  xs: { label: 'XS (tiny)', emoji: '[~]' },
+  small: { label: 'Small', emoji: '[+]' },
+  medium: { label: 'Medium', emoji: '[*]' },
+  large: { label: 'Large', emoji: '[-]' },
+  xl: { label: 'XL (massive)', emoji: '[x]' },
 }
 
 function classifySize(stats: DiffStats): SizeClassification {
@@ -57,16 +56,14 @@ function renderSizeReport(
   size: SizeClassification,
   baseBranch: string,
 ): string {
-  const color = size.color
   const lines: string[] = []
 
-  lines.push(`\x1b[${color}m${size.emoji} PR Size: ${size.label}\x1b[0m`)
-  lines.push(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`)
-  lines.push(`Files:       ${stats.filesChanged}`)
-  lines.push(`Insertions: ${stats.insertions > 0 ? '+' + stats.insertions : 0}`)
-  lines.push(`Deletions:  ${stats.deletions > 0 ? '-' + stats.deletions : 0}`)
-  lines.push(`Total:      ${stats.insertions + stats.deletions} lines`)
-  lines.push(`Base:       ${baseBranch}`)
+  lines.push('' + size.emoji + ' PR Size: ' + size.label)
+  lines.push('Files:       ' + stats.filesChanged)
+  lines.push('Insertions: ' + (stats.insertions > 0 ? '+' + stats.insertions : 0))
+  lines.push('Deletions:  ' + (stats.deletions > 0 ? '-' + stats.deletions : 0))
+  lines.push('Total:      ' + (stats.insertions + stats.deletions) + ' lines')
+  lines.push('Base:       ' + baseBranch)
 
   if (stats.files.length > 0) {
     lines.push('[*] Largest files:')
@@ -85,9 +82,7 @@ function renderSizeReport(
 }
 
 async function getDiffStats(baseBranch: string): Promise<DiffStats | null> {
-  const { stdout } = await execFileNoThrow('git', ['diff', '--numstat', baseBranch], {
-    cwd: findGitRoot(getCwd()) ?? undefined,
-  })
+  const { stdout } = await execFileNoThrow('git', ['diff', '--numstat', baseBranch])
 
   if (!stdout) return null
 
@@ -100,7 +95,9 @@ async function getDiffStats(baseBranch: string): Promise<DiffStats | null> {
     const parts = line.split('\t')
     if (parts.length < 3) continue
 
-    const [add, del, path] = parts
+    const add = parts[0]
+    const del = parts[1]
+    const path = parts[2]
     const addNum = parseInt(add, 10) || 0
     const delNum = parseInt(del, 10) || 0
 
@@ -117,36 +114,31 @@ async function getDiffStats(baseBranch: string): Promise<DiffStats | null> {
   }
 }
 
-async function getBaseBranch(currentBranch?: string): Promise<string> {
-  // Try to detect from current branch
-  if (currentBranch) {
-    // Check for merge-base with origin/main or origin/master
-    const { stdout } = await execFileNoThrow('git', ['rev-parse', '--abbrev-ref', 'HEAD'], {
-      cwd: findGitRoot(getCwd()) ?? undefined,
-    })
-    const branch = stdout?.trim()
-    if (branch && branch !== 'HEAD') {
-      // Look for an upstream branch
-      const { stdout: upstream } = await execFileNoThrow(
-        'git',
-        ['rev-parse', '--abbrev-ref', `${branch}@{upstream}`],
-        { cwd: await getGitRoot() },
-      )
-      if (upstream?.trim()) return upstream.trim()
-    }
+async function getBaseBranch(): Promise<string> {
+  const root = findGitRoot(getCwd())
+  if (!root) return 'origin/main'
+
+  // Try to detect current branch
+  const { stdout } = await execFileNoThrow('git', ['rev-parse', '--abbrev-ref', 'HEAD'])
+  const branch = stdout?.trim()
+  if (branch && branch !== 'HEAD') {
+    const { stdout: upstream } = await execFileNoThrow(
+      'git',
+      ['rev-parse', '--abbrev-ref', branch + '@{upstream}'],
+    )
+    if (upstream?.trim()) return upstream.trim()
   }
 
-  // Fall back to main or master
+  // Fall back to origin/main or origin/master
   for (const fallback of ['origin/main', 'origin/master', 'main', 'master']) {
-    const { stdout } = await execFileNoThrow(
+    const { stdout: verified } = await execFileNoThrow(
       'git',
       ['rev-parse', '--verify', fallback],
-      { cwd: await getGitRoot() },
     )
-    if (stdout?.trim()) return fallback
+    if (verified?.trim()) return fallback
   }
 
-  return 'HEAD~1'
+  return 'origin/main'
 }
 
 export const call: LocalCommandCall = async (args: string): Promise<PrSizeResult> => {
@@ -156,8 +148,12 @@ export const call: LocalCommandCall = async (args: string): Promise<PrSizeResult
 
   for (const arg of parsedArgs) {
     if (arg.startsWith('--')) {
-      const [k, v] = arg.slice(2).split('=')
-      flags[k] = v ?? true
+      const idx = arg.indexOf('=')
+      if (idx !== -1) {
+        flags[arg.substring(2, idx)] = arg.substring(idx + 1)
+      } else {
+        flags[arg.substring(2)] = true
+      }
     } else {
       positional.push(arg)
     }

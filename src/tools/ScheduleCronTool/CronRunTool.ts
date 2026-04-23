@@ -3,8 +3,8 @@
 import { z } from 'zod/v4'
 import type { ValidationResult } from '../../Tool.js'
 import { buildTool, type ToolDef } from '../../Tool.js'
-import { getScheduledPrompt } from '../../bootstrap/state.js'
 import { getCronFilePath, listAllCronTasks } from '../../utils/cronTasks.js'
+import { getSessionCronTasks } from '../../bootstrap/state.js'
 import { lazySchema } from '../../utils/lazySchema.js'
 import { getTeammateContext } from '../../utils/teammateContext.js'
 import { CRON_RUN_DESCRIPTION, CRON_RUN_TOOL_NAME } from './prompt.js'
@@ -63,7 +63,7 @@ The tool fires the job's prompt into the session immediately (as if the schedule
   },
   async validateInput(input): Promise<ValidationResult> {
     // Check session tasks first
-    const sessionTasks = getScheduledPrompt()
+    const sessionTasks = getSessionCronTasks()
     const sessionTask = sessionTasks.find(t => t.id === input.id)
     if (sessionTask) {
       return { result: true }

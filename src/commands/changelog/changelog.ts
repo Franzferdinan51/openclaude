@@ -127,9 +127,7 @@ async function getPrChangelog(prNumber?: string): Promise<string | null> {
     ? ['pr', 'view', prNumber, '--json', 'body', '--jq', '.body']
     : ['pr', 'view', '--json', 'body', '--jq', '.body']
 
-  const { stdout } = await execFileNoThrow('gh', args, {
-    cwd: findGitRoot(getCwd()) ?? undefined,
-  })
+  const { stdout } = await execFileNoThrow('gh', args)
 
   if (!stdout) return null
 
@@ -157,9 +155,7 @@ async function getChangelogFromGit(tag?: string): Promise<string | null> {
     ? ['log', tag + '..HEAD', '--pretty=format:%s%n%b', '--']
     : ['log', '--pretty=format:%s%n%b', '-20', '--']
 
-  const { stdout } = await execFileNoThrow('git', args, {
-    cwd: findGitRoot(getCwd()) ?? undefined,
-  })
+  const { stdout } = await execFileNoThrow('git', args)
 
   if (!stdout) return null
 
@@ -209,10 +205,9 @@ export const call: LocalCommandCall = async (args: string): Promise<ChangeLogRes
   if (prChangelog) {
     const entries = parseChangelogEntries(prChangelog)
     if (entries.length > 0) {
-      const prefix = '[*] Changelog (PR #' + (prArg ?? 'current') + ')\n'
       return {
         type: 'text',
-        value: prefix + formatEntries(entries),
+        value: '[*] Changelog (PR #' + (prArg ?? 'current') + ')\n' + formatEntries(entries),
       }
     }
   }
@@ -220,10 +215,9 @@ export const call: LocalCommandCall = async (args: string): Promise<ChangeLogRes
   if (showAll || tag) {
     const gitChangelog = await getChangelogFromGit(tag)
     if (gitChangelog) {
-      const prefix = '[*] Changelog from ' + (tag ?? 'last 20 commits') + '\n'
       return {
         type: 'text',
-        value: prefix + gitChangelog,
+        value: '[*] Changelog from ' + (tag ?? 'last 20 commits') + '\n' + gitChangelog,
       }
     }
   }
