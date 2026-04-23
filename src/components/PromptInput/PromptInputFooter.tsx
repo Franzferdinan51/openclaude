@@ -14,6 +14,7 @@ import { useAppState } from '../../state/AppState.js';
 import type { ToolPermissionContext } from '../../Tool.js';
 import type { Message } from '../../types/message.js';
 import type { PromptInputMode, VimMode } from '../../types/textInputTypes.js';
+import type { Theme } from '../../utils/theme.js';
 import type { AutoUpdaterResult } from '../../utils/autoUpdater.js';
 import { isFullscreenEnvEnabled } from '../../utils/fullscreen.js';
 import { isUndercover } from '../../utils/undercover.js';
@@ -60,6 +61,42 @@ type Props = {
   historyFailedMatch: boolean;
   onOpenTasksDialog?: (taskId?: string) => void;
 };
+
+type ControlPill = {
+  label: string;
+  color: keyof Theme;
+};
+
+function ControlRail({
+  items,
+  isNarrow,
+}: {
+  items: ControlPill[];
+  isNarrow: boolean;
+}): React.ReactNode {
+  if (items.length === 0) return null;
+
+  return (
+    <Box
+      paddingX={2}
+      paddingBottom={1}
+      flexDirection={isNarrow ? 'column' : 'row'}
+      gap={1}
+    >
+      {items.map(item => (
+        <Box
+          key={item.label}
+          borderStyle="round"
+          borderColor={item.color}
+          paddingX={1}
+        >
+          <Text color={item.color}>{item.label}</Text>
+        </Box>
+      ))}
+    </Box>
+  );
+}
+
 function PromptInputFooter({
   apiKeyStatus,
   debug,
@@ -117,6 +154,43 @@ function PromptInputFooter({
   const coordinatorTaskCount = useCoordinatorTaskCount();
   const coordinatorTaskIndex = useAppState(s => s.coordinatorTaskIndex);
   const pillSelected = tasksSelected && (coordinatorTaskCount === 0 || coordinatorTaskIndex < 0);
+  const controlPills = useMemo(() => {
+    const items: ControlPill[] = [
+      {
+        label: mode === 'bash' ? 'SHELL MODE' : `${mode.toUpperCase()} MODE`,
+        color: mode === 'bash' ? 'warning' : 'claude',
+      },
+      {
+        label: isLoading ? 'TURN ACTIVE' : 'READY',
+        color: isLoading ? 'warning' : 'success',
+      },
+      {
+        label: `TRANSCRIPT ${messages.length}`,
+        color: 'inactive',
+      },
+    ];
+    if (mcpClients?.length) {
+      items.push({
+        label: `MCP ${mcpClients.length}`,
+        color: 'suggestion',
+      });
+    }
+    if (coordinatorTaskCount > 0) {
+      items.push({
+        label: `TASKS ${coordinatorTaskCount}`,
+        color: pillSelected ? 'claude' : 'warning',
+      });
+    }
+    return isNarrow ? items.slice(0, 3) : items;
+  }, [
+    coordinatorTaskCount,
+    isLoading,
+    isNarrow,
+    mcpClients,
+    messages.length,
+    mode,
+    pillSelected,
+  ]);
 
   // Hide `? for shortcuts` if the user has a custom status line, or during ctrl-r
   const suppressHint = suppressHintFromProps || statusLineShouldDisplay(settings) || isSearching;
@@ -136,6 +210,7 @@ function PromptInputFooter({
     return <PromptInputHelpMenu dimColor={true} fixedWidth={true} paddingX={2} />;
   }
   return <>
+      {mode === 'prompt' && !helpOpen && suggestions.length === 0 && !isSearching && !isShort && <ControlRail items={controlPills} isNarrow={isNarrow} />}
       <Box flexDirection={isNarrow ? 'column' : 'row'} justifyContent={isNarrow ? 'flex-start' : 'space-between'} paddingX={2} gap={isNarrow ? 0 : 1}>
         <Box flexDirection="column" flexShrink={isNarrow ? 0 : 1}>
           {mode === 'prompt' && !isShort && !exitMessage.show && !isPasting && statusLineShouldDisplay(settings) && <StatusLine messagesRef={messagesRef} lastAssistantMessageId={lastAssistantMessageId} vimMode={vimMode} />}

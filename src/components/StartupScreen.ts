@@ -178,12 +178,8 @@ export function printStartupScreen(): void {
   const out: string[] = []
 
   out.push('')
-
-  // Minimal tagline header (no ASCII art blocks)
-  out.push('')
-  out.push(`  ${rgb(...AMBER)}✦${RESET} ${rgb(...GOLD)}Any model. Every tool. One Hive.${RESET} ${rgb(...AMBER)}✦${RESET}`)
-  out.push('')
-  out.push(`  ${rgb(...AMBER)}\u2726${RESET} ${rgb(...CREAM)}Any model. Every tool. One Hive.${RESET} ${rgb(...AMBER)}\u2726${RESET}`)
+  out.push(`  ${rgb(...AMBER)}DUCKHIVE${RESET} ${DIM}${rgb(...DIMCOL)}capability-first command deck${RESET}`)
+  out.push(`  ${rgb(...GOLD)}Any model. Every tool. One Hive.${RESET}`)
   out.push('')
 
   // Provider info box
@@ -198,6 +194,10 @@ export function printStartupScreen(): void {
   let [r, l] = lbl('Provider', p.name, provC)
   out.push(boxRow(r, W, l))
   ;[r, l] = lbl('Model', p.model)
+  out.push(boxRow(r, W, l))
+  ;[r, l] = lbl('Surfaces', 'repl · shell · tui · media')
+  out.push(boxRow(r, W, l))
+  ;[r, l] = lbl('Harness', 'openclaude core + duckhive')
   out.push(boxRow(r, W, l))
 
   // ─── Meta-agent config ─────────────────────────────────────────────────────
@@ -233,7 +233,7 @@ export function printStartupScreen(): void {
   out.push(`${rgb(...BORDER)}╚${'═'.repeat(W - 2)}╝${RESET}`)
 
   // Powered by badge
-  out.push(`  ${DIM}${rgb(...DIMCOL)}\u25cf${RESET} ${rgb(...AMBER)}DuckHive${RESET} ${DIM}${rgb(...DIMCOL)}\u00b7${RESET} ${rgb(...ORANGE)}Powered by MiniMax M2.7${RESET}`)
+  out.push(`  ${DIM}${rgb(...DIMCOL)}\u25cf${RESET} ${rgb(...AMBER)}DuckHive${RESET} ${DIM}${rgb(...DIMCOL)}\u00b7${RESET} ${rgb(...ORANGE)}MiniMax-first by default${RESET}`)
 
   // Version + model info
   out.push(`  ${DIM}${rgb(...DIMCOL)}\u25cf${RESET} ${rgb(...ORANGE)}v${MACRO.DISPLAY_VERSION ?? MACRO.VERSION}${RESET} ${DIM}${rgb(...DIMCOL)}\u00b7${RESET} DuckHive   ${DIM}${rgb(...DIMCOL)}\u00b7${RESET} ${p.model}`)

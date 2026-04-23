@@ -48,10 +48,23 @@ const DEFAULT_TIP: TipOfFeed = {
   color: 'dim'
 };
 
+function normalizeEmergencyTip(tip: TipOfFeed): TipOfFeed {
+  return {
+    ...tip,
+    tip: tip.tip
+      .replace(/OpenClaude/g, 'DuckHive')
+      .replace(/Claude Code/g, 'DuckHive')
+      .replace(/claude --continue/g, 'duckhive --continue')
+      .replace(/claude --resume/g, 'duckhive --resume'),
+  };
+}
+
 /**
  * Get the tip of the feed from dynamic config with caching
  * Returns cached value immediately, updates in background
  */
 function getTipOfFeed(): TipOfFeed {
-  return getDynamicConfig_CACHED_MAY_BE_STALE<TipOfFeed>(CONFIG_NAME, DEFAULT_TIP);
+  return normalizeEmergencyTip(
+    getDynamicConfig_CACHED_MAY_BE_STALE<TipOfFeed>(CONFIG_NAME, DEFAULT_TIP),
+  );
 }

@@ -67,7 +67,7 @@ export function createProjectOnboardingFeed(steps: Step[]): FeedConfig {
     });
   }
   return {
-    title: 'Tips for getting started',
+    title: 'DuckHive quickstart',
     lines
   };
 }

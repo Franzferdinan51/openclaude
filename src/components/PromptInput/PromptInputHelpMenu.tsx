@@ -148,7 +148,7 @@ export function PromptInputHelpMenu(props) {
   }
   let t23;
   if ($[25] !== dimColor) {
-    t23 = <Box><Text dimColor={dimColor}>/ for commands</Text></Box>;
+    t23 = <Box><Text dimColor={dimColor}>/ for commands and launchers</Text></Box>;
     $[25] = dimColor;
     $[26] = t23;
   } else {
@@ -164,7 +164,7 @@ export function PromptInputHelpMenu(props) {
   }
   let t25;
   if ($[29] !== dimColor) {
-    t25 = <Box><Text dimColor={dimColor}>{"& for background"}</Text></Box>;
+    t25 = <Box><Text dimColor={dimColor}>{"& to keep work running in background"}</Text></Box>;
     $[29] = dimColor;
     $[30] = t25;
   } else {
@@ -172,7 +172,7 @@ export function PromptInputHelpMenu(props) {
   }
   let t26;
   if ($[31] !== dimColor) {
-    t26 = <Box><Text dimColor={dimColor}>/btw for side question</Text></Box>;
+    t26 = <Box><Text dimColor={dimColor}>/agents for delegation and teams</Text></Box>;
     $[31] = dimColor;
     $[32] = t26;
   } else {
