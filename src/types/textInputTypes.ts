@@ -266,6 +266,7 @@ export type VimInputState = BaseInputState & {
  */
 export type PromptInputMode =
   | 'bash'
+  | 'shell'
   | 'prompt'
   | 'orphaned-permission'
   | 'task-notification'
