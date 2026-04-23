@@ -14,6 +14,7 @@ import desktop from './commands/desktop/index.js'
 import commitPushPr from './commands/commit-push-pr.js'
 import compact from './commands/compact/index.js'
 import config from './commands/config/index.js'
+import connect from './commands/connect/index.js'
 import { context, contextNonInteractive } from './commands/context/index.js'
 import cost from './commands/cost/index.js'
 import diff from './commands/diff/index.js'
@@ -203,7 +204,7 @@ import {
   extraUsageNonInteractive,
 } from './commands/extra-usage/index.js'
 import rateLimitOptions from './commands/rate-limit-options/index.js'
-import statusline from './commands/statusline.js'
+import statusline from './commands/statusline.tsx'
 import effort from './commands/effort/index.js'
 import stats from './commands/stats/index.js'
 // insights.ts is 113KB (3200 lines, includes diffLines/html rendering). Lazy
@@ -289,6 +290,7 @@ const COMMANDS = memoize((): Command[] => [
   color,
   compact,
   config,
+  connect,
   copy,
   desktop,
   context,

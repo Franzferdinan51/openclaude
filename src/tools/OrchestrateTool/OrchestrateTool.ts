@@ -8,7 +8,7 @@ const orchestrator = createHybridOrchestrator()
 
 const inputSchema = lazySchema(() =>
   z.strictObject({
-    action: z.enum(['analyze', 'route', 'plan', 'status']).describe('Orchestrator action'),
+    action: z.enum(['analyze', 'route', 'plan', 'execute', 'status']).describe('Orchestrator action'),
     message: z.string().optional().describe('User message to analyze'),
     history: z.array(z.object({ role: z.string(), content: z.string() })).optional().describe('Conversation history'),
     tools: z.array(z.string()).optional().describe('Requested tools'),
@@ -18,11 +18,11 @@ type InputSchema = ReturnType<typeof inputSchema>
 type Output = { data: { success: boolean; complexity?: number; category?: string; model?: string; reason?: string; plan?: string[]; council?: boolean; councilReasons?: string[]; checkpoint?: boolean; error?: string } }
 
 export const OrchestrateTool = buildTool({
-  name: 'orchestrate',
+  name: 'hive_orchestrate',
   async description() { return 'Smart task routing — analyzes complexity, selects model, triggers council for critical tasks, saves checkpoints for long tasks. Powered by Hybrid Orchestrator.' },
-  async prompt() { return 'Smart task routing with complexity scoring, model selection, council deliberation, and checkpointing. Use /orchestrate analyze to classify a task before execution.' },
+  async prompt() { return 'Smart task routing with complexity scoring, model selection, council deliberation, and checkpointing. Use /orchestrate command to trigger multi-agent orchestration.' },
   get inputSchema(): InputSchema { return inputSchema() },
-  get outputSchema() { return z.object({ success: z.boolean(), complexity: z.number().optional(), category: z.string().optional(), model: z.string().optional(), reason: z.string().optional(), plan: z.array(z.string()).optional(), council: z.boolean().optional(), councilReasons: z.array(z.string()).optional(), checkpoint: z.boolean().optional(), error: z.string().optional() }) },
+  get outputSchema() { return z.object({ success: z.boolean(), complexity: z.number().optional(), category: z.string().optional(), model: z.string().optional(), reason: z.string().optional(), plan: z.array(z.string()).optional(), council: z.boolean().optional(), councilReasons: z.array(z.string()).optional(), checkpoint: z.boolean().optional(), taskId: z.string().optional(), teamSpawned: z.boolean().optional(), teamId: z.string().optional(), agentsSpawned: z.array(z.string()).optional(), status: z.string().optional(), error: z.string().optional() }) },
   isConcurrencySafe() { return true },
   isReadOnly(input) { return input.action === 'analyze' || input.action === 'status' },
   async call(input, context, canUseTool, parentMessage) {
@@ -45,6 +45,28 @@ export const OrchestrateTool = buildTool({
             council: routing.analysis.needsCouncil,
             councilReasons: routing.analysis.councilReasons,
             checkpoint: routing.analysis.needsCheckpoint,
+          },
+        }
+      }
+      case 'execute': {
+        if (!message) return { data: { success: false, error: 'message required for execute' } }
+        const result = await orchestrator.execute(message, history, tools, context)
+        return {
+          data: {
+            success: true,
+            complexity: result.analysis.complexity,
+            category: result.analysis.category,
+            model: result.routing.model,
+            reason: result.routing.reason,
+            plan: result.executionPlan,
+            council: result.councilTriggered,
+            councilReasons: result.analysis.councilReasons,
+            checkpoint: !!result.checkpointId,
+            taskId: result.taskId,
+            teamSpawned: result.teamSpawned,
+            teamId: result.teamId,
+            agentsSpawned: result.agentsSpawned,
+            status: result.status,
           },
         }
       }

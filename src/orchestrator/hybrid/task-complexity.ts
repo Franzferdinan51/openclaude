@@ -64,8 +64,8 @@ export function analyzeTask(message: string, context: TaskContext): TaskAnalysis
   
   // Council triggers
   const councilReasons: string[] = []
-  const needsCouncil = COUNCIL_TRIGGERS.some(t => msg.includes(t)) || complexity >= 8
-  if (needsCouncil && complexity < 8) { complexity = 8; factors.push('Council-worthy topic') }
+  const needsCouncil = COUNCIL_TRIGGERS.some(t => msg.includes(t)) || complexity >= 4
+  if (needsCouncil && complexity < 4) { complexity = Math.max(complexity, 4); factors.push('Council-worthy topic') }
   if (msg.includes('security') || msg.includes('auth')) { councilReasons.push('Security-relevant decision') }
   if (msg.includes('deploy') || msg.includes('production')) { councilReasons.push('Production change') }
   if (msg.includes('cost') || msg.includes('budget')) { councilReasons.push('Financial impact') }

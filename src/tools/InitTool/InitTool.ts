@@ -116,13 +116,14 @@ async function analyzeWorkspace(root: string): Promise<{
   return { packageJson, readmeContent, existingFiles, projectType, language, buildSystem, hasSrc, hasTests, hasConfig }
 }
 
-async function runDeepAnalysis(root: string): Promise<string> {
+async function runDeepAnalysis(root: string, context: ToolUseContext): Promise<string> {
   // Spawn a sub-agent for deep codebase analysis
   const spawnResult = await sessions_spawn({
     mode: 'run',
     runtime: 'subagent',
     task: `Analyze the codebase at "${root}" thoroughly and return a comprehensive summary including:\n1. Project architecture (folder structure, main entry points)\n2. Key conventions (naming, patterns, testing approach)\n3. Build and test commands (from package.json, Makefile, Cargo.toml, etc.)\n4. Tech stack details (frameworks, libraries, important dependencies)\n5. Any existing AI assistant instructions (AGENTS.md, SOUL.md, .cursorrules, CLAUDE.md, .claude)\n\nBe thorough — scan package.json, tsconfig.json, README.md, src/ directory structure, test conventions, and any config files. Return your analysis as structured markdown.`,
     label: `workspace-analysis-${Date.now()}`,
+    context,
   })
   return spawnResult
 }
@@ -372,7 +373,7 @@ export const InitTool = buildTool({
       // Run deep analysis via sub-agent
       let deepAnalysis = ''
       try {
-        deepAnalysis = await runDeepAnalysis(root)
+        deepAnalysis = await runDeepAnalysis(root, context)
       } catch (e) {
         deepAnalysis = `Analysis failed: ${e instanceof Error ? e.message : String(e)}`
       }
