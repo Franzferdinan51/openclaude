@@ -350,6 +350,133 @@ Spawn multi-agent crews that work in parallel on complex tasks. DuckHive integra
 
 ---
 
+### /swarm — Code Swarming
+
+Code swarming launches parallel sub-agents across 17 specialized domains to tackle complex tasks from multiple angles simultaneously.
+
+```bash
+/swarm "Build a REST API" --domain=coding --count=4
+/swarm "Audit this security vulnerability" --domain=security
+/swarm "Research new ML techniques" --domain=research
+/swarm --list          # Show all 17 available domain agents
+/swarm --list-domain   # List domain agent capabilities
+/swarm --dry-run       # Preview what would spawn
+```
+
+**Domain agents include:** coding, code-review, security, debugging, architecture, testing, devops, research, analysis, docs, optimization, refactor, backend, frontend, mobile, infrastructure, data
+
+---
+
+### /acp — ACP Server for IDE Integration
+
+Start the Agent Client Protocol server for IDE integration (Kimi CLI style).
+
+```bash
+/acp                    # Start ACP server
+/acp status            # Check server status
+/acp stop              # Stop server
+```
+
+---
+
+### /spawn — Subagent Spawning
+
+Spawn a subagent teammate to handle a task in parallel (Hermes Agent style).
+
+```bash
+/spawn "Implement a REST API"
+/spawn "Analyze this code" --label=reviewer
+```
+
+---
+
+### /introspect — DUCK.md Influence Analysis
+
+Analyze how DUCK.md context files are influencing the current session (Gemini CLI style).
+
+```bash
+/introspect             # Analyze current session influence
+/context load          # Reload context files
+/context scan          # Scan for DUCK.md files in scope
+```
+
+---
+
+### /prompt-suggest — Prompt Engineering Analysis
+
+Analyze and suggest improvements to your prompts (Gemini CLI style).
+
+```bash
+/prompt-suggest "my complex prompt here"
+```
+
+---
+
+### /instruct — DUCK.md Tuning Assistant
+
+Helps you write and refine DUCK.md context files (Gemini CLI style).
+
+```bash
+/instruct "add a section about testing conventions"
+```
+
+---
+
+### /changelog — Parse CHANGELOG from PR
+
+Extract and format changelog entries from PR bodies or git commits.
+
+```bash
+/changelog                    # Parse current PR
+/changelog 123               # Parse specific PR
+/changelog --all              # Show all commits
+/changelog --tag=v0.7.0      # Show commits since tag
+```
+
+Requires PR body format:
+```markdown
+<!-- CHANGELOG:START -->...<!-- CHANGELOG:END -->
+```
+
+---
+
+### /pr-size — PR Size Classification
+
+Classify the size of a pull request (XS→XL).
+
+```bash
+/pr-size                    # Current PR
+/pr-size 123               # Specific PR
+```
+
+Output: `XS` (trivial), `S` (small), `M` (medium), `L` (large), `XL` (massive)
+
+---
+
+### Session Search — Full-Text Search Across Sessions
+
+Search past sessions using FTS5 (SQLite full-text search).
+
+```bash
+# Via /memory or context tools
+/memory search "authentication bug"
+/session search "REST API implementation"
+```
+
+---
+
+### Skill Workshop — Auto-Capture Complex Tasks
+
+Automatically captures complex tasks as reusable skills for future sessions.
+
+```bash
+/skill "my new skill"        # Create from current task
+/skill --capture            # Auto-capture mode
+/skills                     # List all skills
+```
+
+---
+
 ### MCP Server Management
 
 Manage Model Context Protocol servers with the `dmcp` CLI.
@@ -365,15 +492,16 @@ duckhive dmcp health        # Check MCP server health
 
 ### Custom Tools
 
-DuckHive adds 24 custom tools on top of the OpenClaude base:
+DuckHive adds 30+ custom tools on top of the OpenClaude base:
 
 | Tool | Command | Description |
 |------|---------|-------------|
 | **HiveCouncilTool** | `/council` | 46 AI councilors debate decisions |
 | **HiveSenateTool** | `/senate` | 94 senators pass binding decrees |
 | **HiveTeamTool** | `/team` | Spawn specialized multi-agent crews |
-| **DecreeTool** | `/decree` | Issue and enforce binding laws |
-| **OrchestrateTool** | `/orchestrate` | Smart complexity-based routing with parallel agent execution |
+| **HiveDecreeTool** | `/decree` | Issue and enforce binding laws |
+| **HiveOrchestrateTool** | `/orchestrate` | Smart complexity-based routing with parallel agent execution |
+| **HiveSwarmTool** | `/swarm` | Code swarming — 17 domain agents in parallel |
 | **ConnectTool** | `/connect` | Connect Telegram bots and external services |
 | **MultiModelRouterTool** | `/router` | Route across 9+ providers |
 | **ShadowGitTool** | `/shadow` | Git snapshots before changes (Gemini CLI style) |
@@ -385,6 +513,11 @@ DuckHive adds 24 custom tools on top of the OpenClaude base:
 | **KAIROSTool** | `/kairos` | Proactive heartbeat daemon |
 | **MeshTool** | `/mesh` | Agent mesh networking |
 | **SkillTool** | `/skill` | Runtime skill creation |
+| **SkillManageTool** | `/skills` | Create, edit, and manage skills |
+| **SessionSearchTool** | — | FTS5 full-text search across past sessions |
+| **CronRunTool** | `/cron` | Manually trigger scheduled cron jobs |
+| **SecretScannerTool** | — | Detect secrets before writing to memory |
+| **SSRFValidationTool** | — | DNS-based URL validation for SSRF protection |
 | **TrustedFoldersTool** | `/trusted-folders` | Folder-level security boundaries |
 | **ShellModeTool** | `/shell-mode` | Ctrl-X AI↔shell toggle |
 | **SwapTool** | `/swap` | AI/shell mode switching |
@@ -394,6 +527,13 @@ DuckHive adds 24 custom tools on top of the OpenClaude base:
 | **StreamTool** | `/stream` | Spinners, progress bars, thinking indicators |
 | **REPLPanelTool** | `/panel` | Bubble Tea table/panel rendering |
 | **DeskDevTool** | `/deskdev` | Desktop development mode |
+| **ACPCommand** | `/acp` | ACP server for IDE integration (Kimi CLI style) |
+| **SpawnCommand** | `/spawn` | Spawn a subagent teammate (Hermes Agent style) |
+| **InspectCommand** | `/introspect` | Analyze DUCK.md influence on current session |
+| **PromptSuggestCommand** | `/prompt-suggest` | Prompt engineering analysis (Gemini CLI style) |
+| **InstructCommand** | `/instruct` | DUCK.md tuning assistant (Gemini CLI style) |
+| **ChangelogCommand** | `/changelog` | Parse CHANGELOG entries from PR body |
+| **PrSizeCommand** | `/pr-size` | PR size classification (XS→XL) |
 
 ---
 
@@ -410,16 +550,20 @@ DuckHive v0.8.0
 ├── Agent Teams (multi-agent orchestration)
 │   ├── /council   — 46 adversarial councilors
 │   ├── /senate    — 94 senators, binding decrees
-│   └── /team      — spawn by role (researcher, coder, reviewer...)
+│   ├── /team      — spawn by role (researcher, coder, reviewer...)
+│   ├── /swarm     — 17 domain agents in parallel (code-swarm)
+│   └── /decree    — binding laws enforced across agents
 ├── AI Council (46 councilors)
-├── MCP support (dmcp CLI)
-├── Ctrl-X shell toggle
-├── DUCK.md hierarchical context
 ├── Hybrid Orchestrator
 │   ├── Task Complexity Classifier (1–10)
 │   ├── Model Router (MiniMax M2.7, Kimi K2.5, Gemma 4, more)
+│   ├── Parallel Agent Execution (auto-spawn on complex tasks)
 │   └── Fallback Chain (retry → fallback → never fail)
-└── 24 Custom Tools
+├── Auto-Compact (CONTEXT_COLLAPSE=true, auto-shrinks context)
+├── MCP support (dmcp CLI)
+├── Ctrl-X shell toggle
+├── DUCK.md hierarchical context
+└── 30+ Custom Tools
 ```
 
 ---
@@ -430,10 +574,15 @@ DuckHive v0.8.0
 |---------|-----------|---------|
 | **Default Model** | Claude | MiniMax M2.7 ✅ |
 | **MiniMax mmx** | ❌ | ✅ Image / Speech / Music / Video |
+| **Code Swarming** | ❌ | ✅ /swarm — 17 domain agents in parallel |
 | **Agent Teams** | ❌ | ✅ Spawn multi-agent crews |
 | **AI Council** | ❌ | ✅ 46 adversarial councilors |
+| **Senate** | ❌ | ✅ 94 senators, binding decrees |
 | **Ctrl-X Shell Toggle** | ❌ | ✅ Seamless AI↔shell |
 | **DUCK.md Context** | ❌ | ✅ Hierarchical gemini-cli style |
+| **Auto-Compact** | ❌ | ✅ CONTEXT_COLLAPSE=true auto-shrinks |
+| **Session Search** | ❌ | ✅ FTS5 full-text search across sessions |
+| **Skill Workshop** | ❌ | ✅ Auto-capture complex tasks as skills |
 | **MCP CLI** | Basic | dmcp (enhanced) |
 | **Governance** | ❌ | ✅ Council → Senate → Decree pipeline |
 | **Shadow Git** | ❌ | ✅ Pre-change git snapshots |
@@ -442,6 +591,10 @@ DuckHive v0.8.0
 | **Multi-Model Router** | ❌ | ✅ 9+ provider routing |
 | **Android Control** | ❌ | ✅ Full ADB integration |
 | **KAIROS Daemon** | ❌ | ✅ Proactive heartbeat |
+| **IDE Integration** | ❌ | ✅ /acp ACP server |
+| **PR/Changelog Tools** | ❌ | ✅ /changelog, /pr-size, /introspect |
+| **Secret Scanner** | ❌ | ✅ Detect secrets before memory writes |
+| **SSRF Protection** | ❌ | ✅ DNS-based URL validation |
 
 ---
 
