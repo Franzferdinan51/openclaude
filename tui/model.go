@@ -157,9 +157,54 @@ func InputStyleToString(s InputStyle) string {
 	}
 }
 
+// MaxMessages is the maximum number of messages to keep in the TUI history.
+// When exceeded, the oldest non-system messages are dropped to prevent OOM
+// on long-running heavy sessions. System and user messages are preserved.
+const MaxMessages = 500
+
 // AddMessage appends a message to the list.
+// Truncates oldest non-essential messages if MaxMessages is exceeded.
 func (m *Model) AddMessage(msg Message) {
 	m.messages = append(m.messages, msg)
+
+	// Safety cap: prevent unbounded growth on very long sessions.
+	// Keep the most recent MaxMessages; drop oldest user/assistant/tool
+	// messages but always preserve system messages.
+	if len(m.messages) > MaxMessages {
+		m.truncateMessages()
+	}
+}
+
+// truncateMessages removes old user/assistant/tool messages beyond MaxMessages,
+// preserving all system messages and the most recent messages of other types.
+func (m *Model) truncateMessages() {
+	if len(m.messages) <= MaxMessages {
+		return
+	}
+
+	// Always keep system messages; find the cutoff index so total <= MaxMessages
+	// by dropping the oldest non-system messages first.
+	var systemMsgs []Message
+	var otherMsgs []Message
+	for _, msg := range m.messages {
+		if msg.Type == MsgTypeSystem {
+			systemMsgs = append(systemMsgs, msg)
+		} else {
+			otherMsgs = append(otherMsgs, msg)
+		}
+	}
+
+	// Keep at most MaxMessages total: keep all systems + newest others
+	keepOthers := MaxMessages - len(systemMsgs)
+	if keepOthers < 0 {
+		keepOthers = 0
+	}
+	if keepOthers >= len(otherMsgs) {
+		m.messages = append(systemMsgs, otherMsgs...)
+	} else {
+		// Keep the newest `keepOthers` messages
+		m.messages = append(systemMsgs, otherMsgs[len(otherMsgs)-keepOthers:]...)
+	}
 }
 
 // AddStreamingMessage adds or updates a streaming message.

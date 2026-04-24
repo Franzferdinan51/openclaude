@@ -407,6 +407,43 @@ export function startBackgroundSession({
           continue
         }
 
+        // OOM FIX: When query() compacts messages internally (via continue), the
+        // caller's bgMessages array is never updated — it keeps all pre-compaction
+        // messages. Detect compact_boundary events and truncate bgMessages to match
+        // what query() is working with, preventing unbounded memory growth on long
+        // background sessions.
+        if (
+          event.type === 'system' &&
+          (event as any).subtype === 'compact_boundary'
+        ) {
+          // bgMessages contains all old messages + the new boundary at the end.
+          // Truncate to keep only the boundary and any newer messages that follow.
+          const boundaryIdx = bgMessages.length // boundary is next to be pushed
+          bgMessages.push(event)
+          if (boundaryIdx > 0) {
+            bgMessages.splice(0, boundaryIdx)
+          }
+          // Also truncate task state messages to match.
+          setAppState(prev => {
+            const task = prev.tasks[taskId]
+            if (!task || task.type !== 'local_agent') return prev
+            const taskBgm = task.messages
+            if (taskBgm && taskBgm.length > boundaryIdx) {
+              const truncated = taskBgm.slice(boundaryIdx)
+              truncated.push(event as any)
+              return {
+                ...prev,
+                tasks: {
+                  ...prev.tasks,
+                  [taskId]: { ...task, messages: truncated },
+                },
+              }
+            }
+            return prev
+          })
+          continue
+        }
+
         bgMessages.push(event)
 
         // Per-message write (matches runAgent.ts pattern) — gives live

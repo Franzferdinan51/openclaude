@@ -131,6 +131,37 @@ type FooterItem struct {
 	Value string
 }
 
+// ToolDisplayMode controls how tool calls are rendered.
+type ToolDisplayMode int
+
+const (
+	ToolDisplayGrouped  ToolDisplayMode = iota // bold label + full content (default)
+	ToolDisplayEmoji                           // ⚡ tool_name → ✓/✗ result with timing
+	ToolDisplayMinimal                         // → ran tool_name inline
+	ToolDisplayHidden                          // suppress tool output entirely
+)
+
+// InputStyle controls the appearance of the input area.
+type InputStyle int
+
+const (
+	InputStylePlain     InputStyle = iota // simple prompt (default)
+	InputStyleBordered                      // ─ lines above/below
+	InputStyleBlock                        // full-width background box
+)
+
+// SlashCmd represents a recognized slash command.
+type SlashCmd int
+
+const (
+	SlashCmdNone SlashCmd = iota
+	SlashCmdNew
+	SlashCmdModel
+	SlashCmdHelp
+	SlashCmdCompact
+	SlashCmdCost
+)
+
 // TokenUsage tracks token consumption for the session.
 type TokenUsage struct {
 	InputTokens  int
@@ -187,6 +218,10 @@ type AppState struct {
 
 	// Bridge
 	BridgeConnected bool
+
+	// Display preferences
+	ToolDisplayMode ToolDisplayMode
+	InputStyle      InputStyle
 }
 
 // NewAppState creates the default app state.
@@ -208,6 +243,8 @@ func NewAppState() AppState {
 		DialogOpen:      false,
 		IsCancelled:     false,
 		ActiveTaskIDs:   map[string]struct{}{},
+		ToolDisplayMode: ToolDisplayGrouped,
+		InputStyle:      InputStylePlain,
 	}
 }
 

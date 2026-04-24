@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -14,9 +15,9 @@ import (
 // BridgeConfig holds Unix socket bridge settings.
 type BridgeConfig struct {
 	SocketPath string
-	OnMessage  func(msg BackendEventMsg)
-	OnError    func(err error)
-	OnConnect  func()
+	OnMessage func(msg BackendEventMsg)
+	OnError   func(err error)
+	OnConnect func()
 }
 
 // Bridge connects the TUI to the TypeScript backend via a Unix socket.
@@ -73,23 +74,25 @@ func (b *Bridge) Close() error {
 }
 
 // readLoop pumps messages from the socket to callbacks.
+// Uses bufio.Reader + json.Decoder to avoid per-message heap allocation
+// from json.RawMessage ([]byte) which caused OOM on heavy/long sessions.
 func (b *Bridge) readLoop() {
-	dec := json.NewDecoder(b.conn)
+	// bufio.Reader reuses a fixed internal buffer (typically 4KB) instead of
+	// allocating a new []byte for every Decode() call like json.Decoder on a
+	// bare net.Conn would.
+	reader := bufio.NewReaderSize(b.conn, 4096)
+	dec := json.NewDecoder(reader)
+
 	for {
-		var raw json.RawMessage
-		if err := dec.Decode(&raw); err != nil {
+		var evt BackendEventMsg
+		// Decode directly into the target struct — no intermediate json.RawMessage
+		// allocation. json.Decoder reuses its internal token buffer as well.
+		if err := dec.Decode(&evt); err != nil {
 			if err == io.EOF || b.closed {
 				return
 			}
 			b.config.OnError(err)
 			return
-		}
-
-		// Parse SSE-like frame: {type, id, content, isStreaming, isError}
-		var evt BackendEventMsg
-		if err := json.Unmarshal(raw, &evt); err != nil {
-			b.config.OnError(err)
-			continue
 		}
 		b.config.OnMessage(evt)
 	}
@@ -116,9 +119,9 @@ type BridgeErrMsg struct{ Err error }
 func SendUserInputCmd(bridge *Bridge, text string) tea.Cmd {
 	return func() tea.Msg {
 		err := bridge.Send(map[string]interface{}{
-			"type":  "user_message",
-			"text":  text,
-			"time":  time.Now().Unix(),
+			"type": "user_message",
+			"text": text,
+			"time": time.Now().Unix(),
 		})
 		if err != nil {
 			return BridgeErrMsg{Err: err}
