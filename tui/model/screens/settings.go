@@ -69,7 +69,7 @@ func (m *SettingsScreen) View() string {
 		"  MiniMax + Mercury: multimodal media, budgets, daemon posture",
 		"",
 		tui.HeaderSubtitle.Render("Keybindings"),
-		"  ctrl+c  interrupt",
+		"  ctrl+c  exit (interrupts active work first)",
 		"  ctrl+x  toggle shell mode",
 		"  ctrl+o  toggle transcript",
 		"  ctrl+t  toggle todos",

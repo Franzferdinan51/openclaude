@@ -95,7 +95,7 @@ export function buildCombinedMemoryPrompt(
     '- When to use or update tasks instead of memory: When you need to break your work in current conversation into discrete steps or keep track of your progress use tasks instead of saving to memory. Tasks are great for persisting information about the work that needs to be done in the current conversation, but memory should be reserved for information that will be useful in future conversations.',
     ...(extraGuidelines ?? []),
     '',
-    ...buildSearchingPastContextSection(autoDir),
+    ...buildSearchingPastContextSection(autoDir, teamDir),
   ]
 
   return lines.join('\n')

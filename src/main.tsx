@@ -1003,7 +1003,9 @@ async function run(): Promise<CommanderCommand> {
     const autoTui = shouldAutoLaunchStandaloneTui(args)
     if (!prompt && autoTui) {
       const launched = await launchStandaloneTui(join(__dirname, '..'))
-      if (launched) return
+      if (launched) {
+        process.exit(process.exitCode ?? 0)
+      }
     }
     profileCheckpoint('action_handler_start');
 
@@ -4369,11 +4371,12 @@ async function run(): Promise<CommanderCommand> {
     await update();
   });
 
-  // duckhive tui — launch the Bubble Tea TUI (direct spawn, user explicitly asked)
+  // duckhive tui — launch the Bubble Tea TUI, using the PTY helper when available.
   program.command('tui').description('Launch the DuckHive terminal UI').action(async () => {
-    const started = await launchStandaloneTui(join(__dirname, '..'), {
-      env: { DUCKHIVE_TUI_DIRECT: '1' },
-    })
+    const started = await launchStandaloneTui(join(__dirname, '..'))
+    if (started) {
+      process.exit(process.exitCode ?? 0)
+    }
     if (!started) {
       console.error('duckhive tui: Go TUI binary not found. Rebuild the project to restore tui/duckhive-tui.')
       process.exit(1)

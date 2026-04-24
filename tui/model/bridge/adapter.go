@@ -362,11 +362,13 @@ func (a *Adapter) handleFrame(raw []byte) {
 		}
 	case "system":
 		var m struct {
-			UUID    string `json:"uuid"`
-			Subtype string `json:"subtype"`
-			Content string `json:"content"`
-			Status  string `json:"status"`
-			Model   string `json:"model"`
+			UUID        string `json:"uuid"`
+			Subtype     string `json:"subtype"`
+			Content     string `json:"content"`
+			Status      string `json:"status"`
+			Model       string `json:"model"`
+			TaskID      string `json:"task_id"`
+			Description string `json:"description"`
 		}
 		if err := json.Unmarshal(raw, &m); err == nil {
 			switch m.Subtype {
@@ -378,6 +380,27 @@ func (a *Adapter) handleFrame(raw []byte) {
 			case "status":
 				if strings.TrimSpace(m.Status) != "" {
 					a.publish(model.MsgStatusUpdate{Message: m.Status})
+				}
+			case "session_state_changed":
+				if strings.EqualFold(strings.TrimSpace(m.Status), "idle") {
+					a.publish(model.MsgTasksCleared{})
+					a.publish(model.MsgThinkingEnded{})
+				}
+			case "task_started":
+				desc := strings.TrimSpace(m.Description)
+				if desc == "" {
+					desc = strings.TrimSpace(m.Content)
+				}
+				a.publish(model.MsgTaskStarted{ID: m.TaskID, Desc: desc})
+			case "task_notification":
+				a.publish(model.MsgTaskEnded{ID: m.TaskID})
+				if strings.TrimSpace(m.Content) != "" {
+					a.publish(model.MsgMessageReceived{Message: model.Message{
+						ID:        m.UUID,
+						Type:      model.MsgTypeSystem,
+						Content:   m.Content,
+						Timestamp: time.Now(),
+					}})
 				}
 			case "local_command_output":
 				if strings.TrimSpace(m.Content) != "" {
@@ -408,6 +431,7 @@ func (a *Adapter) handleFrame(raw []byte) {
 		}
 		if err := json.Unmarshal(raw, &r); err == nil {
 			a.publish(model.MsgThinkingEnded{})
+			a.publish(model.MsgTasksCleared{})
 			if r.IsError {
 				errText := strings.TrimSpace(strings.Join(r.Errors, "\n"))
 				if errText == "" {
@@ -500,7 +524,7 @@ func SendPermissionResponseCmd(bridge *Adapter, req model.PermissionRequest, app
 		var response map[string]any
 		if bridge.bridgeCmd != "" {
 			response = map[string]any{
-				"type":     "control_response",
+				"type":       "control_response",
 				"request_id": req.ID,
 			}
 			if approved {

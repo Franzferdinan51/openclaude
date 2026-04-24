@@ -1,6 +1,9 @@
 import { existsSync } from 'fs'
 import { join } from 'path'
-import { getPreferredDuckHiveUISurface } from './duckhiveUi.js'
+import {
+  getPreferredDuckHiveUISurface,
+  type DuckHiveConfig,
+} from './duckhiveUi.js'
 import { isEnvTruthy } from './envUtils.js'
 
 export type LaunchStandaloneTuiOptions = {
@@ -17,12 +20,13 @@ export function shouldAutoLaunchStandaloneTui(
     stdinIsTTY: process.stdin.isTTY === true,
     stdoutIsTTY: process.stdout.isTTY === true,
   },
+  config?: DuckHiveConfig,
 ): boolean {
   return (
     args.length === 0 &&
     io.stdinIsTTY &&
     io.stdoutIsTTY &&
-    getPreferredDuckHiveUISurface(env) === 'tui'
+    getPreferredDuckHiveUISurface(env, config) === 'tui'
   )
 }
 
@@ -39,12 +43,36 @@ async function spawnAndWaitForStart(
       env,
     })
 
-    const onError = () => resolve(false)
+    let started = false
+    const exitPoll = setInterval(() => {
+      if (child.exitCode !== null || child.signalCode !== null) {
+        finish(child.exitCode, child.signalCode)
+      }
+    }, 50)
+
+    const resolveOnce = (value: boolean) => {
+      clearInterval(exitPoll)
+      resolve(value)
+    }
+    const finish = (code: number | null, signal?: NodeJS.Signals | null) => {
+      if (!started) {
+        resolveOnce(false)
+        return
+      }
+      if (signal === 'SIGINT') {
+        process.exitCode = 130
+      } else {
+        process.exitCode = code ?? 0
+      }
+      resolveOnce(true)
+    }
+    const onError = () => resolveOnce(false)
+
     child.once('error', onError)
+    child.once('close', finish)
     child.once('spawn', () => {
+      started = true
       child.off('error', onError)
-      child.on('exit', code => process.exit(code ?? 0))
-      resolve(true)
     })
   })
 }

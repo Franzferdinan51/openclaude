@@ -188,6 +188,11 @@ func (m *MainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case tea.KeyMsg:
+		if msg.String() == "ctrl+c" {
+			_, cmd := m.handleOutbound(model.MsgInterrupt{})
+			return m, cmd
+		}
+
 		switch m.state.ActiveScreen {
 		case model.ScreenWelcome:
 			_, cmd := m.welcome.Update(msg)
@@ -425,12 +430,13 @@ func (m *MainModel) handleBridgeMessage(msg model.InMsg) (tea.Model, tea.Cmd) {
 		m.state.TokenUsage = msg.Usage
 
 	case model.MsgTaskStarted:
-		m.state.ActiveTaskCount++
+		m.startTask(msg.ID)
 
 	case model.MsgTaskEnded:
-		if m.state.ActiveTaskCount > 0 {
-			m.state.ActiveTaskCount--
-		}
+		m.endTask(msg.ID)
+
+	case model.MsgTasksCleared:
+		m.clearTasks()
 
 	case model.MsgError:
 		m.state.IsLoading = false
@@ -450,6 +456,49 @@ func (m *MainModel) handleBridgeMessage(msg model.InMsg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+func (m *MainModel) startTask(id string) {
+	id = strings.TrimSpace(id)
+	if id == "" {
+		m.state.ActiveTaskCount++
+		return
+	}
+	if m.state.ActiveTaskIDs == nil {
+		m.state.ActiveTaskIDs = map[string]struct{}{}
+	}
+	if _, exists := m.state.ActiveTaskIDs[id]; exists {
+		return
+	}
+	m.state.ActiveTaskIDs[id] = struct{}{}
+	m.state.ActiveTaskCount = len(m.state.ActiveTaskIDs)
+}
+
+func (m *MainModel) endTask(id string) {
+	id = strings.TrimSpace(id)
+	if id != "" && len(m.state.ActiveTaskIDs) > 0 {
+		if _, exists := m.state.ActiveTaskIDs[id]; exists {
+			delete(m.state.ActiveTaskIDs, id)
+			m.state.ActiveTaskCount = len(m.state.ActiveTaskIDs)
+			return
+		}
+	}
+	if id == "" || len(m.state.ActiveTaskIDs) == 0 {
+		if m.state.ActiveTaskCount > 0 {
+			m.state.ActiveTaskCount--
+		}
+	}
+}
+
+func (m *MainModel) clearTasks() {
+	m.state.ActiveTaskCount = 0
+	if m.state.ActiveTaskIDs == nil {
+		m.state.ActiveTaskIDs = map[string]struct{}{}
+		return
+	}
+	for id := range m.state.ActiveTaskIDs {
+		delete(m.state.ActiveTaskIDs, id)
+	}
+}
+
 func (m *MainModel) handleOutbound(msg model.OutMsg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case model.MsgInputSubmitted:
@@ -467,13 +516,15 @@ func (m *MainModel) handleOutbound(msg model.OutMsg) (tea.Model, tea.Cmd) {
 			m.shellCancel()
 			return m, nil
 		}
-		if m.bridge != nil {
+		if m.bridge != nil && m.hasActiveBackendWork() {
 			m.state.StatusMsg = "interrupt sent"
 			return m, bridge.SendInterruptCmd(m.bridge)
 		}
+		m.state.StatusMsg = "exiting"
+		return m, m.quitCmd()
 
 	case model.MsgExit:
-		return m, tea.Quit
+		return m, m.quitCmd()
 
 	case model.MsgRedraw:
 		m.resizeLayout()
@@ -566,6 +617,22 @@ func (m *MainModel) handleOutbound(msg model.OutMsg) (tea.Model, tea.Cmd) {
 	}
 
 	return m, nil
+}
+
+func (m *MainModel) hasActiveBackendWork() bool {
+	return m.state.IsLoading || m.state.IsThinking || m.state.ActiveTaskCount > 0
+}
+
+func (m *MainModel) quitCmd() tea.Cmd {
+	return func() tea.Msg {
+		if m.bridge != nil {
+			_ = m.bridge.Close()
+		}
+		if m.shellCancel != nil {
+			m.shellCancel()
+		}
+		return tea.Quit()
+	}
 }
 
 func (m *MainModel) submitInput() tea.Cmd {

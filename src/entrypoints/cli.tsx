@@ -114,7 +114,7 @@ async function main(): Promise<void> {
     }] = await Promise.all([import('../utils/tuiAutoLaunch.js'), import('path'), import('url')]);
     const runtimeRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
     if (shouldAutoLaunchStandaloneTui(args) && (await launchStandaloneTui(runtimeRoot))) {
-      return;
+      process.exit(process.exitCode ?? 0);
     }
   }
 
@@ -168,9 +168,12 @@ async function main(): Promise<void> {
 
   await validateProviderEnvForStartupOrExit()
 
-  // Print the gradient startup screen before the Ink UI loads
-  const { printStartupScreen } = await import('../components/StartupScreen.js')
-  printStartupScreen()
+  // Print the gradient startup screen before the Ink UI loads.
+  const { shouldPrintStartupScreen } = await import('./startupScreenGate.js')
+  if (shouldPrintStartupScreen(args)) {
+    const { printStartupScreen } = await import('../components/StartupScreen.js')
+    printStartupScreen()
+  }
 
   // For all other paths, load the startup profiler
   const {

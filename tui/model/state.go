@@ -183,6 +183,7 @@ type AppState struct {
 
 	// Tasks
 	ActiveTaskCount int
+	ActiveTaskIDs   map[string]struct{}
 
 	// Bridge
 	BridgeConnected bool
@@ -206,6 +207,7 @@ func NewAppState() AppState {
 		IsVimMode:       false,
 		DialogOpen:      false,
 		IsCancelled:     false,
+		ActiveTaskIDs:   map[string]struct{}{},
 	}
 }
 

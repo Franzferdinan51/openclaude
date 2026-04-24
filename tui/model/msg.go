@@ -188,6 +188,9 @@ type MsgTaskEnded struct {
 	ID string
 }
 
+// MsgTasksCleared resets active task tracking after the backend returns idle.
+type MsgTasksCleared struct{}
+
 // MsgTokensReceived updates token usage stats.
 type MsgTokensReceived struct {
 	Usage TokenUsage
@@ -242,6 +245,7 @@ func (MsgModelChanged) inMsg()       {}
 func (MsgError) inMsg()              {}
 func (MsgTaskStarted) inMsg()        {}
 func (MsgTaskEnded) inMsg()          {}
+func (MsgTasksCleared) inMsg()       {}
 func (MsgTokensReceived) inMsg()     {}
 func (MsgCostReceived) inMsg()       {}
 

@@ -71,8 +71,12 @@ let stats: ContextCollapseStats = {
 // ============================================================================
 
 export function initContextCollapse(): void {
-  enabled = feature('CONTEXT_COLLAPSE') === true ||
-    process.env.DUCKHIVE_CONTEXT_COLLAPSE === '1'
+  let featureEnabled = false
+  if (feature('CONTEXT_COLLAPSE')) {
+    featureEnabled = true
+  }
+
+  enabled = featureEnabled || process.env.DUCKHIVE_CONTEXT_COLLAPSE === '1'
   logForDebugging(`[context-collapse] init — enabled=${enabled}`)
 }
 

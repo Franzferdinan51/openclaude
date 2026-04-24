@@ -4,7 +4,11 @@ import (
 	"strings"
 	"testing"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/gitlawb/duckhive/tui/model"
+	"github.com/gitlawb/duckhive/tui/model/bridge"
+	"github.com/gitlawb/duckhive/tui/model/components"
+	"github.com/gitlawb/duckhive/tui/model/screens"
 )
 
 func TestParseUISwitchCommandUsesExplicitTargets(t *testing.T) {
@@ -154,6 +158,73 @@ func TestLocalCommandContentSurfacesCoreAgentFeatures(t *testing.T) {
 	}
 }
 
+func TestTaskLifecycleDeduplicatesAndClearsByID(t *testing.T) {
+	m := &MainModel{
+		state:      model.NewAppState(),
+		msgList:    components.NewMessageList(80, 20),
+		transcript: screens.NewTranscriptPanel(),
+	}
+
+	m.handleBridgeMessage(model.MsgTaskStarted{ID: "task-1", Desc: "first"})
+	m.handleBridgeMessage(model.MsgTaskStarted{ID: "task-1", Desc: "duplicate"})
+	if m.state.ActiveTaskCount != 1 {
+		t.Fatalf("ActiveTaskCount after duplicate start = %d, want 1", m.state.ActiveTaskCount)
+	}
+
+	m.handleBridgeMessage(model.MsgTaskEnded{ID: "task-1"})
+	if m.state.ActiveTaskCount != 0 {
+		t.Fatalf("ActiveTaskCount after task end = %d, want 0", m.state.ActiveTaskCount)
+	}
+}
+
+func TestTaskLifecycleClearsStaleTasksOnIdle(t *testing.T) {
+	m := &MainModel{
+		state:      model.NewAppState(),
+		msgList:    components.NewMessageList(80, 20),
+		transcript: screens.NewTranscriptPanel(),
+	}
+
+	m.handleBridgeMessage(model.MsgTaskStarted{ID: "task-1"})
+	m.handleBridgeMessage(model.MsgTaskStarted{ID: "task-2"})
+	m.handleBridgeMessage(model.MsgTasksCleared{})
+
+	if m.state.ActiveTaskCount != 0 {
+		t.Fatalf("ActiveTaskCount after clear = %d, want 0", m.state.ActiveTaskCount)
+	}
+	if len(m.state.ActiveTaskIDs) != 0 {
+		t.Fatalf("ActiveTaskIDs after clear = %d, want 0", len(m.state.ActiveTaskIDs))
+	}
+}
+
+func TestCtrlCQuitsFromSettingsScreen(t *testing.T) {
+	m := &MainModel{
+		state:      model.NewAppState(),
+		msgList:    components.NewMessageList(80, 20),
+		transcript: screens.NewTranscriptPanel(),
+	}
+	m.state.ActiveScreen = model.ScreenSettings
+	m.settings = screens.NewSettingsScreen(&m.state)
+
+	_, cmd := m.Update(tea.KeyMsg{Type: tea.KeyCtrlC})
+	if !commandReturnsQuit(cmd) {
+		t.Fatal("ctrl+c from settings did not return tea.Quit")
+	}
+}
+
+func TestInterruptExitsWhenIdleEvenWithBridge(t *testing.T) {
+	m := &MainModel{
+		state:      model.NewAppState(),
+		bridge:     bridge.NewSubprocessAdapter("duckhive"),
+		msgList:    components.NewMessageList(80, 20),
+		transcript: screens.NewTranscriptPanel(),
+	}
+
+	_, cmd := m.handleOutbound(model.MsgInterrupt{})
+	if !commandReturnsQuit(cmd) {
+		t.Fatal("idle interrupt did not return tea.Quit")
+	}
+}
+
 func envSliceToMap(entries []string) map[string]string {
 	out := make(map[string]string, len(entries))
 	for _, entry := range entries {
@@ -166,4 +237,12 @@ func envSliceToMap(entries []string) map[string]string {
 		}
 	}
 	return out
+}
+
+func commandReturnsQuit(cmd tea.Cmd) bool {
+	if cmd == nil {
+		return false
+	}
+	_, ok := cmd().(tea.QuitMsg)
+	return ok
 }

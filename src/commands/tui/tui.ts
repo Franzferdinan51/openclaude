@@ -36,6 +36,20 @@ function formatSwitchMessage(surface: DuckHiveUISurface): string {
   return `Default UI set to ${DUCKHIVE_UI_SURFACE_LABELS[surface]}.`
 }
 
+export function buildTuiSlashCommandEnv(
+  baseEnv: NodeJS.ProcessEnv = process.env,
+): NodeJS.ProcessEnv {
+  const env: NodeJS.ProcessEnv = {
+    ...baseEnv,
+    DUCKHIVE_DEFAULT_UI_SURFACE: 'tui',
+  }
+
+  delete env.DUCKHIVE_AUTO_TUI
+  delete env.DUCKHIVE_NO_AUTO_TUI
+  delete env.DUCKHIVE_TUI_DIRECT
+  return env
+}
+
 export const call: LocalCommandCall = async (args: string) => {
   const currentSurface = getCurrentUISurface()
   const { target, error } = resolveTargetUISurface(args)
@@ -79,13 +93,7 @@ export const call: LocalCommandCall = async (args: string) => {
     }
   }
 
-  const env = {
-    ...process.env,
-    DUCKHIVE_DEFAULT_UI_SURFACE: 'tui',
-    DUCKHIVE_TUI_DIRECT: '1',
-  }
-  delete env.DUCKHIVE_AUTO_TUI
-  delete env.DUCKHIVE_NO_AUTO_TUI
+  const env = buildTuiSlashCommandEnv()
 
   return await new Promise(resolve => {
     try {

@@ -22,8 +22,20 @@ test('auto-launch stays disabled by default until TUI is explicitly preferred', 
       [],
       {},
       { stdinIsTTY: true, stdoutIsTTY: true },
+      {},
     ),
   ).toBe(false)
+})
+
+test('auto-launch starts when TUI is explicitly preferred in config', () => {
+  expect(
+    shouldAutoLaunchStandaloneTui(
+      [],
+      {},
+      { stdinIsTTY: true, stdoutIsTTY: true },
+      { ui: { defaultSurface: 'tui' } },
+    ),
+  ).toBe(true)
 })
 
 test('builds bridge wiring for standalone TUI launches', () => {

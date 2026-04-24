@@ -372,7 +372,10 @@ function buildAssistantDailyLogPrompt(skipIndex = false): string {
 /**
  * Build the "Searching past context" section if the feature gate is enabled.
  */
-export function buildSearchingPastContextSection(autoMemDir: string): string[] {
+export function buildSearchingPastContextSection(
+  autoMemDir: string,
+  teamMemDir?: string,
+): string[] {
   if (!getFeatureValue_CACHED_MAY_BE_STALE('tengu_coral_fern', false)) {
     return []
   }
@@ -386,10 +389,17 @@ export function buildSearchingPastContextSection(autoMemDir: string): string[] {
   const memSearch = embedded
     ? `grep -rn "<search term>" ${autoMemDir} --include="*.md"`
     : `${GREP_TOOL_NAME} with pattern="<search term>" path="${autoMemDir}" glob="*.md"`
+  const teamMemSearch =
+    teamMemDir && !teamMemDir.includes('undefined')
+      ? embedded
+        ? `grep -rn "<search term>" ${teamMemDir} --include="*.md"`
+        : `${GREP_TOOL_NAME} with pattern="<search term>" path="${teamMemDir}" glob="*.md"`
+      : null
   const transcriptSearch = embedded
     ? `grep -rn "<search term>" ${projectDir}/ --include="*.jsonl"`
     : `${GREP_TOOL_NAME} with pattern="<search term>" path="${projectDir}/" glob="*.jsonl"`
-  return [
+
+  const lines: string[] = [
     '## Searching past context',
     '',
     'When looking for past context:',
@@ -397,13 +407,24 @@ export function buildSearchingPastContextSection(autoMemDir: string): string[] {
     '```',
     memSearch,
     '```',
-    '2. Session transcript logs (last resort — large files, slow):',
+  ]
+  if (teamMemSearch) {
+    lines.push(
+      '2. Search shared team memory directory:',
+      '```',
+      teamMemSearch,
+      '```',
+    )
+  }
+  lines.push(
+    (teamMemSearch ? '3. ' : '2. ') + 'Session transcript logs (last resort — large files, slow):',
     '```',
     transcriptSearch,
     '```',
     'Use narrow search terms (error messages, file paths, function names) rather than broad keywords.',
     '',
-  ]
+  )
+  return lines
 }
 
 /**

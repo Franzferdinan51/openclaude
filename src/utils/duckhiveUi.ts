@@ -70,7 +70,7 @@ export function getConfiguredDuckHiveUISurface(
 
 export function getPreferredDuckHiveUISurface(
   env: NodeJS.ProcessEnv = process.env,
-  config: DuckHiveConfig = readDuckHiveConfigSync(),
+  config?: DuckHiveConfig,
 ): DuckHiveUISurface {
   const envSurface = normalizeDuckHiveUISurface(env.DUCKHIVE_DEFAULT_UI_SURFACE)
   if (envSurface) {
@@ -81,7 +81,7 @@ export function getPreferredDuckHiveUISurface(
     return 'legacy'
   }
 
-  return getConfiguredDuckHiveUISurface(config)
+  return getConfiguredDuckHiveUISurface(config ?? readDuckHiveConfigSync())
 }
 
 export function setDuckHiveUISurfacePreferenceSync(

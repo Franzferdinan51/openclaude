@@ -31,9 +31,10 @@ def launch():
 
     pid, master = pty.fork()
     if pid == 0:
-        slave = os.ttyname(master)
-        os.environ['TTY'] = slave
-        os.close(master)
+        try:
+            os.environ['TTY'] = os.ttyname(sys.stdin.fileno())
+        except OSError:
+            pass
         os.execvp(tui, [tui] + args)
         return
 
@@ -46,6 +47,7 @@ def launch():
     except:
         set_window_size(master, 40, 120)  # fallback
 
+    status = None
     try:
         while True:
             r, _, _ = select.select([master, sys.stdin], [], [], 0.1)
@@ -67,6 +69,7 @@ def launch():
                     break
             res = os.waitpid(pid, os.WNOHANG)
             if res[0] != 0:
+                status = res[1]
                 break
     finally:
         try:
@@ -80,10 +83,20 @@ def launch():
         except: pass
         try: os.close(master)
         except: pass
-        os.waitpid(pid, 0)
+        if status is None:
+            try:
+                _, status = os.waitpid(pid, 0)
+            except ChildProcessError:
+                status = 0
+
+    if os.WIFEXITED(status):
+        return os.WEXITSTATUS(status)
+    if os.WIFSIGNALED(status):
+        return 128 + os.WTERMSIG(status)
+    return 1
 
 if __name__ == '__main__':
-    try: launch()
+    try: sys.exit(launch())
     except KeyboardInterrupt: sys.exit(130)
     except Exception as e:
         sys.stderr.write(f'tui-pty-helper: {e}\n')
