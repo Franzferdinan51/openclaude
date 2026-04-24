@@ -45,6 +45,25 @@ const (
 	CtxSelect
 )
 
+// ToolDisplayMode controls how tool calls are rendered.
+type ToolDisplayMode int
+
+const (
+	ToolDisplayGrouped  ToolDisplayMode = iota // bold label + full content (default)
+	ToolDisplayEmoji                           // ⚡ tool_name → ✓/✗ result with timing
+	ToolDisplayMinimal                         // → ran tool_name inline
+	ToolDisplayHidden                          // suppress tool output entirely
+)
+
+// InputStyle controls the appearance of the input area.
+type InputStyle int
+
+const (
+	InputStylePlain    InputStyle = iota // simple prompt (default)
+	InputStyleBordered                   // ─ lines above/below
+	InputStyleBlock                     // full-width background box
+)
+
 // Model is the main Bubble Tea model for DuckHive.
 type Model struct {
 	// Messages
@@ -67,6 +86,10 @@ type Model struct {
 	sessionId  string
 	modelName  string
 	totalCost  float64
+
+	// Display preferences
+	toolDisplay ToolDisplayMode
+	inputStyle  InputStyle
 
 	// Pending confirmations / dialogs
 	pendingConfirmation bool
@@ -97,8 +120,40 @@ func NewModel(width, height int) *Model {
 		isLoading:  false,
 		width:      width,
 		height:     height,
-		modelName:  "claude-opus-4.6",
-		sessionId:  "",
+		modelName:   "claude-opus-4.6",
+		sessionId:   "",
+		toolDisplay: ToolDisplayGrouped,
+		inputStyle:  InputStylePlain,
+	}
+}
+
+// ToolDisplayModeToString converts a ToolDisplayMode to a display string.
+func ToolDisplayModeToString(m ToolDisplayMode) string {
+	switch m {
+	case ToolDisplayGrouped:
+		return "grouped"
+	case ToolDisplayEmoji:
+		return "emoji"
+	case ToolDisplayMinimal:
+		return "minimal"
+	case ToolDisplayHidden:
+		return "hidden"
+	default:
+		return "grouped"
+	}
+}
+
+// InputStyleToString converts an InputStyle to a display string.
+func InputStyleToString(s InputStyle) string {
+	switch s {
+	case InputStylePlain:
+		return "plain"
+	case InputStyleBordered:
+		return "bordered"
+	case InputStyleBlock:
+		return "block"
+	default:
+		return "plain"
 	}
 }
 

@@ -235,14 +235,65 @@ var ToolBody = lipgloss.NewStyle().
 	BorderForeground(ColorBorder).
 	PaddingLeft(1)
 
+// ToolDisplayEmoji styles — ⚡ tool_name → ✓/✗ result
+var ToolEmojiHeader = lipgloss.NewStyle().
+	Foreground(ColorAccent).
+	Bold(true)
+
+var ToolEmojiOK = lipgloss.NewStyle().
+	Foreground(ColorSuccess).
+	Bold(true)
+
+var ToolEmojiFail = lipgloss.NewStyle().
+	Foreground(ColorError).
+	Bold(true)
+
 var SpinnerStyle = lipgloss.NewStyle().
 	Foreground(ColorAccent)
+
+// WorkingDots renders "Working..." with trailing dots animation
+var WorkingDots = lipgloss.NewStyle().
+	Foreground(ColorAccent).
+	Italic(true)
 
 var ErrorText = lipgloss.NewStyle().
 	Foreground(ColorError)
 
 var DimText = lipgloss.NewStyle().
 	Foreground(ColorDim)
+
+// Banner styles — ASCII art banner coloring
+var BannerAccent = lipgloss.NewStyle().
+	Foreground(ColorAccent).
+	Bold(true)
+
+var BannerMuted = lipgloss.NewStyle().
+	Foreground(ColorMuted)
+
+// InputStyle styles — block and bordered input area
+var InputBordered = lipgloss.NewStyle().
+	Foreground(ColorText).
+	Background(ColorSurface2).
+	Border(lipgloss.NormalBorder()).
+	BorderForeground(ColorBorder).
+	Padding(0, 1)
+
+var InputBlock = lipgloss.NewStyle().
+	Foreground(ColorText).
+	Background(ColorSurface2).
+	Width(MaxWidth).
+	Padding(0, 2)
+
+// Slash command help styles
+var HelpCmd = lipgloss.NewStyle().
+	Foreground(ColorAccent)
+
+var HelpDesc = lipgloss.NewStyle().
+	Foreground(ColorMuted)
+
+var CostInfo = lipgloss.NewStyle().
+	Foreground(ColorSuccess).
+	Bold(true)
 
 // Dialog is a centered overlay panel.
 var Dialog = lipgloss.NewStyle().
