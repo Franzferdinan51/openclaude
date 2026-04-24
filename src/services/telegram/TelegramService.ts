@@ -6,8 +6,8 @@
  * updates back to the user's Telegram chat.
  *
  * Enable with: DUCKHIVE_TELEGRAM_BOT_TOKEN env var or /connect command.
- * After connecting, messages from Telegram are forwarded to the REPL via
- * onTelegramMessage handlers, and the REPL can send responses via sendTelegramMessage.
+ * Auto-reconnects on failure with exponential backoff.
+ * Persists chat_id across restarts so Telegram messages don't get lost.
  */
 
 import { logForDebugging } from '../../utils/debug.js'
@@ -87,13 +87,54 @@ class TelegramBotAPI {
 }
 
 // ============================================================================
+// Storage helpers
+// ============================================================================
+
+const STORAGE_KEY = 'pluginSecrets.telegram'
+
+function getStorageData(): { botToken?: string; chatId?: number; connectionStatus?: string } | null {
+  try {
+    const storage = getSecureStorage()
+    return storage.read() as { botToken?: string; chatId?: number; connectionStatus?: string } | null
+  } catch {
+    return null
+  }
+}
+
+function saveStorageData(data: { botToken?: string; chatId?: number; connectionStatus?: string }): void {
+  try {
+    const storage = getSecureStorage()
+    const existing = storage.read() as Record<string, unknown> ?? {}
+    existing.pluginSecrets = existing.pluginSecrets ?? {}
+    ;(existing.pluginSecrets as Record<string, unknown>)[STORAGE_KEY.split('.')[1]] = {
+      ...((existing.pluginSecrets as Record<string, unknown>)[STORAGE_KEY.split('.')[1]] as Record<string, unknown> | undefined),
+      ...data,
+    }
+    storage.update(existing)
+  } catch { /* ignore */ }
+}
+
+function getStoredChatId(): number | null {
+  return getStorageData()?.chatId ?? null
+}
+
+function saveChatId(chatId: number): void {
+  saveStorageData({ chatId, connectionStatus: 'connected' })
+}
+
+// ============================================================================
 // Telegram Service
 // ============================================================================
 
 let api: TelegramBotAPI | null = null
-let pollingInterval: ReturnType<typeof setInterval> | null = null
 let offset = 0
 let registeredChatId: number | null = null
+let isConnected = false
+
+// Reconnection state
+let reconnectAttempts = 0
+const MAX_RECONNECT_DELAY = 60000 // 1 minute max
+let reconnectTimeout: ReturnType<typeof setTimeout> | null = null
 
 const commandHandlers = new Map<string, TelegramCommandHandler>()
 const messageHandlers: TelegramMessageHandler[] = []
@@ -114,20 +155,110 @@ export function getRegisteredChatId(): number | null {
   return registeredChatId
 }
 
+export function isTelegramConnected(): boolean {
+  return isConnected
+}
+
 function getToken(): string | null {
-  // Check env first
   const envToken = process.env.DUCKHIVE_TELEGRAM_BOT_TOKEN
   if (envToken) return envToken
 
-  // Check secure storage
+  const data = getStorageData()
+  return data?.botToken ?? null
+}
+
+// ============================================================================
+// Polling (non-interval, promise-based with reconnect)
+// ============================================================================
+
+let shouldStop = false
+
+async function pollLoop(): Promise<void> {
+  if (!api || shouldStop) return
+
   try {
-    const storage = getSecureStorage()
-    const data = storage.read()
-    return data?.pluginSecrets?.telegram?.botToken ?? null
-  } catch {
-    return null
+    const updates = await api.getUpdates(offset, 30)
+    if (!updates.ok || updates.result.length === 0) return
+
+    for (const update of updates.result) {
+      offset = update.update_id + 1
+
+      if (update.message?.text) {
+        const chatId = update.message.chat.id
+        const text = update.message.text
+
+        // Persist chatId on first message
+        if (!registeredChatId) {
+          registeredChatId = chatId
+          saveChatId(chatId)
+          logForDebugging(`[telegram] registered chat ${chatId}`)
+          // Notify REPL that connection is ready
+          for (const h of messageHandlers) {
+            try { h(chatId, '') } catch { /* noop */ }
+          }
+        }
+
+        // Handle commands
+        if (text.startsWith('/')) {
+          const parts = text.slice(1).split(' ')
+          const cmd = parts[0].toLowerCase()
+          const args = parts.slice(1).join(' ')
+
+          const handler = commandHandlers.get(cmd)
+          if (handler) {
+            try { handler(chatId, args) }
+            catch (err) { api?.sendMessage(chatId, `Error: ${err instanceof Error ? err.message : String(err)}`).catch(() => {}) }
+          } else {
+            api?.sendMessage(chatId, `Unknown command: /${cmd}. Try /help`).catch(() => {})
+          }
+        } else {
+          for (const h of messageHandlers) {
+            try { h(chatId, text) }
+            catch (err) { logForDebugging(`[telegram] message handler error: ${err}`) }
+          }
+        }
+      }
+    }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    logForDebugging(`[telegram] polling error: ${msg}`)
+
+    // On network errors, schedule reconnect
+    if (msg.includes('fetch') || msg.includes('network') || msg.includes('ECONNREFUSED')) {
+      scheduleReconnect()
+    }
+  }
+
+  // Continue polling unless stopped
+  if (!shouldStop && api) {
+    // Use setTimeout to yield to event loop between polls
+    await new Promise(resolve => setTimeout(resolve, 0))
+    return pollLoop()
   }
 }
+
+function scheduleReconnect(): void {
+  if (shouldStop) return
+
+  const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), MAX_RECONNECT_DELAY)
+  reconnectAttempts++
+
+  if (reconnectTimeout) clearTimeout(reconnectTimeout)
+  reconnectTimeout = setTimeout(() => {
+    reconnectTimeout = null
+    if (api && !shouldStop) {
+      logForDebugging(`[telegram] reconnecting (attempt ${reconnectAttempts}, delay ${delay}ms)...`)
+      pollLoop().catch(err => {
+        logForDebugging(`[telegram] reconnect poll error: ${err}`)
+        scheduleReconnect()
+      })
+    }
+  }, delay)
+}
+
+// ============================================================================
+// Service lifecycle
+// ============================================================================
 
 export async function startTelegramService(): Promise<void> {
   const token = getToken()
@@ -141,10 +272,20 @@ export async function startTelegramService(): Promise<void> {
     return
   }
 
+  shouldStop = false
+  reconnectAttempts = 0
+
   try {
     api = new TelegramBotAPI(token)
     const me = await api.getMe()
     logForDebugging(`[telegram] bot username: @${me.result.username}`)
+
+    // Restore chatId from storage
+    const storedChatId = getStoredChatId()
+    if (storedChatId) {
+      registeredChatId = storedChatId
+      logForDebugging(`[telegram] restored chat ${storedChatId} from storage`)
+    }
 
     // Set bot commands
     await api.setCommands([
@@ -153,113 +294,48 @@ export async function startTelegramService(): Promise<void> {
       { command: 'help', description: 'Show available commands' },
     ])
 
-    // Start polling
-    startPolling()
+    isConnected = true
     logForDebugging('[telegram] service started with long polling')
+
+    // Start polling
+    pollLoop().catch(err => {
+      logForDebugging(`[telegram] pollLoop error: ${err}`)
+      scheduleReconnect()
+    })
   } catch (err) {
     api = null
+    isConnected = false
     logForDebugging(`[telegram] failed to start: ${err instanceof Error ? err.message : String(err)}`)
   }
 }
 
-function startPolling(): void {
-  if (pollingInterval) return
-
-  pollingInterval = setInterval(async () => {
-    if (!api) return
-
-    try {
-      const updates = await api.getUpdates(offset)
-      if (!updates.ok || updates.result.length === 0) return
-
-      for (const update of updates.result) {
-        offset = update.update_id + 1
-
-        if (update.message?.text) {
-          const chatId = update.message.chat.id
-          const text = update.message.text
-
-          // Register chat ID on first message
-          if (!registeredChatId) {
-            registeredChatId = chatId
-            // Save to storage
-            try {
-              const storage = getSecureStorage()
-              const data = storage.read() ?? {}
-              if (!data.pluginSecrets) data.pluginSecrets = {}
-              data.pluginSecrets.telegram = { ...data.pluginSecrets?.telegram, chatId }
-              storage.update(data)
-            } catch { /* ignore storage errors */ }
-            logForDebugging(`[telegram] registered chat ${chatId}`)
-          }
-
-          // Handle commands
-          if (text.startsWith('/')) {
-            const parts = text.slice(1).split(' ')
-            const cmd = parts[0].toLowerCase()
-            const args = parts.slice(1).join(' ')
-
-            const handler = commandHandlers.get(cmd)
-            if (handler) {
-              try {
-                handler(chatId, args)
-              } catch (err) {
-                logForDebugging(`[telegram] command error: ${err}`)
-                api?.sendMessage(chatId, `Error: ${err instanceof Error ? err.message : String(err)}`).catch(() => {})
-              }
-            } else {
-              api?.sendMessage(chatId, `Unknown command: /${cmd}. Try /help`).catch(() => {})
-            }
-          } else {
-            // Forward message to REPL handlers
-            for (const h of messageHandlers) {
-              try {
-                h(chatId, text)
-              } catch (err) {
-                logForDebugging(`[telegram] message handler error: ${err}`)
-              }
-            }
-          }
-        }
-      }
-    } catch (err) {
-      logForDebugging(`[telegram] polling error: ${err instanceof Error ? err.message : String(err)}`)
-    }
-  }, 1000)
-}
-
 export function stopTelegramService(): void {
-  if (pollingInterval) {
-    clearInterval(pollingInterval)
-    pollingInterval = null
+  shouldStop = true
+  if (reconnectTimeout) {
+    clearTimeout(reconnectTimeout)
+    reconnectTimeout = null
   }
   api = null
   offset = 0
-  registeredChatId = null
-  logForDebugging('[telegram] service stopped')
+  isConnected = false
+  // NOTE: registeredChatId is kept in memory — it will be restored from storage on next start
+  logForDebugging('[telegram] service stopped (chatId preserved in storage)')
 }
 
-export async function sendTelegramMessage(text: string): Promise<void> {
-  const chatId = registeredChatId || (await getStoredChatId())
+export async function sendTelegramMessage(text: string): Promise<boolean> {
+  // Try in-memory chatId first, then stored
+  const chatId = registeredChatId ?? getStoredChatId()
   if (!chatId || !api) {
     logForDebugging('[telegram] cannot send: no registered chat or no API')
-    return
+    return false
   }
   try {
     await api.sendMarkdown(chatId, text)
     logForDebugging(`[telegram] sent message to ${chatId}`)
+    return true
   } catch (err) {
     logForDebugging(`[telegram] send error: ${err instanceof Error ? err.message : String(err)}`)
-  }
-}
-
-async function getStoredChatId(): Promise<number | null> {
-  try {
-    const storage = getSecureStorage()
-    const data = storage.read()
-    return data?.pluginSecrets?.telegram?.chatId ?? null
-  } catch {
-    return null
+    return false
   }
 }
 
@@ -267,22 +343,20 @@ async function getStoredChatId(): Promise<number | null> {
 // REPL Integration - bridge Telegram messages to DuckHive query pipeline
 // ============================================================================
 
-// Queue of messages to be processed by the REPL
+// Queue of messages when REPL handler not yet registered
 const telegramMessageQueue: Array<{ chatId: number; text: string }> = []
 let replMessageHandler: ((text: string) => Promise<void>) | null = null
 
 export function onTelegramReplMessage(handler: (text: string) => Promise<void>): () => void {
   replMessageHandler = handler
-  // Process any queued messages
+  // Drain queued messages
   while (telegramMessageQueue.length > 0) {
     const msg = telegramMessageQueue.shift()
     if (msg && handler) {
-      handler(msg.text).catch(err => logForDebugging(`[telegram] repl message error: ${err}`))
+      handler(msg.text).catch(err => logForDebugging(`[telegram] queued repl error: ${err}`))
     }
   }
-  return () => {
-    replMessageHandler = null
-  }
+  return () => { replMessageHandler = null }
 }
 
 export function queueTelegramMessageForRepl(chatId: number, text: string): void {
@@ -294,9 +368,13 @@ export function queueTelegramMessageForRepl(chatId: number, text: string): void 
   }
 }
 
-// Register built-in commands
+// ============================================================================
+// Built-in commands
+// ============================================================================
+
 registerCommand('start', (chatId) => {
   registeredChatId = chatId
+  saveChatId(chatId)
   api?.sendMarkdown(chatId, '✅ *DuckHive connected!*\n\nSend me a message and I\'ll forward it to your DuckHive session.\n\nUse /help for commands.').catch(() => {})
 })
 
@@ -311,18 +389,21 @@ You can also just send any message to have it processed by DuckHive.`).catch(() 
 })
 
 registerCommand('status', async (chatId) => {
+  const chatIdOk = registeredChatId ?? getStoredChatId()
   api?.sendMarkdown(chatId, `*DuckHive Status*
 
-Session: Active
+Session: ${isConnected ? '🟢 Connected' : '🔴 Disconnected'}
 Model: ${process.env.DUCKHIVE_MODEL_NAME ?? 'default'}
 Provider: ${process.env.DUCKHIVE_PROVIDER ?? 'default'}
 
 Send /help for commands.`).catch(() => {})
 })
 
-// Auto-start if token is available
+// ============================================================================
+// Auto-start
+// ============================================================================
+
 const token = getToken()
 if (token) {
-  // Defer start to next tick so the app is ready
   setTimeout(() => { startTelegramService().catch(() => {}) }, 2000)
 }

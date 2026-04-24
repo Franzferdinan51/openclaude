@@ -148,6 +148,13 @@ Make sure you copied the complete token from @BotFather.`,
   // Also store in environment for the Telegram service to use
   process.env.DUCKHIVE_TELEGRAM_BOT_TOKEN = token
 
+  // Restart Telegram service with the new token (reconnect if was already running)
+  // Import dynamically to avoid circular deps
+  import('../../services/telegram/index.js').then(({ stopTelegramService, startTelegramService }) => {
+    stopTelegramService().catch(() => {})
+    setTimeout(() => { startTelegramService().catch(() => {}) }, 500)
+  }).catch(() => {})
+
   return {
     type: 'text',
     value: `✅ Telegram connected successfully!
