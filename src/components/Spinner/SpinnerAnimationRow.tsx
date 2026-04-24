@@ -201,6 +201,13 @@ export function SpinnerAnimationRow({
   const thinkingShimmerColor = toRGBColor(interpolateColor(THINKING_INACTIVE, THINKING_INACTIVE_SHIMMER, thinkingOpacity));
 
   // === Build status parts ===
+  // Show active task context when there are in-progress tasks or running agents
+  const activeTaskText = hasRunningTeammates && foregroundedTeammate
+    ? ` · ${foregroundedTeammate.identity.agentName}`
+    : tasks.length > 0
+      ? ` · ${tasks.filter(t => t.status === 'in_progress').length} task${tasks.filter(t => t.status === 'in_progress').length !== 1 ? 's' : ''}`
+      : null;
+
   const parts = [...(spinnerSuffix ? [<Text dimColor key="suffix">
             {spinnerSuffix}
           </Text>] : []), ...(showTimer ? [<Text dimColor key="elapsedTime">
@@ -212,7 +219,7 @@ export function SpinnerAnimationRow({
               {thinkingOnly ? `(${thinkingText})` : thinkingText}
             </Text> : <Text dimColor key="thinking">
               {thinkingText}
-            </Text>] : [])];
+            </Text>] : []), ...(activeTaskText ? [<Text key="activeTask" dimColor>{activeTaskText}</Text>] : [])];
   const status = foregroundedTeammate && !foregroundedTeammate.isIdle ? <>
         <Text dimColor>(esc to interrupt </Text>
         <Text color={toInkColor(foregroundedTeammate.identity.color)}>
