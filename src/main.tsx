@@ -3880,13 +3880,16 @@ async function run(): Promise<CommanderCommand> {
     return program;
   }
 
+  // MiniMax is a first-class DuckHive companion command. Register it for both
+  // the installed duckhive binary and direct dev runs via `node dist/cli.mjs`.
+  registerDuckhiveMmxCommand(program);
+
   // duckhive mcp — when running as the duckhive binary, replace the
   // OpenClaude 'mcp' command with our DuckHive MCPManageTool-backed one.
   if (process.argv[1]?.includes('duckhive')) {
     // Skip the OpenClaude mcp subcommands and use DuckHive's instead.
     // (The DuckHive dmcp command registers 'mcp' as its command name.)
     registerDuckhiveMcpCommand(program);
-    registerDuckhiveMmxCommand(program);
   } else {
     // claude mcp
     const mcp = program.command('mcp').description('Configure and manage MCP servers').configureHelp(createSortedHelpConfig()).enablePositionalOptions();
@@ -4368,7 +4371,9 @@ async function run(): Promise<CommanderCommand> {
 
   // duckhive tui — launch the Bubble Tea TUI (direct spawn, user explicitly asked)
   program.command('tui').description('Launch the DuckHive terminal UI').action(async () => {
-    const started = await launchStandaloneTui(join(__dirname, '..'))
+    const started = await launchStandaloneTui(join(__dirname, '..'), {
+      env: { DUCKHIVE_TUI_DIRECT: '1' },
+    })
     if (!started) {
       console.error('duckhive tui: Go TUI binary not found. Rebuild the project to restore tui/duckhive-tui.')
       process.exit(1)

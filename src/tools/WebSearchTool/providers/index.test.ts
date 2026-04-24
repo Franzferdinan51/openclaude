@@ -37,6 +37,16 @@ describe('getProviderMode', () => {
     expect(getProviderMode()).toBe('native')
   })
 
+  test('returns searxng mode', () => {
+    process.env.WEB_SEARCH_PROVIDER = 'searxng'
+    expect(getProviderMode()).toBe('searxng')
+  })
+
+  test('returns minimax mode', () => {
+    process.env.WEB_SEARCH_PROVIDER = 'minimax'
+    expect(getProviderMode()).toBe('minimax')
+  })
+
   test('falls back to auto for invalid mode', () => {
     process.env.WEB_SEARCH_PROVIDER = 'nonexistent_provider'
     expect(getProviderMode()).toBe('auto')
@@ -64,6 +74,18 @@ describe('getProviderChain', () => {
     const chain = getProviderChain('custom' as ProviderMode)
     expect(chain).toHaveLength(1)
     expect(chain[0].name).toBe('custom')
+  })
+
+  test('searxng mode explicitly returns searxng provider', () => {
+    const chain = getProviderChain('searxng' as ProviderMode)
+    expect(chain).toHaveLength(1)
+    expect(chain[0].name).toBe('searxng')
+  })
+
+  test('minimax mode explicitly returns minimax provider', () => {
+    const chain = getProviderChain('minimax' as ProviderMode)
+    expect(chain).toHaveLength(1)
+    expect(chain[0].name).toBe('minimax')
   })
 
   test('specific mode returns exactly one provider', () => {
@@ -122,6 +144,33 @@ describe('runSearch', () => {
       else delete process.env.TAVILY_API_KEY
       if (savedProvider !== undefined) process.env.WEB_SEARCH_PROVIDER = savedProvider
       else delete process.env.WEB_SEARCH_PROVIDER
+    }
+  })
+
+  test('searxng mode has an actionable setup hint when no endpoint is configured', async () => {
+    const savedProvider = process.env.WEB_SEARCH_PROVIDER
+    const savedWebProvider = process.env.WEB_PROVIDER
+    const savedSearchApi = process.env.WEB_SEARCH_API
+    const savedUrlTemplate = process.env.WEB_URL_TEMPLATE
+    process.env.WEB_SEARCH_PROVIDER = 'searxng'
+    delete process.env.WEB_PROVIDER
+    delete process.env.WEB_SEARCH_API
+    delete process.env.WEB_URL_TEMPLATE
+
+    try {
+      const { runSearch } = await import('./index.js')
+      await expect(runSearch({ query: 'test' })).rejects.toThrow(
+        /WEB_SEARCH_API/,
+      )
+    } finally {
+      if (savedProvider !== undefined) process.env.WEB_SEARCH_PROVIDER = savedProvider
+      else delete process.env.WEB_SEARCH_PROVIDER
+      if (savedWebProvider !== undefined) process.env.WEB_PROVIDER = savedWebProvider
+      else delete process.env.WEB_PROVIDER
+      if (savedSearchApi !== undefined) process.env.WEB_SEARCH_API = savedSearchApi
+      else delete process.env.WEB_SEARCH_API
+      if (savedUrlTemplate !== undefined) process.env.WEB_URL_TEMPLATE = savedUrlTemplate
+      else delete process.env.WEB_URL_TEMPLATE
     }
   })
 })

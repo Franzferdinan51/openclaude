@@ -110,6 +110,10 @@ const BUILT_IN_PROVIDERS: Record<string, ProviderPreset> = {
   },
 }
 
+export function isCustomProviderPresetConfigured(name: string): boolean {
+  return Boolean(BUILT_IN_PROVIDERS[name])
+}
+
 // ---------------------------------------------------------------------------
 // Security guardrails
 // ---------------------------------------------------------------------------
@@ -362,7 +366,7 @@ export function buildAuthHeadersForPreset(preset?: ProviderPreset): Record<strin
 // Request construction
 // ---------------------------------------------------------------------------
 
-function resolveConfig(): {
+function resolveConfig(forcedProviderName?: string): {
   urlTemplate: string
   queryParam: string
   method: string
@@ -370,7 +374,7 @@ function resolveConfig(): {
   responseAdapter?: (data: any) => SearchHit[]
   preset?: ProviderPreset
 } {
-  const providerName = process.env.WEB_PROVIDER
+  const providerName = forcedProviderName ?? process.env.WEB_PROVIDER
   const preset = providerName ? BUILT_IN_PROVIDERS[providerName] : undefined
 
   return {
@@ -396,8 +400,8 @@ function parseExtraParams(): Record<string, string> {
   return {}
 }
 
-function buildRequest(query: string) {
-  const config = resolveConfig()
+function buildRequest(query: string, forcedProviderName?: string) {
+  const config = resolveConfig(forcedProviderName)
   const method = config.method.toUpperCase()
 
   // --- URL ---
@@ -591,6 +595,34 @@ export const customProvider: SearchProvider = {
     return {
       hits: applyDomainFilters(hits, input),
       providerName: 'custom',
+      durationSeconds: (performance.now() - start) / 1000,
+    }
+  },
+}
+
+export const searxngProvider: SearchProvider = {
+  name: 'searxng',
+
+  isConfigured() {
+    return Boolean(
+      process.env.WEB_SEARCH_API ||
+      process.env.WEB_URL_TEMPLATE ||
+      process.env.WEB_PROVIDER === 'searxng'
+    )
+  },
+
+  async search(input: SearchInput, signal?: AbortSignal): Promise<ProviderOutput> {
+    const start = performance.now()
+    const { url, init, config } = buildRequest(input.query, 'searxng')
+    const raw = await fetchWithRetry(url, init, signal)
+
+    const hits = config.responseAdapter
+      ? config.responseAdapter(raw)
+      : extractHits(raw, config.jsonPath)
+
+    return {
+      hits: applyDomainFilters(hits, input),
+      providerName: 'searxng',
       durationSeconds: (performance.now() - start) / 1000,
     }
   },

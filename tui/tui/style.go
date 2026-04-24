@@ -129,13 +129,11 @@ var SoftBadge = lipgloss.NewStyle().
 
 var MainPane = lipgloss.NewStyle().
 	Background(ColorBG).
-	Border(lipgloss.NormalBorder(), false, false, true, false).
-	BorderForeground(ColorBorder).
 	Padding(0, 1, 1, 1)
 
 var ComposerFrame = lipgloss.NewStyle().
-	Background(ColorSurface).
-	Border(lipgloss.RoundedBorder()).
+	Background(ColorSurface2).
+	Border(lipgloss.NormalBorder()).
 	BorderForeground(ColorBorder).
 	Padding(0, 1)
 
@@ -177,9 +175,9 @@ var PillMuted = lipgloss.NewStyle().
 
 var EmptyCard = lipgloss.NewStyle().
 	Background(ColorSurface).
-	Border(lipgloss.RoundedBorder()).
+	Border(lipgloss.NormalBorder()).
 	BorderForeground(ColorBorder).
-	Padding(1, 2)
+	Padding(1, 1)
 
 var SideCard = lipgloss.NewStyle().
 	Background(ColorSurface).
@@ -190,6 +188,11 @@ var SideCard = lipgloss.NewStyle().
 var EmptyTitle = lipgloss.NewStyle().
 	Foreground(ColorText).
 	Bold(true)
+
+var HeroTitle = lipgloss.NewStyle().
+	Foreground(ColorAccent).
+	Bold(true).
+	Underline(true)
 
 var EmptyBody = lipgloss.NewStyle().
 	Foreground(ColorMuted)
@@ -202,19 +205,17 @@ var EmptyItem = lipgloss.NewStyle().
 	Foreground(ColorText)
 
 var MessageLabelUser = lipgloss.NewStyle().
-	Foreground(ColorAccent).
-	Bold(true)
+	Foreground(ColorMuted)
 
 var MessageLabelAssistant = lipgloss.NewStyle().
-	Foreground(ColorDuck).
-	Bold(true)
+	Foreground(ColorDuck)
 
 var MessageLabelSystem = lipgloss.NewStyle().
-	Foreground(ColorMuted)
+	Foreground(ColorDim)
 
 var MessageBody = lipgloss.NewStyle().
 	Foreground(ColorText).
-	PaddingLeft(2)
+	PaddingLeft(1)
 
 var ToolHeaderPending = lipgloss.NewStyle().
 	Foreground(ColorWarning).

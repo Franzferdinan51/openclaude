@@ -199,10 +199,12 @@ function SpinnerWithVerbInner({
     }
   }
 
-  // Stale read of the refs for showBtwTip below — we're off the 50ms clock
-  // so this only updates when props/app state change, which is sufficient for
-  // a coarse 30s threshold.
-  const elapsedSnapshot = pauseStartTimeRef.current !== null ? pauseStartTimeRef.current - loadingStartTimeRef.current - totalPausedMsRef.current : Date.now() - loadingStartTimeRef.current - totalPausedMsRef.current;
+  // Guard against uninitialized loadingStartTimeRef (would show ~56 years)
+  const elapsedSnapshot = loadingStartTimeRef.current === 0
+    ? 0
+    : pauseStartTimeRef.current !== null
+      ? pauseStartTimeRef.current - loadingStartTimeRef.current - totalPausedMsRef.current
+      : Date.now() - loadingStartTimeRef.current - totalPausedMsRef.current;
 
   // Leader token count for TeammateSpinnerTree — read raw (non-animated) from
   // the ref. The tree is only shown when teammates are running; teammate

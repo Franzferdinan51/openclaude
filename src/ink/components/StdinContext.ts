@@ -39,7 +39,7 @@ const StdinContext = createContext<Props>({
   setRawMode() {},
   isRawModeSupported: false,
 
-  internal_exitOnCtrlC: true,
+  internal_exitOnCtrlC: false,
   internal_querier: null,
 })
 

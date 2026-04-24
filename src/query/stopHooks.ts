@@ -154,6 +154,21 @@ export async function* handleStopHooks(
     if (!toolUseContext.agentId) {
       void executeAutoDream(stopHookContext, toolUseContext.appendSystemMessage)
     }
+    // Process subconscious queue on each turn (non-blocking)
+    if (!toolUseContext.agentId) {
+      try {
+        const { processSubconsciousQueue } = await import('../tools/AgentTool/agentSoul.js')
+        const thought = processSubconsciousQueue()
+        if (thought && toolUseContext.appendSystemMessage) {
+          // Inject subconscious thought as a background system nudge
+          toolUseContext.appendSystemMessage({
+            role: 'system',
+            content: `[Subconscious: ${thought}]`,
+            type: 'text',
+          })
+        }
+      } catch { /* subconscious processing is best-effort */ }
+    }
   }
 
   // chicago MCP: auto-unhide + lock release at turn end.

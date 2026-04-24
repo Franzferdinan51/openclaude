@@ -30,8 +30,12 @@
  *     }
  *   },
  *   "providers": {
- *     "default": "minimax",          // default provider (minimax, kimi, openai, lmstudio)
+ *     "default": "minimax",          // default provider (minimax, lmstudio, chatgpt/openai, kimi)
  *     "fallback": "openrouter"       // fallback provider
+ *   },
+ *   "search": {
+ *     "provider": "auto",            // auto, minimax, native, ddg, searxng, tavily, exa, you, jina, bing, mojeek, linkup, custom
+ *     "searxngUrl": ""               // optional SearXNG endpoint, e.g. http://localhost:8080/search
  *   }
  * }
  *
@@ -84,6 +88,15 @@ const DEFAULT_PROVIDERS = {
   fallback: 'openrouter',
 }
 
+const DEFAULT_UI = {
+  defaultSurface: 'legacy',
+}
+
+const DEFAULT_SEARCH = {
+  provider: 'auto',
+  searxngUrl: '',
+}
+
 // ─── Config resolution ─────────────────────────────────────────────────────────
 
 /**
@@ -91,7 +104,11 @@ const DEFAULT_PROVIDERS = {
  * Returns the full config object.
  */
 export function loadDuckhiveConfig() {
-  const base = deepMerge({}, DEFAULT_META, { providers: DEFAULT_PROVIDERS })
+  const base = deepMerge({}, DEFAULT_META, {
+    providers: DEFAULT_PROVIDERS,
+    ui: DEFAULT_UI,
+    search: DEFAULT_SEARCH,
+  })
 
   if (!existsSync(CONFIG_FILE)) {
     return base
@@ -112,7 +129,7 @@ export function loadDuckhiveConfig() {
  * Call this before spawning the underlying CLI.
  */
 export function applyConfigToEnv(config) {
-  const { meta, providers } = config
+  const { meta, providers, ui, search } = config
 
   // Meta-agent settings → Duck CLI env vars
   if (meta !== undefined) {
@@ -176,13 +193,41 @@ export function applyConfigToEnv(config) {
       process.env.DUCKHIVE_FALLBACK_PROVIDER = providers.fallback
     }
   }
+
+  if (
+    ui?.defaultSurface &&
+    process.env.DUCKHIVE_DEFAULT_UI_SURFACE === undefined &&
+    process.env.DUCKHIVE_NO_AUTO_TUI === undefined
+  ) {
+    process.env.DUCKHIVE_DEFAULT_UI_SURFACE = ui.defaultSurface
+  }
+
+  if (search?.provider) {
+    process.env.WEB_SEARCH_PROVIDER = search.provider
+    if (search.provider === 'searxng') {
+      process.env.WEB_PROVIDER = 'searxng'
+      if (search.searxngUrl) {
+        process.env.WEB_SEARCH_API = search.searxngUrl
+        try {
+          const url = new URL(search.searxngUrl)
+          if (
+            url.protocol === 'http:' ||
+            ['localhost', '127.0.0.1', '::1'].includes(url.hostname.toLowerCase())
+          ) {
+            process.env.WEB_CUSTOM_ALLOW_HTTP ??= 'true'
+            process.env.WEB_CUSTOM_ALLOW_PRIVATE ??= 'true'
+          }
+        } catch {}
+      }
+    }
+  }
 }
 
 /**
  * Get a human-readable summary of the current config for display.
  */
 export function getConfigSummary(config) {
-  const { meta, providers } = config
+  const { meta, providers, ui, search } = config
   const lines = []
 
   lines.push(`  ${bold('Meta-Agent Configuration')}`)
@@ -215,6 +260,19 @@ export function getConfigSummary(config) {
   if (providers) {
     lines.push(`  ${bold('Providers')}`)
     lines.push(`    ${dim('Default:')} ${providers.default || 'minimax'}  ${dim('Fallback:')} ${providers.fallback || 'openrouter'}`)
+  }
+
+  if (ui) {
+    lines.push(`  ${bold('UI')}`)
+    lines.push(`    ${dim('Default:')} ${ui.defaultSurface || 'legacy'}`)
+  }
+
+  if (search) {
+    lines.push(`  ${bold('Search')}`)
+    lines.push(`    ${dim('Provider:')} ${search.provider || 'auto'}`)
+    if (search.searxngUrl) {
+      lines.push(`    ${dim('SearXNG:')} ${search.searxngUrl}`)
+    }
   }
 
   return lines.join('\n')
@@ -268,6 +326,8 @@ if (args[0] === 'config') {
       const defaultConfig = {
         meta: DEFAULT_META,
         providers: DEFAULT_PROVIDERS,
+        ui: DEFAULT_UI,
+        search: DEFAULT_SEARCH,
         _comment: 'DuckHive configuration — https://github.com/Franzferdinan51/DuckHive',
       }
       writeFileSync(CONFIG_FILE, JSON.stringify(defaultConfig, null, 2))

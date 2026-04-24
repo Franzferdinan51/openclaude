@@ -1,0 +1,169 @@
+package main
+
+import (
+	"strings"
+	"testing"
+
+	"github.com/gitlawb/duckhive/tui/model"
+)
+
+func TestParseUISwitchCommandUsesExplicitTargets(t *testing.T) {
+	tests := []struct {
+		name        string
+		input       string
+		wantTarget  uiSurface
+		wantHandled bool
+		wantErr     bool
+	}{
+		{
+			name:        "bare tui opens tui",
+			input:       "/tui",
+			wantTarget:  uiSurfaceTUI,
+			wantHandled: true,
+		},
+		{
+			name:        "ui legacy switches back to repl",
+			input:       "/ui legacy",
+			wantTarget:  uiSurfaceLegacy,
+			wantHandled: true,
+		},
+		{
+			name:        "repl alias switches back to repl",
+			input:       "/repl",
+			wantTarget:  uiSurfaceLegacy,
+			wantHandled: true,
+		},
+		{
+			name:        "invalid target returns usage error",
+			input:       "/tui nope",
+			wantHandled: true,
+			wantErr:     true,
+		},
+		{
+			name:  "normal prompt is ignored",
+			input: "fix the bug",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			target, handled, err := parseUISwitchCommand(tt.input)
+			if handled != tt.wantHandled {
+				t.Fatalf("handled = %v, want %v", handled, tt.wantHandled)
+			}
+			if target != tt.wantTarget {
+				t.Fatalf("target = %q, want %q", target, tt.wantTarget)
+			}
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("err = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestBuildLauncherEnvStripsTUIOnlyStateForLegacyHandoff(t *testing.T) {
+	t.Setenv("DUCKHIVE_AUTO_TUI", "1")
+	t.Setenv("DUCKHIVE_DEFAULT_UI_SURFACE", "tui")
+	t.Setenv("DUCKHIVE_NO_AUTO_TUI", "0")
+	t.Setenv("DUCKHIVE_BRIDGE_CMD", "node")
+	t.Setenv("DUCKHIVE_BRIDGE_ARGS", "dist/cli.mjs --print")
+	t.Setenv("DUCKHIVE_BRIDGE_SOCKET", "/tmp/duckhive.sock")
+	t.Setenv("DUCKHIVE_LAUNCHER_CMD", "node")
+	t.Setenv("DUCKHIVE_LAUNCHER_ENTRY", "dist/cli.mjs")
+
+	env := envSliceToMap(buildLauncherEnv(uiSurfaceLegacy))
+
+	if got := env["DUCKHIVE_DEFAULT_UI_SURFACE"]; got != "legacy" {
+		t.Fatalf("DUCKHIVE_DEFAULT_UI_SURFACE = %q, want %q", got, "legacy")
+	}
+	if got := env["DUCKHIVE_NO_AUTO_TUI"]; got != "1" {
+		t.Fatalf("DUCKHIVE_NO_AUTO_TUI = %q, want %q", got, "1")
+	}
+
+	for _, key := range []string{
+		"DUCKHIVE_AUTO_TUI",
+		"DUCKHIVE_BRIDGE_CMD",
+		"DUCKHIVE_BRIDGE_ARGS",
+		"DUCKHIVE_BRIDGE_SOCKET",
+		"DUCKHIVE_LAUNCHER_CMD",
+		"DUCKHIVE_LAUNCHER_ENTRY",
+	} {
+		if _, ok := env[key]; ok {
+			t.Fatalf("%s should be removed from legacy handoff env", key)
+		}
+	}
+}
+
+func TestParseLocalTUICommand(t *testing.T) {
+	tests := []struct {
+		name        string
+		input       string
+		wantCommand localTUICommand
+		wantHandled bool
+	}{
+		{name: "help opens command deck", input: "/help", wantCommand: localTUICommandDeck, wantHandled: true},
+		{name: "deck alias opens command deck", input: "/deck", wantCommand: localTUICommandDeck, wantHandled: true},
+		{name: "status opens status", input: "/status", wantCommand: localTUICommandStatus, wantHandled: true},
+		{name: "doctor opens status", input: "/doctor", wantCommand: localTUICommandStatus, wantHandled: true},
+		{name: "agents opens super agent", input: "/agents", wantCommand: localTUICommandSuperAgent, wantHandled: true},
+		{name: "teams opens super agent", input: "/teams", wantCommand: localTUICommandSuperAgent, wantHandled: true},
+		{name: "council opens council", input: "/council", wantCommand: localTUICommandCouncil, wantHandled: true},
+		{name: "provider opens provider card", input: "/provider", wantCommand: localTUICommandProvider, wantHandled: true},
+		{name: "search opens search provider card", input: "/search-provider", wantCommand: localTUICommandSearch, wantHandled: true},
+		{name: "normal input passes through", input: "fix the bug"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			command, handled := parseLocalTUICommand(tt.input)
+			if handled != tt.wantHandled {
+				t.Fatalf("handled = %v, want %v", handled, tt.wantHandled)
+			}
+			if command != tt.wantCommand {
+				t.Fatalf("command = %q, want %q", command, tt.wantCommand)
+			}
+		})
+	}
+}
+
+func TestLocalCommandContentSurfacesCoreAgentFeatures(t *testing.T) {
+	m := &MainModel{
+		state: model.NewAppState(),
+		cap: workspaceCapabilities{
+			hasCouncil:          true,
+			hasTeams:            true,
+			hasMCP:              true,
+			activeProvider:      "minimax",
+			configuredProviders: []string{"minimax", "openrouter"},
+			searchProvider:      "tavily",
+			configuredSearch:    []string{"tavily", "duckduckgo"},
+		},
+	}
+
+	content := m.localCommandContent(localTUICommandDeck)
+	for _, want := range []string{
+		"Super Agent",
+		"Agent Teams",
+		"AI Council",
+		"Search providers",
+		"/search-provider",
+	} {
+		if !strings.Contains(content, want) {
+			t.Fatalf("local command content missing %q:\n%s", want, content)
+		}
+	}
+}
+
+func envSliceToMap(entries []string) map[string]string {
+	out := make(map[string]string, len(entries))
+	for _, entry := range entries {
+		for i := 0; i < len(entry); i++ {
+			if entry[i] != '=' {
+				continue
+			}
+			out[entry[:i]] = entry[i+1:]
+			break
+		}
+	}
+	return out
+}

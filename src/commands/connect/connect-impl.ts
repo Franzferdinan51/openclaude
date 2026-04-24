@@ -61,15 +61,15 @@ export const call: LocalCommandCall = async (args: string) => {
     }
   }
 
-  // --status flag: show connection status
-  if (flags.status !== undefined) {
+  // --status flag OR positional "status": show connection status
+  if (flags.status !== undefined || positional[0] === 'status') {
     const data = storage.read()
     const config = data ? getTelegramConfig(data) : {}
     return { type: 'text', value: formatStatus(config) }
   }
 
-  // --disconnect flag: remove Telegram configuration
-  if (flags.disconnect !== undefined) {
+  // --disconnect flag OR positional "disconnect": remove Telegram configuration
+  if (flags.disconnect !== undefined || positional[0] === 'disconnect') {
     const data = storage.read()
     if (data?.pluginSecrets?.telegram) {
       delete data.pluginSecrets.telegram
@@ -100,8 +100,8 @@ Once you have your token, run:
   /connect <your-bot-token>
 
 After connecting, you can use these commands:
-  /connect --status   Show connection status
-  /connect --disconnect   Remove Telegram connection
+  /connect status        Show connection status
+  /connect disconnect    Remove Telegram connection
 
 Your bot token is stored securely in your system's keychain/credentials store.`,
     }
@@ -118,7 +118,8 @@ Your bot token is stored securely in your system's keychain/credentials store.`,
   }
 
   // Basic validation: Telegram bot tokens are like "123456789:ABCdefGhIJKlmNoPQRstuVWxyZ"
-  const tokenPattern = /^\d{8,10}:[\w-]{30,}$/
+  // Tokens vary in length - some have underscores in the hash portion
+  const tokenPattern = /^\d{8,10}:[\w-]{20,}$/
   if (!tokenPattern.test(token)) {
     return {
       type: 'text',
@@ -151,8 +152,9 @@ Make sure you copied the complete token from @BotFather.`,
   // Restart Telegram service with the new token (reconnect if was already running)
   // Import dynamically to avoid circular deps
   import('../../services/telegram/index.js').then(({ stopTelegramService, startTelegramService }) => {
-    stopTelegramService().catch(() => {})
-    setTimeout(() => { startTelegramService().catch(() => {}) }, 500)
+    // These are fire-and-forget, service handles its own errors
+    void stopTelegramService()
+    setTimeout(() => { void startTelegramService() }, 500)
   }).catch(() => {})
 
   return {

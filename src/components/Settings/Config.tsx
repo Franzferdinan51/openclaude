@@ -48,6 +48,13 @@ import { useSearchInput } from '../../hooks/useSearchInput.js';
 import { useTerminalSize } from '../../hooks/useTerminalSize.js';
 import { clearFastModeCooldown, FAST_MODE_MODEL_DISPLAY, isFastModeAvailable, isFastModeEnabled, getFastModeModel, isFastModeSupportedByModel } from '../../utils/fastMode.js';
 import { isFullscreenEnvEnabled } from '../../utils/fullscreen.js';
+import {
+  DUCKHIVE_UI_SURFACE_LABELS,
+  getConfiguredDuckHiveUISurface,
+  readDuckHiveConfigSync,
+  setDuckHiveUISurfacePreferenceSync,
+  type DuckHiveUISurface,
+} from '../../utils/duckhiveUi.js';
 type Props = {
   onClose: (result?: string, options?: {
     display?: CommandResultDisplay;
@@ -98,6 +105,8 @@ export function Config({
   const themeSetting = useThemeSetting();
   const [globalConfig, setGlobalConfig] = useState(getGlobalConfig());
   const initialConfig = React.useRef(getGlobalConfig());
+  const [duckHiveUISurface, setDuckHiveUISurface] = useState(() => getConfiguredDuckHiveUISurface(readDuckHiveConfigSync()));
+  const initialDuckHiveUISurface = React.useRef(duckHiveUISurface);
   const [settingsData, setSettingsData] = useState(getInitialSettings());
   const initialSettingsData = React.useRef(getInitialSettings());
   const [currentOutputStyle, setCurrentOutputStyle] = useState<OutputStyle>(settingsData?.outputStyle || DEFAULT_OUTPUT_STYLE_NAME);
@@ -650,6 +659,28 @@ export function Config({
       });
     }
   }] : []), {
+    id: 'duckhiveDefaultUISurface',
+    label: 'Default UI',
+    value: duckHiveUISurface,
+    options: ['legacy', 'tui'],
+    type: 'enum' as const,
+    onChange(surface: string) {
+      if (surface !== 'tui' && surface !== 'legacy') {
+        return;
+      }
+      const nextSurface = surface as DuckHiveUISurface;
+      setDuckHiveUISurfacePreferenceSync(nextSurface);
+      setDuckHiveUISurface(nextSurface);
+      setChanges(prev_9 => ({
+        ...prev_9,
+        defaultUI: DUCKHIVE_UI_SURFACE_LABELS[nextSurface]
+      }));
+      logEvent('tengu_duckhive_ui_surface_changed', {
+        surface: nextSurface as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
+        source: 'config_panel' as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS
+      });
+    }
+  }, {
     id: 'flickerFreeMode',
     label: 'Flicker-free mode',
     value: globalConfig.flickerFreeMode ?? (process.env.USER_TYPE === 'ant'),
@@ -1188,6 +1219,9 @@ export function Config({
     if (globalConfig.copyOnSelect !== initialConfig.current.copyOnSelect) {
       formattedChanges.push(`${globalConfig.copyOnSelect ? 'Enabled' : 'Disabled'} copy on select`);
     }
+    if (duckHiveUISurface !== initialDuckHiveUISurface.current) {
+      formattedChanges.push(`Set default UI to ${chalk.bold(DUCKHIVE_UI_SURFACE_LABELS[duckHiveUISurface])}`);
+    }
     if (globalConfig.terminalProgressBarEnabled !== initialConfig.current.terminalProgressBarEnabled) {
       formattedChanges.push(`${globalConfig.terminalProgressBarEnabled ? 'Enabled' : 'Disabled'} terminal progress bar`);
     }
@@ -1211,7 +1245,7 @@ export function Config({
         display: 'system'
       });
     }
-  }, [showSubmenu, changes, globalConfig, mainLoopModel, currentOutputStyle, currentLanguage, settingsData?.autoUpdatesChannel, isFastModeEnabled() ? (settingsData as Record<string, unknown> | undefined)?.fastMode : undefined, onClose]);
+  }, [showSubmenu, changes, globalConfig, mainLoopModel, currentOutputStyle, currentLanguage, settingsData?.autoUpdatesChannel, isFastModeEnabled() ? (settingsData as Record<string, unknown> | undefined)?.fastMode : undefined, duckHiveUISurface, onClose]);
 
   // Restore all state stores to their mount-time snapshots. Changes are
   // applied to disk/AppState immediately on toggle, so "cancel" means
@@ -1287,7 +1321,11 @@ export function Config({
     if (getUserMsgOptIn() !== initialUserMsgOptIn) {
       setUserMsgOptIn(initialUserMsgOptIn);
     }
-  }, [themeSetting, setTheme, initialLocalSettings, initialUserSettings, initialAppState, initialUserMsgOptIn, setAppState]);
+    if (duckHiveUISurface !== initialDuckHiveUISurface.current) {
+      setDuckHiveUISurfacePreferenceSync(initialDuckHiveUISurface.current);
+      setDuckHiveUISurface(initialDuckHiveUISurface.current);
+    }
+  }, [themeSetting, setTheme, initialLocalSettings, initialUserSettings, initialAppState, initialUserMsgOptIn, setAppState, duckHiveUISurface]);
 
   // Escape: revert all changes (if any) and close.
   const handleEscape = useCallback(() => {
@@ -1724,6 +1762,8 @@ export function Config({
                                     </Text>}
                               </> : setting_2.id === 'theme' ? <Text color={isSelected ? 'suggestion' : undefined}>
                                 {THEME_LABELS[setting_2.value.toString()] ?? setting_2.value.toString()}
+                              </Text> : setting_2.id === 'duckhiveDefaultUISurface' ? <Text color={isSelected ? 'suggestion' : undefined}>
+                                {DUCKHIVE_UI_SURFACE_LABELS[setting_2.value as DuckHiveUISurface]}
                               </Text> : setting_2.id === 'notifChannel' ? <Text color={isSelected ? 'suggestion' : undefined}>
                                 <NotifChannelLabel value={setting_2.value.toString()} />
                               </Text> : setting_2.id === 'defaultPermissionMode' ? <Text color={isSelected ? 'suggestion' : undefined}>

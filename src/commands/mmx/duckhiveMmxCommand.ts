@@ -15,33 +15,36 @@
  */
 import { type Command } from '@commander-js/extra-typings'
 import { spawn } from 'child_process'
+import { existsSync } from 'fs'
 import { resolve } from 'path'
 
 function findMmx(): string {
-  const { existsSync } = require('fs')
+  if (process.env.MMX_BIN) return process.env.MMX_BIN
+  const executable = process.platform === 'win32' ? 'mmx.cmd' : 'mmx'
   const locations = [
-    resolve(process.env.HOME ?? '~', '.npm-global/bin/mmx'),
-    '/usr/local/bin/mmx',
-    '/usr/bin/mmx',
+    resolve(process.env.HOME ?? '~', '.npm-global/bin', executable),
+    resolve(process.env.LOCALAPPDATA ?? '', 'Programs', 'npm', executable),
+    `/usr/local/bin/${executable}`,
+    `/usr/bin/${executable}`,
   ]
   for (const loc of locations) {
     if (existsSync(loc)) return loc
   }
-  return 'mmx'
+  return executable
 }
 
 const MMX_BIN = findMmx()
 
 export function registerDuckhiveMmxCommand(program: Command): void {
   const mmx = program
-    .command('mmx')
+    .command('mmx [args...]')
     .description('MiniMax AI Platform — text, image, speech, music, video, vision, search')
     .configureHelp({ sortSubcommands: true, sortOptions: true })
-    .allowUnknownOption(false)
+    .allowUnknownOption(true)
+    .allowExcessArguments(true)
 
   // Pass all args to mmx CLI
-  mmx.action(async () => {
-    const args = process.argv.slice(process.argv.indexOf('mmx') + 1)
+  mmx.action(async (args: string[] = []) => {
     if (args.length === 0) {
       console.log(`🦆 DuckHive MiniMax Integration
 
@@ -76,7 +79,7 @@ Examples:
       const mmxArgs = ['--non-interactive', ...args]
       const child = spawn(MMX_BIN, mmxArgs, {
         stdio: 'inherit',
-        shell: false,
+        shell: process.platform === 'win32',
       })
       child.on('exit', (code) => {
         process.exit(code ?? 0)

@@ -82,7 +82,7 @@ export const renderSync = (
     stdout: process.stdout,
     stdin: process.stdin,
     stderr: process.stderr,
-    exitOnCtrlC: true,
+    exitOnCtrlC: false,
     patchConsole: true,
     ...opts,
   }

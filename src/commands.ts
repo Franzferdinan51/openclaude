@@ -139,6 +139,8 @@ import thinkbackPlay from './commands/thinkback-play/index.js'
 import permissions from './commands/permissions/index.js'
 import plan from './commands/plan/index.js'
 import fast from './commands/fast/index.js'
+import yolo from './commands/yolo/index.js'
+import onboard from './commands/onboard/index.js'
 import passes from './commands/passes/index.js'
 import privacySettings from './commands/privacy-settings/index.js'
 import provider from './commands/provider/index.js'
@@ -206,6 +208,8 @@ import model from './commands/model/index.js'
 import tag from './commands/tag/index.js'
 import outputStyle from './commands/output-style/index.js'
 import remoteEnv from './commands/remote-env/index.js'
+import searchProvider from './commands/search-provider/index.js'
+import tuiCommand from './commands/tui/index.js'
 import upgrade from './commands/upgrade/index.js'
 import {
   extraUsage,
@@ -311,6 +315,8 @@ const COMMANDS = memoize((): Command[] => [
   effort,
   exit,
   fast,
+  yolo,
+  onboard,
   files,
   heapDump,
   help,
@@ -356,6 +362,7 @@ const COMMANDS = memoize((): Command[] => [
   repomap,
   resume,
   session,
+  searchProvider,
   skills,
   stats,
   spawn,
@@ -364,6 +371,7 @@ const COMMANDS = memoize((): Command[] => [
   stickers,
   tag,
   theme,
+  tuiCommand,
   feedback,
   review,
   ultrareview,

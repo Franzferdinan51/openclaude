@@ -114,6 +114,8 @@ export function applyProviderFlag(
         process.env.OPENAI_API_KEY = kimiKey
       }
       if (model) process.env.OPENAI_MODEL = model
+      // Kimi Code API requires this User-Agent to accept requests
+      process.env.OPENAI_EXTRA_HEADERS ??= 'User-Agent: KimiCLI/1.0'
       break
     }
 

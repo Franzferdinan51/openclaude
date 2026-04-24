@@ -5,7 +5,7 @@ import { spawnSync } from 'child_process';
 import { snapshotOutputTokensForTurn, getCurrentTurnTokenBudget, getTurnOutputTokens, getBudgetContinuationCount, getTotalInputTokens } from '../bootstrap/state.js';
 import { parseTokenBudget } from '../utils/tokenBudget.js';
 import { count } from '../utils/array.js';
-import { checkAndFireCouncil } from '../orchestrator/hybrid/index.js';
+import { autoOrchestrate } from '../orchestrator/hybrid/index.js';
 import { dirname, join } from 'path';
 import { tmpdir } from 'os';
 import figures from 'figures';
@@ -2825,16 +2825,28 @@ export function REPL({
     resetTurnToolDuration();
     resetTurnClassifierDuration();
 
-    // Auto-council: check if task complexity warrants AI council deliberation
-    // Fire-and-forget — council results are advisory; query proceeds in parallel
-    const latestMessages = messagesRef.current;
-    const historyForCouncil = latestMessages
-      .filter((m: any) => m.type === 'user' || m.type === 'assistant')
-      .map((m: any) => ({ role: m.type === 'user' ? 'user' : 'assistant', content: getContentText(m.message.content) }));
-    const userText = newMessages.find((m: any) => m.type === 'user' && !m.isMeta);
-    const promptText = userText ? getContentText(userText.message.content) : '';
-    void checkAndFireCouncil(promptText, historyForCouncil, freshTools.map((t: any) => t.name))
-      .catch(() => {}); // non-blocking — council failure doesn't halt query
+ // Auto-orchestration: analyze complexity, route model, fire council, checkpoint
+ // Runs BEFORE the query so orchestration context is available to the LLM
+ const latestMessages = messagesRef.current;
+ const historyForOrchestration = latestMessages
+ .filter((m: any) => m.type === 'user' || m.type === 'assistant')
+ .map((m: any) => ({ role: m.type === 'user' ? 'user' : 'assistant', content: getContentText(m.message.content) }));
+ const userText = newMessages.find((m: any) => m.type === 'user' && !m.isMeta);
+ const promptText = userText ? getContentText(userText.message.content) : '';
+ let orchestrationContext = '';
+ try {
+ const orchestrationResult = await autoOrchestrate(promptText, historyForOrchestration, freshTools.map((t: any) => t.name));
+ if (orchestrationResult.orchestrated) {
+ orchestrationContext = orchestrationResult.systemContext;
+ console.debug('[orchestration] ' + orchestrationResult.summary);
+ // If orchestrator suggests a different model for complex tasks, log the override
+ if (orchestrationResult.routing.model !== mainLoopModelParam && orchestrationResult.complexity >= 5) {
+ console.debug('[orchestration] Model override: ' + mainLoopModelParam + ' \u2192 ' + orchestrationResult.routing.model + ' (' + orchestrationResult.routing.reason + ')');
+ }
+ }
+ } catch {
+ // Orchestration failure is non-fatal — query proceeds without orchestration context
+ }
 
     for await (const event of query({
       messages: messagesIncludingNewMessages,

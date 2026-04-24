@@ -153,13 +153,8 @@ export function CancelRequestHandler(props: CancelRequestHandlerProps): null {
     !isInSpecialModeWithEmptyInput &&
     !isViewingTeammate
 
-  // Ctrl+C (app:interrupt): when viewing a teammate, stops everything and
-  // returns to main thread. Otherwise just handleCancel. Must NOT claim
-  // ctrl+c when main is idle at the prompt — that blocks the copy-selection
-  // handler and double-press-to-exit from ever seeing the keypress.
-  const isCtrlCActive =
-    isContextActive &&
-    (canCancelRunningTask || hasQueuedCommands || isViewingTeammate)
+  // Ctrl+C (app:interrupt): always active when context is active
+  const isCtrlCActive = isContextActive
 
   useKeybinding('chat:cancel', handleCancel, {
     context: 'Chat',

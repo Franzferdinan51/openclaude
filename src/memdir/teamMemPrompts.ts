@@ -1,3 +1,5 @@
+import { getFsImplementation } from '../utils/fsOperations.js'
+import { truncateEntrypointContent } from './memdir.js'
 import {
   buildSearchingPastContextSection,
   DIRS_EXIST_GUIDANCE,

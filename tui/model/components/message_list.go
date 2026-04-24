@@ -163,11 +163,11 @@ func formatMessage(msg model.Message, width int, selected bool) string {
 
 	switch msg.Type {
 	case model.MsgTypeUser:
-		return formatLabeledMessage(tui.MessageLabelUser.Render("YOU"), msg.Content, tui.UserBubble, maxContentWidth, msg.IsStreaming, selected)
+		return formatLabeledMessage(tui.MessageLabelUser.Render("you"), msg.Content, tui.UserBubble, maxContentWidth, msg.IsStreaming, selected)
 	case model.MsgTypeAssistant:
-		return formatLabeledMessage(tui.MessageLabelAssistant.Render("DUCKHIVE"), msg.Content, tui.AssistantBubble, maxContentWidth, msg.IsStreaming, selected)
+		return formatLabeledMessage(tui.MessageLabelAssistant.Render("duckhive"), msg.Content, tui.AssistantBubble, maxContentWidth, msg.IsStreaming, selected)
 	case model.MsgTypeSystem:
-		return formatLabeledMessage(tui.MessageLabelSystem.Render("SYSTEM"), msg.Content, tui.SystemBubble, maxContentWidth, msg.IsStreaming, selected)
+		return formatLabeledMessage(tui.MessageLabelSystem.Render("note"), msg.Content, tui.SystemBubble, maxContentWidth, msg.IsStreaming, selected)
 	case model.MsgTypeToolUse, model.MsgTypeToolResult:
 		return formatToolMessage(msg, maxContentWidth, selected)
 	case model.MsgTypeProgress:
@@ -198,20 +198,17 @@ func formatToolMessage(msg model.Message, width int, selected bool) string {
 	}
 
 	headerStyle := tui.ToolHeaderPending
-	headerIcon := ">"
 	headerState := "running"
 	switch status {
 	case model.ToolStatusCompleted:
 		headerStyle = tui.ToolHeaderSuccess
-		headerIcon = "+"
 		headerState = "done"
 	case model.ToolStatusFailed:
 		headerStyle = tui.ToolHeaderError
-		headerIcon = "!"
 		headerState = "failed"
 	}
 
-	header := headerStyle.Render(fmt.Sprintf("%s %s %s", headerIcon, strings.ToUpper(toolName), headerState))
+	header := headerStyle.Render(fmt.Sprintf("%s [%s]", toolName, headerState))
 	if selected {
 		header = header + " " + tui.Accent.Render("[selected]")
 	}

@@ -1,88 +1,17 @@
 #!/usr/bin/env node
 
 /**
- * DuckHive — AI coding CLI harness
-<<<<<<< Updated upstream
- * Auto-starts Council daemon, configures providers, launches Go TUI when available.
-=======
- * Auto-starts Council daemon, configures MiniMax/OpenAI, launches REPL TUI.
->>>>>>> Stashed changes
+ * DuckHive launcher — starts Council daemon, configures providers, launches REPL.
  */
 
 import { existsSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath, pathToFileURL } from 'url'
-import { fork, spawn } from 'child_process'
+import { fork } from 'child_process'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const distPath = join(__dirname, '..', 'dist', 'cli.mjs')
 
-<<<<<<< Updated upstream
-function shouldAutoLaunchTui() {
-=======
-function shouldAutoLaunchRepl() {
->>>>>>> Stashed changes
-  return (
-    process.argv.slice(2).length === 0 &&
-    process.stdin.isTTY &&
-    process.stdout.isTTY &&
-    process.env.DUCKHIVE_NO_AUTO_TUI !== '1'
-  )
-}
-<<<<<<< Updated upstream
-
-function spawnAndWaitForStart(command, args, env) {
-  return new Promise(resolve => {
-    const child = spawn(command, args, {
-      stdio: 'inherit',
-      env,
-    })
-
-    const onError = () => resolve(false)
-    child.once('error', onError)
-    child.once('spawn', () => {
-      child.off('error', onError)
-      child.on('exit', code => process.exit(code ?? 0))
-      resolve(true)
-    })
-  })
-}
-
-async function launchStandaloneTui() {
-  const tuiPath = join(__dirname, '..', 'tui', 'duckhive-tui')
-  if (!existsSync(tuiPath)) return false
-
-  const env = {
-    ...process.env,
-    DUCKHIVE_AUTO_TUI: '1',
-    DUCKHIVE_BRIDGE_CMD: process.execPath,
-    DUCKHIVE_BRIDGE_ARGS: [
-      distPath,
-      '--print',
-      '--verbose',
-      '--output-format=stream-json',
-      '--input-format=stream-json',
-    ].join(' '),
-  }
-
-  const helperPath = join(__dirname, 'tui-pty-helper.py')
-  if (existsSync(helperPath)) {
-    const helperStarted = await spawnAndWaitForStart('python3', [helperPath], env)
-    if (helperStarted) return true
-  }
-
-  return await spawnAndWaitForStart(tuiPath, [], env)
-}
-
-process.env.COUNCIL_PORT ??= '3007'
-process.env.HIVE_API_BASE ??= `http://localhost:${process.env.COUNCIL_PORT}`
-process.env.DUCKHIVE_COUNCIL_URL ??= process.env.HIVE_API_BASE
-process.env.DUCKHIVE_AGENT_TEAMS_ENABLED ??= '1'
-process.env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS ??= '1'
-=======
->>>>>>> Stashed changes
-
-// ─── Auto-start Council daemon ────────────────────────────────────────────────
 async function ensureCouncilDaemon() {
   const COUNCIL_PORT = process.env.COUNCIL_PORT || '3007'
   try {
@@ -110,7 +39,6 @@ async function ensureCouncilDaemon() {
   }
 }
 
-// ─── Load config ────────────────────────────────────────────────────────────────
 let configApply = null
 try {
   const loaderPath = join(__dirname, 'duckhive-config-loader.js')
@@ -119,60 +47,48 @@ try {
     const config = loadDuckhiveConfig()
     applyConfigToEnv(config)
     configApply = config
+    if (config?.providers?.default && !process.env.DUCKHIVE_PROVIDER) {
+      process.env.DUCKHIVE_PROVIDER = config.providers.default
+    }
   }
-} catch (err) {}
+} catch {}
 
-// ─── Auto-configure MiniMax ────────────────────────────────────────────────────
-if (process.env.MINIMAX_API_KEY && !process.env.CLAUDE_CODE_USE_OPENAI) {
+if ((configApply?.providers?.default === 'minimax' || process.env.MINIMAX_API_KEY) && process.env.MINIMAX_API_KEY && !process.env.CLAUDE_CODE_USE_OPENAI) {
   process.env.CLAUDE_CODE_USE_OPENAI = '1'
   process.env.OPENAI_API_KEY = process.env.MINIMAX_API_KEY
   process.env.OPENAI_BASE_URL = 'https://api.minimax.io/v1'
   process.env.OPENAI_MODEL = process.env.OPENAI_MODEL || 'MiniMax-M2.7'
 }
-const moonshotKey = process.env.KIMI_API_KEY || process.env.MOONSHOT_API_KEY
-if (
-  moonshotKey &&
-  (!process.env.OPENAI_API_KEY ||
-    /moonshot/i.test(process.env.OPENAI_BASE_URL || ''))
-) {
-  process.env.OPENAI_API_KEY = moonshotKey
-}
 if (!process.env.ANTHROPIC_SMALL_FAST_MODEL) {
   process.env.ANTHROPIC_SMALL_FAST_MODEL = 'gpt-4o-mini'
 }
-if (
-  configApply?.providers?.default === 'kimi' &&
-  (process.env.KIMI_API_KEY ||
-    process.env.MOONSHOT_API_KEY ||
-    /moonshot/i.test(process.env.OPENAI_BASE_URL || ''))
-) {
-  process.env.CLAUDE_CODE_USE_OPENAI ??= '1'
-  process.env.OPENAI_BASE_URL =
-    process.env.OPENAI_BASE_URL ||
-    process.env.MOONSHOT_BASE_URL ||
-    'https://api.moonshot.ai/v1'
-  process.env.OPENAI_MODEL = process.env.OPENAI_MODEL || 'kimi-k2.6'
+if (configApply?.providers?.default === 'kimi' && process.env.MINIMAX_API_KEY) {
+  process.env.OPENAI_BASE_URL = 'https://api.moonshot.cn/v1'
+  process.env.OPENAI_MODEL = process.env.OPENAI_MODEL || 'moonshot-v1-128k'
+} else if (configApply?.providers?.default === 'lmstudio') {
+  process.env.CLAUDE_CODE_USE_OPENAI = '1'
+  process.env.OPENAI_API_KEY = process.env.OPENAI_API_KEY || 'lm-studio'
+  process.env.OPENAI_BASE_URL = process.env.OPENAI_BASE_URL || 'http://localhost:1234/v1'
+  process.env.OPENAI_MODEL = process.env.OPENAI_MODEL || 'local-model'
+} else if (configApply?.providers?.default === 'chatgpt' || configApply?.providers?.default === 'openai') {
+  process.env.CLAUDE_CODE_USE_OPENAI = '1'
+  process.env.OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-5.4'
 } else if (configApply?.providers?.default === 'openrouter') {
   process.env.OPENAI_BASE_URL = 'https://openrouter.ai/api/v1'
   process.env.OPENAI_MODEL = process.env.OPENAI_MODEL || 'minimax/minimax-m2.5:free'
 }
 
-// ─── Launch ────────────────────────────────────────────────────────────────────────
 if (existsSync(distPath)) {
-  await ensureCouncilDaemon()
-<<<<<<< Updated upstream
-  if (!(shouldAutoLaunchTui() && (await launchStandaloneTui()))) {
-=======
-  
-  // Auto-launch REPL TUI when run from a real terminal (TTY stdin + stdout)
-  if (shouldAutoLaunchRepl()) {
-    // Launch REPL directly — the Ink REPL IS the TUI
-    await import(pathToFileURL(distPath).href)
-  } else {
-    // Headless mode: run with a prompt argument or --print
->>>>>>> Stashed changes
-    await import(pathToFileURL(distPath).href)
+  // Start Council daemon (3s timeout — non-blocking even if it fails)
+  try {
+    const timer = setTimeout(() => console.error('[duckhive] Council check timed out, continuing...'), 3000)
+    await ensureCouncilDaemon()
+    clearTimeout(timer)
+  } catch (e) {
+    console.error('[duckhive] Council error (non-fatal):', e.message)
   }
+
+  await import(pathToFileURL(distPath).href)
 } else {
   console.error(`duckhive: dist/cli.mjs not found. Run: bun run build`)
   process.exit(1)

@@ -7,7 +7,8 @@ OpenClaude supports multiple search backends through a provider adapter system.
 | Provider | Env Var | Auth Header | Method |
 |---|---|---|---|
 | Custom API | `WEB_SEARCH_API` | Configurable | GET/POST |
-| SearXNG | `WEB_PROVIDER=searxng` | — | GET |
+| MiniMax CLI | `WEB_SEARCH_PROVIDER=minimax` | `MINIMAX_API_KEY` or `mmx auth login` | CLI |
+| SearXNG | `WEB_SEARCH_PROVIDER=searxng`, `WEB_PROVIDER=searxng` | — | GET |
 | Google | `WEB_PROVIDER=google` | `Authorization: Bearer` | GET |
 | Brave | `WEB_PROVIDER=brave` | `X-Subscription-Token` | GET |
 | SerpAPI | `WEB_PROVIDER=serpapi` | `Authorization: Bearer` | GET |
@@ -37,7 +38,13 @@ export WEB_KEY=your-brave-key
 # Bing
 export BING_API_KEY=your-bing-key
 
+# MiniMax CLI search
+npm install -g mmx-cli
+mmx auth login --api-key "$MINIMAX_API_KEY"
+export WEB_SEARCH_PROVIDER=minimax
+
 # Self-hosted SearXNG (free, private)
+export WEB_SEARCH_PROVIDER=searxng
 export WEB_PROVIDER=searxng
 export WEB_SEARCH_API=https://search.example.com/search
 ```
@@ -49,14 +56,16 @@ export WEB_SEARCH_API=https://search.example.com/search
 | Mode | Behavior |
 |---|---|
 | `auto` (default) | Try all configured providers in order, fall through on failure |
+| `minimax` | MiniMax CLI search only — throws on failure |
 | `tavily` | Tavily only — throws on failure |
 | `exa` | Exa only — throws on failure |
+| `searxng` | SearXNG only — throws on failure |
 | `custom` | Custom API only — throws on failure. **Not in the auto chain** — must be explicitly selected |
 | `firecrawl` | Firecrawl only — throws on failure |
 | `ddg` | DuckDuckGo only — throws on failure |
 | `native` | Anthropic native / Codex only |
 
-**Auto mode priority:** firecrawl → tavily → exa → you → jina → bing → mojeek → linkup → ddg
+**Auto mode priority:** minimax → firecrawl → tavily → exa → you → jina → bing → mojeek → linkup → ddg
 
 > **Note:** The `custom` provider is excluded from the `auto` chain. It is only used when `WEB_SEARCH_PROVIDER=custom` is explicitly set. This prevents the generic outbound provider from silently becoming the default backend.
 

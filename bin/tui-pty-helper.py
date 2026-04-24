@@ -54,7 +54,6 @@ def launch():
                     d = os.read(master, 8192)
                     if d:
                         os.write(sys.stdout.fileno(), d)
-                        os.fsync(sys.stdout.fileno())
                     else:
                         break
                 except OSError:
@@ -64,7 +63,6 @@ def launch():
                     d = os.read(sys.stdin.fileno(), 8192)
                     if d:
                         os.write(master, d)
-                        os.fsync(master)
                 except OSError:
                     break
             res = os.waitpid(pid, os.WNOHANG)

@@ -4,7 +4,9 @@
  * WEB_SEARCH_PROVIDER controls which backend to use:
  *
  *   "auto"      (default) — try providers in priority order, fall through on failure
+ *   "minimax"   — use MiniMax CLI (`mmx search query --output json`) only
  *   "custom"    — use WEB_SEARCH_API / WEB_PROVIDER preset only (fail loudly)
+ *   "searxng"   — use a SearXNG endpoint only (fail loudly)
  *   "firecrawl" — use Firecrawl only (fail loudly)
  *   "tavily"    — use Tavily only (fail loudly)
  *   "exa"       — use Exa only (fail loudly)
@@ -26,7 +28,8 @@
 import type { SearchInput, SearchProvider } from './types.js'
 import type { ProviderOutput } from './types.js'
 
-import { customProvider } from './custom.js'
+import { customProvider, searxngProvider } from './custom.js'
+import { minimaxCliProvider } from './minimaxCli.js'
 import { duckduckgoProvider } from './duckduckgo.js'
 import { firecrawlProvider } from './firecrawl.js'
 import { tavilyProvider } from './tavily.js'
@@ -44,13 +47,14 @@ export { extractHits } from './custom.js'
 // ---------------------------------------------------------------------------
 // All registered providers — order matters for auto mode
 // ---------------------------------------------------------------------------
-// Priority: firecrawl → tavily → exa → you → jina → bing → mojeek → linkup → ddg
+// Priority: minimax → firecrawl → tavily → exa → you → jina → bing → mojeek → linkup → ddg
 // DDG is last because it's free but rate-limited.
 // NOTE: customProvider is intentionally excluded from the auto chain.
 //       It is only available when WEB_SEARCH_PROVIDER=custom is explicitly set.
 //       This prevents the generic outbound provider from silently becoming the default backend.
 
 const ALL_PROVIDERS: SearchProvider[] = [
+  minimaxCliProvider,
   firecrawlProvider,
   tavilyProvider,
   exaProvider,
@@ -72,7 +76,9 @@ export function getAvailableProviders(): SearchProvider[] {
 
 export type ProviderMode =
   | 'auto'
+  | 'minimax'
   | 'custom'
+  | 'searxng'
   | 'firecrawl'
   | 'ddg'
   | 'tavily'
@@ -85,7 +91,9 @@ export type ProviderMode =
   | 'native'
 
 const PROVIDER_BY_NAME: Record<string, SearchProvider> = {
+  minimax: minimaxCliProvider,
   custom: customProvider,
+  searxng: searxngProvider,
   firecrawl: firecrawlProvider,
   ddg: duckduckgoProvider,
   tavily: tavilyProvider,
@@ -122,6 +130,19 @@ export function getProviderChain(mode: ProviderMode): SearchProvider[] {
   return [provider]
 }
 
+function providerSetupHint(mode: ProviderMode): string {
+  if (mode === 'minimax') {
+    return 'Install mmx-cli with npm install -g mmx-cli, then run mmx auth login --api-key <key> or set MINIMAX_API_KEY.'
+  }
+  if (mode === 'searxng') {
+    return 'Set WEB_SEARCH_API to your SearXNG /search endpoint, for example WEB_SEARCH_API=http://localhost:8080/search, or run /search-provider searxng --url <url>.'
+  }
+  if (mode === 'custom') {
+    return 'Set WEB_SEARCH_API, WEB_URL_TEMPLATE, or WEB_PROVIDER for the custom search provider.'
+  }
+  return `Set the required environment variable (e.g. ${mode.toUpperCase()}_API_KEY) or switch to WEB_SEARCH_PROVIDER=auto.`
+}
+
 /**
  * Run a search using the configured provider chain.
  *
@@ -152,8 +173,7 @@ export async function runSearch(
     if (provider && !provider.isConfigured()) {
       throw new Error(
         `Search provider "${mode}" is not configured. ` +
-        `Set the required environment variable (e.g. ${mode.toUpperCase()}_API_KEY) ` +
-        `or switch to WEB_SEARCH_PROVIDER=auto.`,
+        providerSetupHint(mode),
       )
     }
   }
