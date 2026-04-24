@@ -216,6 +216,9 @@ async function pollLoop(): Promise<void> {
             try { h(chatId, text) }
             catch (err) { logForDebugging(`[telegram] message handler error: ${err}`) }
           }
+          // Also feed non-command messages into the DuckHive REPL command queue
+          // so they are processed as user queries.
+          queueTelegramMessageForRepl(chatId, text)
         }
       }
     }

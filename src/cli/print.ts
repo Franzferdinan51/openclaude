@@ -370,6 +370,33 @@ const extractMemoriesModule = feature('EXTRACT_MEMORIES')
   : null
 /* eslint-enable @typescript-eslint/no-require-imports */
 
+// ─── Telegram bridge state ─────────────────────────────────────────────────────
+// Lazily initialized; holds the sender function once startTelegramService runs.
+let telegramSender: ((text: string) => Promise<void>) | null = null
+// Set after bridgeHandle is initialized so Telegram messages can be forwarded
+// to the REPL queue. Reset to null when the bridge is torn down.
+let bridgeHandleForTelegram: typeof bridgeHandle = null
+
+// Init Telegram service lazily — must run after enqueue is available in run().
+// Calls onTelegramReplMessage to register a handler that enqueues Telegram
+// texts into the DuckHive command queue.
+async function initTelegramIfNeeded(): Promise<void> {
+  if (telegramSender) return // already started
+  const {
+    startTelegramService,
+    onTelegramReplMessage,
+    sendTelegramMessage,
+  } = await import('../services/telegram/index.js')
+  telegramSender = sendTelegramMessage
+  // Register: Telegram text → REPL queue (enqueue is captured from run() closure)
+  onTelegramReplMessage(async (text: string) => {
+    enqueue({ value: text, mode: 'prompt' })
+    // Wake up the REPL loop if it's waiting for input
+    void run()
+  })
+  await startTelegramService()
+}
+
 const SHUTDOWN_TEAM_PROMPT = `<system-reminder>
 You are running in non-interactive mode and cannot return a response to the user until your team is shut down.
 
@@ -1521,6 +1548,28 @@ function runHeadlessStreaming(
     bridgeLastForwardedIndex = mutableMessages.length
     if (newMessages.length > 0) {
       bridgeHandle.writeMessages(newMessages)
+      // Forward assistant message text to Telegram.
+      if (bridgeHandleForTelegram && telegramSender) {
+        for (const m of newMessages) {
+          if (m.type === 'assistant') {
+            const content = m.message.content
+            let text: string | undefined
+            if (typeof content === 'string') {
+              text = content
+            } else if (Array.isArray(content)) {
+              for (const block of content) {
+                if (block.type === 'text') {
+                  text = (block as { type: 'text'; text: string }).text
+                  break
+                }
+              }
+            }
+            if (text) {
+              void telegramSender(text)
+            }
+          }
+        }
+      }
     }
   }
 
@@ -3973,6 +4022,11 @@ function runHeadlessStreaming(
                 } else {
                   bridgeHandle = handle
                   bridgeLastForwardedIndex = mutableMessages.length
+                  // Set up Telegram bridge: register the REPL handler so Telegram
+                  // messages get enqueued, and save bridgeHandle so outbound
+                  // assistant messages are forwarded to Telegram.
+                  bridgeHandleForTelegram = handle
+                  void initTelegramIfNeeded()
                   // Forward permission requests to the bridge
                   structuredIO.setOnControlRequestSent(request => {
                     handle.sendControlRequest(request)
@@ -4005,6 +4059,7 @@ function runHeadlessStreaming(
               structuredIO.setOnControlRequestResolved(undefined)
               await bridgeHandle.teardown()
               bridgeHandle = null
+              bridgeHandleForTelegram = null
             }
             sendControlResponseSuccess(message)
           }
