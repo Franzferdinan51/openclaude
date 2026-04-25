@@ -97,10 +97,17 @@ func (a *Adapter) connect() error {
 }
 
 // startSubprocess spawns the TS bridge as a child process.
+// Uses Setpgid to create a new process group, detaching the subprocess from
+// Terminal's session so the shell-reaper cannot corrupt its state on exit.
 func (a *Adapter) startSubprocess() error {
 	a.ctx, a.cancel = context.WithCancel(context.Background())
 
 	cmd := exec.CommandContext(a.ctx, a.bridgeCmd, a.bridgeArgs...)
+	// Create a new process group — the subprocess becomes the leader.
+	// This prevents Terminal's shell-reaper from sending signals to or corrupting
+	// the state of the TS bridge subprocess when Terminal closes or crashes.
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
 		return fmt.Errorf("stdin pipe: %w", err)
@@ -166,7 +173,9 @@ func (a *Adapter) Close() error {
 		a.conn.Close()
 	}
 	if a.proc != nil {
-		a.proc.Signal(syscall.SIGTERM)
+		// Kill the entire process group (including all children) to ensure
+		// clean termination. Using negative PID kills the whole group.
+		syscall.Kill(-a.proc.Pid, syscall.SIGTERM)
 	}
 	if a.stdin != nil {
 		a.stdin.Close()
