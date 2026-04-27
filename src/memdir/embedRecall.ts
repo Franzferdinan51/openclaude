@@ -215,33 +215,28 @@ export function indexDocument(id: string, text: string): void {
 
   const tokens = tokenize(text)
 
-  // Try LM Studio first; fall back to TF-IDF
-  let vector: Record<string, number> | null = null
-
-  getLmStudioEmbedding(text)
-    .then(emb => {
-      if (emb) {
-        const existing = idx.docs.find(d => d.id === id)
-        if (!existing) {
-          idx.docs.push({ id, text, vector: emb, indexedAt: Date.now() })
-          saveIndex(idx)
-        }
-      }
-    })
-    .catch(() => { /* LM Studio unavailable, skip */ })
-
-  // TF-IDF fallback (synchronous, always runs)
-  // Build per-doc IDF from all existing docs for accurate similarity
+  // Build TF-IDF vector synchronously (always runs)
   const allTokens = idx.docs.map(d => tokenize(d.text))
   allTokens.push(tokens)
   const idf = buildIdf(allTokens)
   const tf = computeTf(tokens)
-  vector = tfidfVector(tf, idf)
+  const vector = tfidfVector(tf, idf)
 
-  // Remove existing (shouldn't exist since we filtered above, but be safe)
-  idx.docs = idx.docs.filter(d => d.id !== id)
+  // Fire-and-forget LM Studio embedding — if it responds, upgrade the entry
+  // Use a fresh local idx so the module-level cachedIndex stays valid
+  const localIdx = ensureIndex()
+  getLmStudioEmbedding(text)
+    .then(emb => {
+      if (emb) {
+        localIdx.docs = localIdx.docs.filter(d => d.id !== id)
+        localIdx.docs.push({ id, text, vector: emb, indexedAt: Date.now() })
+        saveIndex(localIdx)
+      }
+    })
+    .catch(() => { /* LM Studio unavailable, skip */ })
+
+  // Always push TF-IDF entry first (synchronous, stable)
   idx.docs.push({ id, text, vector, indexedAt: Date.now() })
-
   cachedIdf = idf
   saveIndex(idx)
 }
@@ -262,22 +257,23 @@ export function search(
   // Build query vector
   const queryTokens = tokenize(query)
 
-  // Try LM Studio for query embedding first
-  let queryVector: Record<string, number> | null = null
-
-  getLmStudioEmbedding(query)
-    .then(emb => {
-      if (emb) queryVector = emb
-    })
-    .catch(() => { /* fall through to TF-IDF */ })
-
-  // TF-IDF query vector (synchronous fallback)
+  // Build TF-IDF query vector synchronously (reliable baseline)
   const allTokens = idx.docs.map(d => tokenize(d.text))
   const idf = cachedIdf && Object.keys(cachedIdf).length > 0
     ? cachedIdf
     : buildIdf(allTokens)
   const queryTf = computeTf(queryTokens)
-  queryVector = tfidfVector(queryTf, idf)
+  let queryVector = tfidfVector(queryTf, idf)
+
+  // LM Studio: fire-and-forget upgrade — don't overwrite TF-IDF result
+  getLmStudioEmbedding(query)
+    .then(emb => {
+      if (emb) {
+        // Re-score with LM Studio embeddings (overwrite queryVector)
+        queryVector = emb
+      }
+    })
+    .catch(() => { /* LM Studio unavailable, TF-IDF result stands */ })
 
   // Score all docs
   const results: SearchResult[] = idx.docs.map(doc => ({

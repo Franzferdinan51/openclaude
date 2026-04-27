@@ -14,6 +14,18 @@ REPORT_DIR="$HOME/.openclaw/logs/duckhive-nightly"
 BUILD_LOG="$REPORT_DIR/build-$(date +%Y%m%d).log"
 REPORT_FILE="$REPORT_DIR/report-$(date +%Y%m%d).txt"
 
+# Explicit PATH — cron runs with minimal env
+BUN="$HOME/.bun/bin/bun"
+if [ -x "$BUN" ]; then
+  export PATH="$HOME/.bun/bin:$HOME/.bun/bin/bun:$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin"
+else
+  export PATH="$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin"
+fi
+LOG_DIR="$HOME/.openclaw/logs"
+REPORT_DIR="$HOME/.openclaw/logs/duckhive-nightly"
+BUILD_LOG="$REPORT_DIR/build-$(date +%Y%m%d).log"
+REPORT_FILE="$REPORT_DIR/report-$(date +%Y%m%d).txt"
+
 mkdir -p "$LOG_DIR" "$REPORT_DIR"
 
 # =============================================================================

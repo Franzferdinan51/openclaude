@@ -145,7 +145,7 @@ export function prependPathRefs(
 ): string | Array<ContentBlockParam> {
   if (!prefix) return content
   if (typeof content === 'string') return prefix + content
-  const i = content.findLastIndex(b => b.type === 'text')
+  const i = content.length - [...content].reverse().findIndex(b => b.type === "text") - 1
   if (i !== -1) {
     const b = content[i]!
     if (b.type === 'text') {
