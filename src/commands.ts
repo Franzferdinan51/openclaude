@@ -21,6 +21,7 @@ import diff from './commands/diff/index.js'
 import dream from './commands/dream/index.js'
 import ctx_viz from './commands/ctx_viz/index.js'
 import doctor from './commands/doctor/index.js'
+import duckcustodian from './commands/duckcustodian/index.js'
 import onboardGithub from './commands/onboard-github/index.js'
 import memory from './commands/memory/index.js'
 import repomap from './commands/repomap/index.js'
@@ -312,6 +313,7 @@ const COMMANDS = memoize((): Command[] => [
   diff,
   dream,
   doctor,
+  duckcustodian,
   effort,
   exit,
   fast,
