@@ -122,12 +122,14 @@ class LRUMap<K, V> {
 
   /**
    * Remove the oldest (first) entry when over CACHE_MAX_ENTRIES.
+   * Calls recordEviction() for each removed entry so the counter stays accurate.
    */
   evictIfFull(): void {
     while (this.map.size > CACHE_MAX_ENTRIES) {
       const oldest = this.map.keys().next().value
       if (oldest !== undefined) {
         this.map.delete(oldest)
+        recordEviction()
       }
     }
   }
@@ -144,6 +146,11 @@ const cache = new LRUMap<string, CacheEntry>()
 let hits = 0
 let misses = 0
 let evictions = 0
+
+/** Called by LRUMap.evictIfFull() whenever an entry is evicted */
+function recordEviction(): void {
+  evictions++
+}
 
 // ---------------------------------------------------------------------------
 // Key construction
