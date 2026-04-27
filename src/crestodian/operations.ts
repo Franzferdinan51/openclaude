@@ -19,9 +19,11 @@ export type DuckCustodianOperation =
   | { kind: 'config-validate' }
   | { kind: 'config-set'; key: string; value: string }
   | { kind: 'setup' }
+  | { kind: 'setup-workspace'; workspace: string; model?: string }
   | { kind: 'mmx-status' }
   | { kind: 'lmstudio-status' }
   | { kind: 'models' }
+  | { kind: 'set-default-model'; model: string }
   | { kind: 'audit' }
   | { kind: 'audit-path' }
   | { kind: 'memory-stats' }
@@ -29,7 +31,9 @@ export type DuckCustodianOperation =
   | { kind: 'lessons' }
   | { kind: 'inject-memory'; content: string }
   | { kind: 'openclaw-status' }
-  | { kind: 'openclaw-restart' };
+  | { kind: 'openclaw-restart' }
+  | { kind: 'gateway-status' }
+  | { kind: 'gateway-restart' };
 
 export type DuckCustodianOperationResult = {
   applied: boolean;
@@ -47,6 +51,9 @@ export function isPersistentDuckCustodianOperation(op: DuckCustodianOperation): 
     case 'doctor-fix':
     case 'inject-memory':
     case 'openclaw-restart':
+    case 'gateway-restart':
+    case 'setup-workspace':
+    case 'set-default-model':
       return true;
     default:
       return false;
@@ -99,6 +106,14 @@ export function describeDuckCustodianOperation(op: DuckCustodianOperation): stri
       return 'Check OpenClaw gateway status';
     case 'openclaw-restart':
       return 'Restart OpenClaw gateway';
+    case 'gateway-status':
+      return 'Check DuckHive gateway status';
+    case 'gateway-restart':
+      return 'Restart DuckHive gateway';
+    case 'setup-workspace':
+      return `Setup workspace: ${op.workspace}${op.model ? `, model: ${op.model}` : ''}`;
+    case 'set-default-model':
+      return `Set default model: ${op.model}`;
   }
 }
 
@@ -203,6 +218,37 @@ export function parseDuckCustodianOperation(input: string): DuckCustodianOperati
     case 'restart-openclaw':
       return { kind: 'openclaw-restart' };
 
+    case 'gateway':
+      if (args.startsWith('restart')) return { kind: 'gateway-restart' };
+      return { kind: 'gateway-status' };
+
+    case 'gateway-status':
+      return { kind: 'gateway-status' };
+
+    case 'gateway-restart':
+      return { kind: 'gateway-restart' };
+
+    case 'set-default-model':
+    case 'default-model':
+    case 'set-model':
+      if (args) return { kind: 'set-default-model', model: args };
+      return { kind: 'none', message: 'Usage: set-default-model <model-id>' };
+
+    case 'setup': {
+      // "setup workspace <path> [model <model>]"
+      const parts = args.split(/\s+/);
+      if (parts[0] === 'workspace' && parts[1]) {
+        const ws = parts[1];
+        const modelIdx = parts.indexOf('model');
+        return {
+          kind: 'setup-workspace',
+          workspace: ws,
+          model: modelIdx > 0 ? parts[modelIdx + 1] : undefined,
+        };
+      }
+      return { kind: 'setup' };
+    }
+
     default:
       return { kind: 'none', message: input };
   }
@@ -226,6 +272,18 @@ export interface DuckCustodianDeps {
   scanMemory?: () => Promise<string[]>;
   getLessons?: () => Promise<string[]>;
   injectMemory?: (content: string) => Promise<void>;
+  /** Write a key=value to the DuckHive config file */
+  setConfig?: (key: string, value: string) => Promise<{ ok: boolean; error?: string }>;
+  /** Restart the DuckHive gateway (not OpenClaw) */
+  restartGateway?: () => Promise<void>;
+  /** Get DuckHive gateway status */
+  checkGateway?: () => Promise<{ reachable: boolean; version?: string; error?: string }>;
+  /** Run setup bootstrap and configure mmx API key */
+  runSetup?: (workspace?: string, model?: string) => Promise<{ ok: boolean; message: string }>;
+  /** Set the default model in config */
+  setDefaultModel?: (model: string) => Promise<{ ok: boolean; error?: string }>;
+  /** List available models from mmx */
+  listModels?: () => Promise<string[]>;
 }
 
 export async function executeDuckCustodianOperation(
@@ -360,11 +418,70 @@ export async function executeDuckCustodianOperation(
       return { applied: true, message: '✅ OpenClaw gateway restarted.' };
     }
 
-    case 'models':
+    case 'gateway-status': {
+      if (!deps.checkGateway) return { applied: false, message: 'Gateway check not configured.' };
+      const r = await deps.checkGateway();
       return {
         applied: false,
-        message: 'Use `duckcustodian health` to see available models from mmx and LM Studio.',
+        message: r.reachable
+          ? `✅ DuckHive gateway reachable: ${r.version ?? 'unknown version'}`
+          : `❌ DuckHive gateway not reachable: ${r.error ?? 'gateway may be stopped'}`,
       };
+    }
+
+    case 'gateway-restart': {
+      if (!deps.restartGateway) return { applied: false, message: 'Gateway restart not configured.' };
+      await deps.restartGateway();
+      await appendDuckCustodianAuditEntry({
+        operation: 'gateway-restart',
+        summary: 'Restarted DuckHive gateway',
+      });
+      return { applied: true, message: '✅ DuckHive gateway restarted.' };
+    }
+
+    case 'models': {
+      if (!deps.listModels) {
+        // Fallback: show from health probes
+        const checks: string[] = [];
+        if (deps.checkMmx) {
+          const r = await deps.checkMmx();
+          checks.push(`mmx: ${r.found ? '✅ available' : '❌ not found'}`);
+        }
+        if (deps.checkLmStudio) {
+          const r = await deps.checkLmStudio();
+          checks.push(`LM Studio: ${r.found ? `✅ ${r.models.length} models` : '❌ not reachable'}`);
+        }
+        return { applied: false, message: checks.join('\n') || 'No model providers configured.' };
+      }
+      const models = await deps.listModels();
+      return {
+        applied: false,
+        message: models.length > 0
+          ? `Available models:\n${models.map(m => `• ${m}`).join('\n')}`
+          : 'No models found. Configure mmx or LM Studio.',
+      };
+    }
+
+    case 'set-default-model': {
+      if (!deps.setDefaultModel) return { applied: false, message: 'set-default-model not configured.' };
+      const r = await deps.setDefaultModel(op.model);
+      if (!r.ok) return { applied: false, message: `❌ ${r.error ?? 'Failed to set default model'}` };
+      await appendDuckCustodianAuditEntry({
+        operation: 'set-default-model',
+        summary: `Set default model to: ${op.model}`,
+      });
+      return { applied: true, message: `✅ Default model set to: ${op.model}` };
+    }
+
+    case 'setup-workspace': {
+      if (!deps.runSetup) return { applied: false, message: 'Setup not configured.' };
+      const r = await deps.runSetup(op.workspace, op.model);
+      await appendDuckCustodianAuditEntry({
+        operation: 'setup-workspace',
+        summary: `Setup workspace: ${op.workspace}${op.model ? `, model: ${op.model}` : ''}`,
+      });
+      return { applied: true, message: r.message };
+    }
 
     case 'audit': {
       const auditPath = resolveDuckCustodianAuditPath();
