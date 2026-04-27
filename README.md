@@ -5,9 +5,9 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.5-blue?style=for-the-badge&logo=typescript)](package.json)
 [![Bun](https://img.shields.io/badge/Bun-1.1-yellow?style=for-the-badge&logo=bun)](package.json)
 
-**The Mega AI Coding Harness** — Forked from [Gitlawb/openclaude](https://github.com/Gitlawb/openclaude) and extended with MiniMax M2.7, Agent Teams, AI Council, and full MiniMax CLI integration.
+**The Mega AI Coding Harness** — Forked from [Gitlawb/openclaude](https://github.com/Gitlawb/openclaude) and extended with MiniMax M2.7, Agent Teams, AI Council, and full MiniMax CLI integration. Built with 3-layer memory (BM25 → embed → LESSONS), swarm voting, task planning, budget enforcement, and unified channel adapters.
 
-[Features](#features) · [Quick Start](#getting-started) · [DuckHive mmx](#duckhive-mmx) · [Agent Teams](#agent-teams) · [Architecture](#architecture) · [Comparison](#what-duckhive-adds-over-openclaude)
+[Features](#features) · [Quick Start](#getting-started) · [DuckHive mmx](#duckhive-mmx) · [Agent Teams](#agent-teams) · [Memory Layers](#memory--intelligence) · [Architecture](#architecture) · [Comparison](#what-duckhive-adds-over-openclaude)
 
 ---
 
@@ -365,6 +365,23 @@ Code swarming launches parallel sub-agents across 17 specialized domains to tack
 
 **Domain agents include:** coding, code-review, security, debugging, architecture, testing, devops, research, analysis, docs, optimization, refactor, backend, frontend, mobile, infrastructure, data
 
+### Swarm Voting — Multi-Agent Response Routing
+
+When multiple agents respond, DuckHive routes the best response through three strategies:
+
+```bash
+/swarm vote           # Peer voting — agents score each other's work
+/swarm merge          # Merge — combine complementary responses
+/swarm pick-best      # Pick — score by completeness + correctness + code quality
+```
+
+**Strategies:**
+- `vote()` — agents rate peers, highest score wins (LLM-based peer scoring)
+- `merge()` — combine responses, deduplicate overlapping sections
+- `pickBest()` — heuristic scoring: completeness (40%), correctness (30%), code quality (30%)
+
+Integrates with existing `teammateMailbox.ts` — no new agent spawning mechanism needed.
+
 ---
 
 ### /acp — ACP Server for IDE Integration
@@ -490,9 +507,100 @@ duckhive dmcp health        # Check MCP server health
 
 ---
 
+### Memory & Intelligence — 3-Layer Recall System
+
+DuckHive layers three memory systems for progressively smarter recall:
+
+```
+Query → BM25 (keyword, fast) → EmbedRecall (semantic) → LESSONS (permanent failure moat)
+```
+
+**BM25 Keyword Search** (`src/memdir/bm25.ts`) — From-scratch BM25, no external deps:
+- Inverted index over all session files, stored in `~/.duckhive/bm25-index.json`
+- Tokenize: lowercase, strip punctuation, split on whitespace
+- BM25 formula: k1=1.5, b=0.75
+- `buildIndex()`, `search(query, limit?)`, `updateIndex()`, `clearIndex()`
+
+**Embed Recall** (`src/memdir/embedRecall.ts`) — Semantic/conceptual search:
+- Primary: LM Studio `/v1/embeddings` if `LM_STUDIO_URL` is set
+- Fallback: TF-IDF cosine similarity (no external calls, runs locally)
+- 82 stopwords filtered, IDF rebuilt on every index update
+- `indexDocument()`, `search()`, `clearIndex()`, `indexSessionContent()`
+
+**LESSONS.md** (`src/memdir/lessons.ts`) — Permanent failure moat:
+- Append-only log of every provider failure, tool error, API limit, and infra mistake
+- Never compacted, never deleted — the permanent record of what doesn't work
+- `recordLesson()`, `getLessonsForTask(query)`, `recordProviderFailure()`, `recordToolError()`
+- Auto-deduplication: 80% word overlap threshold prevents recording the same failure twice
+- Pre-flight check: `getLessonsForTask()` called at session start before repeating past approaches
+- Location: `<memdir>/LESSONS.md`, tags: `provider-failure`, `tool-error`, `api-limit`, `infra`, `code-pattern`, `permission`, `security`
+
+### Task Planner — Structured Decomposition
+
+DuckHive plans complex tasks before executing, with two planner strategies:
+
+```bash
+# Auto-selects based on task complexity
+/plan "Build a REST API with auth"
+
+# Force LLM planner for complex tasks
+/plan --llm "Architect a microservices system"
+```
+
+**SimplePlanner** — Fast keyword heuristics, dependency ordering, per-step complexity scoring.
+
+**LLMPlanner** — Full reasoning for complex tasks (complexity ≥7), JSON plan output, falls back to SimplePlanner on parse errors.
+
+### Budget Tracker — Daily Spend Enforcement
+
+Tracks spend per provider daily and auto-falls back when budgets are exhausted:
+
+```bash
+/budget                 # Show current spend and remaining
+/budget set minimax 5.00  # Set $5/day limit on minimax
+/budget reset          # Reset all spend counters
+```
+
+State: `~/.duckhive/budget-state.json` · Log: `~/.duckhive/budget-log.jsonl` · Fail-open (never blocks API calls).
+
+### Provider Cache — 30s Response Cache
+
+Cache LLM responses for 30 seconds to skip redundant API calls:
+
+```bash
+/cache                  # Show cache stats (hits, misses, size)
+/cache clear           # Flush entire cache
+```
+
+Keyed by `model::baseUrl::SHA256(messages)`, LRU eviction at 1000 entries. TTL configurable via `PROVIDER_CACHE_TTL=30`.
+
+### Custom Providers — OpenAI-Compatible Endpoints
+
+Add any OpenAI-compatible API without code changes:
+
+```bash
+/provider add my-endpoint --base-url https://api.example.com --api-key sk-xxx --model chat
+/provider list            # Show all custom providers
+/provider remove my-endpoint
+```
+
+Config: `~/.duckhive/custom-providers.json` · Auto health-checks endpoints on add.
+
+### Channel Adapters — Unified Messaging
+
+DuckHive unifies messaging across channels through a shared interface — the agent loop doesn't know or care which channel it's talking to:
+
+```bash
+/channel list           # Show all registered adapters
+/channel status telegram  # Check Telegram adapter health
+/channel send telegram "Hello"  # Send via Telegram
+```
+
+Adapters: **TelegramAdapter** · **WebhookAdapter** (HTTP receiver) · **EmailAdapter** (IMAP/SMTP) · **ConsoleAdapter** (local TUI/REPL for debugging). All normalize to DuckHive's `Message` type.
+
 ### Custom Tools
 
-DuckHive adds 30+ custom tools on top of the OpenClaude base:
+DuckHive adds 40+ custom tools on top of the OpenClaude base:
 
 | Tool | Command | Description |
 |------|---------|-------------|
@@ -502,20 +610,29 @@ DuckHive adds 30+ custom tools on top of the OpenClaude base:
 | **HiveDecreeTool** | `/decree` | Issue and enforce binding laws |
 | **HiveOrchestrateTool** | `/orchestrate` | Smart complexity-based routing with parallel agent execution |
 | **HiveSwarmTool** | `/swarm` | Code swarming — 17 domain agents in parallel |
+| **SwarmVotingTool** | `/swarm vote\|merge\|pick-best` | Multi-agent response routing |
 | **ConnectTool** | `/connect` | Connect Telegram bots and external services |
 | **MultiModelRouterTool** | `/router` | Route across 9+ providers |
 | **ShadowGitTool** | `/shadow` | Git snapshots before changes (Gemini CLI style) |
 | **CheckpointTool** | `/checkpoint` | Save and restore long AI sessions |
 | **ContextTool** | `/context` | Hierarchical DUCK.md loading |
+| **TaskPlannerTool** | `/plan` | Structured task decomposition (heuristic or LLM) |
 | **AndroidTool** | `/android` | Full Android control via ADB |
 | **VisionTool** | `/vision` | Phone screenshot + AI analysis |
 | **MemoryTool** | `/memory` | Long-term remember/recall |
+| **LessonsTool** | `/lessons` | Permanent failure moat — provider/tool error log |
+| **BM25Tool** | `/bm25` | Keyword search across all sessions |
+| **EmbedRecallTool** | `/embed` | Semantic search across memory |
 | **KAIROSTool** | `/kairos` | Proactive heartbeat daemon |
 | **MeshTool** | `/mesh` | Agent mesh networking |
 | **SkillTool** | `/skill` | Runtime skill creation |
 | **SkillManageTool** | `/skills` | Create, edit, and manage skills |
 | **SessionSearchTool** | — | FTS5 full-text search across past sessions |
 | **CronRunTool** | `/cron` | Manually trigger scheduled cron jobs |
+| **BudgetTrackerTool** | `/budget` | Daily spend enforcement with auto-fallback |
+| **ProviderCacheTool** | `/cache` | 30s response cache for provider calls |
+| **CustomProvidersTool** | `/provider add\|list\|remove` | OpenAI-compatible endpoint config |
+| **ChannelAdapterTool** | `/channel` | Unified messaging — Telegram/Webhook/Email/Console |
 | **SecretScannerTool** | — | Detect secrets before writing to memory |
 | **SSRFValidationTool** | — | DNS-based URL validation for SSRF protection |
 | **TrustedFoldersTool** | `/trusted-folders` | Folder-level security boundaries |
@@ -552,7 +669,17 @@ DuckHive v0.8.0
 │   ├── /senate    — 94 senators, binding decrees
 │   ├── /team      — spawn by role (researcher, coder, reviewer...)
 │   ├── /swarm     — 17 domain agents in parallel (code-swarm)
-│   └── /decree    — binding laws enforced across agents
+│   ├── /decree    — binding laws enforced across agents
+│   └── Swarm Voting — vote / merge / pick-best response routing
+├── 3-Layer Memory & Intelligence
+│   ├── BM25 (keyword) — inverted index, ~/.duckhive/bm25-index.json
+│   ├── Embed Recall (semantic) — TF-IDF or LM Studio embeddings
+│   └── LESSONS.md (permanent) — append-only failure moat, never deleted
+├── Task Planner — SimplePlanner (heuristic) + LLMPlanner (complexity ≥7)
+├── Budget Tracker — daily spend enforcement, ~/.duckhive/budget-state.json
+├── Provider Cache — 30s LRU response cache, ~/.duckhive/provider-cache/
+├── Custom Providers — OpenAI-compatible endpoint config
+├── Channel Adapters — Telegram / Webhook / Email / Console
 ├── AI Council (46 councilors)
 ├── Hybrid Orchestrator
 │   ├── Task Complexity Classifier (1–10)
@@ -563,7 +690,7 @@ DuckHive v0.8.0
 ├── MCP support (dmcp CLI)
 ├── Ctrl-X shell toggle
 ├── DUCK.md hierarchical context
-└── 30+ Custom Tools
+└── 40+ Custom Tools
 ```
 
 ---
@@ -595,6 +722,15 @@ DuckHive v0.8.0
 | **PR/Changelog Tools** | ❌ | ✅ /changelog, /pr-size, /introspect |
 | **Secret Scanner** | ❌ | ✅ Detect secrets before memory writes |
 | **SSRF Protection** | ❌ | ✅ DNS-based URL validation |
+| **BM25 Keyword Search** | ❌ | ✅ Full-text session search, no deps |
+| **Embed Recall** | ❌ | ✅ Semantic search (TF-IDF or LM Studio) |
+| **LESSONS.md** | ❌ | ✅ Permanent failure moat, never deleted |
+| **Task Planner** | ❌ | ✅ Heuristic + LLM task decomposition |
+| **Budget Tracker** | ❌ | ✅ Daily spend enforcement + auto-fallback |
+| **Provider Cache** | ❌ | ✅ 30s LRU response cache for all providers |
+| **Custom Providers** | ❌ | ✅ OpenAI-compatible endpoint config |
+| **Channel Adapters** | ❌ | ✅ Telegram / Webhook / Email / Console |
+| **Swarm Voting** | ❌ | ✅ vote / merge / pick-best response routing |
 
 ---
 
