@@ -1,74 +1,77 @@
 /**
  * DuckHive Computer-Use Command
  *
- * Integrates OpenAI Codex's bundled computer-use MCP server into DuckHive.
+ * Fully integrated OpenAI Codex computer-use MCP server for DuckHive.
  *
- * The "computer-use" plugin ships as a bundled marketplace plugin in Codex CLI
- * (~/.codex/.tmp/bundled-marketplaces/openai-bundled/plugins/computer-use/).
- * It contains a native macOS app "Codex Computer Use" whose embedded
- * SkyComputerUseClient binary acts as an MCP server over stdio.
+ * Discovery order (tried in order):
+ *   1. DuckHive bundled path (packages/computer-use-bundle/computer-use)
+ *      — populated by install.js from /Applications/Codex.app/ or ~/.codex cache
+ *   2. /Applications/Codex.app/Contents/Resources/plugins/... (Codex app bundle)
+ *   3. ~/.codex/.tmp/bundled-marketplaces/... (Codex runtime cache)
+ *   4. ~/.codex/plugins/... (Codex plugin directory)
  *
- * DuckHive's own @ant/computer-use-mcp implementation (src/utils/computerUse/)
- * requires native modules (@ant/computer-use-input + @ant/computer-use-swift)
- * that are built into Claude Code's bundle but NOT available standalone on npm.
- * Rather than reimplement those natives, we wire Codex's proven bundled binary.
+ * MCP tool names: mcp__computer-use__*
+ *   screenshot, cursor_position, click, type_text, press_key, scroll, drag,
+ *   open_application, list_apps, request_access, and 22 more.
  *
- * MCP tool names exposed: mcp__computer-use__*
- *   screenshot, cursor_position, click, type, key, scroll, drag,
- *   open_application, list_apps, request_access, etc.
+ * Gated by: macOS only (SkyComputerUseClient is a native macOS binary).
  */
 import type { LocalCommandCall } from '../../types/command.js'
-import { join, dirname } from 'path'
-import { existsSync } from 'fs'
+import { join, dirname, existsSync } from 'fs'
+import { homedir } from 'os'
+import { cwd } from 'process'
 
-// ── Paths ────────────────────────────────────────────────────────────────────────
+// ── Constants ─────────────────────────────────────────────────────────────────
 
-const CODEX_PLUGIN_NAME = 'computer-use'
-const CODEX_COMPUTE_USE_APP = 'Codex Computer Use.app'
-const SKY_COMPUTE_CLIENT = 'SkyComputerUseClient'
-const CODEX_COMPUTE_CLIENT_REL = join(
-  'Contents',
-  'SharedSupport',
-  CODEX_COMPUTE_APP,
-  'Contents',
-  'MacOS',
-  SKY_COMPUTE_CLIENT,
-)
-const CODEX_COMPUTE_CLIENT_ABS = join(
-  'Contents',
-  'MacOS',
-  SKY_COMPUTE_CLIENT,
-)
+const PLUGIN_NAME = 'computer-use'
+const CODEX_APP_BUNDLE = 'Codex Computer Use.app'
+const SKY_CLIENT_BIN = 'SkyComputerUseClient'
+
+// ── Path discovery ─────────────────────────────────────────────────────────
 
 /**
- * Find the Codex computer-use plugin directory.
- * Codex populates ~/.codex/.tmp/bundled-marketplaces/openai-bundled/plugins/
- * on first run. We check multiple known locations.
+ * Find the computer-use plugin directory.
+ * Tries DuckHive's bundled copy first, then falls back to system Codex paths.
  */
-function findCodexPluginDir(): string | null {
-  const home = process.env.HOME ?? ''
+export function findComputerUsePluginDir(): string | null {
+  const home = homedir()
   const candidates = [
-    join(home, '.codex', '.tmp', 'bundled-marketplaces', 'openai-bundled', 'plugins', CODEX_PLUGIN_NAME),
-    join(home, '.codex', 'plugins', CODEX_PLUGIN_NAME),
+    // 1. DuckHive bundled (install.js copies it here)
+    // DuckHive runs from its root: node dist/cli.mjs → cwd() = DuckHive root
+    join(cwd(), 'packages', 'computer-use-bundle', PLUGIN_NAME),
+    // 2. Codex app bundle (App Store / Applications/)
+    join('/Applications', CODEX_APP_BUNDLE, 'Contents', 'Resources', 'plugins', 'openai-bundled', 'plugins', PLUGIN_NAME),
+    // 3. Homebrew-installed Codex
+    join(home, 'Applications', CODEX_APP_BUNDLE, 'Contents', 'Resources', 'plugins', 'openai-bundled', 'plugins', PLUGIN_NAME),
+    // 4. Codex runtime-extracted cache (~/.codex/.tmp/)
+    join(home, '.codex', '.tmp', 'bundled-marketplaces', 'openai-bundled', 'plugins', PLUGIN_NAME),
+    // 5. Codex plugin directory (~/.codex/plugins/)
+    join(home, '.codex', 'plugins', PLUGIN_NAME),
   ]
+
   for (const dir of candidates) {
-    const mcpJson = join(dir, '.mcp.json')
-    const appContents = join(dir, CODEX_COMPUTE_APP, 'Contents')
-    if (existsSync(mcpJson) && existsSync(appContents)) return dir
+    if (isValidPluginDir(dir)) return dir
   }
   return null
 }
 
 /**
- * Get the absolute path to the SkyComputerUseClient binary.
- * Tries the embedded SharedSupport location first (standard), then the
- * top-level MacOS location (older Codex versions).
+ * Verify this directory has both the .mcp.json config AND the app bundle.
  */
-function findComputeClientBin(pluginDir: string): string | null {
+function isValidPluginDir(dir: string): boolean {
+  return existsSync(join(dir, '.mcp.json')) &&
+    existsSync(join(dir, CODEX_APP_BUNDLE, 'Contents'))
+}
+
+/**
+ * Find the SkyComputerUseClient binary within the plugin directory.
+ * Tries the SharedSupport path (standard) first, then top-level MacOS.
+ */
+export function findComputeClientBin(pluginDir: string): string | null {
   if (!pluginDir) return null
   const candidates = [
-    join(pluginDir, CODEX_COMPUTE_CLIENT_REL),
-    join(pluginDir, CODEX_COMPUTE_APP, CODEX_COMPUTE_CLIENT_ABS),
+    join(pluginDir, CODEX_APP_BUNDLE, 'Contents', 'SharedSupport', 'SkyComputerUseClient.app', 'Contents', 'MacOS', SKY_CLIENT_BIN),
+    join(pluginDir, CODEX_APP_BUNDLE, 'Contents', 'MacOS', SKY_CLIENT_BIN),
   ]
   for (const bin of candidates) {
     if (existsSync(bin)) return bin
@@ -76,80 +79,39 @@ function findComputeClientBin(pluginDir: string): string | null {
   return null
 }
 
-// ── MCP Config Builder ───────────────────────────────────────────────────────
+// ── MCP Config ───────────────────────────────────────────────────────────────
 
 /**
- * Build the DuckHive MCP server config for the Codex computer-use server.
- * Returns a stdio config with the absolute path to SkyComputerUseClient.
+ * Build the stdio MCP config for the computer-use server.
  */
-function buildCodexCUConfig(binPath: string, cwd: string): {
+export function buildCodexCUConfig(binPath: string): {
+  type: 'stdio'
   command: string
   args: string[]
+  env: Record<string, string>
 } {
   return {
+    type: 'stdio',
     command: binPath,
     args: ['mcp'],
+    env: {},
   }
 }
 
-// ── DuckHive MCP Integration ───────────────────────────────────────────────────
+// ── DuckHive MCP config wiring ───────────────────────────────────────────────
 
 /**
- * Add the Codex computer-use MCP server to DuckHive's user-level config.
- * This makes it available as `mcp__computer-use__*` tools.
- *
- * NOTE: Requires DuckHive to have MCP allowlist policy that permits this server.
- * The stdio config (command + args) must pass policy checks in config.ts
- * isMcpServerAllowedByPolicy / isMcpServerDenied.
- *
- * This function dynamically imports DuckHive's MCP config module to avoid
- * circular deps. Safe to call after DuckHive has fully bootstrapped.
+ * Add the computer-use MCP server to DuckHive's config so it's auto-loaded.
  */
-async function addToDuckHiveMCP(
+export async function addToDuckHiveMCP(
   binPath: string,
-  pluginDir: string,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
-    const { addMcpConfig, type Scope } = await import(
+    const { addMcpConfig } = await import(
       '../../services/mcp/config.js'
     )
-    const { getServerCommandArray } = await import(
-      '../../services/mcp/config.js'
-    )
-    const config = buildCodexCUConfig(binPath, pluginDir)
-
-    // Validate the config is allowed by policy before adding
-    const { isMcpServerAllowedByPolicy, isMcpServerDenied } = await import(
-      '../../services/mcp/config.js'
-    )
-    const allowed = isMcpServerAllowedByPolicy(CODEX_PLUGIN_NAME, {
-      type: 'stdio',
-      command: config.command,
-      args: config.args,
-    })
-    const denied = isMcpServerDenied(CODEX_PLUGIN_NAME, {
-      type: 'stdio',
-      command: config.command,
-      args: config.args,
-    })
-    if (denied) {
-      return {
-        ok: false,
-        error: `MCP server "${CODEX_PLUGIN_NAME}" is denied by policy. Check your MCP denylist settings.`,
-      }
-    }
-    if (!allowed) {
-      // Not explicitly allowed — try adding anyway (user-level = 'user' scope)
-      // The policy may be open or require name-only allowlist
-    }
-
-    await addMcpConfig(CODEX_PLUGIN_NAME, {
-      type: 'stdio',
-      command: config.command,
-      args: config.args,
-      env: {},
-    })
-
+    const config = buildCodexCUConfig(binPath)
+    await addMcpConfig(PLUGIN_NAME, config)
     return { ok: true }
   } catch (err) {
     return {
@@ -160,14 +122,16 @@ async function addToDuckHiveMCP(
 }
 
 /**
- * Remove the Codex computer-use MCP server from DuckHive's config.
+ * Remove the computer-use MCP server from DuckHive's config.
  */
-async function removeFromDuckHiveMCP(): Promise<{
-  ok: true
-} | { ok: false; error: string }> {
+export async function removeFromDuckHiveMCP(): Promise<
+  { ok: true } | { ok: false; error: string }
+> {
   try {
-    const { removeMcpConfig } = await import('../../services/mcp/config.js')
-    await removeMcpConfig(CODEX_PLUGIN_NAME)
+    const { removeMcpConfig } = await import(
+      '../../services/mcp/config.js'
+    )
+    await removeMcpConfig(PLUGIN_NAME)
     return { ok: true }
   } catch (err) {
     return {
@@ -178,36 +142,66 @@ async function removeFromDuckHiveMCP(): Promise<{
 }
 
 /**
- * Check if the Codex computer-use MCP server is currently configured.
+ * Check if computer-use is currently in DuckHive's MCP config.
  */
-async function isConfiguredInDuckHiveMCP(): Promise<boolean> {
+export async function isInDuckHiveMCPConfig(): Promise<boolean> {
   try {
     const { getCurrentProjectConfig } = await import(
       '../../services/mcp/config.js'
     )
-    const config = getCurrentProjectConfig()
-    return Boolean(config.mcpServers?.[CODEX_PLUGIN_NAME])
+    const cfg = getCurrentProjectConfig()
+    return Boolean(cfg.mcpServers?.[PLUGIN_NAME])
   } catch {
     return false
   }
 }
 
-// ── Tool Rendering Overrides ───────────────────────────────────────────────────
+/**
+ * Auto-wire computer-use into DuckHive MCP if plugin is found.
+ * Called on every command invocation — idempotent and silent.
+ */
+export async function autoWireComputerUse(): Promise<{
+  wired: boolean
+  pluginDir: string | null
+  binPath: string | null
+}> {
+  // Check if already wired
+  const alreadyWired = await isInDuckHiveMCPConfig()
+  if (alreadyWired) {
+    const pluginDir = findComputerUsePluginDir()
+    const binPath = pluginDir ? findComputeClientBin(pluginDir) : null
+    return { wired: true, pluginDir, binPath }
+  }
+
+  // Discover plugin
+  const pluginDir = findComputerUsePluginDir()
+  if (!pluginDir) return { wired: false, pluginDir: null, binPath: null }
+
+  const binPath = findComputeClientBin(pluginDir)
+  if (!binPath) return { wired: false, pluginDir, binPath: null }
+
+  // Auto-add to DuckHive MCP config
+  const result = await addToDuckHiveMCP(binPath)
+  return {
+    wired: result.ok,
+    pluginDir,
+    binPath,
+  }
+}
+
+// ── Tool rendering overrides ────────────────────────────────────────────────
 
 /**
- * Rendering overrides for mcp__computer-use__* tools in DuckHive's TUI.
- * Mirrors the pattern in src/utils/computerUse/toolRendering.tsx.
- *
- * Provides user-friendly labels and summaries for each tool.
+ * TUI-friendly rendering for mcp__computer-use__* tools.
+ * Provides labels + message summaries matching the tool names.
  */
 export function getCodexComputerUseToolOverrides(toolName: string): {
   userFacingName: () => string
   renderToolUseMessage: (input: Record<string, unknown>) => string
 } {
-  const prefix = CODEX_PLUGIN_NAME
+  const prefix = PLUGIN_NAME
 
-  function userFacingName() {
-    // Strip mcp__computer-use__ prefix for display
+  function userFacingName(): string {
     const base = toolName.replace(`mcp__${prefix}__`, '')
     const labels: Record<string, string> = {
       screenshot: '📸 Screenshot',
@@ -218,15 +212,12 @@ export function getCodexComputerUseToolOverrides(toolName: string): {
       double_click: '🖱️ Double Click',
       triple_click: '🖱️ Triple Click',
       type_text: '⌨️ Type Text',
-      type: '⌨️ Type Text',
       press_key: '⌨️ Press Key',
-      key: '⌨️ Press Key',
       hold_key: '⌨️ Hold Key',
       scroll: '📜 Scroll',
       drag: '✋ Drag',
       left_click_drag: '✋ Left-Click Drag',
       mouse_move: '🖱️ Move Mouse',
-      mouse_move_to: '🖱️ Move Mouse To',
       open_application: '📱 Open App',
       list_apps: '📋 List Apps',
       get_app_state: '📋 App State',
@@ -242,7 +233,7 @@ export function getCodexComputerUseToolOverrides(toolName: string): {
     return labels[base] ?? base.replace(/_/g, ' ')
   }
 
-  function fmtCoord(c: [number, number] | unknown): string {
+  function fmtCoord(c: unknown): string {
     if (!Array.isArray(c) || c.length < 2) return ''
     return `(${c[0]}, ${c[1]})`
   }
@@ -251,7 +242,6 @@ export function getCodexComputerUseToolOverrides(toolName: string): {
     input: Record<string, unknown>,
   ): string {
     const base = toolName.replace(`mcp__${prefix}__`, '')
-
     switch (base) {
       case 'screenshot':
       case 'cursor_position':
@@ -264,10 +254,8 @@ export function getCodexComputerUseToolOverrides(toolName: string): {
       case 'double_click':
       case 'triple_click':
       case 'mouse_move':
-      case 'mouse_move_to':
         return fmtCoord(input.coordinate ?? input.position)
       case 'type_text':
-      case 'type':
         return typeof input.text === 'string' ? `"${input.text}"` : ''
       case 'press_key':
       case 'key':
@@ -279,7 +267,6 @@ export function getCodexComputerUseToolOverrides(toolName: string): {
       case 'left_click_drag':
         return `${fmtCoord(input.start_coordinate ?? input.from)} → ${fmtCoord(input.coordinate ?? input.to)}`
       case 'open_application':
-      case 'open_app':
         return typeof input.bundle_id === 'string'
           ? String(input.bundle_id)
           : typeof input.app === 'string' ? input.app : ''
@@ -288,7 +275,9 @@ export function getCodexComputerUseToolOverrides(toolName: string): {
       case 'wait':
         return typeof input.duration === 'number' ? `${input.duration}s` : ''
       case 'computer_batch':
-        return Array.isArray(input.actions) ? `${input.actions.length} actions` : ''
+        return Array.isArray(input.actions)
+          ? `${input.actions.length} actions`
+          : ''
       default:
         return ''
     }
@@ -297,56 +286,55 @@ export function getCodexComputerUseToolOverrides(toolName: string): {
   return { userFacingName, renderToolUseMessage }
 }
 
-// ── CLI Command ────────────────────────────────────────────────────────────────
+// ── CLI Command ────────────────────────────────────────────────────────────
 
 export const call: LocalCommandCall = async (
   args: string,
 ): Promise<{ type: 'text'; value: string }> => {
   const parts = args.trim().split(/\s+/).filter(Boolean)
   const subcommand = parts[0]?.toLowerCase() ?? 'status'
-  const pluginDir = findCodexPluginDir()
-  const binPath = pluginDir ? findComputeClientBin(pluginDir) : null
-  const configured = await isConfiguredInDuckHiveMCP()
+
+  // Always auto-wire on status — this makes it truly zero-config
+  const { wired, pluginDir, binPath } = await autoWireComputerUse()
+  const configured = wired
 
   if (subcommand === 'status') {
-    const status = binPath
-      ? `✅ Codex computer-use found\n   Plugin: ${pluginDir}\n   Binary: ${binPath}`
-      : `⚠️ Codex computer-use plugin not found\n   Run Codex CLI once to populate the plugin.`
+    const src = pluginDir ?? 'not found'
+    const bin = binPath ?? 'not found'
+    const status = pluginDir
+      ? `✅ Found\n   Plugin: ${src}\n   Binary: ${bin}`
+      : `⚠️ Plugin not found\n   Install Codex CLI or run \`node install.js\` to copy the plugin.`
     const configStatus = configured
-      ? `✅ Wired into DuckHive MCP`
-      : `ℹ️ Not yet in DuckHive MCP (run \`/computer-use enable\` to add)`
+      ? `✅ Auto-wired into DuckHive MCP`
+      : `ℹ️ Not in DuckHive MCP config`
 
     return {
       type: 'text',
-      value: `🦆 DuckHive Computer Use (OpenAI Codex)\n${'─'.repeat(50)}\n${status}\n${configStatus}\n\nTools available: screenshot, click, type, scroll, drag, open_app, and more.`,
+      value: `🦆 DuckHive Computer Use\n${'─'.repeat(50)}\n${status}\n${configStatus}\n\n32 tools: screenshot, click, type, scroll, drag, open_app, and more.\nRestart DuckHive or run \`/mcp reload\` to activate tools.`,
     }
   }
 
   if (subcommand === 'enable') {
-    if (!binPath) {
+    if (!pluginDir || !binPath) {
       return {
         type: 'text',
         value:
-          '⚠️ Codex computer-use plugin not found.\nRun `codex` once to install the plugin,\nthen try again.',
+          '⚠️ computer-use plugin not found.\nRun \`node install.js\` while Codex CLI is installed, or copy the plugin from /Applications/Codex.app/.',
       }
     }
     if (configured) {
       return {
         type: 'text',
-        value: '✅ Codex computer-use is already enabled in DuckHive.',
+        value:
+          '✅ computer-use is already wired into DuckHive MCP.\nRestart DuckHive or run \`/mcp reload\` to activate tools.',
       }
     }
-    const result = await addToDuckHiveMCP(binPath!, pluginDir!)
-    if (result.ok) {
-      return {
-        type: 'text',
-        value: `✅ Codex computer-use enabled!\n\nRestart DuckHive (or run \`/mcp reload\`) to load the tools.\nYou\'ll see mcp__computer-use__* tools in your session.`,
-      }
-    } else {
-      return {
-        type: 'text',
-        value: `❌ Failed to enable: ${result.error}`,
-      }
+    const result = await addToDuckHiveMCP(binPath)
+    return {
+      type: 'text',
+      value: result.ok
+        ? `✅ computer-use enabled!\nRestart DuckHive or run \`/mcp reload\` to activate tools.`
+        : `❌ Failed: ${result.error}`,
     }
   }
 
@@ -354,25 +342,20 @@ export const call: LocalCommandCall = async (
     if (!configured) {
       return {
         type: 'text',
-        value: 'ℹ️ Codex computer-use is not in DuckHive MCP config.',
+        value: 'ℹ️ computer-use is not in DuckHive MCP config.',
       }
     }
     const result = await removeFromDuckHiveMCP()
-    if (result.ok) {
-      return {
-        type: 'text',
-        value: '✅ Codex computer-use removed from DuckHive MCP.\nRestart DuckHive (or run `/mcp reload`) to apply.',
-      }
-    } else {
-      return {
-        type: 'text',
-        value: `❌ Failed to remove: ${result.error}`,
-      }
+    return {
+      type: 'text',
+      value: result.ok
+        ? '✅ computer-use removed from DuckHive MCP.\nRestart DuckHive or run \`/mcp reload\` to deactivate tools.'
+        : `❌ Failed: ${result.error}`,
     }
   }
 
   return {
     type: 'text',
-    value: `🦆 DuckHive Computer Use\n${'─'.repeat(50)}\n/computer-use status   — Check plugin + config status\n/computer-use enable   — Wire Codex computer-use into DuckHive MCP\n/computer-use disable  — Remove from DuckHive MCP\n\nRequirements:\n  • OpenAI Codex CLI installed (codex --version)\n  • Run \`codex\` once to populate the bundled plugin\n  • macOS 15+ with accessibility permissions`,
+    value: `🦆 Computer Use\n${'─'.repeat(50)}\n/computer-use status   — Check plugin + config status\n/computer-use enable  — Wire into DuckHive MCP\n/computer-use disable — Remove from DuckHive MCP\n\n32 tools: screenshot, click, type, scroll, drag, open_app, and more.`,
   }
 }

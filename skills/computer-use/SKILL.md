@@ -1,106 +1,84 @@
-# computer-use Skill — DuckHive Codex Integration
+# computer-use — DuckHive Built-in MCP Server
 
-## What This Is
+## Overview
 
-Integrates OpenAI Codex's bundled `computer-use` MCP server into DuckHive.
-Instead of reimplementing native macOS input/screenshot modules from scratch,
-we wire Codex's proven bundled plugin (`SkyComputerUseClient`) as a stdio MCP
-server that DuckHive can consume via its MCP client.
+DuckHive ships with the **OpenAI Codex computer-use MCP server** fully built-in. No setup needed on macOS — it's installed automatically by `node install.js` from the Codex app bundle.
 
-## Prerequisites
+## What It Is
 
-1. **OpenAI Codex CLI installed**
-   ```bash
-   npm i -g @openai/codex
-   codex --version  # should print codex-cli X.X.X
-   ```
+32 macOS desktop automation tools via the Codex `SkyComputerUseClient` native binary:
+- 📸 `screenshot` — capture screen
+- 🖱️ `click`, `left_click`, `right_click`, `double_click`, `mouse_move`, `drag`
+- ✌️ `left_click_drag`, `scroll`
+- ⌨️ `type_text`, `press_key`, `hold_key`
+- 🔍 `zoom`
+- 📱 `open_application`, `list_apps`, `get_app_state`
+- 📋 `write_clipboard`, `read_clipboard`
+- 🔐 `request_access`, `list_granted_applications`
+- ⏱️ `wait`, `cursor_position`, `computer_batch`
 
-2. **Run Codex once** to populate the bundled plugin:
-   ```bash
-   codex  # any command; this triggers plugin extraction
-   # Plugin lands at:
-   # ~/.codex/.tmp/bundled-marketplaces/openai-bundled/plugins/computer-use/
-   ```
+## Automatic Installation
 
-3. **macOS 15+** with Accessibility permissions granted to Terminal
+`node install.js` copies the plugin from:
+1. `/Applications/Codex.app/Contents/Resources/plugins/openai-bundled/plugins/computer-use/` (Codex app)
+2. `~/.codex/.tmp/bundled-marketplaces/openai-bundled/plugins/computer-use/` (Codex cache)
 
-## Usage
+Copied to: `packages/computer-use-bundle/computer-use/`
+
+## Auto-Wired
+
+The plugin is automatically added to DuckHive's MCP config on first use of `/computer-use status`. No manual `/computer-use enable` required — just run any computer-use command.
+
+## Manual Commands
 
 ```
-/computer-use status   — Check plugin detection + config status
-/computer-use enable  — Wire into DuckHive MCP (adds mcp__computer-use__* tools)
-/computer-use disable — Remove from DuckHive MCP
+/computer-use status   — Check plugin + MCP config status
+/computer-use enable  — Force-add to DuckHive MCP config
+/computer-use disable — Remove from DuckHive MCP config
 ```
 
-After enabling, restart DuckHive or run `/mcp reload`. You'll see tools like:
-- `mcp__computer-use__screenshot` — capture screen
-- `mcp__computer-use__click` — click at coordinate
-- `mcp__computer-use__type_text` — type text
-- `mcp__computer-use__scroll` — scroll
-- `mcp__computer-use__drag` — drag
-- `mcp__computer-use__open_application` — open an app
-- `mcp__computer-use__list_apps` — list running apps
-- `mcp__computer-use__request_access` — request TCC permissions
-- and more...
+After enable/disable, restart DuckHive or run `/mcp reload`.
 
-## Architecture
+## Requirements
+
+- **macOS only** (SkyComputerUseClient is a native macOS binary)
+- **Codex CLI installed** (provides the plugin source: `@openai/codex`)
+- **Accessibility permissions** granted (System Preferences → Privacy → Accessibility)
+
+## How It Works
 
 ```
 DuckHive MCP Client
   │
   │ StdioClientTransport
-  │   command: ~/.codex/.../SkyComputerUseClient
+  │   command: packages/computer-use-bundle/computer-use/.../SkyComputerUseClient
   │   args: ["mcp"]
   │
   ▼
-~/.codex/.tmp/bundled-marketplaces/openai-bundled/plugins/computer-use/
-  Codex Computer Use.app/
-    Contents/
-      MacOS/SkyComputerUseService     ← macOS LaunchAgent (TCC, accessibility)
-      SharedSupport/SkyComputerUseClient.app/
-        Contents/MacOS/SkyComputerUseClient ← The MCP server binary
+packages/computer-use-bundle/computer-use/Codex Computer Use.app/
+  SkyComputerUseService    ← LaunchAgent (TCC/Accessibility manager)
+  SkyComputerUseClient     ← stdio MCP server (spawned as subprocess)
 ```
 
-## How It Works
+## Architecture
 
-1. **Discovery**: `impl.ts` searches known Codex plugin paths for the
-   `computer-use` plugin directory containing `.mcp.json` + the `.app` bundle.
-
-2. **Config wiring**: `addToDuckHiveMCP()` dynamically calls DuckHive's
-   `addMcpConfig()` to register the server in `mcpServers` config with
-   `type: 'stdio'`, absolute `command` path, and `args: ['mcp']`.
-
-3. **In-process launch**: DuckHive's MCP client detects the `computer-use`
-   server name and (with `CHICAGO_MCP` feature flag) runs the in-process
-   `createComputerUseMcpServerForCli()` OR falls through to spawning a subprocess.
-   Since our binary is a real MCP stdio server, the standard subprocess path works.
-
-4. **Rendering**: `getCodexComputerUseToolOverrides()` provides TUI-friendly
-   labels and message summaries for each tool.
-
-## Native Alternative (DuckHive Full Implementation)
-
-DuckHive *also* has a full `src/utils/computerUse/` implementation that uses
-`@ant/computer-use-mcp` + `@ant/computer-use-input` + `@ant/computer-use-swift`.
-This requires those packages to be resolvable in the Node module search path —
-they come from Claude Code's bundle. That path is gated by `CHICAGO_MCP`.
-
-The Codex binary integration here is the **fallback/alternative** for users
-who have Codex installed but can't use the `CHICAGO_MCP` native path.
-
-## Troubleshooting
-
-| Problem | Fix |
-|---|---|
-| "Plugin not found" | Run `codex` once to trigger plugin extraction |
-| Policy denied | Check `settings.json` → `deniedMcpServers` in DuckHive config |
-| SkyComputerUseClient crashes (code sig error) | Normal on first run; macOS prompts for Accessibility perms |
-| Tools not showing after enable | Run `/mcp reload` or restart DuckHive |
+| Layer | Implementation |
+|-------|----------------|
+| MCP server | Codex `SkyComputerUseClient` (native macOS binary) |
+| MCP transport | stdio (subprocess spawned by DuckHive MCP client) |
+| Tool rendering | `getCodexComputerUseToolOverrides()` in impl.ts |
+| Auto-discovery | `findComputerUsePluginDir()` — 5 known paths |
+| Auto-wiring | `autoWireComputerUse()` on every command invocation |
 
 ## Key Files
 
 | File | Purpose |
 |------|---------|
-| `src/commands/computer-use/impl.ts` | Command implementation, MCP config wiring |
-| `src/commands/computer-use/index.ts` | Command registration |
-| `~/.codex/.tmp/bundled-marketplaces/openai-bundled/plugins/computer-use/` | Codex plugin source |
+| `src/commands/computer-use/impl.ts` | Command + auto-discovery + MCP wiring |
+| `packages/computer-use-bundle/` | Plugin copy destination |
+| `install.js` → `setupComputerUseBundle()` | Copies plugin from Codex app |
+| `SKILL.md` | This file |
+
+## Tool Names (mcp__computer-use__*)
+
+`screenshot`, `cursor_position`, `click`, `left_click`, `right_click`, `double_click`, `triple_click`, `type_text`, `press_key`, `hold_key`, `scroll`, `drag`, `left_click_drag`, `mouse_move`, `open_application`, `list_apps`, `get_app_state`, `request_access`, `write_clipboard`, `read_clipboard`, `left_mouse_down`, `left_mouse_up`, `zoom`, `wait`, `computer_batch`

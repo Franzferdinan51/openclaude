@@ -170,6 +170,49 @@ function setupPermissions() {
   return true;
 }
 
+function setupComputerUseBundle() {
+  if (!isMac) {
+    log('info', 'Skipping computer-use bundle (macOS only)');
+    return true;
+  }
+  const bundleSrc = '/Applications/Codex.app/Contents/Resources/plugins/openai-bundled/plugins/computer-use';
+  const bundleDst = join(__dirname, 'packages', 'computer-use-bundle', 'computer-use');
+
+  // Ensure destination parent exists
+  const bundleParent = join(__dirname, 'packages', 'computer-use-bundle');
+  try {
+    exec(`mkdir -p "${bundleParent}"`, { stdio: 'pipe' });
+  } catch {}
+
+  // Try Codex app bundle first
+  if (existsSync(bundleSrc)) {
+    log('info', 'Copying computer-use from Codex app bundle...');
+    try {
+      exec(`cp -R "${bundleSrc}" "${bundleDst}"`, { stdio: 'pipe' });
+      log('info', 'computer-use bundle installed from Codex app');
+      return true;
+    } catch (e) {
+      warnings.push(`computer-use bundle copy from app failed: ${e.message}`);
+    }
+  }
+
+  // Fallback: try extracted Codex cache (~/.codex/.tmp/)
+  const cacheSrc = join(process.env.HOME ?? '', '.codex', '.tmp', 'bundled-marketplaces', 'openai-bundled', 'plugins', 'computer-use');
+  if (existsSync(cacheSrc)) {
+    log('info', 'Copying computer-use from Codex runtime cache...');
+    try {
+      exec(`cp -R "${cacheSrc}" "${bundleDst}"`, { stdio: 'pipe' });
+      log('info', 'computer-use bundle installed from Codex cache');
+      return true;
+    } catch (e) {
+      warnings.push(`computer-use cache copy failed: ${e.message}`);
+    }
+  } else {
+    log('warn', 'computer-use plugin not found. Install Codex CLI (@openai/codex) and run once to extract the plugin.');
+  }
+  return true;
+}
+
 function addToPathWindows(installDir) {
   log('info', 'Adding DuckHive to PATH (Windows)...');
   try {
@@ -444,6 +487,9 @@ async function main() {
 
   // Setup
   setupPermissions();
+
+  // Setup computer-use MCP bundle (macOS only)
+  setupComputerUseBundle();
 
   // Create platform-specific installers
   createPowershellInstaller();
