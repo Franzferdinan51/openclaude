@@ -35,6 +35,14 @@ import { homedir } from 'os'
  * an absolute path so it works from any cwd.
  */
 
+function findSpawnHelper(): string | null {
+  const base = join(process.cwd(), 'packages', 'computer-use-bundle')
+  // spawn-with-tty.sh → spawn-pty.py → PTY → satisfies hardened runtime
+  const script = join(base, 'spawn-with-tty.sh')
+  if (existsSync(script)) return script
+  return null
+}
+
 function findComputerUseBinary(): string | null {
   const home = homedir()
   const candidates = [
@@ -63,6 +71,8 @@ function isMacOS(): boolean {
 }
 
 const COMPUTER_USE_BINARY = isMacOS() ? findComputerUseBinary() : null
+const SPAWN_HELPER = isMacOS() ? findSpawnHelper() : null
+const USE_PTY_WRAPPER = isMacOS() && SPAWN_HELPER !== null && COMPUTER_USE_BINARY !== null
 
 registerBuiltinPlugin({
   name: 'computer-use',
@@ -79,14 +89,23 @@ registerBuiltinPlugin({
   defaultEnabled: true,
 
   // Override mcpServers inline so absolute path works regardless of cwd.
-  // The bundle's .mcp.json uses relative path which only works when cwd=plugin-dir.
+  // The bundle's .mcp.json uses a relative path which only works when cwd=plugin-dir.
   // We use an absolute path so it works from any working directory.
+  //
+  // On macOS 26.3+, SkyComputerUseClient crashes with "Launch Constraint Violation"
+  // (hardened runtime rejects stdio subprocess spawn without TTY session). The PTY
+  // wrapper satisfies this by allocating a pseudo-terminal before exec.
   mcpServers: COMPUTER_USE_BINARY
     ? {
         'computer-use': {
           type: 'stdio',
-          command: COMPUTER_USE_BINARY,
-          args: ['mcp'],
+          // PTY wrapper → script → Python pty module → fork+exec in session with controlling TTY
+          command: USE_PTY_WRAPPER
+            ? SPAWN_HELPER
+            : COMPUTER_USE_BINARY,
+          args: USE_PTY_WRAPPER
+            ? [COMPUTER_USE_BINARY, 'mcp']
+            : ['mcp'],
           env: {},
         },
       }
