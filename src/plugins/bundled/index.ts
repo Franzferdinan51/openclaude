@@ -10,8 +10,8 @@
  * src/skills/bundled/ instead.
  *
  * To add a new built-in plugin:
- * 1. Import registerBuiltinPlugin from '../builtinPlugins.js'
- * 2. Call registerBuiltinPlugin() with the plugin definition here
+ * 1. Import its registerXPlugin() helper from the plugin module here
+ * 2. Call that helper from initBuiltinPlugins()
  */
 
 import { registerBuiltinPlugin } from '../builtinPlugins.js'
@@ -113,6 +113,7 @@ registerBuiltinPlugin({
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
+import { registerKarpathyGuidelinesPlugin } from './karpathyGuidelines.js'
 
 /**
  * Initialize built-in plugins. Called during CLI startup.
@@ -121,4 +122,5 @@ export function initBuiltinPlugins(): void {
   // Built-in plugins registered above via registerBuiltinPlugin() calls.
   // This function exists to run the side-effects (registerBuiltinPlugin calls)
   // at module initialization time.
+  registerKarpathyGuidelinesPlugin()
 }
