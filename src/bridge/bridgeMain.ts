@@ -1767,11 +1767,6 @@ export function parseArgs(args: string[]): ParsedArgs {
     } else if (arg.startsWith('--session-timeout=')) {
       sessionTimeoutMs =
         parseInt(arg.slice('--session-timeout='.length), 10) * 1000
-    } else if (
-      arg === '--dangerously-skip-permissions' ||
-      arg === '--yolo'
-    ) {
-      permissionMode = 'bypassPermissions'
     } else if (arg === '--permission-mode' && i + 1 < args.length) {
       permissionMode = args[++i]!
     } else if (arg.startsWith('--permission-mode=')) {
@@ -1938,8 +1933,6 @@ ${
     : ''
 }  --permission-mode <mode>         Permission mode for spawned sessions
                                    (${modes})
-  --dangerously-skip-permissions    Alias for --permission-mode bypassPermissions
-  --yolo                            Deprecated alias for --permission-mode bypassPermissions
   --debug-file <path>              Write debug logs to file
   -v, --verbose                    Enable verbose output
   -h, --help                       Show this help
@@ -1947,7 +1940,7 @@ ${serverOptions}
 DESCRIPTION
   Remote Control allows you to control sessions on your local device from
   claude.ai/code (https://claude.ai/code). Run this command in the
-  directory you want to work in, then connect from DuckHive or web.
+  directory you want to work in, then connect from the Claude app or web.
 ${serverDescription}
 NOTES
   - You must be logged in with a Claude account that has a subscription
@@ -2129,7 +2122,7 @@ export async function bridgeMain(args: string[]): Promise<void> {
     })
     // biome-ignore lint/suspicious/noConsole:: intentional console output
     console.log(
-      '\nRemote Control lets you access this CLI session from the web (claude.ai/code)\nor DuckHive, so you can pick up where you left off on any device.\n\nYou can disconnect remote access anytime by running /remote-control again.\n',
+      '\nRemote Control lets you access this CLI session from the web (claude.ai/code)\nor the Claude app, so you can pick up where you left off on any device.\n\nYou can disconnect remote access anytime by running /remote-control again.\n',
     )
     const answer = await new Promise<string>(resolve => {
       rl.question('Enable Remote Control? (y/n) ', resolve)
@@ -2255,7 +2248,7 @@ export async function bridgeMain(args: string[]): Promise<void> {
     })
     // biome-ignore lint/suspicious/noConsole: intentional dialog output
     console.log(
-      `\nDuckHive Remote Control is launching in spawn mode which lets you create new sessions in this project from DuckHive on Web or your Mobile app. Learn more here: https://docs.openclaw.ai/\n\n` +
+      `\nClaude Remote Control is launching in spawn mode which lets you create new sessions in this project from OpenClaude on the web or your mobile app. Learn more here: https://code.claude.com/docs/en/remote-control\n\n` +
         `Spawn mode for this project:\n` +
         `  [1] same-dir \u2014 sessions share the current directory (default)\n` +
         `  [2] worktree \u2014 each session gets an isolated git worktree\n\n` +

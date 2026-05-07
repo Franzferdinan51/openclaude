@@ -205,6 +205,11 @@ export type AxiosErrorKind =
 // SDK-specific error classes
 // ============================================================================
 
+/**
+ * Base class for all SDK errors. Extends ClaudeError so that existing
+ * `catch (e) { if (e instanceof ClaudeError) … }` checks still work,
+ * while giving SDK consumers a more specific base to match against.
+ */
 export class SDKError extends ClaudeError {
   constructor(message: string) {
     super(message)
@@ -267,25 +272,21 @@ export type SDKAssistantMessageError =
   | 'unknown'
   | 'max_output_tokens'
 
+/**
+ * Convert an SDKAssistantMessageError type string to the proper Error class.
+ */
 export function sdkErrorFromType(
   errorType: SDKAssistantMessageError,
   message?: string,
 ): SDKError | ClaudeError {
   switch (errorType) {
-    case 'authentication_failed':
-      return new SDKAuthenticationError(message)
-    case 'billing_error':
-      return new SDKBillingError(message)
-    case 'rate_limit':
-      return new SDKRateLimitError(message)
-    case 'invalid_request':
-      return new SDKInvalidRequestError(message)
-    case 'server_error':
-      return new SDKServerError(message)
-    case 'max_output_tokens':
-      return new SDKMaxOutputTokensError(message)
-    default:
-      return new ClaudeError(message ?? 'Unknown error')
+    case 'authentication_failed': return new SDKAuthenticationError(message)
+    case 'billing_error': return new SDKBillingError(message)
+    case 'rate_limit': return new SDKRateLimitError(message)
+    case 'invalid_request': return new SDKInvalidRequestError(message)
+    case 'server_error': return new SDKServerError(message)
+    case 'max_output_tokens': return new SDKMaxOutputTokensError(message)
+    default: return new ClaudeError(message ?? 'Unknown error')
   }
 }
 

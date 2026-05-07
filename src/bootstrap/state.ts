@@ -4,7 +4,6 @@ import type { logs } from '@opentelemetry/api-logs'
 import type { LoggerProvider } from '@opentelemetry/sdk-logs'
 import type { MeterProvider } from '@opentelemetry/sdk-metrics'
 import type { BasicTracerProvider } from '@opentelemetry/sdk-trace-base'
-import { AsyncLocalStorage } from 'async_hooks'
 import { realpathSync } from 'fs'
 import sumBy from 'lodash-es/sumBy.js'
 import { cwd } from 'process'
@@ -432,6 +431,10 @@ const STATE: State = getInitialState()
 /**
  * Per-query SDK context for AsyncLocalStorage-based isolation.
  * When set, overrides global STATE reads for the current async context.
+ *
+ * **Runtime Requirement:** Uses Node.js `async_hooks.AsyncLocalStorage`.
+ * Not available in browsers or non-Node JavaScript environments.
+ * SDK consumers must run in a Node.js runtime (Node.js 12.17.0+ or 14.0.0+).
  */
 type SdkContext = {
   sessionId: SessionId
@@ -441,8 +444,19 @@ type SdkContext = {
   parentSessionId?: SessionId
 }
 
+import { AsyncLocalStorage } from 'async_hooks'
+
 const sdkContextStorage = new AsyncLocalStorage<SdkContext>()
 
+/**
+ * Run a function with an SDK-specific context that overrides global state.
+ * All reads of sessionId, sessionProjectDir, cwd, originalCwd within fn
+ * return context-scoped values instead of global STATE.
+ *
+ * **Node.js Only:** Requires AsyncLocalStorage from async_hooks module.
+ * This function will throw if called in a non-Node environment where
+ * async_hooks is not available.
+ */
 export function runWithSdkContext<T>(context: SdkContext, fn: () => T): T {
   return sdkContextStorage.run(context, fn)
 }
@@ -1509,10 +1523,9 @@ export function clearRegisteredPluginHooks(): void {
   }
 
   const filtered: Partial<Record<HookEvent, RegisteredHookMatcher[]>> = {}
-  for (const [event, matchers] of Object.entries(STATE.registeredHooks ?? {})) {
-    if (!matchers) continue
+  for (const [event, matchers] of Object.entries(STATE.registeredHooks)) {
     // Keep only callback hooks (those without pluginRoot)
-    const callbackHooks = (matchers as RegisteredHookMatcher[] | undefined)?.filter(m => !('pluginRoot' in m)) ?? []
+    const callbackHooks = matchers.filter(m => !('pluginRoot' in m))
     if (callbackHooks.length > 0) {
       filtered[event as HookEvent] = callbackHooks
     }
@@ -1789,3 +1802,4 @@ export function isReplBridgeActive(): boolean {
 export function getReplBridgeHandle(): null {
   return null
 }
+

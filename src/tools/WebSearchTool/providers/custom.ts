@@ -47,7 +47,17 @@ interface ProviderPreset {
   authScheme?: string
   jsonPath?: string
   responseAdapter?: (data: any) => SearchHit[]
+  /**
+   * When set, the API key (WEB_KEY) is sent as this query parameter instead
+   * of in an HTTP header. Auth headers are suppressed automatically unless
+   * WEB_AUTH_HEADER is explicitly set by the user.
+   */
   authQueryParam?: string
+  /**
+   * Additional query params sourced from environment variables.
+   * Format: { paramName: ENV_VAR_NAME } (e.g. { cx: 'GOOGLE_CSE_ID' }).
+   * The named env var must be set or the request fails fast with a clear error.
+   */
   envQueryParams?: Record<string, string>
 }
 
@@ -69,6 +79,13 @@ const BUILT_IN_PROVIDERS: Record<string, ProviderPreset> = {
     },
   },
   google: {
+    // Google Custom Search JSON API requires both `key` (API key) and
+    // `cx` (Programmable Search Engine ID) as query parameters. There is
+    // no Bearer-token auth path. Set WEB_KEY=<api-key> and
+    // GOOGLE_CSE_ID=<engine-id>.
+    //
+    // ⚠️  Google has announced this API will be discontinued on 2027-01-01
+    // and is closed to new customers. Prefer Brave/Tavily/Exa where possible.
     urlTemplate: 'https://www.googleapis.com/customsearch/v1',
     queryParam: 'q',
     authQueryParam: 'key',
@@ -86,6 +103,8 @@ const BUILT_IN_PROVIDERS: Record<string, ProviderPreset> = {
     urlTemplate: 'https://api.search.brave.com/res/v1/web/search',
     queryParam: 'q',
     authHeader: 'X-Subscription-Token',
+    // Brave wants the bare token in X-Subscription-Token, NOT "Bearer <token>".
+    // Empty scheme overrides the default 'Bearer' applied by buildAuthHeadersForPreset.
     authScheme: '',
     responseAdapter(data: any) {
       return (data.web?.results ?? []).map((r: any) => ({
@@ -110,10 +129,6 @@ const BUILT_IN_PROVIDERS: Record<string, ProviderPreset> = {
       }))
     },
   },
-}
-
-export function isCustomProviderPresetConfigured(name: string): boolean {
-  return Boolean(BUILT_IN_PROVIDERS[name])
 }
 
 // ---------------------------------------------------------------------------
@@ -350,6 +365,9 @@ function auditLogCustomSearch(url: string): void {
 // ---------------------------------------------------------------------------
 
 export function buildAuthHeadersForPreset(preset?: ProviderPreset): Record<string, string> {
+  // Presets that authenticate via a query parameter (e.g. Google's `?key=...`)
+  // do not send an Authorization header. The user can still force a header by
+  // setting WEB_AUTH_HEADER explicitly.
   if (preset?.authQueryParam && process.env.WEB_AUTH_HEADER === undefined) {
     return {}
   }
@@ -365,14 +383,16 @@ export function buildAuthHeadersForPreset(preset?: ProviderPreset): Record<strin
   const scheme = process.env.WEB_AUTH_SCHEME !== undefined
     ? process.env.WEB_AUTH_SCHEME
     : (preset?.authScheme ?? 'Bearer')
-  return { [headerName]: `${scheme} ${apiKey}`.trim() }
+  // Empty scheme → bare key, no leading space (e.g. Brave's X-Subscription-Token)
+  const value = scheme ? `${scheme} ${apiKey}` : apiKey
+  return { [headerName]: value }
 }
 
 // ---------------------------------------------------------------------------
 // Request construction
 // ---------------------------------------------------------------------------
 
-function resolveConfig(forcedProviderName?: string): {
+function resolveConfig(): {
   urlTemplate: string
   queryParam: string
   method: string
@@ -380,7 +400,7 @@ function resolveConfig(forcedProviderName?: string): {
   responseAdapter?: (data: any) => SearchHit[]
   preset?: ProviderPreset
 } {
-  const providerName = forcedProviderName ?? process.env.WEB_PROVIDER
+  const providerName = process.env.WEB_PROVIDER
   const preset = providerName ? BUILT_IN_PROVIDERS[providerName] : undefined
 
   return {
@@ -406,9 +426,10 @@ function parseExtraParams(): Record<string, string> {
   return {}
 }
 
-function buildRequest(query: string, forcedProviderName?: string) {
-  const config = resolveConfig(forcedProviderName)
+function buildRequest(query: string) {
+  const config = resolveConfig()
   const method = config.method.toUpperCase()
+  const preset = config.preset
 
   // --- URL ---
   const rawTemplate = config.urlTemplate
@@ -425,25 +446,28 @@ function buildRequest(query: string, forcedProviderName?: string) {
     url.searchParams.set(config.queryParam, query)
   }
 
-  const preset = config.preset
+  // Preset env-sourced params (e.g. Google's `cx` from GOOGLE_CSE_ID).
+  // Fail fast with a clear error if the named env var isn't set, since the
+  // upstream API will reject the request anyway.
   if (preset?.envQueryParams) {
     for (const [paramName, envVar] of Object.entries(preset.envQueryParams)) {
       const value = process.env[envVar]
       if (!value) {
         throw new Error(
-          `Search preset "${process.env.WEB_PROVIDER ?? forcedProviderName}" requires ${envVar} ` +
-          `(sent as ?${paramName}=). Set ${envVar} and try again.`,
+          `Search preset "${process.env.WEB_PROVIDER}" requires environment ` +
+          `variable ${envVar} (used as ?${paramName}=). Set ${envVar} and try again.`,
         )
       }
       url.searchParams.set(paramName, value)
     }
   }
 
+  // Preset query-param auth (e.g. Google's `?key=...`).
   if (preset?.authQueryParam) {
     const apiKey = process.env.WEB_KEY
     if (!apiKey) {
       throw new Error(
-        `Search preset "${process.env.WEB_PROVIDER ?? forcedProviderName}" requires WEB_KEY ` +
+        `Search preset "${process.env.WEB_PROVIDER}" requires WEB_KEY ` +
         `(sent as ?${preset.authQueryParam}=). Set WEB_KEY and try again.`,
       )
     }
@@ -626,34 +650,6 @@ export const customProvider: SearchProvider = {
     return {
       hits: applyDomainFilters(hits, input),
       providerName: 'custom',
-      durationSeconds: (performance.now() - start) / 1000,
-    }
-  },
-}
-
-export const searxngProvider: SearchProvider = {
-  name: 'searxng',
-
-  isConfigured() {
-    return Boolean(
-      process.env.WEB_SEARCH_API ||
-      process.env.WEB_URL_TEMPLATE ||
-      process.env.WEB_PROVIDER === 'searxng'
-    )
-  },
-
-  async search(input: SearchInput, signal?: AbortSignal): Promise<ProviderOutput> {
-    const start = performance.now()
-    const { url, init, config } = buildRequest(input.query, 'searxng')
-    const raw = await fetchWithRetry(url, init, signal)
-
-    const hits = config.responseAdapter
-      ? config.responseAdapter(raw)
-      : extractHits(raw, config.jsonPath)
-
-    return {
-      hits: applyDomainFilters(hits, input),
-      providerName: 'searxng',
       durationSeconds: (performance.now() - start) / 1000,
     }
   },

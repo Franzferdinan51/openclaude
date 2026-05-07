@@ -408,17 +408,6 @@ function hydrateOpenAIShimCompatibilityEnv(
   // Provider selection, base URL defaults, and model defaults now flow
   // through resolveProviderRequest(). The shim still needs a few legacy
   // credential aliases because downstream auth/header paths read OPENAI_*.
-  if (isEnvTruthy(processEnv.CLAUDE_CODE_USE_OPENAI)) {
-    const routeCredential = resolveRouteCredentialValue({
-      processEnv,
-      baseUrl: processEnv.OPENAI_BASE_URL ?? processEnv.OPENAI_API_BASE,
-    })
-    if (routeCredential && !processEnv.OPENAI_API_KEY) {
-      processEnv.OPENAI_API_KEY = routeCredential
-    }
-    return
-  }
-
   if (isEnvTruthy(processEnv.CLAUDE_CODE_USE_GEMINI)) {
     const geminiApiKey =
       processEnv.GEMINI_API_KEY ?? processEnv.GOOGLE_API_KEY

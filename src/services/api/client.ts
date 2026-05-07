@@ -12,8 +12,8 @@ import {
 import {
   convertEffortValueToLevel,
   type EffortValue,
-  type OpenAIEffortLevel,
   standardEffortToOpenAI,
+  type OpenAIEffortLevel,
 } from 'src/utils/effort.js'
 import { getUserAgent } from 'src/utils/http.js'
 import { getSmallFastModel } from 'src/utils/model/model.js'
@@ -34,6 +34,17 @@ import {
   getVertexRegionForModel,
   isEnvTruthy,
 } from '../../utils/envUtils.js'
+import {
+  getMiniMaxBaseUrlOverride,
+  getRouteDefaultBaseUrl,
+  getRouteDefaultModel,
+  getXaiBaseUrlOverride,
+  resolveEnvOnlyProviderRouteId,
+} from '../../integrations/routeMetadata.js'
+import {
+  shouldUseFirstPartyAnthropicAuth,
+  type ProviderOverride,
+} from './authRouting.js'
 
 const importRuntimeModule = new Function(
   'specifier',
@@ -96,6 +107,62 @@ function createStderrLogger(): ClientOptions['logger'] {
   }
 }
 
+function isMiniMaxModelName(value: string | undefined): boolean {
+  const normalized = value?.trim().toLowerCase()
+  return Boolean(
+    normalized &&
+      (normalized.startsWith('minimax-') || normalized.startsWith('minimax/')),
+  )
+}
+
+function isXaiModelName(value: string | undefined): boolean {
+  const normalized = value?.trim().toLowerCase()
+  return Boolean(
+    normalized &&
+      (normalized.startsWith('grok-') || normalized.startsWith('xai/')),
+  )
+}
+
+function applyMiniMaxEnvOnlyDefaults(): void {
+  const baseUrlOverride = getMiniMaxBaseUrlOverride()
+  const hasMiniMaxBaseOverride = baseUrlOverride !== undefined
+  const modelOverride = process.env.OPENAI_MODEL?.trim() || undefined
+
+  process.env.CLAUDE_CODE_USE_OPENAI = '1'
+  process.env.OPENAI_BASE_URL =
+    baseUrlOverride ?? getRouteDefaultBaseUrl('minimax')
+  process.env.OPENAI_MODEL =
+    (hasMiniMaxBaseOverride || isMiniMaxModelName(modelOverride)
+      ? modelOverride
+      : undefined) ??
+    getRouteDefaultModel('minimax')
+  process.env.OPENAI_API_KEY = process.env.MINIMAX_API_KEY
+  delete process.env.OPENAI_API_FORMAT
+  delete process.env.OPENAI_AUTH_HEADER
+  delete process.env.OPENAI_AUTH_SCHEME
+  delete process.env.OPENAI_AUTH_HEADER_VALUE
+}
+
+function applyXaiEnvOnlyDefaults(): void {
+  const baseUrlOverride = getXaiBaseUrlOverride()
+  const hasXaiBaseOverride = baseUrlOverride !== undefined
+  const modelOverride = process.env.OPENAI_MODEL?.trim() || undefined
+
+  process.env.CLAUDE_CODE_USE_OPENAI = '1'
+  process.env.OPENAI_BASE_URL =
+    baseUrlOverride ?? getRouteDefaultBaseUrl('xai')
+  process.env.OPENAI_MODEL =
+    (hasXaiBaseOverride || isXaiModelName(modelOverride)
+      ? modelOverride
+      : undefined) ??
+    getRouteDefaultModel('xai')
+  process.env.OPENAI_API_KEY = process.env.XAI_API_KEY
+  delete process.env.OPENAI_API_FORMAT
+  delete process.env.OPENAI_AUTH_HEADER
+  delete process.env.OPENAI_AUTH_SCHEME
+  delete process.env.OPENAI_AUTH_HEADER_VALUE
+}
+
 export async function getAnthropicClient({
   apiKey,
   maxRetries,
@@ -110,9 +177,11 @@ export async function getAnthropicClient({
   model?: string
   fetchOverride?: ClientOptions['fetch']
   source?: string
-  providerOverride?: { model: string; baseURL: string; apiKey: string }
+  providerOverride?: ProviderOverride
   effortValue?: EffortValue
 }): Promise<Anthropic> {
+  // Convert the runtime effort value to the OpenAI-shaped enum the shim
+  // expects. Undefined → shim falls back to descriptor/alias defaults.
   const shimReasoningEffort: OpenAIEffortLevel | undefined =
     effortValue !== undefined
       ? standardEffortToOpenAI(convertEffortValueToLevel(effortValue))
@@ -148,11 +217,7 @@ export async function getAnthropicClient({
   }
 
   const shouldUseFirstPartyAuth =
-    !providerOverride &&
-    !isEnvTruthy(process.env.CLAUDE_CODE_USE_OPENAI) &&
-    !isEnvTruthy(process.env.CLAUDE_CODE_USE_GITHUB) &&
-    !isEnvTruthy(process.env.CLAUDE_CODE_USE_GEMINI) &&
-    !isEnvTruthy(process.env.CLAUDE_CODE_USE_MISTRAL)
+    shouldUseFirstPartyAnthropicAuth(providerOverride)
 
   if (shouldUseFirstPartyAuth) {
     logForDebugging('[API:auth] OAuth token check starting')
@@ -160,7 +225,10 @@ export async function getAnthropicClient({
     logForDebugging('[API:auth] OAuth token check complete')
   }
 
-  if (shouldUseFirstPartyAuth && !isClaudeAISubscriber()) {
+  const isClaudeAiSubscriber =
+    shouldUseFirstPartyAuth && isClaudeAISubscriber()
+
+  if (shouldUseFirstPartyAuth && !isClaudeAiSubscriber) {
     await configureApiKeyHeaders(defaultHeaders, getIsNonInteractiveSession())
   }
 
@@ -216,7 +284,19 @@ export async function getAnthropicClient({
     }
     return new Anthropic(nativeArgs)
   }
+  const envOnlyProviderRouteId = resolveEnvOnlyProviderRouteId(process.env)
+  const useXaiEnvOnlyProvider = envOnlyProviderRouteId === 'xai'
+  const useMiniMaxEnvOnlyProvider = envOnlyProviderRouteId === 'minimax'
+  if (useMiniMaxEnvOnlyProvider) {
+    applyMiniMaxEnvOnlyDefaults()
+  }
+  if (useXaiEnvOnlyProvider) {
+    applyXaiEnvOnlyDefaults()
+  }
+
   if (
+    useMiniMaxEnvOnlyProvider ||
+    useXaiEnvOnlyProvider ||
     isEnvTruthy(process.env.CLAUDE_CODE_USE_OPENAI) ||
     isEnvTruthy(process.env.CLAUDE_CODE_USE_GITHUB) ||
     isEnvTruthy(process.env.CLAUDE_CODE_USE_GEMINI) ||
@@ -385,8 +465,8 @@ export async function getAnthropicClient({
 
   // Determine authentication method based on available tokens
   const clientConfig: ConstructorParameters<typeof Anthropic>[0] = {
-    apiKey: isClaudeAISubscriber() ? null : apiKey || getAnthropicApiKey(),
-    authToken: isClaudeAISubscriber()
+    apiKey: isClaudeAiSubscriber ? null : apiKey || getAnthropicApiKey(),
+    authToken: isClaudeAiSubscriber
       ? getClaudeAIOAuthTokens()?.accessToken
       : undefined,
     // Set baseURL from OAuth config when using staging OAuth

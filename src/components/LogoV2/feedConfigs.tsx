@@ -7,6 +7,7 @@ import { formatCreditAmount, getCachedReferrerReward } from '../../services/api/
 import type { LogOption } from '../../types/logs.js';
 import { getCwd } from '../../utils/cwd.js';
 import { formatRelativeTimeAgo } from '../../utils/format.js';
+import { getReleaseSectionHeaderTitle, isReleaseSectionHeader } from '../../utils/releaseNotes.js';
 import type { FeedConfig, FeedLine } from './Feed.js';
 export function createRecentActivityFeed(activities: LogOption[]): FeedConfig {
   const lines: FeedLine[] = activities.map(log => {
@@ -35,13 +36,18 @@ export function createWhatsNewFeed(releaseNotes: string[]): FeedConfig {
         };
       }
     }
+    if (isReleaseSectionHeader(note)) {
+      return {
+        text: `${getReleaseSectionHeaderTitle(note)}:`
+      };
+    }
     return {
       text: note
     };
   });
-  const emptyMessage = "external" === 'ant' ? 'Unable to fetch latest DuckHive commits' : 'Check /release-notes for recent updates';
+  const emptyMessage = "external" === 'ant' ? 'Unable to fetch latest claude-cli-internal commits' : 'Check /release-notes for recent updates';
   return {
-    title: "external" === 'ant' ? "DuckHive Updates [internal-only: Latest CC commits]" : "DuckHive Updates",
+    title: "external" === 'ant' ? "OpenClaude Updates [internal-only: Latest CC commits]" : "OpenClaude Updates",
     lines,
     footer: lines.length > 0 ? '/release-notes for more' : undefined,
     emptyMessage
@@ -60,20 +66,20 @@ export function createProjectOnboardingFeed(steps: Step[]): FeedConfig {
       text: `${checkmark}${text}`
     };
   });
-  const warningText = getCwd() === homedir() ? 'Note: You have launched duckhive in your home directory. For the best experience, launch it in a project directory instead.' : undefined;
+  const warningText = getCwd() === homedir() ? 'Note: You have launched openclaude in your home directory. For the best experience, launch it in a project directory instead.' : undefined;
   if (warningText) {
     lines.push({
       text: warningText
     });
   }
   return {
-    title: 'DuckHive quickstart',
+    title: 'Tips for getting started',
     lines
   };
 }
 export function createGuestPassesFeed(): FeedConfig {
   const reward = getCachedReferrerReward();
-  const subtitle = reward ? `Share DuckHive and earn ${formatCreditAmount(reward)} of extra usage` : 'Share DuckHive with friends';
+  const subtitle = reward ? `Share OpenClaude and earn ${formatCreditAmount(reward)} of extra usage` : 'Share OpenClaude with friends';
   return {
     title: '3 guest passes',
     lines: [],

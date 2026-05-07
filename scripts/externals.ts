@@ -37,12 +37,6 @@ export const COMMON_EXTERNALS: string[] = [
   '@aws-sdk/credential-providers',
   '@azure/identity',
   'google-auth-library',
-  'graphology',
-  'graphology-operators',
-  'graphology-pagerank',
-  'js-tiktoken',
-  'tree-sitter-wasms',
-  'web-tree-sitter',
   // @vscode/ripgrep ships a platform-specific binary alongside its
   // index.js and resolves the path via __dirname at runtime. Bundling
   // would freeze the build host's absolute path into dist/cli.mjs, so we
@@ -52,6 +46,9 @@ export const COMMON_EXTERNALS: string[] = [
 
 // Additional packages external only in the SDK bundle (TUI + heavy deps)
 export const SDK_ONLY_EXTERNALS: string[] = [
+  'react',
+  'react-reconciler',
+  'ink',
   '@anthropic-ai/sdk',
   '@modelcontextprotocol/sdk',
 ]

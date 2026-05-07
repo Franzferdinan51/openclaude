@@ -484,6 +484,22 @@ export function resolveActiveRouteIdFromEnv(
     activeProfileProvider?: string
   },
 ): string | null {
+  if (isEnvTruthy(processEnv.CLAUDE_CODE_USE_GEMINI)) {
+    return 'gemini'
+  }
+  if (isEnvTruthy(processEnv.CLAUDE_CODE_USE_MISTRAL)) {
+    return 'mistral'
+  }
+  if (isEnvTruthy(processEnv.CLAUDE_CODE_USE_GITHUB)) {
+    return 'github'
+  }
+  if (isEnvTruthy(processEnv.CLAUDE_CODE_USE_BEDROCK)) {
+    return 'bedrock'
+  }
+  if (isEnvTruthy(processEnv.CLAUDE_CODE_USE_VERTEX)) {
+    return 'vertex'
+  }
+
   if (isEnvTruthy(processEnv.CLAUDE_CODE_USE_OPENAI)) {
     const baseUrl =
       processEnv.OPENAI_BASE_URL ?? processEnv.OPENAI_API_BASE
@@ -517,22 +533,6 @@ export function resolveActiveRouteIdFromEnv(
     }
 
     return 'custom'
-  }
-
-  if (isEnvTruthy(processEnv.CLAUDE_CODE_USE_GEMINI)) {
-    return 'gemini'
-  }
-  if (isEnvTruthy(processEnv.CLAUDE_CODE_USE_MISTRAL)) {
-    return 'mistral'
-  }
-  if (isEnvTruthy(processEnv.CLAUDE_CODE_USE_GITHUB)) {
-    return 'github'
-  }
-  if (isEnvTruthy(processEnv.CLAUDE_CODE_USE_BEDROCK)) {
-    return 'bedrock'
-  }
-  if (isEnvTruthy(processEnv.CLAUDE_CODE_USE_VERTEX)) {
-    return 'vertex'
   }
 
   const envOnlyRouteId = resolveEnvOnlyProviderRouteId(processEnv)

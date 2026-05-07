@@ -531,17 +531,16 @@ export function resolveProviderRequest(options?: {
   const isGithubMode = isEnvTruthy(process.env.CLAUDE_CODE_USE_GITHUB)
   const isMistralMode = isEnvTruthy(process.env.CLAUDE_CODE_USE_MISTRAL)
   const isGeminiMode = isEnvTruthy(process.env.CLAUDE_CODE_USE_GEMINI)
-  const isOpenAIMode = isEnvTruthy(process.env.CLAUDE_CODE_USE_OPENAI)
   const requestedModel =
     options?.model?.trim() ||
     (isMistralMode
       ? process.env.MISTRAL_MODEL?.trim()
       : process.env.OPENAI_MODEL?.trim()) ||
-    (isGeminiMode && !isOpenAIMode
+    (isGeminiMode
       ? process.env.GEMINI_MODEL?.trim()
       : process.env.OPENAI_MODEL?.trim()) ||
     options?.fallbackModel?.trim() ||
-    (isGeminiMode && !isOpenAIMode ? DEFAULT_GEMINI_MODEL : undefined) ||
+    (isGeminiMode ? DEFAULT_GEMINI_MODEL : undefined) ||
     (isGithubMode ? 'github:copilot' : 'codexplan')
   const descriptor = parseModelDescriptor(requestedModel)
   const explicitBaseUrl = asEnvUrl(options?.baseUrl)
@@ -558,7 +557,7 @@ export function resolveProviderRequest(options?: {
 
   const primaryEnvBaseUrl = isMistralMode
     ? normalizedMistralEnvBaseUrl
-    : isGeminiMode && !isOpenAIMode
+    : isGeminiMode
     ? normalizedGeminiEnvBaseUrl
     : asNamedEnvUrl(process.env.OPENAI_BASE_URL, 'OPENAI_BASE_URL')
 
@@ -569,7 +568,7 @@ export function resolveProviderRequest(options?: {
     ? (primaryEnvBaseUrl === undefined
       ? asNamedEnvUrl(process.env.OPENAI_API_BASE, 'OPENAI_API_BASE') ?? DEFAULT_MISTRAL_BASE_URL
       : undefined)
-    : isGeminiMode && !isOpenAIMode
+    : isGeminiMode
     ? (primaryEnvBaseUrl === undefined
       ? asNamedEnvUrl(process.env.OPENAI_API_BASE, 'OPENAI_API_BASE') ?? DEFAULT_GEMINI_BASE_URL
       : undefined)

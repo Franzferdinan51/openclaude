@@ -6,8 +6,6 @@ import {
   getSessionId,
   isSessionPersistenceDisabled,
 } from 'src/bootstrap/state.js'
-import { checkAndFireCouncil } from 'src/orchestrator/hybrid/index.js'
-import { getContentText } from 'src/utils/messages.js'
 import type {
   PermissionMode,
   SDKCompactBoundaryMessage,
@@ -44,6 +42,8 @@ import { SYNTHETIC_OUTPUT_TOOL_NAME } from './tools/SyntheticOutputTool/Syntheti
 import type { Message } from './types/message.js'
 import type { OrphanedPermission } from './types/textInputTypes.js'
 import { createAbortController } from './utils/abortController.js'
+import { validateArrayOf, assertNonEmptyString, assertObject, assertFunction } from './utils/validation.js'
+import { invalidateRemovedToolSchemas } from './utils/toolSchemaCache.js'
 import type { AttributionState } from './utils/commitAttribution.js'
 import { getGlobalConfig } from './utils/config.js'
 import { getCwd } from './utils/cwd.js'
@@ -84,18 +84,7 @@ import {
   shouldEnableThinkingByDefault,
   type ThinkingConfig,
 } from './utils/thinking.js'
-import { invalidateRemovedToolSchemas } from './utils/toolSchemaCache.js'
-import {
-  assertFunction,
-  assertNonEmptyString,
-  validateArrayOf,
-} from './utils/validation.js'
-
-// Lazy: MessageSelector.tsx pulls React/ink; only needed for message filtering at query time
-/* eslint-disable @typescript-eslint/no-require-imports */
-const messageSelector =
-  (): typeof import('src/components/MessageSelector.js') =>
-    require('src/components/MessageSelector.js')
+import { selectableUserMessagesFilter } from './utils/messageFilters.js'
 
 import {
   localCommandOutputToSDKAssistantMessage,
@@ -368,7 +357,7 @@ export class QueryEngine {
         isNonInteractiveSession: true,
         customSystemPrompt,
         appendSystemPrompt,
-        agentDefinitions: { activeAgents: agents, allAgents: [] },
+        agentDefinitions: { activeAgents: agents, allAgents: agents },
         theme: resolveThemeSetting(getGlobalConfig().theme),
         maxBudgetUsd,
       },
@@ -477,7 +466,7 @@ export class QueryEngine {
         (msg.type === 'user' &&
           !msg.isMeta && // Skip synthetic caveat messages
           !msg.toolUseResult && // Skip tool results (they'll be acked from query)
-          messageSelector().selectableUserMessagesFilter(msg)) || // Skip non-user-authored messages (task notifications, etc.)
+          selectableUserMessagesFilter(msg)) || // Skip non-user-authored messages (task notifications, etc.)
         (msg.type === 'system' && msg.subtype === 'compact_boundary'), // Always ack compact boundaries
     )
     const messagesToAck = replayUserMessages ? replayableMessages : []
@@ -517,7 +506,7 @@ export class QueryEngine {
         customSystemPrompt,
         appendSystemPrompt,
         theme: resolveThemeSetting(getGlobalConfig().theme),
-        agentDefinitions: { activeAgents: agents, allAgents: [] },
+        agentDefinitions: { activeAgents: agents, allAgents: agents },
         maxBudgetUsd,
       },
       getAppState,
@@ -649,7 +638,7 @@ export class QueryEngine {
 
     if (fileHistoryEnabled() && persistSession) {
       messagesFromUserInput
-        .filter(messageSelector().selectableUserMessagesFilter)
+        .filter(selectableUserMessagesFilter)
         .forEach(message => {
           void fileHistoryMakeSnapshot(
             (updater: (prev: FileHistoryState) => FileHistoryState) => {
@@ -680,17 +669,6 @@ export class QueryEngine {
     const initialStructuredOutputCalls = jsonSchema
       ? countToolCalls(this.mutableMessages, SYNTHETIC_OUTPUT_TOOL_NAME)
       : 0
-
-    // Auto-council: check if task complexity warrants AI council deliberation
-    // Fire-and-forget — council results are advisory; query proceeds in parallel
-    const promptText = typeof prompt === 'string' ? prompt
-      : Array.isArray(prompt) ? prompt.map(p => 'content' in p && typeof p.content === 'string' ? p.content : '').join(' ')
-      : ''
-    const historyForCouncil = this.mutableMessages
-      .filter(m => m.type === 'user' || m.type === 'assistant')
-      .map(m => ({ role: m.type === 'user' ? 'user' : 'assistant', content: getContentText(m.message.content as any) }))
-    void checkAndFireCouncil(promptText, historyForCouncil, tools.map(t => t.name))
-      .catch(() => {}) // non-blocking — council failure doesn't halt query
 
     for await (const message of query({
       messages,
@@ -1041,10 +1019,11 @@ export class QueryEngine {
           SYNTHETIC_OUTPUT_TOOL_NAME,
         )
         const callsThisQuery = currentCalls - initialStructuredOutputCalls
-        const maxRetries = parseInt(
+        const parsed = parseInt(
           process.env.MAX_STRUCTURED_OUTPUT_RETRIES || '5',
           10,
         )
+        const maxRetries = Number.isNaN(parsed) ? 5 : parsed
         if (callsThisQuery >= maxRetries) {
           if (persistSession) {
             if (
@@ -1196,24 +1175,50 @@ export class QueryEngine {
     return this.mutableMessages
   }
 
-  getReadFileState(): FileStateCache {
-    return this.readFileState
+  /**
+   * Inject messages into the engine's message store.
+   * Used by SDK query() when fork=true to resume from a forked session.
+   */
+  injectMessages(messages: Message[]): void {
+    const validated = validateArrayOf(messages, (msg, _i) => {
+      const m = msg as Record<string, unknown>
+      assertNonEmptyString(m.type, 'type')
+      if (m.message !== undefined) {
+        assertObject(m.message, 'message')
+        const inner = m.message as Record<string, unknown>
+        if (inner.role !== undefined) {
+          assertNonEmptyString(inner.role, 'message.role')
+        }
+        if (inner.content !== undefined && typeof inner.content !== 'string' && !Array.isArray(inner.content)) {
+          throw new TypeError("'message.content' must be a string or array")
+        }
+      }
+      return msg
+    }, 'injectMessages')
+    this.mutableMessages.push(...validated)
   }
 
-  getSessionId(): string {
-    return getSessionId()
-  }
-
+  /**
+   * Inject agent definitions into the engine's config.
+   * Used by SDK to load agents after engine creation (async loading).
+   * Validates that agents have the internal format fields
+   * (agentType, whenToUse, getSystemPrompt) since SDK agents
+   * are converted to this format before injection.
+   */
   injectAgents(agents: AgentDefinition[]): void {
     const validated = validateArrayOf(agents, (agent, _i) => {
       const a = agent as Record<string, unknown>
       assertNonEmptyString(a.agentType, 'agentType')
       assertNonEmptyString(a.whenToUse, 'whenToUse')
-      assertFunction(a.getSystemPrompt, 'getSystemPrompt')
+      if (typeof a.getSystemPrompt !== 'function') {
+        throw new TypeError("missing or invalid 'getSystemPrompt' (expected function)")
+      }
       if (a.tools !== undefined) {
         const validToolNames = new Set(this.config.tools.map(t => t.name))
         for (const toolSpec of a.tools as string[]) {
+          // Wildcard '*' means all tools are allowed - skip validation
           if (toolSpec === '*') continue
+          // Parse tool spec to get base tool name (may contain permission rules)
           const toolName = toolSpec.split(':')[0] ?? toolSpec
           if (!validToolNames.has(toolName)) {
             throw new TypeError(`agent references unknown tool '${toolSpec}'`)
@@ -1225,12 +1230,17 @@ export class QueryEngine {
     this.config.agents = validated
   }
 
+  /**
+   * Update the engine's tool list dynamically.
+   * Used by SDK setPermissionMode to refresh tools when permission mode changes.
+   */
   updateTools(tools: Tools): void {
     if (!Array.isArray(tools) && !(Symbol.iterator in Object(tools))) {
       throw new TypeError(`updateTools: expected iterable, got ${typeof tools}`)
     }
     const toolArray = Array.from(tools as Iterable<unknown>)
 
+    // Phase 1: Validate new tools
     validateArrayOf(toolArray, (tool, _i) => {
       const t = tool as Record<string, unknown>
       assertNonEmptyString(t.name, 'name')
@@ -1238,9 +1248,8 @@ export class QueryEngine {
       return tool
     }, 'updateTools')
 
-    const validToolNames = new Set(
-      toolArray.map(t => (t as Record<string, unknown>).name as string),
-    )
+    // Phase 2: Validate agent compatibility BEFORE commit (transactional)
+    const validToolNames = new Set(toolArray.map(t => (t as Record<string, unknown>).name as string))
     for (const agent of this.config.agents) {
       if (agent.tools) {
         for (const toolSpec of agent.tools) {
@@ -1248,29 +1257,55 @@ export class QueryEngine {
           const toolName = toolSpec.split(':')[0] ?? toolSpec
           if (!validToolNames.has(toolName)) {
             throw new TypeError(
-              `updateTools: agent '${agent.agentType}' references tool '${toolSpec}' which is not in the new tool set`,
+              `updateTools: agent '${agent.agentType}' references tool '${toolSpec}' which is not in the new tool set`
             )
           }
         }
       }
     }
 
+    // Phase 3: Commit — only reached if all validations pass
     this.config.tools = toolArray as Tools
+
+    // Phase 4: Invalidate schema cache for removed tools only.
+    // Selective invalidation preserves cached schemas for tools that remain,
+    // avoiding unnecessary recomputation for concurrent engines in multi-session
+    // SDK scenarios. New tools (not yet cached) will be computed on first render.
     invalidateRemovedToolSchemas(validToolNames)
+  }
+
+  getReadFileState(): FileStateCache {
+    return this.readFileState
+  }
+
+  getSessionId(): string {
+    return getSessionId()
   }
 
   setModel(model: string): void {
     this.config.userSpecifiedModel = model
   }
 
+  /**
+   * Update the engine's thinking config dynamically.
+   * Used by SDK setMaxThinkingTokens to change the thinking token budget.
+   */
   setThinkingConfig(config: ThinkingConfig): void {
     this.config.thinkingConfig = config
   }
 
+  /**
+   * Get MCP server connections. Returns a readonly array to prevent
+   * external mutation (use setMcpClients or updateTools to modify).
+   */
   getMcpClients(): readonly MCPServerConnection[] {
     return this.config.mcpClients
   }
 
+  /**
+   * Set MCP server connections. Replaces the entire mcpClients array.
+   * Used by SDK to inject session-scoped MCP servers after connection.
+   */
   setMcpClients(clients: MCPServerConnection[]): void {
     this.config.mcpClients = clients
   }

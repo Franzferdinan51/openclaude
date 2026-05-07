@@ -114,6 +114,7 @@ export function executeEffort(args: string): EffortCommandResult {
     return setEffortValue(normalized);
   }
   if (isOpenAIEffortLevel(normalized)) {
+    // Normalize OpenAI-shaped 'xhigh' → standard 'max' so it persists.
     return setEffortValue(openAIEffortToStandard(normalized));
   }
   return {

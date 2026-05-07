@@ -1285,6 +1285,21 @@ async function* queryModel(
   let messagesForAPI = normalizeMessagesForAPI(messages, filteredTools)
   queryCheckpoint('query_message_normalization_end')
 
+  // Apply hybrid context strategy for optimal cache/fresh balance
+  if (feature('HYBRID_CONTEXT_STRATEGY')) {
+    const { applyHybridStrategy } = await import('../../utils/hybridContextStrategy.js')
+    // Cap at 200k to avoid edge case with very large context windows
+    const strategyResult = applyHybridStrategy(messagesForAPI, {
+      cacheWeight: 0.4,
+      freshWeight: 0.6,
+      maxTotalTokens: Math.min(
+        getContextWindowForModel(model, getSdkBetas()) - COMPACT_MAX_OUTPUT_TOKENS,
+        200000
+      ),
+    })
+    messagesForAPI = strategyResult.selectedMessages
+  }
+
   // Model-specific post-processing: strip tool-search-specific fields if the
   // selected model doesn't support tool search.
   //
@@ -2578,12 +2593,7 @@ async function* queryModel(
           : 'other') as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
       })
       const result = yield* executeNonStreamingRequest(
-        {
-          model: options.model,
-          source: options.querySource,
-          providerOverride: options.providerOverride,
-          effortValue: effort,
-        },
+        { model: options.model, source: options.querySource, providerOverride: options.providerOverride, effortValue: effort },
         {
           model: options.model,
           fallbackModel: options.fallbackModel,
@@ -2682,11 +2692,7 @@ async function* queryModel(
       try {
         // Fall back to non-streaming mode
         const result = yield* executeNonStreamingRequest(
-          {
-            model: options.model,
-            source: options.querySource,
-            effortValue: effort,
-          },
+          { model: options.model, source: options.querySource, effortValue: effort },
           {
             model: options.model,
             fallbackModel: options.fallbackModel,

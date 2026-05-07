@@ -73,49 +73,15 @@ if (feature('ABLATION_BASELINE') && process.env.CLAUDE_CODE_ABLATION_BASELINE) {
  * All imports are dynamic to minimize module evaluation for fast paths.
  * Fast-path for --version has zero imports beyond this file.
  */
-function normalizeDeprecatedCliFlags(argv: string[] = process.argv): void {
-  let sawDoubleDash = false;
-  for (let i = 2; i < argv.length; i++) {
-    const arg = argv[i];
-    if (arg === '--') {
-      sawDoubleDash = true;
-      continue;
-    }
-    if (sawDoubleDash) {
-      continue;
-    }
-    if (arg === '--yolo') {
-      argv[i] = '--dangerously-skip-permissions';
-    }
-  }
-}
-
 async function main(): Promise<void> {
-  normalizeDeprecatedCliFlags();
   const args = process.argv.slice(2);
 
   // Fast-path for --version/-v: zero module loading needed
   if (args.length === 1 && (args[0] === '--version' || args[0] === '-v' || args[0] === '-V')) {
     // MACRO.VERSION is inlined at build time
     // biome-ignore lint/suspicious/noConsole:: intentional console output
-    console.log(`${MACRO.DISPLAY_VERSION ?? MACRO.VERSION} (DuckHive)`);
+    console.log(`${MACRO.DISPLAY_VERSION ?? MACRO.VERSION} (OpenClaude)`);
     return;
-  }
-
-  if (args.length === 0 && process.stdin.isTTY && process.stdout.isTTY) {
-    const [{
-      launchStandaloneTui,
-      shouldAutoLaunchStandaloneTui
-    }, {
-      dirname,
-      resolve
-    }, {
-      fileURLToPath
-    }] = await Promise.all([import('../utils/tuiAutoLaunch.js'), import('path'), import('url')]);
-    const runtimeRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-    if (shouldAutoLaunchStandaloneTui(args) && (await launchStandaloneTui(runtimeRoot))) {
-      process.exit(process.exitCode ?? 0);
-    }
   }
 
   // --provider: set provider env vars early so saved-profile resolution,
@@ -156,11 +122,6 @@ async function main(): Promise<void> {
     }
   }
 
-  {
-    const { applyModelFlagFromArgs } = await import('../utils/providerFlag.js')
-    applyModelFlagFromArgs(args)
-  }
-
   // Hydrate GitHub credentials after profile is applied so CLAUDE_CODE_USE_GITHUB from profile is available
   {
     const {
@@ -173,12 +134,20 @@ async function main(): Promise<void> {
 
   await validateProviderEnvForStartupOrExit()
 
-  // Print the gradient startup screen before the Ink UI loads.
-  const { shouldPrintStartupScreen } = await import('./startupScreenGate.js')
-  if (shouldPrintStartupScreen(args)) {
-    const { printStartupScreen } = await import('../components/StartupScreen.js')
-    printStartupScreen()
+  // #808: --model alone (no --provider) — route to the env var matching the
+  // active provider before the banner prints so the override is visible.
+  if (args.includes('--model')) {
+    const { applyModelFlagFromArgs } = await import('../utils/providerFlag.js')
+    applyModelFlagFromArgs(args)
   }
+
+  // Parse --model early so the startup screen can display the override
+  const { eagerParseCliFlag } = await import('../utils/cliArgs.js')
+  const earlyModelFlag = eagerParseCliFlag('--model')
+
+  // Print the gradient startup screen before the Ink UI loads
+  const { printStartupScreen } = await import('../components/StartupScreen.js')
+  printStartupScreen(earlyModelFlag)
 
   // For all other paths, load the startup profiler
   const {

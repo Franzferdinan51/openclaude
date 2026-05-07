@@ -39,6 +39,64 @@ export type AttributionTexts = {
   pr: string
 }
 
+function sanitizeCoAuthorNamePart(value: string): string {
+  return value
+    .replace(/[\r\n<>]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .replace(/\(\s+/g, '(')
+    .replace(/\s+\)/g, ')')
+    .trim()
+}
+
+function formatClaudeCoAuthorName(model: string): string {
+  const publicName = getPublicModelDisplayName(model)
+  if (!publicName) {
+    return sanitizeCoAuthorNamePart(getPublicModelName(model))
+  }
+  const coAuthorName = publicName.startsWith('Claude ')
+    ? publicName
+    : `Claude ${publicName}`
+  return sanitizeCoAuthorNamePart(coAuthorName)
+}
+
+export function getDefaultCommitCoAuthorName({
+  model,
+  apiProvider,
+  isInternalRepo,
+}: {
+  model: string
+  apiProvider: string
+  isInternalRepo: boolean
+}): string {
+  const isKnownPublicModel = getPublicModelDisplayName(model) !== null
+  const normalizedModel = model.toLowerCase()
+  const isClaudeProvider =
+    apiProvider === 'firstParty' ||
+    apiProvider === 'bedrock' ||
+    apiProvider === 'vertex' ||
+    apiProvider === 'foundry' ||
+    normalizedModel.includes('claude')
+
+  if (isClaudeProvider && (isInternalRepo || isKnownPublicModel)) {
+    return formatClaudeCoAuthorName(model)
+  }
+
+  // Unknown first-party models may be unreleased Claude codenames, so keep the
+  // historical public fallback. OpenAI-compatible providers should identify the
+  // actual configured model instead of claiming Claude Opus.
+  if (apiProvider === 'firstParty') {
+    // @[MODEL LAUNCH]: Update this fallback when the default public Claude model changes.
+    return 'Claude Opus 4.6'
+  }
+
+  const sanitizedModel = sanitizeCoAuthorNamePart(model)
+  return sanitizedModel ? `OpenClaude (${sanitizedModel})` : 'OpenClaude'
+}
+
+export function getDefaultCommitCoAuthorEmail(_apiProvider: string): string {
+  return 'openclaude@gitlawb.com'
+}
+
 /**
  * Returns attribution text for commits and PRs based on user settings.
  * Handles:
@@ -65,24 +123,23 @@ export function getAttributionTexts(): AttributionTexts {
     return { commit: '', pr: '' }
   }
 
-  // @[MODEL LAUNCH]: Update the hardcoded fallback model name below (guards against codename leaks).
-  // For internal repos, use the real model name. For external repos,
-  // fall back to "MiniMax M2.7" for unrecognized models to avoid leaking codenames.
+  // First-party unknown models may be unreleased Claude codenames. Other
+  // providers can safely use the configured public model string.
   const model = getMainLoopModel()
-  const isKnownPublicModel = getPublicModelDisplayName(model) !== null
-  const modelName =
-    isInternalModelRepoCached() || isKnownPublicModel
-      ? getPublicModelName(model)
-      : 'MiniMax M2.7'
+  const apiProvider = getAPIProvider()
+  const modelName = getDefaultCommitCoAuthorName({
+    model,
+    apiProvider,
+    isInternalRepo: isInternalModelRepoCached(),
+  })
   const defaultAttribution =
-    '🤖 Generated with [DuckHive](https://github.com/Franzferdinan51/DuckHive)'
-  const coAuthorDomain =
-    getAPIProvider() === 'firstParty' ? 'anthropic.com' : 'duckhive.dev'
+    '🤖 Generated with [OpenClaude](https://github.com/Gitlawb/openclaude)'
+  const coAuthorEmail = getDefaultCommitCoAuthorEmail(apiProvider)
   const defaultCommit = isEnvTruthy(
     process.env.OPENCLAUDE_DISABLE_CO_AUTHORED_BY,
   )
     ? ''
-    : `Co-Authored-By: ${modelName} <noreply@${coAuthorDomain}>`
+    : `Co-Authored-By: ${modelName} <${coAuthorEmail}>`
 
   const settings = getInitialSettings()
 
@@ -331,7 +388,7 @@ export async function getEnhancedPRAttribution(
   }
 
   const defaultAttribution =
-    '🤖 Generated with [DuckHive](https://github.com/Franzferdinan51/DuckHive)'
+    '🤖 Generated with [OpenClaude](https://github.com/Gitlawb/openclaude)'
 
   // Get AppState first
   const appState = getAppState()
@@ -377,7 +434,7 @@ export async function getEnhancedPRAttribution(
     memoryAccessCount > 0
       ? `, ${memoryAccessCount} ${memoryAccessCount === 1 ? 'memory' : 'memories'} recalled`
       : ''
-  const summary = `🤖 Generated with [DuckHive](https://github.com/Franzferdinan51/DuckHive) (${claudePercent}% ${promptCount}-shotted by ${shortModelName}${memSuffix})`
+  const summary = `🤖 Generated with [OpenClaude](https://github.com/Gitlawb/openclaude) (${claudePercent}% ${promptCount}-shotted by ${shortModelName}${memSuffix})`
 
   // Append trailer lines for squash-merge survival. Only for allowlisted repos
   // (INTERNAL_MODEL_REPOS) and only in builds with COMMIT_ATTRIBUTION enabled —
