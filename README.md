@@ -140,6 +140,24 @@ Zip up a DuckHive session for sharing or archival. Includes context files, histo
 /export import session.zip    # Restore a session
 ```
 
+### /goal — Persisted Workflow Goals
+
+Track multi-step tasks across sessions with persisted goals. Inspired by Codex `/goal` (r0.128.0). Goals survive restarts and can be resumed later.
+
+```bash
+/goal create Build user authentication system    # Create a new goal
+/goal list                                          # List all goals
+/goal list active                                   # Filter by status
+/goal status goal_abc123                            # Show goal details
+/goal pause goal_abc123                            # Pause a goal
+/goal resume goal_abc123                           # Resume paused goal
+/goal complete goal_abc123                         # Mark as done
+/goal step add goal_abc123 Implement login API     # Add a step
+/goal clear goal_abc123                             # Delete a goal
+```
+
+Goals persist in `~/.duckhive/config.json` and survive across sessions.
+
 ### Sub-Agent Spawning with Model Routing
 
 Spawn specialized sub-agents with automatic model selection based on task type. Each sub-agent gets the optimal model from the router.
@@ -289,6 +307,33 @@ desktop_control get_action_log
 desktop_control vision_assist vision_prompt="What buttons are visible on screen?"
 desktop_control set_resource_broker vision_endpoint="http://localhost:1234" vision_model="qwen3.5-9b"
 ```
+
+---
+
+### DuckHive Android — Run on Android via Termux
+
+DuckHive runs natively on Android using Termux + glibc-runner. Based on [openclaw-android](https://github.com/AidanPark/openclaw-android).
+
+**Quick Install (in Termux):**
+```bash
+curl -sL https://raw.githubusercontent.com/Franzferdinan51/DuckHive/main/scripts/duckhive-android/install.sh | bash
+```
+
+**Commands:**
+```bash
+dh update                           # Update DuckHive
+dh backup                           # Backup config and skills
+dh android screenshot               # Take device screenshot
+dh android tap 500 500              # Tap screen coordinates
+dh android swipe 100 500 300 500    # Swipe gesture
+dh android text "hello"             # Input text
+dh onboard                          # Initial setup
+dh status                           # Show status
+```
+
+**Requirements:**
+- Android with [Termux](https://f-droid.org/en/packages/com.termux/) (F-Droid recommended)
+- ~200MB storage footprint
 
 ---
 
