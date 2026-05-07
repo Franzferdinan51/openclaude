@@ -149,25 +149,42 @@ export function handleIngressMessage(
 
     // control_request from the server (initialize, set_model, can_use_tool).
     // Must respond promptly or the server kills the WS (~10-14s timeout).
-    if (isSDKControlRequest(parsed)) {
+    const req = parsed as Record<string, unknown> | null
+    if (
+      req !== null &&
+      typeof req === 'object' &&
+      req.type === 'control_request' &&
+      'request_id' in req &&
+      'request' in req &&
+      typeof req.request === 'object' &&
+      req.request !== null
+    ) {
       logForDebugging(
-        `[bridge:repl] Inbound control_request subtype=${parsed.request.subtype}`,
+        `[bridge:repl] Inbound control_request subtype=${
+          'subtype' in req.request ? String(req.request.subtype) : 'unknown'
+        }`,
       )
       onControlRequest?.(parsed)
       return
     }
 
-    if (!isSDKMessage(parsed)) return
+    const msg = parsed as Record<string, unknown> | null
+    if (
+      msg === null ||
+      typeof msg !== 'object' ||
+      !('type' in msg) ||
+      typeof msg.type !== 'string'
+    ) {
+      return
+    }
 
     // Check for UUID to detect echoes of our own messages
     const uuid =
-      'uuid' in parsed && typeof parsed.uuid === 'string'
-        ? parsed.uuid
-        : undefined
+      'uuid' in msg && typeof msg.uuid === 'string' ? msg.uuid : undefined
 
     if (uuid && recentPostedUUIDs.has(uuid)) {
       logForDebugging(
-        `[bridge:repl] Ignoring echo: type=${parsed.type} uuid=${uuid}`,
+        `[bridge:repl] Ignoring echo: type=${String(msg.type)} uuid=${uuid}`,
       )
       return
     }
@@ -179,16 +196,16 @@ export function handleIngressMessage(
     // receiving any frames, etc).
     if (uuid && recentInboundUUIDs.has(uuid)) {
       logForDebugging(
-        `[bridge:repl] Ignoring re-delivered inbound: type=${parsed.type} uuid=${uuid}`,
+        `[bridge:repl] Ignoring re-delivered inbound: type=${String(msg.type)} uuid=${uuid}`,
       )
       return
     }
 
     logForDebugging(
-      `[bridge:repl] Ingress message type=${parsed.type}${uuid ? ` uuid=${uuid}` : ''}`,
+      `[bridge:repl] Ingress message type=${String(msg.type)}${uuid ? ` uuid=${uuid}` : ''}`,
     )
 
-    if (parsed.type === 'user') {
+    if (msg.type === 'user') {
       if (uuid) recentInboundUUIDs.add(uuid)
       logEvent('tengu_bridge_message_received', {
         is_repl: true,
@@ -197,7 +214,7 @@ export function handleIngressMessage(
       void onInboundMessage?.(parsed)
     } else {
       logForDebugging(
-        `[bridge:repl] Ignoring non-user inbound message: type=${parsed.type}`,
+        `[bridge:repl] Ignoring non-user inbound message: type=${String(msg.type)}`,
       )
     }
   } catch (err) {

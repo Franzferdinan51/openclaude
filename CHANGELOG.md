@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### Upstream Sync
+
+* synced DuckHive to OpenClaude `main` at `4b1e516fc70c07da6ad678df35030fa114cc8918`
+* added the `duckhive/sdk` SDKv2 export and separate `dist/sdk.mjs` bundle
+* ported OpenClaude SDK query/session/runtime helpers, generated SDK types, permission/web-search/provider fixes, hook EOF handling, incremental token counting, and QueryEngine SDK mutators
+* removed DuckHive-owned `openclaude` command wrappers so `openclaude` remains owned by `@gitlawb/openclaude`
+
 ## [0.9.0](https://github.com/Franzferdinan51/DuckHive/compare/v0.8.1...v0.9.0) (2026-05-06)
 
 ### Features

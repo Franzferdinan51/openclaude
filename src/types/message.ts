@@ -1,11 +1,20 @@
 /**
  * Stub types for missing modules.
- * These bridge the gap between what TypeScript expects and what OpenClaude provides.
- * Generated/imported at build time; stubs satisfy type-checking only.
+ * Uses `any` to match upstream snapshot behavior where Message is not strongly typed.
+ * See issue #473 for the typecheck-foundation effort.
  */
 
-// Re-export Message from its actual location
-export type { Message, MessageSource } from '../utils/mailbox.js'
+/* eslint-disable @typescript-eslint/no-explicit-any */
+export type Message = any
+export type AssistantMessage = any
+export type UserMessage = any
+export type SystemMessage = any
+export type SystemAPIErrorMessage = any
+export type AttachmentMessage = any
+export type ProgressMessage = any
+export type HookResultMessage = any
+export type NormalizedUserMessage = any
+export type MessageSource = any
 
 // Assistant mode detection
 export const isAssistantMode = false

@@ -67,7 +67,7 @@ cat > "$LAUNCHER" <<EOF
 exec "$ROOT_DIR/bin/duckhive" "\$@"
 EOF
 chmod 755 "$LAUNCHER"
-chmod 755 "$ROOT_DIR/bin/duckhive" "$ROOT_DIR/bin/openclaude" 2>/dev/null || true
+chmod 755 "$ROOT_DIR/bin/duckhive" 2>/dev/null || true
 chmod 755 "$ROOT_DIR/bin/tui-pty-helper.py" 2>/dev/null || true
 
 case ":$PATH:" in

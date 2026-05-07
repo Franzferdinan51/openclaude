@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import {
   parseProviderFlag,
+  applyModelFlagFromArgs,
   applyProviderFlag,
   applyProviderFlagFromArgs,
   VALID_PROVIDERS,
@@ -10,12 +11,15 @@ const ENV_KEYS = [
   'CLAUDE_CODE_USE_OPENAI',
   'CLAUDE_CODE_USE_GEMINI',
   'CLAUDE_CODE_USE_GITHUB',
+  'CLAUDE_CODE_USE_MISTRAL',
   'CLAUDE_CODE_USE_BEDROCK',
   'CLAUDE_CODE_USE_VERTEX',
   'OPENAI_BASE_URL',
   'OPENAI_API_KEY',
   'OPENAI_MODEL',
   'GEMINI_MODEL',
+  'MISTRAL_MODEL',
+  'ANTHROPIC_MODEL',
   'KIMI_API_KEY',
   'MOONSHOT_API_KEY',
 ]
@@ -33,12 +37,15 @@ const RESET_KEYS = [
   'CLAUDE_CODE_USE_OPENAI',
   'CLAUDE_CODE_USE_GEMINI',
   'CLAUDE_CODE_USE_GITHUB',
+  'CLAUDE_CODE_USE_MISTRAL',
   'CLAUDE_CODE_USE_BEDROCK',
   'CLAUDE_CODE_USE_VERTEX',
   'OPENAI_BASE_URL',
   'OPENAI_API_KEY',
   'OPENAI_MODEL',
   'GEMINI_MODEL',
+  'MISTRAL_MODEL',
+  'ANTHROPIC_MODEL',
   'KIMI_API_KEY',
   'MOONSHOT_API_KEY',
 ] as const
@@ -227,5 +234,36 @@ describe('applyProviderFlagFromArgs', () => {
 
   test('returns undefined when --provider is absent', () => {
     expect(applyProviderFlagFromArgs(['--model', 'gpt-4o'])).toBeUndefined()
+  })
+})
+
+describe('applyModelFlagFromArgs', () => {
+  test('routes --model to OPENAI_MODEL for active OpenAI-compatible providers', () => {
+    process.env.CLAUDE_CODE_USE_OPENAI = '1'
+    applyModelFlagFromArgs(['--model', 'gpt-5.4'])
+    expect(process.env.OPENAI_MODEL).toBe('gpt-5.4')
+  })
+
+  test('routes --model to GEMINI_MODEL for active Gemini provider', () => {
+    process.env.CLAUDE_CODE_USE_GEMINI = 'true'
+    applyModelFlagFromArgs(['--model', 'gemini-2.5-pro'])
+    expect(process.env.GEMINI_MODEL).toBe('gemini-2.5-pro')
+  })
+
+  test('routes --model to MISTRAL_MODEL for active Mistral provider', () => {
+    process.env.CLAUDE_CODE_USE_MISTRAL = '1'
+    applyModelFlagFromArgs(['--model', 'devstral-latest'])
+    expect(process.env.MISTRAL_MODEL).toBe('devstral-latest')
+  })
+
+  test('routes --model to ANTHROPIC_MODEL when no third-party provider is active', () => {
+    applyModelFlagFromArgs(['--model', 'claude-sonnet-4-6'])
+    expect(process.env.ANTHROPIC_MODEL).toBe('claude-sonnet-4-6')
+  })
+
+  test('does not run when --provider is present', () => {
+    process.env.CLAUDE_CODE_USE_OPENAI = '1'
+    applyModelFlagFromArgs(['--provider', 'openai', '--model', 'gpt-5.4'])
+    expect(process.env.OPENAI_MODEL).toBeUndefined()
   })
 })

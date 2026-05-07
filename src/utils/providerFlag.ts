@@ -57,12 +57,37 @@ export function applyProviderFlagFromArgs(
  * Extract the value of --model from argv.
  * Returns null if absent.
  */
-function parseModelFlag(args: string[]): string | null {
+export function parseModelFlag(args: string[]): string | null {
   const idx = args.indexOf('--model')
   if (idx === -1) return null
   const value = args[idx + 1]
   if (!value || value.startsWith('--')) return null
   return value
+}
+
+/**
+ * Apply --model without --provider to process.env for this process only.
+ * Routes to the active provider's model env var after saved profile env has
+ * been applied, without persisting anything back to profile files.
+ */
+export function applyModelFlagFromArgs(args: string[]): void {
+  if (args.includes('--provider')) return
+  const model = parseModelFlag(args)
+  if (!model) return
+
+  const truthy = (value: string | undefined) => value === '1' || value === 'true'
+  if (truthy(process.env.CLAUDE_CODE_USE_GEMINI)) {
+    process.env.GEMINI_MODEL = model
+  } else if (truthy(process.env.CLAUDE_CODE_USE_MISTRAL)) {
+    process.env.MISTRAL_MODEL = model
+  } else if (
+    truthy(process.env.CLAUDE_CODE_USE_OPENAI) ||
+    truthy(process.env.CLAUDE_CODE_USE_GITHUB)
+  ) {
+    process.env.OPENAI_MODEL = model
+  } else {
+    process.env.ANTHROPIC_MODEL = model
+  }
 }
 
 /**

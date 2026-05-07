@@ -153,6 +153,17 @@ function hasGeminiApiHost(baseUrl: string | undefined): boolean {
   }
 }
 
+function hasCerebrasApiHost(baseUrl: string | undefined): boolean {
+  if (!baseUrl) return false
+
+  try {
+    const host = new URL(baseUrl).hostname.toLowerCase()
+    return host === 'api.cerebras.ai' || host.endsWith('.cerebras.ai')
+  } catch {
+    return false
+  }
+}
+
 function isMoonshotBaseUrl(baseUrl: string | undefined): boolean {
   return isMoonshotApiBaseUrl(baseUrl)
 }
@@ -1544,7 +1555,12 @@ class OpenAIShimMessages {
     // Moonshot (api.moonshot.ai/.cn) has not published support for the
     // parameter either; strip it preemptively to avoid the same class of
     // error on strict-parse providers.
-    if (isMistral || isGeminiMode() || isMoonshot) {
+    if (
+      isMistral ||
+      isGeminiMode() ||
+      isMoonshot ||
+      hasCerebrasApiHost(request.baseUrl)
+    ) {
       delete body.store
     }
 

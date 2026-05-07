@@ -1349,10 +1349,11 @@ async function execCommandHook(
         })
         // Explicitly specify UTF-8 encoding to ensure proper handling of Unicode characters
         child.stdin.write(jsonInput + '\n', 'utf8')
-        // When requestPrompt is provided, keep stdin open for prompt responses
-        if (!requestPrompt) {
-          child.stdin.end()
-        }
+        // Always close stdin after writing the initial JSON payload. The
+        // hook input contract says stdin closes after the payload, and plugin
+        // hooks commonly read until EOF. Keeping stdin open in interactive
+        // mode makes UserPromptSubmit hooks wait for the full hook timeout.
+        child.stdin.end()
         resolve()
       })
 

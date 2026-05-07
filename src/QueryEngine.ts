@@ -84,6 +84,12 @@ import {
   shouldEnableThinkingByDefault,
   type ThinkingConfig,
 } from './utils/thinking.js'
+import { invalidateRemovedToolSchemas } from './utils/toolSchemaCache.js'
+import {
+  assertFunction,
+  assertNonEmptyString,
+  validateArrayOf,
+} from './utils/validation.js'
 
 // Lazy: MessageSelector.tsx pulls React/ink; only needed for message filtering at query time
 /* eslint-disable @typescript-eslint/no-require-imports */
@@ -1198,8 +1204,75 @@ export class QueryEngine {
     return getSessionId()
   }
 
+  injectAgents(agents: AgentDefinition[]): void {
+    const validated = validateArrayOf(agents, (agent, _i) => {
+      const a = agent as Record<string, unknown>
+      assertNonEmptyString(a.agentType, 'agentType')
+      assertNonEmptyString(a.whenToUse, 'whenToUse')
+      assertFunction(a.getSystemPrompt, 'getSystemPrompt')
+      if (a.tools !== undefined) {
+        const validToolNames = new Set(this.config.tools.map(t => t.name))
+        for (const toolSpec of a.tools as string[]) {
+          if (toolSpec === '*') continue
+          const toolName = toolSpec.split(':')[0] ?? toolSpec
+          if (!validToolNames.has(toolName)) {
+            throw new TypeError(`agent references unknown tool '${toolSpec}'`)
+          }
+        }
+      }
+      return agent
+    }, 'injectAgents')
+    this.config.agents = validated
+  }
+
+  updateTools(tools: Tools): void {
+    if (!Array.isArray(tools) && !(Symbol.iterator in Object(tools))) {
+      throw new TypeError(`updateTools: expected iterable, got ${typeof tools}`)
+    }
+    const toolArray = Array.from(tools as Iterable<unknown>)
+
+    validateArrayOf(toolArray, (tool, _i) => {
+      const t = tool as Record<string, unknown>
+      assertNonEmptyString(t.name, 'name')
+      assertFunction(t.call, 'call')
+      return tool
+    }, 'updateTools')
+
+    const validToolNames = new Set(
+      toolArray.map(t => (t as Record<string, unknown>).name as string),
+    )
+    for (const agent of this.config.agents) {
+      if (agent.tools) {
+        for (const toolSpec of agent.tools) {
+          if (toolSpec === '*') continue
+          const toolName = toolSpec.split(':')[0] ?? toolSpec
+          if (!validToolNames.has(toolName)) {
+            throw new TypeError(
+              `updateTools: agent '${agent.agentType}' references tool '${toolSpec}' which is not in the new tool set`,
+            )
+          }
+        }
+      }
+    }
+
+    this.config.tools = toolArray as Tools
+    invalidateRemovedToolSchemas(validToolNames)
+  }
+
   setModel(model: string): void {
     this.config.userSpecifiedModel = model
+  }
+
+  setThinkingConfig(config: ThinkingConfig): void {
+    this.config.thinkingConfig = config
+  }
+
+  getMcpClients(): readonly MCPServerConnection[] {
+    return this.config.mcpClients
+  }
+
+  setMcpClients(clients: MCPServerConnection[]): void {
+    this.config.mcpClients = clients
   }
 }
 

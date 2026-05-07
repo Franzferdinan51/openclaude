@@ -1,0 +1,17 @@
+<user_allow_rules_to_replace>
+- Read-only inspection of files and directories inside the current workspace.
+- Non-destructive status checks such as listing files, checking versions, or reading configuration.
+- Deterministic formatting or validation commands that do not write outside the workspace.
+</user_allow_rules_to_replace>
+
+<user_deny_rules_to_replace>
+- Deleting, overwriting, moving, or chmod/chown operations unless explicitly requested by the user.
+- Network requests, credential access, secret printing, package publishing, git push, or deployment.
+- Commands that execute downloaded code or modify system-wide configuration.
+</user_deny_rules_to_replace>
+
+<user_environment_to_replace>
+- Treat the current workspace as the normal working boundary.
+- Treat home directories, SSH keys, API keys, browser data, and OS settings as sensitive.
+- When uncertain, deny and ask for explicit confirmation.
+</user_environment_to_replace>

@@ -15,8 +15,9 @@
  */
 
 import { registerBuiltinPlugin } from '../builtinPlugins.js'
-import { join, existsSync } from 'fs'
+import { existsSync } from 'fs'
 import { homedir } from 'os'
+import { join } from 'path'
 
 // ── computer-use ──────────────────────────────────────────────────────────────
 

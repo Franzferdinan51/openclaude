@@ -12,6 +12,7 @@
  *   "exa"       — use Exa only (fail loudly)
  *   "you"       — use You.com only (fail loudly)
  *   "jina"      — use Jina only (fail loudly)
+ *   "brave"     — use Brave only (fail loudly)
  *   "bing"      — use Bing only (fail loudly)
  *   "mojeek"    — use Mojeek only (fail loudly)
  *   "linkup"    — use Linkup only (fail loudly)
@@ -36,6 +37,7 @@ import { tavilyProvider } from './tavily.js'
 import { exaProvider } from './exa.js'
 import { youProvider } from './you.js'
 import { jinaProvider } from './jina.js'
+import { braveProvider } from './brave.js'
 import { bingProvider } from './bing.js'
 import { mojeekProvider } from './mojeek.js'
 import { linkupProvider } from './linkup.js'
@@ -47,8 +49,10 @@ export { extractHits } from './custom.js'
 // ---------------------------------------------------------------------------
 // All registered providers — order matters for auto mode
 // ---------------------------------------------------------------------------
-// Priority: minimax → firecrawl → tavily → exa → you → jina → bing → mojeek → linkup → ddg
+// Priority: minimax → firecrawl → tavily → exa → you → jina → brave → bing → mojeek → linkup → ddg
 // DDG is last because it's free but rate-limited.
+// Brave sits ahead of Bing because it runs an independent index and Bing's
+// hosted API was sunsetted in 2025 for new users.
 // NOTE: customProvider is intentionally excluded from the auto chain.
 //       It is only available when WEB_SEARCH_PROVIDER=custom is explicitly set.
 //       This prevents the generic outbound provider from silently becoming the default backend.
@@ -60,6 +64,7 @@ const ALL_PROVIDERS: SearchProvider[] = [
   exaProvider,
   youProvider,
   jinaProvider,
+  braveProvider,
   bingProvider,
   mojeekProvider,
   linkupProvider,
@@ -85,6 +90,7 @@ export type ProviderMode =
   | 'exa'
   | 'you'
   | 'jina'
+  | 'brave'
   | 'bing'
   | 'mojeek'
   | 'linkup'
@@ -100,6 +106,7 @@ const PROVIDER_BY_NAME: Record<string, SearchProvider> = {
   exa: exaProvider,
   you: youProvider,
   jina: jinaProvider,
+  brave: braveProvider,
   bing: bingProvider,
   mojeek: mojeekProvider,
   linkup: linkupProvider,

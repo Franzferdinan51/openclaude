@@ -1,12 +1,12 @@
 # Upstream Sync - May 2026
 
-DuckHive checked the live upstream repositories on May 7, 2026 and ported the safest high-value fixes into `0.8.1`.
+DuckHive checked the live upstream repositories on May 7, 2026 and ported the safest high-value fixes into `0.8.1` and the SDKv2 sync line.
 
 ## Repositories Checked
 
 | Project | Repository | Latest checked state | DuckHive action |
 | --- | --- | --- | --- |
-| OpenClaude | https://github.com/Gitlawb/openclaude | `main` pushed 2026-05-06, latest release `v0.9.2`; post-release commits `feb5791` and `6af709e` | Ported both post-release fixes that apply cleanly to DuckHive |
+| OpenClaude | https://github.com/Gitlawb/openclaude | `main` checked at `4b1e516fc70c07da6ad678df35030fa114cc8918` on 2026-05-07 | Ported SDKv2/runtime/build surfaces plus post-release CLI/provider/web-search fixes |
 | OpenAI Codex | https://github.com/openai/codex | `main` pushed 2026-05-07; latest stable `rust-v0.128.0`, newest prerelease `rust-v0.129.0-alpha.13` | Reviewed stable/prerelease split; deferred alpha-only imports |
 | OpenClaw | https://github.com/openclaw/openclaw | `main` pushed 2026-05-07; latest release `v2026.5.6` | Reviewed Codex OAuth routing, plugin fetch, web-fetch timeout, and subagent reliability fixes for follow-up ports |
 | Hermes Agent | https://github.com/NousResearch/hermes-agent | `main` pushed 2026-05-07; latest release `v2026.4.30` | Reviewed curator, self-improvement, MiniMax OAuth, remote model catalog, and goal-loop features for DuckHive-shaped follow-up work |
@@ -81,3 +81,32 @@ Before symbol edits, GitNexus impact analysis reported:
 - `AgentTool`: LOW risk for the text-only async handoff result mapping
 
 The implementation therefore stayed limited to upstream-matched behavior and focused regression tests.
+
+## Ported In SDKv2 Sync
+
+Source: `Gitlawb/openclaude@4b1e516fc70c07da6ad678df35030fa114cc8918`
+
+DuckHive now exposes `duckhive/sdk` with the OpenClaude SDKv2 runtime entrypoint, generated SDK schemas/types, query/session APIs, permission helpers, transcript helpers, SDK-specific error classes, QueryEngine SDK mutators, and a separate `dist/sdk.mjs` build. The SDK bundle is scanned to prevent React/Ink/TUI imports from leaking into the public SDK surface.
+
+Additional OpenClaude fixes ported in this sync:
+
+- incremental cached token counting
+- hook stdin EOF handling
+- `--model` without `--provider`
+- Cerebras `store` stripping in the OpenAI-compatible shim
+- Brave web search auth, Google custom search query params, and Exa highlights
+- interactive/plugin startup cycle fix by lazily initializing DuckHive orchestration
+- command ownership cleanup so DuckHive owns `duckhive` only and no longer ships an `openclaude` wrapper
+
+Verification highlights:
+
+- `bun test tests/sdk` passes
+- focused provider, web search, token counter, hook, and OpenAI shim tests pass
+- `bun run build`, `bun run smoke`, and `bun run verify:privacy` pass
+- `cd tui && go test ./...` passes
+
+Known existing project-wide verification debt:
+
+- `bun run typecheck` still reports broad pre-existing type errors unrelated to SDKv2, including missing legacy command modules and old test typing issues.
+- Full `bun test` currently fails when provider profile tests leave Bun module mocks/global state that later SDK and API suites observe; the isolated SDK suite and targeted regression suites pass.
+- `bun run doctor:runtime` imports the raw source command registry and still fails on missing legacy `commands/fork` source in this checkout, while the built CLI smoke path passes.

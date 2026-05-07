@@ -17,8 +17,9 @@
  * Gated by: macOS only (SkyComputerUseClient is a native macOS binary).
  */
 import type { LocalCommandCall } from '../../types/command.js'
-import { join, dirname, existsSync } from 'fs'
+import { existsSync } from 'fs'
 import { homedir } from 'os'
+import { dirname, join } from 'path'
 import { cwd } from 'process'
 
 // ── Constants ─────────────────────────────────────────────────────────────────

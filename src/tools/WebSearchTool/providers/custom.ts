@@ -47,6 +47,8 @@ interface ProviderPreset {
   authScheme?: string
   jsonPath?: string
   responseAdapter?: (data: any) => SearchHit[]
+  authQueryParam?: string
+  envQueryParams?: Record<string, string>
 }
 
 const BUILT_IN_PROVIDERS: Record<string, ProviderPreset> = {
@@ -69,8 +71,8 @@ const BUILT_IN_PROVIDERS: Record<string, ProviderPreset> = {
   google: {
     urlTemplate: 'https://www.googleapis.com/customsearch/v1',
     queryParam: 'q',
-    authHeader: 'Authorization',
-    authScheme: 'Bearer',
+    authQueryParam: 'key',
+    envQueryParams: { cx: 'GOOGLE_CSE_ID' },
     responseAdapter(data: any) {
       return (data.items ?? []).map((r: any) => ({
         title: r.title ?? '',
@@ -348,6 +350,10 @@ function auditLogCustomSearch(url: string): void {
 // ---------------------------------------------------------------------------
 
 export function buildAuthHeadersForPreset(preset?: ProviderPreset): Record<string, string> {
+  if (preset?.authQueryParam && process.env.WEB_AUTH_HEADER === undefined) {
+    return {}
+  }
+
   const apiKey = process.env.WEB_KEY
   if (!apiKey) return {}
 
@@ -419,6 +425,31 @@ function buildRequest(query: string, forcedProviderName?: string) {
     url.searchParams.set(config.queryParam, query)
   }
 
+  const preset = config.preset
+  if (preset?.envQueryParams) {
+    for (const [paramName, envVar] of Object.entries(preset.envQueryParams)) {
+      const value = process.env[envVar]
+      if (!value) {
+        throw new Error(
+          `Search preset "${process.env.WEB_PROVIDER ?? forcedProviderName}" requires ${envVar} ` +
+          `(sent as ?${paramName}=). Set ${envVar} and try again.`,
+        )
+      }
+      url.searchParams.set(paramName, value)
+    }
+  }
+
+  if (preset?.authQueryParam) {
+    const apiKey = process.env.WEB_KEY
+    if (!apiKey) {
+      throw new Error(
+        `Search preset "${process.env.WEB_PROVIDER ?? forcedProviderName}" requires WEB_KEY ` +
+        `(sent as ?${preset.authQueryParam}=). Set WEB_KEY and try again.`,
+      )
+    }
+    url.searchParams.set(preset.authQueryParam, apiKey)
+  }
+
   const urlString = url.toString()
 
   // --- Security validation ---
@@ -427,7 +458,7 @@ function buildRequest(query: string, forcedProviderName?: string) {
 
   // --- Headers ---
   const headers: Record<string, string> = {
-    ...buildAuthHeadersForPreset(config.preset),
+    ...buildAuthHeadersForPreset(preset),
   }
 
   // Merge WEB_HEADERS with allowlist enforcement

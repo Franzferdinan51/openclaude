@@ -2,9 +2,17 @@
 import { z } from 'zod/v4'
 import { buildTool, type ToolDef } from '../../Tool.js'
 import { lazySchema } from '../../utils/lazySchema.js'
-import { createHybridOrchestrator } from '../../orchestrator/hybrid/index.js'
+import {
+  createHybridOrchestrator,
+  type HybridOrchestrator,
+} from '../../orchestrator/hybrid/index.js'
 
-const orchestrator = createHybridOrchestrator()
+let orchestrator: HybridOrchestrator | undefined
+
+function getOrchestrator(): HybridOrchestrator {
+  orchestrator ??= createHybridOrchestrator()
+  return orchestrator
+}
 
 const inputSchema = lazySchema(() =>
   z.strictObject({
@@ -33,7 +41,7 @@ export const OrchestrateTool = buildTool({
       case 'route':
       case 'plan': {
         if (!message) return { data: { success: false, error: 'message required for analyze/route/plan' } }
-        const routing = orchestrator.analyze(message, history, tools)
+        const routing = getOrchestrator().analyze(message, history, tools)
         return {
           data: {
             success: true,
@@ -50,7 +58,7 @@ export const OrchestrateTool = buildTool({
       }
       case 'execute': {
         if (!message) return { data: { success: false, error: 'message required for execute' } }
-        const result = await orchestrator.execute(message, history, tools, context)
+        const result = await getOrchestrator().execute(message, history, tools, context)
         return {
           data: {
             success: true,

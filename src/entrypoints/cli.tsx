@@ -156,6 +156,11 @@ async function main(): Promise<void> {
     }
   }
 
+  {
+    const { applyModelFlagFromArgs } = await import('../utils/providerFlag.js')
+    applyModelFlagFromArgs(args)
+  }
+
   // Hydrate GitHub credentials after profile is applied so CLAUDE_CODE_USE_GITHUB from profile is available
   {
     const {
