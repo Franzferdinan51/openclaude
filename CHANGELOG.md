@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.8.1](https://github.com/Franzferdinan51/DuckHive/compare/v0.8.0...v0.8.1) (2026-05-07)
+
+### Upstream Sync
+
+* checked current repository heads and latest releases for OpenClaude, OpenAI Codex, OpenClaw, and Hermes Agent
+* ported OpenClaude post-0.9.2 effort handling so OpenAI/Codex `xhigh` persists as `max` and is emitted as `reasoning_effort: "xhigh"` for chat-completions transports
+* ported OpenClaude async subagent handoff guidance so the main agent stops after launching background work unless it has clearly non-overlapping work
+* refreshed GitNexus index metadata after local analysis
+
+### Notes
+
+* Codex 0.129.0 remains prerelease as of this sync; DuckHive tracks the stable Codex 0.128.0 features for future selective ports rather than importing alpha-only behavior into `main`
+* OpenClaw and Hermes latest heads were reviewed for compatible follow-up work; larger gateway, curator, and platform changes are documented in `docs/upstream-sync-2026-05.md`
+
 ## [0.6.0](https://github.com/Gitlawb/openclaude/compare/v0.5.2...v0.6.0) (2026-04-22)
 
 
