@@ -27,7 +27,6 @@ var Styles = struct {
 }{
 	Header: lipgloss.NewStyle().
 		Foreground(lipgloss.Color("#FAFAFA")).
-		Background(lipgloss.Color("#1A1A2E")).
 		Padding(0, 1),
 
 	HeaderTitle: lipgloss.NewStyle().
@@ -43,42 +42,35 @@ var Styles = struct {
 
 	UserBubble: lipgloss.NewStyle().
 		Foreground(lipgloss.Color("#FAFAFA")).
-		Background(lipgloss.Color("#2D5A8A")).
 		Padding(0, 1).
 		MarginLeft(4),
 
 	AssistantBubble: lipgloss.NewStyle().
 		Foreground(lipgloss.Color("#E0E0E0")).
-		Background(lipgloss.Color("#1E1E2E")).
 		Padding(0, 1).
 		MarginRight(4),
 
 	SystemBubble: lipgloss.NewStyle().
 		Foreground(lipgloss.Color("#8792A6")).
-		Background(lipgloss.Color("#1A1A2E")).
 		Padding(0, 1).
 		Italic(true),
 
 	ToolBubble: lipgloss.NewStyle().
 		Foreground(lipgloss.Color("#A6ACCD")).
-		Background(lipgloss.Color("#252535")).
 		Padding(0, 1),
 
 	InputArea: lipgloss.NewStyle().
 		Foreground(lipgloss.Color("#FAFAFA")).
-		Background(lipgloss.Color("#16161E")).
 		Padding(1, 2),
 
 	InputField: lipgloss.NewStyle().
 		Foreground(lipgloss.Color("#FAFAFA")).
-		Background(lipgloss.Color("#252535")).
 		Border(lipgloss.NormalBorder()).
 		BorderForeground(lipgloss.Color("#3D3D5C")).
 		Padding(0, 1),
 
 	StatusBar: lipgloss.NewStyle().
 		Foreground(lipgloss.Color("#8792A6")).
-		Background(lipgloss.Color("#1A1A2E")).
 		Padding(0, 2),
 
 	Spinner: lipgloss.NewStyle().
