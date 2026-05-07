@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.9.0](https://github.com/Franzferdinan51/DuckHive/compare/v0.8.1...v0.9.0) (2026-05-06)
+
+### Features
+
+* **DuckHive Curator** — Hermes-Agent v0.12.0 "Curator" inspired skill librarian. Run `/curate status` to grade and rank all skills by quality, recency, and content richness. Run `/curate run` to perform a full curation cycle with archiving of low-rated skills. Defense-in-depth protects bundled skills (computer-use, duckcustodian-agent, newest-desktop-control) from mutation.
+* **desktop-control-lobster-edition-skill** integrated as `newest-desktop-control` — Node.js MCP gateway for cross-platform desktop automation (macOS/Linux/Windows), Android ADB control, and Codex Computer Use detection. Auto-wired via `config/mcporter.json`.
+
+### Bug Fixes
+
+* **Build fix**: `saveConfigWithLock` was not exported from `src/utils/config.ts`, breaking the duckcustodian build. Exported the function so `duckcustodian/impl.ts` can use it.
+
+### Documentation
+
+* Added `skills/newest-desktop-control/SKILL.md` with full capability documentation
+* Updated `docs/upstream-sync-2026-05.md` with Curator port details
+
 ## [0.8.1](https://github.com/Franzferdinan51/DuckHive/compare/v0.8.0...v0.8.1) (2026-05-07)
 
 ### Upstream Sync

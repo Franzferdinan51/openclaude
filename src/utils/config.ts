@@ -1194,7 +1194,7 @@ function saveConfig<A extends object>(
  * whether to invalidate the cache -- invalidating after a skipped write
  * destroys the good cached state the auth-loss guard depends on.
  */
-function saveConfigWithLock<A extends object>(
+export function saveConfigWithLock<A extends object>(
   file: string,
   createDefault: () => A,
   mergeFn: (current: A) => A,

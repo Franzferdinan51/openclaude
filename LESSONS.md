@@ -28,4 +28,13 @@ When something breaks:
 3. What we did to fix it
 4. What to do if it happens again
 
+---
+
+## [2026-05-06] code-pattern: saveConfigWithLock not exported (build broken)
+
+**Symptom:** `bun run build` failed with `Module has no exported member 'saveConfigWithLock'`
+**Root cause:** `src/commands/duckcustodian/impl.ts` imported `saveConfigWithLock` from `src/utils/config.js`, but the function was defined as a private (non-exported) function in `config.ts`. This was a pre-existing bug introduced when duckcustodian was added.
+**Fix:** Added `export` keyword to `function saveConfigWithLock` in `src/utils/config.ts:1197`.
+**Prevention:** Run `bun run build` after any `src/commands/` additions to catch import errors early.
+
 This file survives across sessions. It's the moat that keeps us from falling into the same ditch twice.

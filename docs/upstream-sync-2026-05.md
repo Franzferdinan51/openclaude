@@ -61,12 +61,15 @@ DuckHive has compatible surfaces in provider profile handling, `src/upstreamprox
 
 ### Hermes Agent
 
-Hermes `v2026.4.30` adds autonomous curator, self-improvement review-loop hardening, MiniMax OAuth, remote model catalog manifests, and model-capability-driven image routing. DuckHive already has `duckcustodian`, skills, memory, MiniMax, and provider discovery, so the best path is not a bulk port. The next slice should add:
+Hermes `v2026.4.30` adds autonomous curator, self-improvement review-loop hardening, MiniMax OAuth, remote model catalog manifests, and model-capability-driven image routing. DuckHive already has `duckcustodian`, skills, memory, MiniMax, and provider discovery.
 
-- curator status/dry-run over DuckHive skills and memory
+**✅ Implemented in v0.9.0:** DuckHive Curator — `duckhive curate status` grades and ranks all skills by quality, recency, and content richness. `duckhive curate run` performs a full curation cycle with archiving of low-rated skills. Defense-in-depth protects bundled skills from mutation.
+
+**Remaining slices:**
 - MiniMax OAuth credential refresh alongside existing mmx/API-key support
 - remote model catalog refresh for providers that support live catalogs
 - vision-capability routing for multimodal messages
+- Self-improvement loop: after-turn background fork reviewing skill/memory usefulness
 
 ## GitNexus Impact Notes
 

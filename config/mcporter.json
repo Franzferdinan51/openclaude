@@ -7,6 +7,14 @@
       "http": {
         "endpoint": "http://127.0.0.1:9003/mcp"
       }
+    },
+    "newest-desktop-control": {
+      "name": "Newest Desktop Control",
+      "description": "Cross-platform desktop automation MCP gateway: screenshots, mouse, keyboard, clipboard, app launch, terminal, file, window activation, Android ADB control, and Codex Computer Use detection. Node.js stdio JSON-RPC server.",
+      "command": "node",
+      "args": ["${SKILL_DIR}/newest-desktop-control/src/server.js"],
+      "scope": "agent",
+      "env": {}
     }
   }
 }
