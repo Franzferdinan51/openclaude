@@ -1,4 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
 import { isIP } from 'node:net'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
@@ -14,7 +15,14 @@ import {
   asTrimmedString,
   parseChatgptAccountId,
 } from './codexOAuthShared.js'
-import { DEFAULT_GEMINI_BASE_URL } from 'src/utils/providerProfile.js'
+import {
+  DEFAULT_GEMINI_BASE_URL,
+  DEFAULT_GEMINI_MODEL,
+} from 'src/utils/providerProfile.js'
+import {
+  openAIShimSupportsApiFormatForModel,
+  resolveOpenAIShimRuntimeContext,
+} from '../../integrations/runtimeMetadata.js'
 
 export const DEFAULT_OPENAI_BASE_URL = 'https://api.openai.com/v1'
 export const DEFAULT_CODEX_BASE_URL = 'https://chatgpt.com/backend-api/codex'
@@ -31,7 +39,11 @@ const CODEX_ALIAS_MODELS: Record<
   }
 > = {
   codexplan: {
-    model: 'gpt-5.4',
+    model: 'gpt-5.5',
+    reasoningEffort: 'high',
+  },
+  'gpt-5.5': {
+    model: 'gpt-5.5',
     reasoningEffort: 'high',
   },
   'gpt-5.4': {
@@ -59,6 +71,10 @@ const CODEX_ALIAS_MODELS: Record<
   'gpt-5.1-codex-mini': {
     model: 'gpt-5.1-codex-mini',
   },
+  'gpt-5.5-mini': {
+    model: 'gpt-5.5-mini',
+    reasoningEffort: 'medium',
+  },
   'gpt-5.4-mini': {
     model: 'gpt-5.4-mini',
     reasoningEffort: 'medium',
@@ -74,7 +90,8 @@ type ReasoningEffort = 'low' | 'medium' | 'high' | 'xhigh'
 
 const OPENAI_CODEX_SHORTCUT_ALIASES = new Set(['codexplan', 'codexspark'])
 
-export type ProviderTransport = 'chat_completions' | 'codex_responses'
+export type ProviderTransport = 'chat_completions' | 'responses' | 'codex_responses'
+export type OpenAICompatibleApiFormat = 'chat_completions' | 'responses'
 
 export type ResolvedProviderRequest = {
   transport: ProviderTransport
@@ -102,6 +119,17 @@ type ModelDescriptor = {
 }
 
 const LOCALHOST_HOSTNAMES = new Set(['localhost', '127.0.0.1', '::1'])
+
+function hashCacheScopePartition(value: unknown): string {
+  return createHash('sha256')
+    .update(JSON.stringify(value))
+    .digest('hex')
+    .slice(0, 16)
+}
+
+function normalizeCacheScopeHeaderValue(value: string | undefined): string {
+  return value?.trim() ?? ''
+}
 
 function isPrivateIpv4Address(hostname: string): boolean {
   const octets = hostname.split('.').map(part => Number.parseInt(part, 10))
@@ -188,6 +216,30 @@ function parseReasoningEffort(value: string | undefined): ReasoningEffort | unde
   const normalized = value.trim().toLowerCase()
   if (normalized === 'low' || normalized === 'medium' || normalized === 'high' || normalized === 'xhigh') {
     return normalized
+  }
+  return undefined
+}
+
+export function parseOpenAICompatibleApiFormat(
+  value: string | undefined,
+): OpenAICompatibleApiFormat | undefined {
+  if (!value) return undefined
+  const normalized = value.trim().toLowerCase().replace(/[- ]+/g, '_')
+  if (
+    normalized === 'responses' ||
+    normalized === 'response' ||
+    normalized === 'responses_api'
+  ) {
+    return 'responses'
+  }
+  if (
+    normalized === 'chat_completions' ||
+    normalized === 'chat_completion' ||
+    normalized === 'completions' ||
+    normalized === 'completion' ||
+    normalized === 'chat'
+  ) {
+    return 'chat_completions'
   }
   return undefined
 }
@@ -474,20 +526,23 @@ export function resolveProviderRequest(options?: {
   baseUrl?: string
   fallbackModel?: string
   reasoningEffortOverride?: ReasoningEffort
+  apiFormat?: OpenAICompatibleApiFormat | string
 }): ResolvedProviderRequest {
   const isGithubMode = isEnvTruthy(process.env.CLAUDE_CODE_USE_GITHUB)
   const isMistralMode = isEnvTruthy(process.env.CLAUDE_CODE_USE_MISTRAL)
   const isGeminiMode = isEnvTruthy(process.env.CLAUDE_CODE_USE_GEMINI)
+  const isOpenAIMode = isEnvTruthy(process.env.CLAUDE_CODE_USE_OPENAI)
   const requestedModel =
     options?.model?.trim() ||
     (isMistralMode
       ? process.env.MISTRAL_MODEL?.trim()
       : process.env.OPENAI_MODEL?.trim()) ||
-    (isGeminiMode
+    (isGeminiMode && !isOpenAIMode
       ? process.env.GEMINI_MODEL?.trim()
       : process.env.OPENAI_MODEL?.trim()) ||
     options?.fallbackModel?.trim() ||
-    (isGithubMode ? 'github:copilot' : 'gpt-4o')
+    (isGeminiMode && !isOpenAIMode ? DEFAULT_GEMINI_MODEL : undefined) ||
+    (isGithubMode ? 'github:copilot' : 'codexplan')
   const descriptor = parseModelDescriptor(requestedModel)
   const explicitBaseUrl = asEnvUrl(options?.baseUrl)
 
@@ -503,7 +558,7 @@ export function resolveProviderRequest(options?: {
 
   const primaryEnvBaseUrl = isMistralMode
     ? normalizedMistralEnvBaseUrl
-    : isGeminiMode
+    : isGeminiMode && !isOpenAIMode
     ? normalizedGeminiEnvBaseUrl
     : asNamedEnvUrl(process.env.OPENAI_BASE_URL, 'OPENAI_BASE_URL')
 
@@ -514,7 +569,7 @@ export function resolveProviderRequest(options?: {
     ? (primaryEnvBaseUrl === undefined
       ? asNamedEnvUrl(process.env.OPENAI_API_BASE, 'OPENAI_API_BASE') ?? DEFAULT_MISTRAL_BASE_URL
       : undefined)
-    : isGeminiMode
+    : isGeminiMode && !isOpenAIMode
     ? (primaryEnvBaseUrl === undefined
       ? asNamedEnvUrl(process.env.OPENAI_API_BASE, 'OPENAI_API_BASE') ?? DEFAULT_GEMINI_BASE_URL
       : undefined)
@@ -563,11 +618,34 @@ export function resolveProviderRequest(options?: {
     ? normalizeGithubModelsApiModel(requestedModel)
     : requestedModel
 
+  const requestedApiFormat =
+    isGithubMode
+      ? undefined
+      : parseOpenAICompatibleApiFormat(options?.apiFormat) ??
+        parseOpenAICompatibleApiFormat(process.env.OPENAI_API_FORMAT)
+  const supportsRequestedApiFormat =
+    requestedApiFormat !== 'responses' ||
+    (() => {
+      const runtimeShimContext = resolveOpenAIShimRuntimeContext({
+        processEnv: process.env,
+        baseUrl: finalBaseUrl,
+        model: descriptor.baseModel,
+        treatAsLocal: finalBaseUrl ? isLocalProviderUrl(finalBaseUrl) : false,
+      })
+
+      return openAIShimSupportsApiFormatForModel(
+        runtimeShimContext.openaiShimConfig,
+        'responses',
+        descriptor.baseModel,
+      )
+    })()
   const transport: ProviderTransport =
     shouldUseCodexTransport(requestedModel, finalBaseUrl) ||
       (isGithubCopilot && shouldUseGithubResponsesApi(githubResolvedModel))
       ? 'codex_responses'
-      : 'chat_completions'
+      : requestedApiFormat === 'responses' && supportsRequestedApiFormat
+        ? 'responses'
+        : 'chat_completions'
 
   // For GitHub Copilot API, normalize to real model ID (e.g., "github:copilot" -> "gpt-4o")
   // For GitHub Models/custom endpoints:
@@ -621,7 +699,15 @@ export function getAdditionalModelOptionsCacheScope(): string | null {
     return null
   }
 
-  return `openai:${request.baseUrl.toLowerCase()}`
+  const partition = hashCacheScopePartition({
+    apiKey: normalizeCacheScopeHeaderValue(process.env.OPENAI_API_KEY),
+    authHeader: normalizeCacheScopeHeaderValue(process.env.OPENAI_AUTH_HEADER).toLowerCase(),
+    authScheme: normalizeCacheScopeHeaderValue(process.env.OPENAI_AUTH_SCHEME).toLowerCase(),
+    authHeaderValue: normalizeCacheScopeHeaderValue(process.env.OPENAI_AUTH_HEADER_VALUE),
+    customHeaders: normalizeCacheScopeHeaderValue(process.env.ANTHROPIC_CUSTOM_HEADERS),
+  })
+
+  return `openai:${request.baseUrl.toLowerCase()}:${partition}`
 }
 
 export function resolveCodexAuthPath(

@@ -21,11 +21,10 @@ describe('Gemini store field fix', () => {
   test('isGeminiMode is imported and used in openaiShim', async () => {
     const content = await file('services/api/openaiShim.ts').text()
 
-    // Verify the fix: store deletion should check for Gemini mode
+    // Verify the fix: store deletion should check for Gemini mode/host.
     expect(content).toContain('isGeminiMode()')
-    expect(content).toContain("mistral and gemini don't recognize body.store")
-    // Ensure the delete body.store is guarded for both Mistral and Gemini
-    expect(content).toMatch(/isMistral\s*\|\|\s*isGeminiMode\(\)/)
+    expect(content).toContain('shouldStripResponsesStore')
+    expect(content).toContain('hasGeminiApiHost(request.baseUrl)')
   })
 
   test('store: false is still set by default (OpenAI needs it)', async () => {

@@ -130,6 +130,7 @@ export async function getProviderValidationError(
   const request = resolveProviderRequest({
     model: env.OPENAI_MODEL,
     baseUrl: env.OPENAI_BASE_URL,
+    fallbackModel: 'gpt-4o',
   })
   const keyNames = getOpenAICompatibleApiKeyEnvVars(request.baseUrl)
   const resolvedApiKey = resolveOpenAICompatibleApiKey(request.baseUrl, env)

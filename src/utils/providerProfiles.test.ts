@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, mock, test } from 'bun:test'
 
+import * as actualConfig from './config.js'
 import type { ProviderProfile } from './config.js'
 
 async function importFreshProvidersModule() {
@@ -74,6 +75,7 @@ afterEach(() => {
   }
 
   mock.restore()
+  mock.module('./config.js', () => actualConfig)
   mockConfigState = createMockConfigState()
 })
 

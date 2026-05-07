@@ -57,8 +57,8 @@ test('creates a cache scope for local openai-compatible providers', () => {
   process.env.OPENAI_BASE_URL = 'http://localhost:1234/v1'
   process.env.OPENAI_MODEL = 'llama-3.2-3b-instruct'
 
-  expect(getAdditionalModelOptionsCacheScope()).toBe(
-    'openai:http://localhost:1234/v1',
+  expect(getAdditionalModelOptionsCacheScope()).toMatch(
+    /^openai:http:\/\/localhost:1234\/v1:[a-f0-9]{16}$/,
   )
 })
 
@@ -73,8 +73,8 @@ test('keeps codex alias models on chat completions for local openai-compatible p
     resolvedModel: 'gpt-5.4',
     baseUrl: 'http://127.0.0.1:8080/v1',
   })
-  expect(getAdditionalModelOptionsCacheScope()).toBe(
-    'openai:http://127.0.0.1:8080/v1',
+  expect(getAdditionalModelOptionsCacheScope()).toMatch(
+    /^openai:http:\/\/127\.0\.0\.1:8080\/v1:[a-f0-9]{16}$/,
   )
 })
 

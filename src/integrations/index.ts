@@ -1,112 +1,128 @@
-// Stub for upstream integrations module
-// DuckHive uses its own MCP-based integration system instead
+// src/integrations/index.ts
+// Single loader entrypoint for descriptor modules.
+// Runtime and tests must import this file before reading registry state.
 
-export interface AnthropicProxyDescriptor {
-  id: string
-  name: string
-}
-
-export interface GatewayDescriptor {
-  id: string
-  name: string
-}
+import type { AnthropicProxyDescriptor } from './descriptors.js'
+import {
+  ANTHROPIC_PROXY_DESCRIPTORS,
+  BRAND_DESCRIPTORS,
+  GATEWAY_DESCRIPTORS,
+  MODEL_DESCRIPTOR_GROUPS,
+  VENDOR_DESCRIPTORS,
+  type ProviderPreset,
+} from './generated/integrationArtifacts.generated.js'
+import {
+  getAllAnthropicProxies,
+  getAllBrands,
+  getAllGateways,
+  getAllModels,
+  getAllVendors,
+  getAnthropicProxy,
+  getBrand,
+  getBrandsForVendor,
+  getCatalogEntriesForRoute,
+  getCatalogForGateway,
+  getCatalogForVendor,
+  getGateway,
+  getModel,
+  getModelsForBrand,
+  getModelsForGateway,
+  getModelsForVendor,
+  getVendor,
+  registerAnthropicProxy,
+  registerBrand,
+  registerGateway,
+  registerModel,
+  registerVendor,
+  validateIntegrationRegistry,
+  _clearRegistryForTesting,
+} from './registry.js'
 
 export function ensureIntegrationsLoaded(): void {
-  // No-op for DuckHive
+  for (const vendor of VENDOR_DESCRIPTORS) {
+    if (!getVendor(vendor.id)) {
+      registerVendor(vendor)
+    }
+  }
+
+  for (const gateway of GATEWAY_DESCRIPTORS) {
+    if (!getGateway(gateway.id)) {
+      registerGateway(gateway)
+    }
+  }
+
+  for (const anthropicProxy of ANTHROPIC_PROXY_DESCRIPTORS as unknown as AnthropicProxyDescriptor[]) {
+    if (!getAnthropicProxy(anthropicProxy.id)) {
+      registerAnthropicProxy(anthropicProxy)
+    }
+  }
+
+  for (const brand of BRAND_DESCRIPTORS) {
+    if (!getBrand(brand.id)) {
+      registerBrand(brand)
+    }
+  }
+
+  for (const modelGroup of MODEL_DESCRIPTOR_GROUPS) {
+    for (const model of modelGroup) {
+      if (!getModel(model.id)) {
+        registerModel(model)
+      }
+    }
+  }
 }
 
-export function registerGateway(_gateway: GatewayDescriptor): void {
-  // No-op for DuckHive
+ensureIntegrationsLoaded()
+
+export {
+  registerBrand,
+  registerVendor,
+  registerGateway,
+  registerAnthropicProxy,
+  registerModel,
+  getBrand,
+  getVendor,
+  getGateway,
+  getAnthropicProxy,
+  getModel,
+  getAllBrands,
+  getAllVendors,
+  getAllGateways,
+  getAllAnthropicProxies,
+  getAllModels,
+  getCatalogForGateway,
+  getCatalogForVendor,
+  getCatalogEntriesForRoute,
+  getModelsForBrand,
+  getModelsForGateway,
+  getModelsForVendor,
+  getBrandsForVendor,
+  validateIntegrationRegistry,
+  _clearRegistryForTesting,
 }
 
-export function getAllGateways(): GatewayDescriptor[] {
-  return []
-}
-
-export function getGateway(_id: string): GatewayDescriptor | undefined {
-  return undefined
-}
-
-export function getAllVendors(): unknown[] {
-  return []
-}
-
-export function getVendor(_id: string): unknown | undefined {
-  return undefined
-}
-
-export function registerVendor(_vendor: unknown): void {
-  // No-op
-}
-
-export function getAllBrands(): unknown[] {
-  return []
-}
-
-export function getBrand(_id: string): unknown | undefined {
-  return undefined
-}
-
-export function getBrandsForVendor(_vendorId: string): unknown[] {
-  return []
-}
-
-export function registerBrand(_brand: unknown): void {
-  // No-op
-}
-
-export function getAllModels(): unknown[] {
-  return []
-}
-
-export function getModel(_id: string): unknown | undefined {
-  return undefined
-}
-
-export function getModelsForBrand(_brandId: string): unknown[] {
-  return []
-}
-
-export function registerModel(_model: unknown): void {
-  // No-op
-}
-
-export function getCatalogEntriesForRoute(_route: string): unknown[] {
-  return []
-}
-
-export function getCatalogForGateway(_gatewayId: string): unknown[] {
-  return []
-}
-
-export function getCatalogForVendor(_vendorId: string): unknown[] {
-  return []
-}
-
-export function getModelsForGateway(_gatewayId: string): unknown[] {
-  return []
-}
-
-export function getModelsForVendor(_vendorId: string): unknown[] {
-  return []
-}
-
-export function getAnthropicProxy(_id: string): AnthropicProxyDescriptor | undefined {
-  return undefined
-}
-
-export function getAllAnthropicProxies(): AnthropicProxyDescriptor[] {
-  return []
-}
-
-export function registerAnthropicProxy(_proxy: AnthropicProxyDescriptor): void {
-  // No-op
-}
-
-export function validateIntegrationRegistry(): void {
-  // No-op
-}
-
-export function _clearRegistryForTesting(): void {
-  // No-op
-}
+export { routeForPreset, vendorIdForPreset, gatewayIdForPreset } from './compatibility.js'
+export { resolveProfileRoute } from './profileResolver.js'
+export type { ResolvedProfileRoute } from './profileResolver.js'
+export type { ProviderPreset }
+export { PROVIDER_PRESET_MANIFEST } from './generated/integrationArtifacts.generated.js'
+export {
+  getRouteDefaultBaseUrl,
+  getRouteDefaultModel,
+  getRouteDescriptor,
+  getRouteLabel,
+  getRouteProviderTypeLabel,
+  getTransportKindForRoute,
+  resolveActiveRouteIdFromEnv,
+  resolveRouteIdFromBaseUrl,
+  routeSupportsApiFormatSelection,
+  routeSupportsAuthHeaders,
+  routeSupportsCustomHeaders,
+  routeShowsAuthHeader,
+  routeShowsAuthHeaderValue,
+  routeShowsCustomHeaders,
+} from './routeMetadata.js'
+export {
+  getProviderPresetUiMetadata,
+  ORDERED_PROVIDER_PRESETS,
+} from './providerUiMetadata.js'

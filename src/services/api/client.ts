@@ -147,11 +147,20 @@ export async function getAnthropicClient({
     defaultHeaders['x-anthropic-additional-protection'] = 'true'
   }
 
-  logForDebugging('[API:auth] OAuth token check starting')
-  await checkAndRefreshOAuthTokenIfNeeded()
-  logForDebugging('[API:auth] OAuth token check complete')
+  const shouldUseFirstPartyAuth =
+    !providerOverride &&
+    !isEnvTruthy(process.env.CLAUDE_CODE_USE_OPENAI) &&
+    !isEnvTruthy(process.env.CLAUDE_CODE_USE_GITHUB) &&
+    !isEnvTruthy(process.env.CLAUDE_CODE_USE_GEMINI) &&
+    !isEnvTruthy(process.env.CLAUDE_CODE_USE_MISTRAL)
 
-  if (!isClaudeAISubscriber()) {
+  if (shouldUseFirstPartyAuth) {
+    logForDebugging('[API:auth] OAuth token check starting')
+    await checkAndRefreshOAuthTokenIfNeeded()
+    logForDebugging('[API:auth] OAuth token check complete')
+  }
+
+  if (shouldUseFirstPartyAuth && !isClaudeAISubscriber()) {
     await configureApiKeyHeaders(defaultHeaders, getIsNonInteractiveSession())
   }
 

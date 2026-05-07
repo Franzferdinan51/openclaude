@@ -87,7 +87,7 @@ test('detects Moonshot (Kimi) from api.moonshot.ai hostname', async () => {
 
   expect(
     getLocalOpenAICompatibleProviderLabel('https://api.moonshot.ai/v1'),
-  ).toBe('Moonshot (Kimi)')
+  ).toBe('Moonshot AI')
 })
 
 test('falls back to a generic local openai-compatible label', async () => {

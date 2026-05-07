@@ -2,6 +2,14 @@ import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test'
 import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import * as actualAnalytics from '../services/analytics/index.js'
+import * as actualTelemetryEvents from './telemetry/events.js'
+import * as actualPolicyLimits from '../services/policyLimits/index.js'
+import * as actualTeamHelpers from './swarm/teamHelpers.js'
+import * as actualTeammateMailbox from './teammateMailbox.js'
+import * as actualTeammate from './teammate.js'
+import * as actualReplBridgeHandle from '../bridge/replBridgeHandle.js'
+import * as actualAgentTool from '../tools/AgentTool/AgentTool.js'
 
 type HookChainsModule = typeof import('./hookChains.js')
 
@@ -21,6 +29,17 @@ type ImportHarnessOptions = {
 const tempDirs: string[] = []
 const originalHookChainsEnabled = process.env.CLAUDE_CODE_ENABLE_HOOK_CHAINS
 
+function restoreMockedModules(): void {
+  mock.module('../services/analytics/index.js', () => actualAnalytics)
+  mock.module('./telemetry/events.js', () => actualTelemetryEvents)
+  mock.module('../services/policyLimits/index.js', () => actualPolicyLimits)
+  mock.module('./swarm/teamHelpers.js', () => actualTeamHelpers)
+  mock.module('./teammateMailbox.js', () => actualTeammateMailbox)
+  mock.module('./teammate.js', () => actualTeammate)
+  mock.module('../bridge/replBridgeHandle.js', () => actualReplBridgeHandle)
+  mock.module('../tools/AgentTool/AgentTool.js', () => actualAgentTool)
+}
+
 async function createConfigFile(config: unknown): Promise<string> {
   const dir = await mkdtemp(join(tmpdir(), 'openclaude-hook-chains-int-'))
   tempDirs.push(dir)
@@ -37,6 +56,7 @@ async function importHookChainsHarness(
   agentToolCallSpy: ReturnType<typeof mock>
 }> {
   mock.restore()
+  restoreMockedModules()
 
   const allowRemoteSessions = options.allowRemoteSessions ?? true
   const teamName = options.teamName ?? 'mesh-team'
@@ -52,46 +72,48 @@ async function importHookChainsHarness(
   }))
 
   mock.module('../services/analytics/index.js', () => ({
+    ...actualAnalytics,
     logEvent: () => {},
   }))
 
   mock.module('./telemetry/events.js', () => ({
+    ...actualTelemetryEvents,
     logOTelEvent: async () => {},
   }))
 
   mock.module('../services/policyLimits/index.js', () => ({
+    ...actualPolicyLimits,
     isPolicyAllowed: () => allowRemoteSessions,
   }))
 
   mock.module('./swarm/teamHelpers.js', () => ({
+    ...actualTeamHelpers,
     readTeamFileAsync: async () => options.teamFile ?? null,
   }))
 
   mock.module('./teammateMailbox.js', () => ({
+    ...actualTeammateMailbox,
     writeToMailbox: writeToMailboxSpy,
   }))
 
   mock.module('./teammate.js', () => ({
+    ...actualTeammate,
     getAgentName: () => senderName,
     getTeamName: () => teamName,
     getTeammateColor: () => 'blue',
-    // Keep parity with the real module's surface so later tests that
-    // run after this file (mock.module is process-global and mock.restore
-    // does not undo module mocks in Bun) do not see undefined members.
-    isTeammate: () => false,
-    isPlanModeRequired: () => false,
-    getAgentId: () => undefined,
-    getParentSessionId: () => undefined,
   }))
 
   mock.module('../bridge/replBridgeHandle.js', () => ({
+    ...actualReplBridgeHandle,
     getReplBridgeHandle: () => replBridgeHandle,
   }))
 
   // Integration mock target requested in the task: fallback action can route
   // through this mocked tool launcher from runtime callback wiring.
   mock.module('../tools/AgentTool/AgentTool.js', () => ({
+    ...actualAgentTool,
     AgentTool: {
+      ...actualAgentTool.AgentTool,
       call: agentToolCallSpy,
     },
   }))
@@ -106,6 +128,7 @@ beforeEach(() => {
 
 afterEach(async () => {
   mock.restore()
+  restoreMockedModules()
 
   if (originalHookChainsEnabled === undefined) {
     delete process.env.CLAUDE_CODE_ENABLE_HOOK_CHAINS

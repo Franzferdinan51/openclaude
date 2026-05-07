@@ -127,9 +127,7 @@ import { feature } from 'bun:bundle'
 const OverflowTestTool = feature('OVERFLOW_TEST_TOOL')
   ? require('./tools/OverflowTestTool/OverflowTestTool.js').OverflowTestTool
   : null
-const CtxInspectTool = feature('CONTEXT_COLLAPSE')
-  ? require('./tools/CtxInspectTool/CtxInspectTool.js').CtxInspectTool
-  : null
+const CtxInspectTool = null
 const TerminalCaptureTool = feature('TERMINAL_PANEL')
   ? require('./tools/TerminalCaptureTool/TerminalCaptureTool.js')
       .TerminalCaptureTool
