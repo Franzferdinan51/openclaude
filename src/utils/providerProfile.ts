@@ -403,6 +403,52 @@ export function buildMistralProfileEnv(options: {
   return env
 }
 
+export function buildGithubProfileEnv(options: {
+  model?: string | null
+  baseUrl?: string | null
+}): ProfileEnv {
+  const env: ProfileEnv = {
+    OPENAI_MODEL:
+      normalizeProfileModel(
+        sanitizeProviderConfigValue(options.model),
+      ) || 'github:copilot',
+  }
+
+  const baseUrl = sanitizeProviderConfigValue(options.baseUrl)
+  if (baseUrl) {
+    env.OPENAI_BASE_URL = baseUrl
+  }
+
+  return env
+}
+
+export function buildVertexProfileEnv(options: {
+  model?: string | null
+  baseUrl?: string | null
+}): ProfileEnv {
+  const env: ProfileEnv = {
+    ANTHROPIC_MODEL:
+      normalizeProfileModel(
+        sanitizeProviderConfigValue(options.model),
+      ) || 'claude-sonnet-4-6',
+  }
+
+  const baseUrl = sanitizeProviderConfigValue(options.baseUrl)
+  if (baseUrl) {
+    env.ANTHROPIC_VERTEX_BASE_URL = baseUrl
+  }
+
+  return env
+}
+
+export function clearManagedProfileEnv(
+  targetEnv: NodeJS.ProcessEnv,
+): void {
+  for (const key of PROFILE_ENV_KEYS) {
+    delete targetEnv[key]
+  }
+}
+
 export function buildCodexOAuthProfileEnv(
   tokens: {
     accessToken: string
