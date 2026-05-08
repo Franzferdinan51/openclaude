@@ -42,6 +42,7 @@ export type TelegramMessageHandler = (chatId: number, text: string) => void
 class TelegramBotAPI {
   private token: string
   private baseUrl = 'https://api.telegram.org/bot'
+  private timeoutMs = 30_000
 
   constructor(token: string) {
     this.token = token
@@ -53,6 +54,7 @@ class TelegramBotAPI {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: body ? JSON.stringify(body) : undefined,
+      signal: AbortSignal.timeout(this.timeoutMs),
     })
     if (!response.ok) {
       throw new Error(`Telegram API error: ${response.status} ${response.statusText}`)
@@ -178,7 +180,7 @@ async function pollLoop(): Promise<void> {
 
   try {
     const updates = await api.getUpdates(offset, 30)
-    if (!updates.ok || updates.result.length === 0) return
+    if (!updates.ok) return
 
     for (const update of updates.result) {
       offset = update.update_id + 1
@@ -227,13 +229,13 @@ async function pollLoop(): Promise<void> {
     if (msg.includes('fetch') || msg.includes('network') || msg.includes('ECONNREFUSED')) {
       scheduleReconnect()
     }
-  }
-
-  // Continue polling unless stopped
-  if (!shouldStop && api) {
-    // Use setTimeout to yield to event loop between polls
-    await new Promise(resolve => setTimeout(resolve, 0))
-    return pollLoop()
+  } finally {
+    // Continue polling even after quiet getUpdates responses; Telegram long
+    // polling commonly returns empty batches during idle periods.
+    if (!shouldStop && api) {
+      await new Promise(resolve => setTimeout(resolve, 0))
+      return pollLoop()
+    }
   }
 }
 

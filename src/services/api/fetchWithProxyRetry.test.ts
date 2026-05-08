@@ -84,3 +84,28 @@ test('fetchWithProxyRetry does not retry non-network errors', async () => {
   )
   expect(attempts).toBe(1)
 })
+
+test('fetchWithProxyRetry strips symbol metadata from plain header dictionaries', async () => {
+  let capturedHeaders: HeadersInit | undefined
+  const headers = { Accept: 'application/json' } as Record<string, string> & {
+    [key: symbol]: unknown
+  }
+  Object.defineProperty(headers, Symbol('sensitiveHeaders'), {
+    value: new Set(['accept']),
+    enumerable: false,
+  })
+
+  globalThis.fetch = (async (_input, init) => {
+    capturedHeaders = init?.headers
+    return new Response('ok')
+  }) as FetchType
+
+  const response = await fetchWithProxyRetry('https://example.com/search', {
+    headers,
+  })
+
+  expect(await response.text()).toBe('ok')
+  expect(capturedHeaders).not.toBe(headers)
+  expect(Object.getOwnPropertySymbols(capturedHeaders as object)).toHaveLength(0)
+  expect(new Headers(capturedHeaders).get('accept')).toBe('application/json')
+})

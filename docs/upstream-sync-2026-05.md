@@ -8,7 +8,7 @@ DuckHive checked the live upstream repositories on May 7, 2026 and ported the sa
 | --- | --- | --- | --- |
 | OpenClaude | https://github.com/Gitlawb/openclaude | `main` checked at `4b1e516fc70c07da6ad678df35030fa114cc8918` on 2026-05-07 | Ported SDKv2/runtime/build surfaces plus post-release CLI/provider/web-search fixes |
 | OpenAI Codex | https://github.com/openai/codex | `main` pushed 2026-05-07; latest stable `rust-v0.128.0`, newest prerelease `rust-v0.129.0-alpha.13` | Reviewed stable/prerelease split; deferred alpha-only imports |
-| OpenClaw | https://github.com/openclaw/openclaw | `main` pushed 2026-05-07; latest release `v2026.5.6` | Reviewed Codex OAuth routing, plugin fetch, web-fetch timeout, and subagent reliability fixes for follow-up ports |
+| OpenClaw | https://github.com/openclaw/openclaw | `main` checked at `350889dd75f494f448733d310f38a400448d0944` on 2026-05-08; latest checked release line `v2026.5.7` | Ported compatible fetch header normalization and Telegram polling/buffering reliability fixes into DuckHive's smaller channel/harness surfaces |
 | Hermes Agent | https://github.com/NousResearch/hermes-agent | `main` pushed 2026-05-07; latest release `v2026.4.30` | Reviewed curator, self-improvement, MiniMax OAuth, remote model catalog, and goal-loop features for DuckHive-shaped follow-up work |
 
 ## Ported In 0.8.1
@@ -51,13 +51,21 @@ Codex `rust-v0.129.0-alpha.*` was treated as prerelease-only. Do not import alph
 
 ### OpenClaw
 
-OpenClaw `v2026.5.6` contains important Codex OAuth and fetch fixes:
+OpenClaw `v2026.5.6` and the live `main` line checked on 2026-05-08 contain important Codex OAuth, fetch, agent, and Telegram fixes:
 
 - preserve valid `openai-codex/*` OAuth routing instead of rewriting it to generic `openai/*`
 - normalize symbol-bearing header objects before native `fetch` or debug replay
 - bound guarded dispatcher cleanup after web-fetch timeouts
+- keep Telegram polling alive after quiet `getUpdates` responses and avoid sticky transport stalls
+- retry overloaded subagent announces
 
-DuckHive has compatible surfaces in provider profile handling, `src/upstreamproxy`, and `src/tools/WebFetchTool`. These should be the next operational backport.
+DuckHive now ports the compatible pieces that fit its architecture:
+
+- `src/services/api/fetchWithProxyRetry.ts` strips symbol metadata from plain header dictionaries before native `fetch`.
+- `src/services/telegram/TelegramService.ts` keeps long polling alive after empty Telegram batches and bounds Bot API calls with an abort timeout.
+- `src/channels/TelegramAdapter.ts` buffers all updates from a batch and continues past filtered/non-text updates instead of dropping later valid messages.
+
+The deeper OpenClaw Codex OAuth doctor route-repair and guarded Undici dispatcher lifecycle are still larger gateway/plugin slices. DuckHive already carries adjacent provider profile and WebFetch SSRF surfaces, but those should be ported as separate runtime-backed changes rather than copied wholesale from OpenClaw's gateway-specific stack.
 
 ### Hermes Agent
 

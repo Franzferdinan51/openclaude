@@ -25,6 +25,12 @@
  */
 
 // Re-export the base interface and utilities.
+import type { ChannelAdapter, ChannelAdapterConfig, Message } from './ChannelAdapter.js'
+import { TelegramAdapter } from './TelegramAdapter.js'
+import { WebhookAdapter } from './WebhookAdapter.js'
+import { EmailAdapter } from './EmailAdapter.js'
+import { ConsoleAdapter } from './ConsoleAdapter.js'
+
 export {
   type ChannelAdapter,
   type ChannelAdapterConfig,
@@ -36,17 +42,15 @@ export type { MessageSource } from '../utils/mailbox.js'
 
 // ─── Adapters ────────────────────────────────────────────────────────────────
 
-export { TelegramAdapter } from './TelegramAdapter.js'
 export type { TelegramAdapterConfig } from './TelegramAdapter.js'
 
-export { WebhookAdapter } from './WebhookAdapter.js'
 export type { WebhookAdapterConfig } from './WebhookAdapter.js'
 
-export { EmailAdapter } from './EmailAdapter.js'
 export type { EmailAdapterConfig } from './EmailAdapter.js'
 
-export { ConsoleAdapter } from './ConsoleAdapter.js'
 export type { ConsoleAdapterConfig } from './ConsoleAdapter.js'
+
+export { TelegramAdapter, WebhookAdapter, EmailAdapter, ConsoleAdapter }
 
 // ─── Adapter factory ────────────────────────────────────────────────────────
 
@@ -113,7 +117,7 @@ export async function runAgentWithChannel(
 
   try {
     // Establish the channel connection.
-    await adapter.connect()
+    await adapter.connect?.()
 
     console.log(`[DuckHive] Agent loop started — channel: ${adapter.getChannelName()}`)
 
@@ -152,7 +156,7 @@ export async function runAgentWithChannel(
       }
     }
   } finally {
-    await adapter.disconnect()
+    await adapter.disconnect?.()
     console.log(`[DuckHive] Agent loop stopped — channel: ${adapter.getChannelName()}`)
   }
 }

@@ -100,7 +100,7 @@ export class TelegramAdapter implements ChannelAdapter {
   private lastUpdateId = 0
 
   /** Pending inbound update buffered between receiveMessage() calls. */
-  private pendingUpdate: TelegramUpdate | null = null
+  private pendingUpdates: TelegramUpdate[] = []
 
   /** True once connect() has been called. */
   private connected = false
@@ -110,7 +110,7 @@ export class TelegramAdapter implements ChannelAdapter {
 
   constructor(config: TelegramAdapterConfig = {}) {
     const token =
-      config.botToken ?? process.env.TELEGRAM_BOT_TOKEN
+      config.botToken ?? process.env.DUCKHIVE_TELEGRAM_BOT_TOKEN ?? process.env.TELEGRAM_BOT_TOKEN
     if (!token) {
       throw new Error(
         '[TelegramAdapter] botToken is required. ' +
@@ -166,7 +166,10 @@ export class TelegramAdapter implements ChannelAdapter {
       text,
       parse_mode: 'MarkdownV2',
     }
-    const result = await this.apiCall<{ ok: boolean }>('sendMessage', params as Record<string, unknown>)
+    const result = await this.apiCall<{ ok: boolean }>(
+      'sendMessage',
+      params as unknown as Record<string, unknown>,
+    )
     if (!result.ok) {
       throw new Error(`[TelegramAdapter] sendMessage failed: ${JSON.stringify(result)}`)
     }
@@ -179,29 +182,22 @@ export class TelegramAdapter implements ChannelAdapter {
    * Returns null immediately when no new update is available.
    */
   async receiveMessage(): Promise<Message | null> {
-    // Serve a buffered update first (from a prior getUpdates response).
-    if (this.pendingUpdate) {
-      const update = this.takeNextUpdate()
-      if (update) {
-        const msg = this.extractMessage(update)
-        if (msg) return msg
-      }
+    let update = this.takeNextUpdate()
+    while (update) {
+      const msg = this.extractMessage(update)
+      if (msg) return msg
+      update = this.takeNextUpdate()
     }
 
-    // Fetch the next batch of updates.
-    const updates = await this.fetchUpdates()
-    if (!updates || updates.length === 0) {
-      return null
+    this.pendingUpdates.push(...await this.fetchUpdates())
+    update = this.takeNextUpdate()
+    while (update) {
+      const msg = this.extractMessage(update)
+      if (msg) return msg
+      update = this.takeNextUpdate()
     }
 
-    // Buffer any extra updates beyond the first.
-    if (updates.length > 1) {
-      this.pendingUpdate = updates[1] ?? null
-    }
-
-    const first = updates[0]
-    const msg = this.extractMessage(first)
-    return msg
+    return null
   }
 
   async disconnect(): Promise<void> {
@@ -236,9 +232,7 @@ export class TelegramAdapter implements ChannelAdapter {
 
   /** Extract the next buffered update and shift the buffer. */
   private takeNextUpdate(): TelegramUpdate | null {
-    const update = this.pendingUpdate
-    this.pendingUpdate = null
-    return update
+    return this.pendingUpdates.shift() ?? null
   }
 
   /**

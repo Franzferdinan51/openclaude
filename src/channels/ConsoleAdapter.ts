@@ -117,7 +117,7 @@ export class ConsoleAdapter implements ChannelAdapter {
     if (this._connected) return
 
     // Ensure TTY so readline works correctly.
-    if (!this.input.isTTY) {
+    if (!(this.input as NodeJS.ReadStream).isTTY) {
       // In non-TTY (e.g., piped input), push lines directly from the stream.
       this._connected = true
       return

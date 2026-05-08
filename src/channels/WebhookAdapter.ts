@@ -125,9 +125,8 @@ export class WebhookAdapter implements ChannelAdapter {
     if (this._connected) return
     if (this.connectError) throw this.connectError
 
+    const http = await import('http')
     return new Promise((resolve, reject) => {
-      const http = await import('http')
-
       this.server = http.createServer((req, res) => {
         void this.handleRequest(req, res)
       })
