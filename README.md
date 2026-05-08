@@ -2,12 +2,12 @@
 
 ![DuckHive](https://img.shields.io/badge/DuckHive-v0.9.0-gold?style=for-the-badge&logo=buymeacoffee)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.5-blue?style=for-the-badge&logo=typescript)](package.json)
-[![Bun](https://img.shields.io/badge/Bun-1.1-yellow?style=for-the-badge&logo=bun)](package.json)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue?style=for-the-badge&logo=typescript)](package.json)
+[![Bun](https://img.shields.io/badge/Bun-1.3-yellow?style=for-the-badge&logo=bun)](package.json)
 
 **The Mega AI Coding Harness** — Forked from [Gitlawb/openclaude](https://github.com/Gitlawb/openclaude) and extended with MiniMax M2.7, Agent Teams, AI Council, and full MiniMax CLI integration. Built with 3-layer memory (BM25 → embed → LESSONS), swarm voting, task planning, budget enforcement, and unified channel adapters.
 
-[Features](#features) · [Quick Start](#getting-started) · [DuckHive mmx](#duckhive-mmx) · [Agent Teams](#agent-teams) · [Memory Layers](#memory--intelligence) · [Architecture](#architecture) · [Comparison](#what-duckhive-adds-over-openclaude)
+[Features](#features) · [Quick Start](#getting-started) · [SDK](#duckhive-sdk) · [DuckHive mmx](#duckhive-mmx) · [Agent Teams](#agent-teams) · [Memory Layers](#memory--intelligence) · [Architecture](#architecture) · [Comparison](#what-duckhive-adds-over-openclaude)
 
 ---
 
@@ -102,7 +102,7 @@ duckhive "Implement a REST API"
 
 ### Distribution
 
-DuckHive is distributed as a `duckhive` launcher that boots the TypeScript agent core and, for interactive sessions, hands off to the checked-in Go TUI binary:
+DuckHive is distributed as a `duckhive` launcher that boots the TypeScript agent core and, for interactive sessions, hands off to the checked-in Go TUI binary. DuckHive owns only the `duckhive` command; the `openclaude` command should remain installed from `@gitlawb/openclaude`.
 
 | Method | Command |
 |--------|---------|  
@@ -112,6 +112,23 @@ DuckHive is distributed as a `duckhive` launcher that boots the TypeScript agent
 | Git clone | `git clone && bun install && bun run build` |
 
 The TypeScript agent core (`dist/cli.mjs`) is built via `bun run build` and runs under the Go CLI harness. All integrated services (council daemon on port 3007, MCP servers) are started on-demand.
+
+### DuckHive SDK
+
+DuckHive exposes the OpenClaude SDKv2-compatible runtime at `duckhive/sdk`. The SDK entrypoint is intentionally separate from the CLI bundle and builds to `dist/sdk.mjs` so consumers can import session/query APIs without pulling in React, Ink, or TUI-only modules.
+
+```ts
+import { query } from 'duckhive/sdk'
+
+for await (const message of query({
+  prompt: 'Summarize this repository',
+  options: { cwd: process.cwd() },
+})) {
+  console.log(message)
+}
+```
+
+The SDK surface includes generated schemas/types, query/session helpers, permission helpers, transcript helpers, and SDK-specific errors. `bun run build` verifies that the SDK bundle has no React/Ink leakage.
 
 ### /init — Project Setup
 
@@ -643,6 +660,8 @@ DuckHive unifies messaging across channels through a shared interface — the ag
 
 Adapters: **TelegramAdapter** · **WebhookAdapter** (HTTP receiver) · **EmailAdapter** (IMAP/SMTP) · **ConsoleAdapter** (local TUI/REPL for debugging). All normalize to DuckHive's `Message` type.
 
+Telegram supports `DUCKHIVE_TELEGRAM_BOT_TOKEN` or `TELEGRAM_BOT_TOKEN`. The long-polling path is hardened to keep polling after quiet `getUpdates` responses, bound Bot API calls with a timeout, and preserve later valid updates when earlier updates in a batch are filtered.
+
 ### Custom Tools
 
 DuckHive adds 40+ custom tools on top of the OpenClaude base:
@@ -702,7 +721,7 @@ DuckHive adds 40+ custom tools on top of the OpenClaude base:
 ## Architecture
 
 ```
-DuckHive v0.8.0
+DuckHive v0.9.0
 ├── MiniMax M2.7 (default model)
 ├── DuckHive mmx (MiniMax CLI integration)
 │   ├── Image generation
@@ -783,8 +802,8 @@ DuckHive v0.8.0
 
 ### Prerequisites
 
-- **Bun** 1.1+ (for build)
-- **Node.js** 20+ (runtime)
+- **Bun** 1.3+ (for build/test)
+- **Node.js** 22+ (runtime)
 - **Git**
 
 ### Build from Source
@@ -903,7 +922,28 @@ duckhive config path
 
 # Version
 ./bin/duckhive --version
+
+# Command ownership check
+duckhive --version      # 0.9.0 (DuckHive)
+openclaude --version    # upstream OpenClaude, if installed separately
 ```
+
+---
+
+## Verification
+
+Current shipping/runtime gates:
+
+```bash
+bun test
+bun run build
+bun run verify:privacy
+bun run smoke
+bun run doctor:runtime
+cd tui && go test ./...
+```
+
+Known debt: `bun run typecheck` is still a repo-wide hardening task. The remaining errors are broad pre-existing TypeScript debt in dormant optional modules, legacy command surfaces, and older UI/test typing. Runtime build, tests, SDK bundle checks, privacy verification, smoke, doctor, and TUI Go tests are the current green gates.
 
 ---
 

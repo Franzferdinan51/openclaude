@@ -110,11 +110,9 @@ Verification highlights:
 
 - `bun test tests/sdk` passes
 - focused provider, web search, token counter, hook, and OpenAI shim tests pass
-- `bun run build`, `bun run smoke`, and `bun run verify:privacy` pass
+- full `bun test`, `bun run build`, `bun run smoke`, `bun run verify:privacy`, and `bun run doctor:runtime` pass
 - `cd tui && go test ./...` passes
 
 Known existing project-wide verification debt:
 
-- `bun run typecheck` still reports broad pre-existing type errors unrelated to SDKv2, including missing legacy command modules and old test typing issues.
-- Full `bun test` currently fails when provider profile tests leave Bun module mocks/global state that later SDK and API suites observe; the isolated SDK suite and targeted regression suites pass.
-- `bun run doctor:runtime` imports the raw source command registry and still fails on missing legacy `commands/fork` source in this checkout, while the built CLI smoke path passes.
+- `bun run typecheck` still reports broad pre-existing type errors unrelated to SDKv2 and the OpenClaw/Telegram hardening pass, including missing optional legacy modules and old strictness issues across UI/command/test surfaces.
