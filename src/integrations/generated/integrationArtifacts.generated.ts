@@ -234,7 +234,8 @@ export const PROVIDER_PRESET_MANIFEST = [
     "label": "Moonshot AI - API",
     "name": "Moonshot AI - API",
     "apiKeyEnvVars": [
-      "MOONSHOT_API_KEY"
+      "MOONSHOT_API_KEY",
+      "KIMI_API_KEY"
     ]
   },
   {

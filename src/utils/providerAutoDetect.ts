@@ -148,6 +148,15 @@ export function detectProviderFromEnv(
     }
   }
 
+  if (envHasNonEmpty(env, 'KIMI_API_KEY')) {
+    return {
+      kind: 'openai',
+      source: 'KIMI_API_KEY set',
+      baseUrl: 'https://api.moonshot.ai/v1',
+      model: 'kimi-k2.6',
+    }
+  }
+
   const geminiKey = firstSet(env, ['GEMINI_API_KEY', 'GOOGLE_API_KEY'])
   if (geminiKey) {
     return { kind: 'gemini', source: `${geminiKey} set` }

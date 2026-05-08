@@ -10,7 +10,7 @@ export default defineVendor({
   setup: {
     requiresAuth: true,
     authMode: 'api-key',
-    credentialEnvVars: ['MOONSHOT_API_KEY'],
+    credentialEnvVars: ['MOONSHOT_API_KEY', 'KIMI_API_KEY'],
   },
   transportConfig: {
     kind: 'openai-compatible',
@@ -29,7 +29,7 @@ export default defineVendor({
     description: 'Moonshot AI - API endpoint',
     label: 'Moonshot AI - API',
     name: 'Moonshot AI - API',
-    apiKeyEnvVars: ['MOONSHOT_API_KEY'],
+    apiKeyEnvVars: ['MOONSHOT_API_KEY', 'KIMI_API_KEY'],
   },
   catalog: {
     source: 'static',

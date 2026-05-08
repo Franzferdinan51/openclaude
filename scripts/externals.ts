@@ -42,6 +42,15 @@ export const COMMON_EXTERNALS: string[] = [
   // would freeze the build host's absolute path into dist/cli.mjs, so we
   // keep it external and rely on the npm package being installed.
   '@vscode/ripgrep',
+  // Language processing — native WASM modules with platform binaries
+  'js-tiktoken',
+  'tree-sitter',
+  'tree-sitter-wasms',
+  'web-tree-sitter',
+  // Knowledge graph / RAG
+  'graphology',
+  'graphology-operators',
+  'graphology-pagerank',
 ]
 
 // Additional packages external only in the SDK bundle (TUI + heavy deps)

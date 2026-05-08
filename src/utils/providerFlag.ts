@@ -43,6 +43,7 @@ function buildValidProviders(): string[] {
   ensureIntegrationsLoaded()
 
   const discovered = new Set<string>([
+    'kimi',
     ...PRESET_VENDOR_MAP.map(mapping => mapping.preset),
     ...getAllVendors().map(vendor => vendor.id),
     ...getAllGateways().map(gateway => gateway.id),
@@ -175,6 +176,8 @@ export function applyProviderFlag(
   provider: string,
   args: string[],
 ): { error?: string } {
+  const routeProvider = provider === 'kimi' ? 'moonshotai' : provider
+
   if (!VALID_PROVIDERS.includes(provider)) {
     return {
       error: `Unknown provider "${provider}". Valid providers: ${VALID_PROVIDERS.join(', ')}`,
@@ -209,7 +212,7 @@ export function applyProviderFlag(
   }
 
   const model = parseModelFlag(args)
-  const { defaultBaseUrl, defaultModel } = getRouteDefaults(provider)
+  const { defaultBaseUrl, defaultModel } = getRouteDefaults(routeProvider)
 
   switch (provider) {
     case 'anthropic':
@@ -279,8 +282,13 @@ export function applyProviderFlag(
       if (defaultBaseUrl) {
         process.env.OPENAI_BASE_URL ??= defaultBaseUrl
       }
-      if (defaultModel) {
+      if (provider === 'kimi') {
+        process.env.OPENAI_MODEL ??= 'kimi-k2.6'
+      } else if (defaultModel) {
         process.env.OPENAI_MODEL ??= defaultModel
+      }
+      if (provider === 'kimi' && process.env.KIMI_API_KEY && !process.env.OPENAI_API_KEY) {
+        process.env.OPENAI_API_KEY = process.env.KIMI_API_KEY
       }
       if (model) process.env.OPENAI_MODEL = model
       break

@@ -14,3 +14,8 @@ declare const MACRO: {
   PACKAGE_URL: string
   NATIVE_PACKAGE_URL: string | undefined
 }
+
+declare module '*.md' {
+  const content: string
+  export default content
+}

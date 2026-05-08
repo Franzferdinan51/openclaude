@@ -332,11 +332,8 @@ export function resolveModelRuntimeLimits(options: {
   const modelDescriptor =
     getModelDescriptorForCatalogEntry(catalogEntry) ??
     findModelDescriptorForApiName(routeId, options.model)
-  const externalContextWindow = getOpenAIContextWindow(options.model, runtimeEnv)
-  const externalMaxOutputTokens = getOpenAIMaxOutputTokens(
-    options.model,
-    runtimeEnv,
-  )
+  const externalContextWindow = getOpenAIContextWindow(options.model)
+  const externalMaxOutputTokens = getOpenAIMaxOutputTokens(options.model)
 
   return {
     contextWindow:

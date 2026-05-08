@@ -1743,7 +1743,16 @@ function extractFirstPrompt(transcript: TranscriptMessage[]): string {
  * Gets the last user message that was processed (i.e., before any non-user message appears).
  * Used to determine if a session has valid user interaction.
  */
-export function getFirstMeaningfulUserMessageTextContent<T extends Message>(
+type MessageWithUserPromptContent = {
+  type?: string
+  isMeta?: boolean
+  isCompactSummary?: boolean
+  message?: { content?: unknown }
+}
+
+export function getFirstMeaningfulUserMessageTextContent<
+  T extends MessageWithUserPromptContent,
+>(
   transcript: T[],
 ): string | undefined {
   for (const msg of transcript) {

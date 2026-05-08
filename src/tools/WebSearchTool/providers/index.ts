@@ -38,6 +38,7 @@ import { braveProvider } from './brave.js'
 import { bingProvider } from './bing.js'
 import { mojeekProvider } from './mojeek.js'
 import { linkupProvider } from './linkup.js'
+import { minimaxCliProvider } from './minimaxCli.js'
 
 export { type SearchInput, type SearchProvider, type ProviderOutput, type SearchHit } from './types.js'
 export { applyDomainFilters, safeHostname, hostMatchesDomain } from './types.js'
@@ -54,6 +55,33 @@ export { extractHits } from './custom.js'
 // NOTE: customProvider is intentionally excluded from the auto chain.
 //       It is only available when WEB_SEARCH_PROVIDER=custom is explicitly set.
 //       This prevents the generic outbound provider from silently becoming the default backend.
+
+const searxngProvider: SearchProvider = {
+  name: 'searxng',
+  isConfigured() {
+    return true
+  },
+  async search(input, signal) {
+    if (!process.env.WEB_SEARCH_API && !process.env.WEB_URL_TEMPLATE) {
+      throw new Error(
+        'SearXNG search requires WEB_SEARCH_API or WEB_URL_TEMPLATE for your instance endpoint.',
+      )
+    }
+
+    const previousProvider = process.env.WEB_PROVIDER
+    process.env.WEB_PROVIDER = 'searxng'
+    try {
+      const result = await customProvider.search(input, signal)
+      return { ...result, providerName: 'searxng' }
+    } finally {
+      if (previousProvider === undefined) {
+        delete process.env.WEB_PROVIDER
+      } else {
+        process.env.WEB_PROVIDER = previousProvider
+      }
+    }
+  },
+}
 
 const ALL_PROVIDERS: SearchProvider[] = [
   firecrawlProvider,
@@ -89,6 +117,8 @@ export type ProviderMode =
   | 'bing'
   | 'mojeek'
   | 'linkup'
+  | 'searxng'
+  | 'minimax'
   | 'native'
 
 const PROVIDER_BY_NAME: Record<string, SearchProvider> = {
@@ -103,6 +133,8 @@ const PROVIDER_BY_NAME: Record<string, SearchProvider> = {
   bing: bingProvider,
   mojeek: mojeekProvider,
   linkup: linkupProvider,
+  searxng: searxngProvider,
+  minimax: minimaxCliProvider,
 }
 
 const VALID_MODES = new Set<string>(Object.keys(PROVIDER_BY_NAME).concat(['auto', 'native']))

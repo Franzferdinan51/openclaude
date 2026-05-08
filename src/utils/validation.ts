@@ -39,3 +39,12 @@ export function assertFunction(
     throw new TypeError(`missing or invalid '${field}' (expected function)`)
   }
 }
+
+export function assertObject(
+  value: unknown,
+  field: string,
+): asserts value is Record<string, unknown> {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    throw new TypeError(`missing or invalid '${field}' (expected object)`)
+  }
+}
