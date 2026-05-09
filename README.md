@@ -1044,3 +1044,42 @@ MIT License — see [LICENSE](LICENSE) file.
 ---
 
 *Forked from [Gitlawb/openclaude](https://github.com/Gitlawb/openclaude) · Powered by [MiniMax](https://www.minimax.io/) · DuckHive DNA*
+
+---
+
+## Known Issues & Troubleshooting
+
+### Yolo Mode (`--yolo` flag)
+Yolo mode is ONLY available as an in-app command, NOT as a CLI flag:
+```bash
+# Inside duckhive REPL, type:
+/yolo on   # enable
+/yolo off  # disable
+/yolo      # toggle
+```
+
+### OpenClaw Integration
+DuckHive has built-in OpenClaw commands (from openclaude upstream):
+- `/openclaw-status` - Check OpenClaw gateway status
+- `/openclaw-restart` - Restart OpenClaw gateway
+
+These are HELP commands to manage OpenClaw, not conflicts. OpenClaw and DuckHive are SEPARATE:
+- `openclaw` - OpenClaw gateway/agent (standalone)
+- `duckhive` - DuckHive AI coding harness
+
+### Timer in TUI
+The Go TUI (`duckhive-tui`) doesn't display session elapsed time in the UI.
+The time IS tracked in the bridge layer - the display connection needs work.
+Use the legacy Ink REPL for duration display after tasks.
+
+### Terminal Freezes During Heavy Tasks
+The SerialBatchEventUploader has a blocking queue. During heavy tool use,
+the queue fills and `enqueue()` blocks the Node.js event loop.
+Workarounds: split tasks, reduce concurrent calls, use `/yolo on`.
+
+### Building from Source
+```bash
+cd ~/Desktop/DuckHive-git
+bun run build
+# Rebuilds dist/cli.mjs from TypeScript source
+```
