@@ -4,12 +4,16 @@ import { GatewayProvider } from './context/GatewayContext';
 import { ChatProvider } from './context/ChatContext';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { RightPanel } from './components/RightPanel/RightPanel';
+import { MessageList } from './components/Chat/MessageList';
+import { InputBar } from './components/Chat/InputBar';
+import { useChat } from './context/ChatContext';
 
 function AppInner() {
   const { theme, setTheme } = useTheme();
+  const { messages, sendMessage, isLoading, cancelLoading } = useChat();
 
   return (
-    <div className="app-shell">
+    <div className="app-shell" data-theme={theme}>
       {/* Header */}
       <header className="app-header">
         <div className="header-left">
@@ -17,7 +21,7 @@ function AppInner() {
           <span className="header-title">DuckHive</span>
         </div>
         <div className="header-center">
-          <span className="header-status">● Connected</span>
+          <span className="header-status">Connected</span>
           <span className="header-model">MiniMax-M2.7</span>
         </div>
         <div className="header-right">
@@ -26,9 +30,9 @@ function AppInner() {
             value={theme}
             onChange={e => setTheme(e.target.value as 'claw' | 'knot' | 'dash')}
           >
-            <option value="claw">Claw Theme</option>
-            <option value="knot">Knot Theme</option>
-            <option value="dash">Dash Theme</option>
+            <option value="claw">🦆 Claw</option>
+            <option value="knot">🟣 Knot</option>
+            <option value="dash">🔵 Dash</option>
           </select>
         </div>
       </header>
@@ -39,7 +43,7 @@ function AppInner() {
           <nav className="sidebar-nav">
             <button className="sidebar-item active">
               <span className="sidebar-icon">💬</span>
-              <span>Agents</span>
+              <span>Chat</span>
             </button>
             <button className="sidebar-item">
               <span className="sidebar-icon">📋</span>
@@ -70,7 +74,7 @@ function AppInner() {
 
         {/* Main chat area */}
         <main className="main-area">
-          {/* Session tabs */}
+          {/* Session tab bar */}
           <div className="session-tabs">
             <button className="tab active">Session 1</button>
             <button className="tab">+ New</button>
@@ -78,26 +82,18 @@ function AppInner() {
 
           {/* Messages */}
           <div className="messages-area">
-            <div className="message bot">
-              <span className="message-avatar">🦆</span>
-              <div className="message-content">
-                <p>Welcome to DuckHive! How can I help you today?</p>
-              </div>
-            </div>
+            <MessageList messages={messages} />
           </div>
 
-          {/* Input bar */}
-          <div className="input-bar">
-            <textarea
-              className="input-field"
-              placeholder="Type your message..."
-              rows={1}
-            />
-            <button className="send-btn">Send</button>
-          </div>
+          {/* Input */}
+          <InputBar
+            onSendMessage={sendMessage}
+            isLoading={isLoading}
+            onCancel={isLoading ? cancelLoading : undefined}
+          />
         </main>
 
-        {/* Right panel — real data from gateway */}
+        {/* Right panel */}
         <RightPanel />
       </div>
     </div>

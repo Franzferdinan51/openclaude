@@ -9,10 +9,11 @@ interface ChatContextValue {
   sessions: SessionInfo[];
   activeSession: string | null;
   messages: ChatMessage[];
-  loading: boolean;
+  isLoading: boolean;
   createSession: (title?: string) => Promise<string | null>;
   setActiveSession: (id: string) => void;
   sendMessage: (content: string) => Promise<void>;
+  cancelLoading: () => void;
   loadSessions: () => Promise<void>;
 }
 
@@ -20,10 +21,11 @@ const ChatContext = createContext<ChatContextValue>({
   sessions: [],
   activeSession: null,
   messages: [],
-  loading: false,
+  isLoading: false,
   createSession: async () => null,
   setActiveSession: () => {},
   sendMessage: async () => {},
+  cancelLoading: () => {},
   loadSessions: async () => {},
 });
 
@@ -31,7 +33,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const [sessions, setSessions] = useState<SessionInfo[]>([]);
   const [activeSession, setActiveSessionState] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
 
   // FIX: useRef to always get current messages (avoids stale closure in sendMessage)
   const messagesRef = useRef<ChatMessage[]>([]);
@@ -58,26 +61,47 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     setMessages(data?.messages ?? []);
   }, []);
 
+  const cancelLoading = useCallback(() => {
+    if (abortRef.current) {
+      abortRef.current.abort();
+    }
+    setIsLoading(false);
+  }, []);
+
   // FIX: use messagesRef.current instead of stale `messages` from closure
   const sendMessage = useCallback(async (content: string) => {
+    if (isLoading) return;
+    
     const userMsg: ChatMessage = { role: 'user', content };
     setMessages(prev => [...prev, userMsg]);
-    setLoading(true);
+    setIsLoading(true);
+
+    const controller = new AbortController();
+    abortRef.current = controller;
 
     const allMessages = [...messagesRef.current, userMsg];
-    const reply = await sendChat(allMessages);
 
-    setLoading(false);
-    if (reply?.choices?.[0]?.message) {
-      const assistantMsg = reply.choices[0].message as ChatMessage;
-      setMessages(prev => [...prev, assistantMsg]);
+    try {
+      const reply = await sendChat(allMessages, { stream: false });
+
+      if (reply?.choices?.[0]?.message) {
+        const assistantMsg = reply.choices[0].message as ChatMessage;
+        setMessages(prev => [...prev, assistantMsg]);
+      }
+    } catch (error) {
+      if ((error as Error).name !== 'AbortError') {
+        console.error('Chat error:', error);
+      }
+    } finally {
+      setIsLoading(false);
+      abortRef.current = null;
     }
-  }, []); // no deps - uses ref instead of closure
+  }, [isLoading]); // depends on isLoading to prevent concurrent sends
 
   return (
     <ChatContext.Provider value={{
-      sessions, activeSession, messages, loading,
-      createSession: createNewSession, setActiveSession, sendMessage, loadSessions,
+      sessions, activeSession, messages, isLoading,
+      createSession: createNewSession, setActiveSession, sendMessage, cancelLoading, loadSessions,
     }}>
       {children}
     </ChatContext.Provider>
