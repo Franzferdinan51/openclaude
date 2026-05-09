@@ -8,6 +8,10 @@ import { updateSettingsForSource } from '../../utils/settings/settings.js'
 import { getSettings_DEPRECATED } from '../../utils/settings/settings.js'
 
 export function isYoloModeEnabled(): boolean {
+  // Check CLI flag first (--yolo sets this env var)
+  if (process.env.CLAUDE_CODE_YOLO === '1') {
+    return true
+  }
   const settings = getSettings_DEPRECATED()
   return settings?.permissions?.yoloMode === true
 }

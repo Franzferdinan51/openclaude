@@ -24,6 +24,7 @@ var Styles = struct {
 	Footer           lipgloss.Style
 	HelpText         lipgloss.Style
 	ModeIndicator    lipgloss.Style
+	AccentTimer      lipgloss.Style // Timer display style
 }{
 	Header: lipgloss.NewStyle().
 		Foreground(lipgloss.Color("#FAFAFA")).
@@ -98,6 +99,9 @@ var Styles = struct {
 	ModeIndicator: lipgloss.NewStyle().
 		Foreground(lipgloss.Color("#FFCB6B")).
 		Bold(true),
+
+	AccentTimer: lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#6FD3A3")). // Green timer
 }
 
 const (

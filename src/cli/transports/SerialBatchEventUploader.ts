@@ -94,23 +94,25 @@ export class SerialBatchEventUploader<T> {
   }
 
   /**
-   * Add events to the pending buffer. Returns immediately if space is
-   * available. Blocks (awaits) if the buffer is full — caller pauses
-   * until drain frees space.
+   * Add events to the pending buffer. Returns immediately.
+   * NON-BLOCKING: if queue is full, oldest events are dropped to make room.
+   * This prevents event loop freezing during heavy tool use.
    */
   async enqueue(events: T | T[]): Promise<void> {
     if (this.closed) return
     const items = Array.isArray(events) ? events : [events]
     if (items.length === 0) return
 
-    // Backpressure: wait until there's space
+    // NON-BLOCKING BACKPRESSURE:
+    // If queue would overflow, drop OLDEST events to make room
+    // This is better than blocking the event loop
     while (
       this.pending.length + items.length > this.config.maxQueueSize &&
-      !this.closed
+      !this.closed &&
+      this.pending.length > 0
     ) {
-      await new Promise<void>(resolve => {
-        this.backpressureResolvers.push(resolve)
-      })
+      // Drop oldest event to free space
+      this.pending.shift()
     }
 
     if (this.closed) return

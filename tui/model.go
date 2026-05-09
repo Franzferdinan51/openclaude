@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/charmbracelet/bubbles/viewport"
@@ -64,9 +65,13 @@ type Model struct {
 	height        int
 
 	// Session
-	sessionId  string
-	modelName  string
-	totalCost  float64
+	sessionId       string
+	sessionStartTime time.Time // when current task started (for timer display)
+	modelName       string
+	totalCost       float64
+
+	// Timer display
+	isTimerActive bool
 
 	// Pending confirmations / dialogs
 	pendingConfirmation bool
@@ -98,7 +103,9 @@ func NewModel(width, height int) *Model {
 		width:      width,
 		height:     height,
 		modelName:  "claude-opus-4.6",
-		sessionId:  "",
+		sessionId:        "",
+		sessionStartTime: time.Time{},
+		isTimerActive:    false,
 	}
 }
 
@@ -137,4 +144,32 @@ func (m *Model) FinalizeMessage(id string) {
 // Init is called once at startup.
 func (m *Model) Init() tea.Cmd {
 	return func() tea.Msg { return m.spinner.Tick() }
+}
+
+// StartTimer marks session start and activates timer display.
+func (m *Model) StartTimer() {
+	if !m.isTimerActive {
+		m.sessionStartTime = time.Now()
+		m.isTimerActive = true
+	}
+}
+
+// StopTimer deactivates the timer.
+func (m *Model) StopTimer() {
+	m.isTimerActive = false
+}
+
+// ElapsedString returns formatted elapsed time.
+func (m *Model) ElapsedString() string {
+	if !m.isTimerActive || m.sessionStartTime.IsZero() {
+		return ""
+	}
+	elapsed := time.Since(m.sessionStartTime)
+	hours := int(elapsed.Hours())
+	minutes := int(elapsed.Minutes()) % 60
+	seconds := int(elapsed.Seconds()) % 60
+	if hours > 0 {
+		return fmt.Sprintf("%d:%02d:%02d", hours, minutes, seconds)
+	}
+	return fmt.Sprintf("%d:%02d", minutes, seconds)
 }

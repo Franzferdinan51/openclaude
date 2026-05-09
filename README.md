@@ -1083,3 +1083,28 @@ cd ~/Desktop/DuckHive-git
 bun run build
 # Rebuilds dist/cli.mjs from TypeScript source
 ```
+
+---
+
+## ⚠️ IMPORTANT: OpenClaw vs OpenClaude (2026-05-09)
+
+DuckHive is based on **OpenClaude** (https://github.com/Gitlawb/openclaude), NOT OpenClaw.
+
+| Project | URL | Role in DuckHive |
+|---------|-----|------------------|
+| **OpenClaude** | https://github.com/Gitlawb/openclaude | DIRECT UPSTREAM - DuckHive is forked from this |
+| **OpenClaw** | https://github.com/openclaw/openclaw | SEPARATE project - DuckHive can interact with it via built-in commands |
+| **DuckHive** | https://github.com/Franzferdinan51/DuckHive | Ryan's fork with MiniMax/MMX/Agent Teams |
+
+### Built-in Commands for OpenClaw Gateway
+These commands let DuckHive check/manage the **OpenClaw gateway** running separately:
+- `/openclaw-status` - Check OpenClaw gateway status (must be running at localhost:18789)
+- `/openclaw-restart` - Restart OpenClaw gateway
+
+These are HELPER commands to manage OpenClaw, NOT DuckHive's upstream.
+
+### Common Confusion
+- Type `duckhive` → starts DuckHive (based on OpenClaude)
+- Type `openclaw` → starts OpenClaw gateway (separate process)
+
+They CAN run together - DuckHive uses OpenClaw commands as helpers, but they are completely separate programs.

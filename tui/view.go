@@ -26,7 +26,7 @@ func (m *Model) View() string {
 // headerView renders the top bar with logo/title.
 func (m *Model) headerView() string {
 	title := Styles.HeaderTitle.Render("DuckHive")
-	version := Styles.HeaderSubtitle.Render("v0.8.0")
+	version := Styles.HeaderSubtitle.Render("v0.9.1")
 	status := ""
 	if m.isLoading {
 		status = " " + m.spinner.View()
@@ -36,6 +36,9 @@ func (m *Model) headerView() string {
 	}
 	if m.totalCost > 0 {
 		status += " " + Styles.DimText.Render(fmt.Sprintf("$%.4f", m.totalCost))
+	}
+	if m.isTimerActive && !m.sessionStartTime.IsZero() {
+		status += " " + Styles.AccentTimer.Render(m.ElapsedString())
 	}
 
 	left := fmt.Sprintf(" %s %s", title, version)

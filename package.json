@@ -1,6 +1,6 @@
 {
   "name": "duckhive",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "description": "DuckHive \u2014 Claude Code with any LLM: OpenAI, Gemini, DeepSeek, Ollama, and 200+ models",
   "type": "module",
   "bin": {

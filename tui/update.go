@@ -27,6 +27,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.spinner = s
 		return m, cmd
 
+	// --- Timer tick (triggered by model) ---
+	case timerTickMsg:
+		// Just trigger a re-render for timer updates
+		return m, nil
+
 	// --- Keyboard input ---
 	case tea.KeyMsg:
 		return m.handleKey(msg)
@@ -51,6 +56,14 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case BackendEventMsg:
+		// Trigger timer on activity (task start/end)
+		if msg.IsActivity {
+			if !m.isTimerActive {
+				m.StartTimer()
+				return m, StartTimerCmd()
+			}
+		}
+
 		if msg.Type == MsgTypeProgress || msg.Type == MsgTypeSystem {
 			m.AddMessage(Message{
 				ID:      msg.ID,
@@ -243,11 +256,35 @@ type CancelMsg struct{}
 
 // BackendEventMsg wraps a message from the bridge.
 type BackendEventMsg struct {
-	Type      MessageType
-	ID        string
-	Content   string
+	Type        MessageType
+	ID          string
+	Content     string
 	IsStreaming bool
-	IsError   bool
+	IsError     bool
+	IsActivity  bool // true means a task started/ended - triggers timer
+}
+
+// timerTickMsg is sent to update the timer display every second.
+type timerTickMsg struct{}
+
+// StartTimerCmd returns a command to start a periodic timer tick.
+func StartTimerCmd() tea.Cmd {
+	return func() tea.Msg {
+		ticker := time.NewTicker(time.Second)
+		ch := make(chan tea.Msg)
+		go func() {
+			for range ticker.C {
+				select {
+				case <-ch:
+					ticker.Stop()
+					return
+				default:
+					ch <- timerTickMsg{}
+				}
+			}
+		}()
+		return nil
+	}()
 }
 
 // vpDeltaMsg carries viewport scroll delta from mouse events.

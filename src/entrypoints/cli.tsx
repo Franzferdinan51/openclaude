@@ -392,6 +392,11 @@ async function main(): Promise<void> {
     process.env.CLAUDE_CODE_SIMPLE = '1';
   }
 
+  // --yolo: enable yolo/permission bypass mode early
+  if (args.includes('--yolo')) {
+    process.env.CLAUDE_CODE_YOLO = '1';
+  }
+
   // No special flags detected, load and run the full CLI
   if (process.env.OPENCLAUDE_DISABLE_EARLY_INPUT !== '1') {
     const {
