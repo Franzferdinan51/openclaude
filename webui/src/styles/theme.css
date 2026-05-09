@@ -180,6 +180,11 @@ button {
   color: var(--color-text);
 }
 
+.rail-button.active {
+  background: var(--color-accent-muted);
+  color: var(--color-accent);
+}
+
 .left-panel,
 .inspector {
   padding: 14px;
@@ -305,6 +310,9 @@ button {
   display: flex;
   flex-direction: column;
   gap: 5px;
+  color: var(--color-text);
+  text-align: left;
+  cursor: pointer;
 }
 
 .metric span {
@@ -314,6 +322,104 @@ button {
 
 .metric strong {
   font-size: 14px;
+}
+
+.metric:hover,
+.metric:focus-visible {
+  border-color: color-mix(in srgb, var(--color-accent), transparent 55%);
+  background: var(--color-accent-muted);
+  outline: none;
+}
+
+.panel-list {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  max-height: 360px;
+  overflow: auto;
+}
+
+.list-row,
+.mini-action {
+  border: 1px solid var(--color-border);
+  border-radius: 7px;
+  background: var(--color-surface-elevated);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.list-row {
+  min-height: 48px;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  padding: 8px 10px;
+  text-align: left;
+}
+
+.list-row:hover,
+.list-row.active {
+  border-color: color-mix(in srgb, var(--color-accent), transparent 55%);
+  background: var(--color-accent-muted);
+}
+
+.list-row span {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.list-row strong,
+.list-row small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.list-row strong {
+  font-size: 12px;
+}
+
+.list-row small {
+  color: var(--color-text-muted);
+  font-size: 10px;
+}
+
+.mini-action {
+  min-height: 26px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px;
+  font-size: 11px;
+}
+
+.ops-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.ops-card strong {
+  color: var(--color-text);
+}
+
+.ops-card button {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid var(--color-border);
+  border-radius: 7px;
+  background: var(--color-surface-elevated);
+  color: var(--color-text);
+  cursor: pointer;
 }
 
 .workspace {

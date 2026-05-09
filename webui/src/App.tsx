@@ -10,6 +10,7 @@ import {
   GitBranch,
   Hammer,
   MessageSquare,
+  MessageSquarePlus,
   MonitorCog,
   Pause,
   Play,
@@ -48,9 +49,22 @@ const navItems = [
   { id: 'settings', label: 'Settings', icon: Settings },
 ]
 
+type NavId = (typeof navItems)[number]['id']
+
 function AppInner() {
   const { theme, setTheme } = useTheme()
-  const { messages, sendMessage, isLoading, cancelLoading, clearMessages, activeRunId } = useChat()
+  const {
+    activeSession,
+    activeRunId,
+    cancelLoading,
+    clearMessages,
+    createSession,
+    isLoading,
+    messages,
+    sendMessage,
+    sessions,
+    setActiveSession,
+  } = useChat()
   const {
     agents,
     connected,
@@ -67,6 +81,7 @@ function AppInner() {
     tools,
   } = useGateway()
   const [commandOpen, setCommandOpen] = React.useState(false)
+  const [activeNav, setActiveNav] = React.useState<NavId>('runs')
 
   React.useEffect(() => {
     if (activeRunId) selectRun(activeRunId)
@@ -86,6 +101,20 @@ function AppInner() {
   const activeEvents = selectedRunId ? eventsByRun[selectedRunId] ?? [] : []
   const runningCount = runs.filter(run => ['running', 'awaiting_approval', 'recovering'].includes(run.status)).length
   const pendingApprovals = runs.reduce((total, run) => total + (run.permissionState?.pendingApprovalIds?.length ?? 0), 0)
+
+  const handleNewChat = React.useCallback(() => {
+    void createSession('New WebUI session')
+    setActiveNav('sessions')
+  }, [createSession])
+
+  const runCommand = React.useCallback((command: () => void | Promise<void>) => {
+    void Promise.resolve(command()).finally(() => setCommandOpen(false))
+  }, [])
+
+  const sendPrompt = React.useCallback((prompt: string) => {
+    void sendMessage(prompt)
+    setActiveNav('runs')
+  }, [sendMessage])
 
   return (
     <div className="app-shell" data-theme={theme}>
@@ -128,7 +157,12 @@ function AppInner() {
           {navItems.map(item => {
             const Icon = item.icon
             return (
-              <button key={item.id} className="rail-button" title={item.label}>
+              <button
+                key={item.id}
+                className={`rail-button ${activeNav === item.id ? 'active' : ''}`}
+                title={item.label}
+                onClick={() => setActiveNav(item.id)}
+              >
                 <Icon size={18} />
                 <span>{item.label}</span>
               </button>
@@ -137,30 +171,142 @@ function AppInner() {
         </aside>
 
         <aside className="left-panel">
-          <section className="panel-section">
-            <div className="section-heading">
-              <span>Agent Runs</span>
-              <span className="muted">{runs.length}</span>
-            </div>
-            <div className="run-list">
-              {runs.length === 0 ? (
-                <EmptyPanel title="No runs yet" detail="Send a prompt to register the first AgentRun." />
-              ) : runs.slice(0, 12).map(run => (
-                <button
-                  key={run.id}
-                  className={`run-row ${run.id === selectedRunId ? 'active' : ''}`}
-                  onClick={() => selectRun(run.id)}
-                >
-                  <span className={`status-dot ${run.status}`} />
-                  <span className="run-row-main">
-                    <span className="run-title">{run.title}</span>
-                    <span className="run-meta">{run.runtimeHarness} · {run.model ?? 'auto'}</span>
-                  </span>
-                  <ChevronRight size={14} />
+          {activeNav === 'sessions' && (
+            <section className="panel-section">
+              <div className="section-heading">
+                <span>Sessions</span>
+                <button className="mini-action" onClick={handleNewChat}>
+                  <MessageSquarePlus size={13} /> New
                 </button>
-              ))}
-            </div>
-          </section>
+              </div>
+              <div className="panel-list">
+                {sessions.length === 0 ? (
+                  <EmptyPanel title="No saved sessions" detail="Create a new chat or send a prompt." />
+                ) : sessions.map(session => (
+                  <button
+                    key={session.id}
+                    className={`list-row ${session.id === activeSession ? 'active' : ''}`}
+                    onClick={() => setActiveSession(session.id)}
+                  >
+                    <MessageSquare size={15} />
+                    <span>
+                      <strong>{session.title}</strong>
+                      <small>{new Date(session.updatedAt).toLocaleTimeString()}</small>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {activeNav === 'runs' && (
+            <section className="panel-section">
+              <div className="section-heading">
+                <span>Agent Runs</span>
+                <span className="muted">{runs.length}</span>
+              </div>
+              <div className="run-list">
+                {runs.length === 0 ? (
+                  <EmptyPanel title="No runs yet" detail="Send a prompt to register the first AgentRun." />
+                ) : runs.slice(0, 12).map(run => (
+                  <button
+                    key={run.id}
+                    className={`run-row ${run.id === selectedRunId ? 'active' : ''}`}
+                    onClick={() => selectRun(run.id)}
+                  >
+                    <span className={`status-dot ${run.status}`} />
+                    <span className="run-row-main">
+                      <span className="run-title">{run.title}</span>
+                      <span className="run-meta">{run.runtimeHarness} · {run.model ?? 'auto'}</span>
+                    </span>
+                    <ChevronRight size={14} />
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {activeNav === 'agents' && (
+            <section className="panel-section">
+              <div className="section-heading"><span>Agents</span><span className="muted">{agents.length}</span></div>
+              <div className="panel-list">
+                {agents.map(agent => (
+                  <button key={agent.id} className="list-row" onClick={() => sendPrompt(`Inspect agent ${agent.name} and summarize its current work queue.`)}>
+                    <Bot size={15} />
+                    <span><strong>{agent.name}</strong><small>{agent.status} · {agent.model ?? 'auto'}</small></span>
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {activeNav === 'tools' && (
+            <section className="panel-section">
+              <div className="section-heading"><span>Tools</span><span className="muted">{tools.length}</span></div>
+              <div className="panel-list">
+                {tools.map(tool => (
+                  <button key={tool.name} className="list-row" onClick={() => sendPrompt(`Explain when to use the ${tool.name} tool and whether it is safe for this workspace.`)}>
+                    <Hammer size={15} />
+                    <span><strong>{tool.name}</strong><small>{tool.category ?? 'tool'}{tool.dangerous ? ' · approval needed' : ''}</small></span>
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {activeNav === 'mcp' && (
+            <section className="panel-section">
+              <div className="section-heading"><span>MCP Servers</span><span className="muted">{mcpServers.length}</span></div>
+              <div className="panel-list">
+                {mcpServers.map(server => (
+                  <button key={server.id} className="list-row" onClick={() => sendPrompt(`Check MCP server ${server.name} and list available capabilities.`)}>
+                    <GitBranch size={15} />
+                    <span><strong>{server.name}</strong><small>{server.status} · {server.tools} tools</small></span>
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {activeNav === 'desktop' && (
+            <section className="panel-section">
+              <div className="section-heading"><span>Desktop Control</span><span className="muted">{status?.desktopControl?.version ?? 'local'}</span></div>
+              <div className="ops-card">
+                <strong>{status?.desktopControl?.configured ? 'Newest Desktop Control is bundled' : 'Desktop control not detected'}</strong>
+                <span>{status?.desktopControl?.packagePath ?? 'No package path reported'}</span>
+                <button onClick={() => sendPrompt('Run a desktop and Android control readiness check and report any missing permissions or ADB setup.')}>
+                  <MonitorCog size={14} /> Check readiness
+                </button>
+              </div>
+            </section>
+          )}
+
+          {activeNav === 'ops' && (
+            <section className="panel-section">
+              <div className="section-heading"><span>Operations</span><span className="muted">{connected ? 'online' : 'offline'}</span></div>
+              <div className="ops-card">
+                <strong>Provider: {status?.provider?.provider ?? 'auto'}</strong>
+                <span>Model: {status?.provider?.model ?? 'auto'}</span>
+                <span>Telegram: {status?.telegram?.configured ? 'configured' : 'not configured'}</span>
+                <span>Memory: {status?.system?.memory.percent ?? 0}% used</span>
+                <button onClick={refresh}><RefreshCw size={14} /> Refresh diagnostics</button>
+              </div>
+            </section>
+          )}
+
+          {activeNav === 'settings' && (
+            <section className="panel-section">
+              <div className="section-heading"><span>Settings</span><span className="muted">{theme}</span></div>
+              <div className="panel-list">
+                {(['claw', 'knot', 'dash'] as const).map(nextTheme => (
+                  <button key={nextTheme} className={`list-row ${theme === nextTheme ? 'active' : ''}`} onClick={() => setTheme(nextTheme)}>
+                    <Settings size={15} />
+                    <span><strong>{nextTheme}</strong><small>Switch console accent theme</small></span>
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
 
           <section className="panel-section">
             <div className="section-heading">
@@ -174,21 +320,21 @@ function AppInner() {
           </section>
 
           <section className="panel-section compact-grid">
-            <Metric label="Agents" value={agents.length} />
-            <Metric label="Tools" value={tools.length} />
-            <Metric label="MCP" value={mcpServers.length} />
-            <Metric label="Memory" value="ready" />
+            <Metric label="Agents" value={agents.length} onClick={() => setActiveNav('agents')} />
+            <Metric label="Tools" value={tools.length} onClick={() => setActiveNav('tools')} />
+            <Metric label="MCP" value={mcpServers.length} onClick={() => setActiveNav('mcp')} />
+            <Metric label="Memory" value="ready" onClick={() => setActiveNav('ops')} />
           </section>
         </aside>
 
         <main className="workspace">
           <div className="session-strip">
-            <button className="session-chip active">
-              <TerminalSquare size={14} />
-              Console Session
-            </button>
+              <button className="session-chip active" onClick={() => setActiveNav('sessions')}>
+                <TerminalSquare size={14} />
+                Console Session
+              </button>
             {selectedRun && (
-              <button className="session-chip">
+              <button className="session-chip" onClick={() => setActiveNav('runs')}>
                 <Activity size={14} />
                 {selectedRun.status}
               </button>
@@ -206,7 +352,7 @@ function AppInner() {
                 </p>
                 <div className="welcome-examples">
                   {EXAMPLE_PROMPTS.map(prompt => (
-                    <button key={prompt} onClick={() => sendMessage(prompt)}>
+                    <button key={prompt} onClick={() => sendPrompt(prompt)}>
                       <Send size={14} />
                       {prompt}
                     </button>
@@ -268,7 +414,11 @@ function AppInner() {
             ))}
           </section>
 
-          <RightPanel onClearChat={clearMessages} />
+          <RightPanel
+            onClearChat={clearMessages}
+            onNewChat={handleNewChat}
+            onOpenCommands={() => setCommandOpen(true)}
+          />
         </aside>
       </div>
 
@@ -280,11 +430,12 @@ function AppInner() {
               <span>Command palette</span>
               <kbd>⌘K</kbd>
             </div>
-            <button onClick={refresh}><RefreshCw size={15} /> Refresh WebUI data</button>
-            <button onClick={() => selectedRun && controlRun(selectedRun.id, 'approve')} disabled={!selectedRun}>
+            <button onClick={() => runCommand(refresh)}><RefreshCw size={15} /> Refresh WebUI data</button>
+            <button onClick={() => selectedRun && runCommand(() => controlRun(selectedRun.id, 'approve'))} disabled={!selectedRun}>
               <ShieldCheck size={15} /> Approve selected run
             </button>
-            <button onClick={clearMessages}><MessageSquare size={15} /> Clear console transcript</button>
+            <button onClick={() => runCommand(handleNewChat)}><MessageSquarePlus size={15} /> New console session</button>
+            <button onClick={() => runCommand(clearMessages)}><MessageSquare size={15} /> Clear console transcript</button>
           </div>
         </div>
       )}
@@ -296,12 +447,12 @@ function StatusPill({ label, tone = 'neutral' }: { label: string; tone?: 'neutra
   return <span className={`status-pill ${tone}`}>{label}</span>
 }
 
-function Metric({ label, value }: { label: string; value: React.ReactNode }) {
+function Metric({ label, value, onClick }: { label: string; value: React.ReactNode; onClick?: () => void }) {
   return (
-    <div className="metric">
+    <button className="metric" onClick={onClick}>
       <span>{label}</span>
       <strong>{value}</strong>
-    </div>
+    </button>
   )
 }
 

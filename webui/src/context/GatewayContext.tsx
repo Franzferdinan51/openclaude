@@ -75,9 +75,7 @@ export function GatewayProvider({ children }: { children: ReactNode }) {
     setMcpServers(m);
     setRuns(r);
     setStatus(s);
-    if (!selectedRunId && r[0]) {
-      setSelectedRunId(r[0].id);
-    }
+    setSelectedRunId(prev => prev ?? r[0]?.id ?? null);
   }, []);
 
   useEffect(() => {
@@ -100,10 +98,10 @@ export function GatewayProvider({ children }: { children: ReactNode }) {
       },
       snapshot => {
         setRuns(snapshot);
-        if (!selectedRunId && snapshot[0]) setSelectedRunId(snapshot[0].id);
+        setSelectedRunId(prev => prev ?? snapshot[0]?.id ?? null);
       },
     );
-  }, [selectedRunId]);
+  }, []);
 
   useEffect(() => {
     if (!selectedRunId || eventsByRun[selectedRunId]) return;
@@ -116,9 +114,9 @@ export function GatewayProvider({ children }: { children: ReactNode }) {
     runId: string,
     action: 'pause' | 'resume' | 'stop' | 'approve' | 'recover',
   ) => {
-    await runAction(runId, action);
+    const updated = await runAction(runId, action);
     const next = await listRuns();
-    setRuns(next);
+    setRuns(updated ? next.map(run => run.id === updated.id ? updated : run) : next);
   }, []);
 
   const connected = health?.status !== 'offline';

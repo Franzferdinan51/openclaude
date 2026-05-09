@@ -4,6 +4,8 @@ import { useGateway } from '../../context/GatewayContext';
 
 interface QuickActionsProps {
   onClearChat?: () => void;
+  onNewChat?: () => void;
+  onOpenCommands?: () => void;
 }
 
 const QUICK_ACTIONS = [
@@ -13,14 +15,20 @@ const QUICK_ACTIONS = [
   { label: 'Clear', action: 'clear', color: '#ef4444', icon: Trash2 },
 ];
 
-export function QuickActions({ onClearChat }: QuickActionsProps) {
+export function QuickActions({ onClearChat, onNewChat, onOpenCommands }: QuickActionsProps) {
   const { refresh } = useGateway();
   const handleClick = (action: string) => {
+    if (action === 'new-chat') {
+      onNewChat?.();
+    }
     if (action === 'clear' && onClearChat) {
       onClearChat();
     }
     if (action === 'refresh') {
       refresh();
+    }
+    if (action === 'commands') {
+      onOpenCommands?.();
     }
   };
 

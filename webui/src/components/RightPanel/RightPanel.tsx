@@ -19,9 +19,11 @@ const tabs: { id: Tab; label: string; icon: LucideIcon }[] = [
 
 interface RightPanelProps {
   onClearChat?: () => void;
+  onNewChat?: () => void;
+  onOpenCommands?: () => void;
 }
 
-export function RightPanel({ onClearChat }: RightPanelProps) {
+export function RightPanel({ onClearChat, onNewChat, onOpenCommands }: RightPanelProps) {
   const [activeTab, setActiveTab] = React.useState<Tab>('tools');
 
   return (
@@ -50,7 +52,11 @@ export function RightPanel({ onClearChat }: RightPanelProps) {
         {activeTab === 'cost' && <CostPanel />}
       </div>
 
-      <QuickActions onClearChat={onClearChat} />
+      <QuickActions
+        onClearChat={onClearChat}
+        onNewChat={onNewChat}
+        onOpenCommands={onOpenCommands}
+      />
       <SystemStatus />
     </aside>
   );
