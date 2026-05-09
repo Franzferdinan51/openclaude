@@ -1,0 +1,172 @@
+/* DuckHive Global Styles - OpenClaw Theme Variables */
+
+:root {
+  /* Claw Theme (default) */
+  --color-bg: #0d1117;
+  --color-surface: #161b22;
+  --color-surface-elevated: #21262d;
+  --color-border: #30363d;
+  --color-text: #e6edf3;
+  --color-text-muted: #8b949e;
+  --color-text-dim: #6e7681;
+  --color-accent: #f0b429;
+  --color-accent-hover: #f7c948;
+  --color-accent-muted: rgba(240, 180, 41, 0.15);
+  --color-success: #3fb950;
+  --color-warning: #d29922;
+  --color-danger: #f85149;
+  --color-info: #58a6ff;
+
+  /* Spacing */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 24px;
+  --space-2xl: 32px;
+
+  /* Typography */
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  --font-mono: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+  --font-size-xs: 11px;
+  --font-size-sm: 12px;
+  --font-size-base: 14px;
+  --font-size-lg: 16px;
+  --font-size-xl: 20px;
+  --font-size-2xl: 24px;
+
+  /* Layout */
+  --header-height: 52px;
+  --sidebar-width: 220px;
+  --right-panel-width: 320px;
+
+  /* Border radius */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+
+  /* Transitions */
+  --transition-fast: 100ms ease;
+  --transition-normal: 200ms ease;
+  --transition-slow: 300ms ease;
+}
+
+/* Knot Theme */
+[data-theme="knot"] {
+  --color-bg: #1a1625;
+  --color-surface: #251f33;
+  --color-surface-elevated: #302844;
+  --color-border: #463e5c;
+  --color-accent: #b77fdb;
+  --color-accent-hover: #c99be8;
+  --color-accent-muted: rgba(183, 127, 219, 0.15);
+  --color-success: #6fdc8c;
+  --color-warning: #e3b341;
+  --color-danger: #f97583;
+  --color-info: #79c0ff;
+}
+
+/* Dash Theme */
+[data-theme="dash"] {
+  --color-bg: #0a0e14;
+  --color-surface: #121820;
+  --color-surface-elevated: #1a2332;
+  --color-border: #243044;
+  --color-accent: #00d4ff;
+  --color-accent-hover: #33dfff;
+  --color-accent-muted: rgba(0, 212, 255, 0.15);
+  --color-success: #00c853;
+  --color-warning: #ffab00;
+  --color-danger: #ff5252;
+  --color-info: #40c4ff;
+}
+
+/* App layout */
+.app {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background-color: var(--color-bg);
+}
+
+.app-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+
+.app-main {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-base);
+  color: var(--color-text);
+  background-color: var(--color-bg);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-surface);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-dim);
+}
+
+/* Button reset */
+button {
+  font-family: inherit;
+  font-size: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: inherit;
+}
+
+/* Select reset */
+select {
+  font-family: inherit;
+  font-size: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: inherit;
+}
