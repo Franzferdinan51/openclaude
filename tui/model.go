@@ -116,10 +116,6 @@ func (m *Model) AddMessage(msg Message) {
 	if len(m.messages) > 200 {
 		m.messages = m.messages[len(m.messages)-200:]
 	}
-	// FIX: truncate to last 200 messages to prevent unbounded memory growth
-	if len(m.messages) > 200 {
-		m.messages = m.messages[len(m.messages)-200:]
-	}
 }
 
 // AddStreamingMessage adds or updates a streaming message.
