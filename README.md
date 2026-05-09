@@ -7,7 +7,7 @@
 
 **The Mega AI Coding Harness** — Forked from [Gitlawb/openclaude](https://github.com/Gitlawb/openclaude) and extended with MiniMax M2.7, Agent Teams, AI Council, and full MiniMax CLI integration. Built with 3-layer memory (BM25 → embed → LESSONS), swarm voting, task planning, budget enforcement, and unified channel adapters.
 
-[Features](#features) · [Quick Start](#getting-started) · [SDK](#duckhive-sdk) · [DuckHive mmx](#duckhive-mmx) · [Agent Teams](#agent-teams) · [Memory Layers](#memory--intelligence) · [Architecture](#architecture) · [Comparison](#what-duckhive-adds-over-openclaude)
+[Features](#features) · [Quick Start](#getting-started) · [SDK](#duckhive-sdk) · [Agent Harness](#agent-harness-platform) · [DuckHive mmx](#duckhive-mmx) · [Agent Teams](#agent-teams) · [Memory Layers](#memory--intelligence) · [Architecture](#architecture) · [Comparison](#what-duckhive-adds-over-openclaude)
 
 ---
 
@@ -129,6 +129,57 @@ for await (const message of query({
 ```
 
 The SDK surface includes generated schemas/types, query/session helpers, permission helpers, transcript helpers, and SDK-specific errors. `bun run build` verifies that the SDK bundle has no React/Ink leakage.
+
+### Agent Harness Platform
+
+DuckHive now has an experimental shared AgentRun control plane. Local agent tasks and hybrid orchestration runs are mirrored into a durable run store with normalized lifecycle events:
+
+```
+queued → preparing → running → awaiting_approval → paused → recovering → completed|failed|cancelled
+```
+
+The split follows the same safety boundary used by modern agent harnesses: DuckHive core owns provider/model selection, auth, session and transcript mirroring, tool policy, permissions, budgets, and channel delivery. A harness only executes a prepared attempt and streams events back.
+
+Public experimental harness import:
+
+```ts
+import {
+  registerAgentHarness,
+  resolveAgentHarness,
+  type AgentHarness,
+} from 'duckhive/harness'
+```
+
+Runtime selection:
+
+```bash
+DUCKHIVE_AGENT_RUNTIME=auto              # default: choose a matching harness
+DUCKHIVE_AGENT_RUNTIME=builtin           # force DuckHive core execution
+DUCKHIVE_AGENT_HARNESS_FALLBACK=builtin  # default fallback
+DUCKHIVE_AGENT_HARNESS_FALLBACK=none     # fail if no harness supports the run
+```
+
+The AgentRun store persists under DuckHive's config home by default, or under `DUCKHIVE_AGENT_RUN_STORE_DIR` when set. `duckhive/harness` is intentionally separate from `duckhive/sdk` and builds to `dist/harness.mjs`.
+
+### Telegram Remote Control
+
+Telegram can inspect and control AgentRuns when `DUCKHIVE_TELEGRAM_BOT_TOKEN` is set. For safety, set `DUCKHIVE_TELEGRAM_ALLOWED_CHAT_ID` to a comma-separated chat allowlist before using a bot in shared chats.
+
+Supported run-control commands:
+
+```text
+/agents
+/runs
+/run <id>
+/tail <id>
+/pause <id>
+/resume <id>
+/stop <id>
+/approve <id>
+/status
+```
+
+Long Telegram responses are chunked, Markdown delivery falls back to plain text, and `bun run doctor:runtime` reports the Agent Harness and Telegram configuration state.
 
 ### /init — Project Setup
 

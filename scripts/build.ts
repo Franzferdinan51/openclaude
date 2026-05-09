@@ -120,6 +120,7 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const) {
 
 let result: Awaited<ReturnType<typeof Bun.build>> | undefined
 let sdkResult: Awaited<ReturnType<typeof Bun.build>> | undefined
+let harnessResult: Awaited<ReturnType<typeof Bun.build>> | undefined
 
 try {
 
@@ -892,6 +893,32 @@ if (!sdkResult.success) {
   console.log(`✓ Built SDK bundle → dist/sdk.mjs`)
 }
 
+// ── Agent Harness Bundle Build ────────────────────────────────────────────
+console.log('Building agent harness bundle...')
+
+harnessResult = await Bun.build({
+  entrypoints: ['./src/entrypoints/harness.ts'],
+  outdir: './dist',
+  target: 'node',
+  format: 'esm',
+  splitting: false,
+  sourcemap: 'external',
+  minify: false,
+  naming: 'harness.mjs',
+  external: SDK_EXTERNALS,
+  plugins: [noTelemetryPlugin],
+})
+
+if (!harnessResult.success) {
+  console.error('Agent harness build failed:')
+  for (const log of harnessResult.logs) {
+    console.error(log)
+  }
+  process.exitCode = 1
+} else {
+  console.log(`✓ Built agent harness bundle → dist/harness.mjs`)
+}
+
 } finally {
   // Always restore source files, even if Bun.build() throws
   restoreModifiedFiles()
@@ -922,7 +949,7 @@ if (sdkResult?.success) {
 }
 
 // ── Validate external lists ──────────────────────────────────────────────
-if (result?.success && sdkResult?.success) {
+if (result?.success && sdkResult?.success && harnessResult?.success) {
   console.log('\nValidating external lists...')
   const validation = Bun.spawnSync(['bun', 'run', 'scripts/validate-externals.ts'], {
     stdout: 'inherit',

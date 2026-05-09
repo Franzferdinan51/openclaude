@@ -12,6 +12,8 @@
 
 import { logForDebugging } from '../../utils/debug.js'
 import { getSecureStorage } from '../../utils/secureStorage/index.js'
+import { getAgentRunStore } from '../../agent-runs/AgentRunStore.js'
+import type { AgentRun, AgentRunStatus } from '../../agent-runs/types.js'
 
 // ============================================================================
 // Types
@@ -132,6 +134,7 @@ let api: TelegramBotAPI | null = null
 let offset = 0
 let registeredChatId: number | null = null
 let isConnected = false
+let lastInboundChatId: number | null = null
 
 // Reconnection state
 let reconnectAttempts = 0
@@ -161,6 +164,20 @@ export function isTelegramConnected(): boolean {
   return isConnected
 }
 
+export function getTelegramServiceHealth(): {
+  connected: boolean
+  registeredChatId: number | null
+  queuedMessages: number
+  reconnectAttempts: number
+} {
+  return {
+    connected: isConnected,
+    registeredChatId,
+    queuedMessages: telegramMessageQueue.length,
+    reconnectAttempts,
+  }
+}
+
 function getToken(): string | null {
   const envToken = process.env.DUCKHIVE_TELEGRAM_BOT_TOKEN
   if (envToken) return envToken
@@ -188,6 +205,12 @@ async function pollLoop(): Promise<void> {
       if (update.message?.text) {
         const chatId = update.message.chat.id
         const text = update.message.text
+        lastInboundChatId = chatId
+
+        if (!isChatAllowed(chatId)) {
+          logForDebugging(`[telegram] rejected message from unauthorized chat ${chatId}`)
+          continue
+        }
 
         // Persist chatId on first message
         if (!registeredChatId) {
@@ -326,18 +349,27 @@ export function stopTelegramService(): void {
 
 export async function sendTelegramMessage(text: string): Promise<boolean> {
   // Try in-memory chatId first, then stored
-  const chatId = registeredChatId ?? getStoredChatId()
+  const chatId = registeredChatId ?? getStoredChatId() ?? lastInboundChatId
   if (!chatId || !api) {
     logForDebugging('[telegram] cannot send: no registered chat or no API')
     return false
   }
   try {
-    await api.sendMarkdown(chatId, text)
+    for (const chunk of chunkTelegramMessage(text)) {
+      await api.sendMarkdown(chatId, chunk)
+    }
     logForDebugging(`[telegram] sent message to ${chatId}`)
     return true
   } catch (err) {
     logForDebugging(`[telegram] send error: ${err instanceof Error ? err.message : String(err)}`)
-    return false
+    try {
+      for (const chunk of chunkTelegramMessage(stripMarkdown(text))) {
+        await api.sendMessage(chatId, chunk)
+      }
+      return true
+    } catch {
+      return false
+    }
   }
 }
 
@@ -385,6 +417,14 @@ registerCommand('help', (chatId) => {
 
 • /start — Register with DuckHive
 • /status — Current session status
+• /agents — Show available agent-control commands
+• /runs — List recent agent runs
+• /run <id> — Show one run
+• /tail <id> — Show recent run events
+• /pause <id> — Pause a run
+• /resume <id> — Resume a run
+• /stop <id> — Cancel a run
+• /approve <id> — Mark an approval as acknowledged
 • /help — Show this help
 
 You can also just send any message to have it processed by DuckHive.`).catch(() => {})
@@ -392,14 +432,138 @@ You can also just send any message to have it processed by DuckHive.`).catch(() 
 
 registerCommand('status', async (chatId) => {
   const chatIdOk = registeredChatId ?? getStoredChatId()
+  const store = getAgentRunStore()
+  const activeRuns = store.listRuns().filter(run => !isTerminalRunStatus(run.status))
   api?.sendMarkdown(chatId, `*DuckHive Status*
 
 Session: ${isConnected ? '🟢 Connected' : '🔴 Disconnected'}
 Model: ${process.env.DUCKHIVE_MODEL_NAME ?? 'default'}
 Provider: ${process.env.DUCKHIVE_PROVIDER ?? 'default'}
+Telegram chat: ${chatIdOk ?? 'not registered'}
+Active runs: ${activeRuns.length}
 
 Send /help for commands.`).catch(() => {})
 })
+
+registerCommand('agents', (chatId) => {
+  api?.sendMarkdown(chatId, `*DuckHive Agent Control*
+
+Use /runs to list recent work, /run <id> for details, /tail <id> for events, and /stop <id> to cancel a run. New local agent tasks created by DuckHive are mirrored into this control plane automatically.`).catch(() => {})
+})
+
+registerCommand('runs', (chatId) => {
+  const runs = getAgentRunStore().listRuns().slice(0, 10)
+  const text = runs.length === 0
+    ? 'No DuckHive agent runs found.'
+    : `*Recent DuckHive Runs*\n\n${runs.map(formatRunLine).join('\n')}`
+  api?.sendMarkdown(chatId, text).catch(() => {})
+})
+
+registerCommand('run', (chatId, args) => {
+  const runId = args.trim()
+  const run = runId ? getAgentRunStore().getRun(runId) : undefined
+  api?.sendMarkdown(chatId, run ? formatRunDetail(run) : `Run not found: ${runId || '(missing id)'}`).catch(() => {})
+})
+
+registerCommand('tail', (chatId, args) => {
+  const runId = args.trim()
+  const events = runId ? getAgentRunStore().listEvents(runId).slice(-8) : []
+  const text = events.length === 0
+    ? `No events found for run: ${runId || '(missing id)'}`
+    : `*Run Events ${runId}*\n\n${events.map(event => `• ${event.type} at ${new Date(event.timestamp).toISOString()}`).join('\n')}`
+  api?.sendMarkdown(chatId, text).catch(() => {})
+})
+
+registerCommand('pause', (chatId, args) => {
+  updateRunStatusCommand(chatId, args, 'paused', 'paused')
+})
+
+registerCommand('resume', (chatId, args) => {
+  updateRunStatusCommand(chatId, args, 'running', 'resumed')
+})
+
+registerCommand('stop', (chatId, args) => {
+  updateRunStatusCommand(chatId, args, 'cancelled', 'cancelled')
+})
+
+registerCommand('approve', (chatId, args) => {
+  const runId = args.trim()
+  const store = getAgentRunStore()
+  const run = store.getRun(runId)
+  if (!run) {
+    api?.sendMarkdown(chatId, `Run not found: ${runId || '(missing id)'}`).catch(() => {})
+    return
+  }
+  store.updateRun(run.id, {
+    permissionState: {
+      pendingApprovalIds: [],
+      lastDecision: 'allow',
+    },
+  })
+  api?.sendMarkdown(chatId, `Run ${run.id} approval acknowledged.`).catch(() => {})
+})
+
+function updateRunStatusCommand(
+  chatId: number,
+  args: string,
+  status: AgentRunStatus,
+  label: string,
+): void {
+  const runId = args.trim()
+  const store = getAgentRunStore()
+  const run = runId ? store.updateRun(runId, { status }) : undefined
+  api?.sendMarkdown(
+    chatId,
+    run ? `Run ${run.id} ${label}.` : `Run not found: ${runId || '(missing id)'}`,
+  ).catch(() => {})
+}
+
+function formatRunLine(run: AgentRun): string {
+  const agent = run.selectedAgent ? ` · ${run.selectedAgent}` : ''
+  return `• ${run.id} [${run.status}] ${run.title}${agent}`
+}
+
+function formatRunDetail(run: AgentRun): string {
+  return `*DuckHive Run ${run.id}*
+
+Title: ${run.title}
+Status: ${run.status}
+Agent: ${run.selectedAgent ?? 'default'}
+Runtime: ${run.runtimeHarness}
+Provider: ${run.provider ?? 'default'}
+Model: ${run.model ?? 'default'}
+Tasks: ${run.taskIds.length}
+Children: ${run.childRunIds.length}
+Updated: ${new Date(run.updatedAt).toISOString()}`
+}
+
+function isTerminalRunStatus(status: AgentRunStatus): boolean {
+  return status === 'completed' || status === 'failed' || status === 'cancelled'
+}
+
+function chunkTelegramMessage(text: string): string[] {
+  const maxLength = 3900
+  if (text.length <= maxLength) return [text]
+  const chunks: string[] = []
+  for (let i = 0; i < text.length; i += maxLength) {
+    chunks.push(text.slice(i, i + maxLength))
+  }
+  return chunks
+}
+
+function stripMarkdown(text: string): string {
+  return text.replace(/[*_`[\]()~>#+=|{}.!-]/g, '')
+}
+
+function isChatAllowed(chatId: number): boolean {
+  const allowlist = process.env.DUCKHIVE_TELEGRAM_ALLOWED_CHAT_ID
+  if (!allowlist) return true
+  return allowlist
+    .split(',')
+    .map(value => value.trim())
+    .filter(Boolean)
+    .includes(String(chatId))
+}
 
 // ============================================================================
 // Auto-start

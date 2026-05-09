@@ -1,5 +1,6 @@
 import { getSdkAgentProgressSummariesEnabled } from '../../bootstrap/state.js';
 import { OUTPUT_FILE_TAG, STATUS_TAG, SUMMARY_TAG, TASK_ID_TAG, TASK_NOTIFICATION_TAG, TOOL_USE_ID_TAG, WORKTREE_BRANCH_TAG, WORKTREE_PATH_TAG, WORKTREE_TAG } from '../../constants/xml.js';
+import { completeAgentTaskRun, createAgentTaskRun, failAgentTaskRun, progressAgentTaskRun } from '../../agent-runs/taskBridge.js';
 import { abortSpeculation } from '../../services/PromptSuggestion/speculation.js';
 import type { AppState } from '../../state/AppState.js';
 import type { SetAppState, Task, TaskStateBase } from '../../Task.js';
@@ -350,6 +351,7 @@ export function updateAgentProgress(taskId: string, progress: AgentProgress, set
       } : progress
     };
   });
+  progressAgentTaskRun(taskId, progress);
 }
 
 /**
@@ -427,6 +429,7 @@ export function completeAgentTask(result: AgentToolResult, setAppState: SetAppSt
       selectedAgent: undefined
     };
   });
+  completeAgentTaskRun(taskId);
   void evictTaskOutput(taskId);
   // Note: Notification is sent by AgentTool via enqueueAgentNotification
 }
@@ -451,6 +454,7 @@ export function failAgentTask(taskId: string, error: string, setAppState: SetApp
       selectedAgent: undefined
     };
   });
+  failAgentTaskRun(taskId, error);
   void evictTaskOutput(taskId);
   // Note: Notification is sent by AgentTool via enqueueAgentNotification
 }
@@ -511,6 +515,15 @@ export function registerAsyncAgent({
 
   // Register task in AppState
   registerTask(taskState, setAppState);
+  createAgentTaskRun({
+    id: agentId,
+    description,
+    prompt,
+    agentType: taskState.agentType,
+    model: taskState.model,
+    transcriptPath: getAgentTranscriptPath(asAgentId(agentId)),
+    progress: taskState.progress,
+  });
   return taskState;
 }
 
@@ -576,6 +589,15 @@ export function registerAgentForeground({
   });
   backgroundSignalResolvers.set(agentId, resolveBackgroundSignal!);
   registerTask(taskState, setAppState);
+  createAgentTaskRun({
+    id: agentId,
+    description,
+    prompt,
+    agentType: taskState.agentType,
+    model: taskState.model,
+    transcriptPath: getAgentTranscriptPath(asAgentId(agentId)),
+    progress: taskState.progress,
+  });
 
   // Auto-background after timeout if configured
   let cancelAutoBackground: (() => void) | undefined;

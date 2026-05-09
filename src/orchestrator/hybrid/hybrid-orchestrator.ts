@@ -4,6 +4,7 @@ import { selectModel, type RouteResult } from './model-router.js'
 import { getHiveBridge } from '../../services/hive-bridge/index.js'
 import { spawnTeammate } from '../../tools/shared/spawnMultiAgent.js'
 import type { ToolUseContext } from '../../Tool.js'
+import { getAgentRunStore } from '../../agent-runs/AgentRunStore.js'
 
 export interface HybridOrchestratorConfig {
   enableCouncil?: boolean
@@ -70,6 +71,20 @@ export class HybridOrchestrator {
       teamSpawned: false,
       status: 'pending',
     }
+    const agentRunStore = getAgentRunStore()
+    agentRunStore.createRun({
+      id: result.taskId,
+      title: message,
+      description: routing.executionPlan.join(' -> '),
+      status: 'running',
+      selectedAgent: 'coordinator',
+      provider: routeResult.provider,
+      model: routeResult.model,
+      runtimeHarness: 'builtin',
+      progress: {
+        summary: `Analyzed as ${analysis.category} (${analysis.complexity}/10)`,
+      },
+    })
 
     // Step 1: Fire council for complex/critical tasks
     if (this.config.enableCouncil && (analysis.category === 'critical' || analysis.category === 'complex' || analysis.needsCouncil)) {
@@ -132,6 +147,18 @@ export class HybridOrchestrator {
           })
           result.agentsSpawned = result.agentsSpawned ?? []
           result.agentsSpawned.push(sr.agentId!)
+          agentRunStore.createRun({
+            id: sr.agentId!,
+            title: `${sr.agentName}: ${message}`,
+            description: sr.output,
+            status: 'running',
+            parentRunId: result.taskId,
+            selectedAgent: sr.agentName,
+            provider: routeResult.provider,
+            model: routeResult.model,
+            runtimeHarness: 'builtin',
+            taskIds: [sr.agentId!],
+          })
         } else {
           result.steps.push({
             step: `spawn_agent_${sr.agentName}`,
@@ -174,6 +201,12 @@ export class HybridOrchestrator {
     }
 
     result.status = 'ready'
+    agentRunStore.updateRun(result.taskId, {
+      status: 'running',
+      progress: {
+        summary: `Ready with ${result.steps.length} orchestration steps`,
+      },
+    })
     return result
   }
 

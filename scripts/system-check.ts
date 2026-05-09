@@ -552,6 +552,39 @@ function checkOllamaProcessorMode(): CheckResult {
   return pass('Ollama processor mode', `Detected non-CPU mode: ${modelLine}`)
 }
 
+function checkAgentHarnessRuntime(): CheckResult {
+  const runtime = process.env.DUCKHIVE_AGENT_RUNTIME ?? 'auto'
+  const fallback = process.env.DUCKHIVE_AGENT_HARNESS_FALLBACK ?? 'builtin'
+  const validFallbacks = new Set(['builtin', 'none'])
+  if (!validFallbacks.has(fallback)) {
+    return fail(
+      'Agent harness runtime',
+      `Invalid DUCKHIVE_AGENT_HARNESS_FALLBACK=${fallback}. Use builtin or none.`,
+    )
+  }
+  return pass(
+    'Agent harness runtime',
+    `runtime=${runtime}; fallback=${fallback}; public import duckhive/harness.`,
+  )
+}
+
+function checkTelegramChannelConfig(): CheckResult {
+  const hasToken = Boolean(process.env.DUCKHIVE_TELEGRAM_BOT_TOKEN?.trim())
+  const allowlist = process.env.DUCKHIVE_TELEGRAM_ALLOWED_CHAT_ID
+  if (!hasToken) {
+    return pass(
+      'Telegram channel',
+      'Not configured. Set DUCKHIVE_TELEGRAM_BOT_TOKEN to enable remote run control.',
+    )
+  }
+  return pass(
+    'Telegram channel',
+    allowlist
+      ? 'Configured with chat allowlist for AgentRun commands.'
+      : 'Configured without DUCKHIVE_TELEGRAM_ALLOWED_CHAT_ID; any chat the bot can read may register.',
+  )
+}
+
 function serializeSafeEnvSummary(): Record<string, string | boolean> {
   if (isTruthy(process.env.CLAUDE_CODE_USE_GEMINI)) {
     return {
@@ -667,6 +700,8 @@ async function main(): Promise<void> {
   results.push(await checkBaseUrlReachability())
   results.push(await checkProviderGenerationReadiness())
   results.push(checkOllamaProcessorMode())
+  results.push(checkAgentHarnessRuntime())
+  results.push(checkTelegramChannelConfig())
 
   if (!options.json) {
     printResults(results)

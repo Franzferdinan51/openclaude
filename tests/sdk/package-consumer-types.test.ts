@@ -56,6 +56,7 @@ function setupConsumerProject(name: string): string {
   const pkgDir = join(tmpDir, 'node_modules', '@gitlawb', 'openclaude')
   mkdirSync(pkgDir, { recursive: true })
   mkdirSync(join(pkgDir, 'src', 'entrypoints', 'sdk'), { recursive: true })
+  mkdirSync(join(pkgDir, 'src', 'agent-runs'), { recursive: true })
   mkdirSync(join(pkgDir, 'dist'), { recursive: true })
 
   // Package.json with "exports" mapping (matches real package)
@@ -73,6 +74,10 @@ function setupConsumerProject(name: string): string {
             types: './src/entrypoints/sdk.d.ts',
             import: './dist/sdk.mjs',
           },
+          './harness': {
+            types: './src/entrypoints/harness.ts',
+            import: './dist/harness.mjs',
+          },
         },
       },
       null,
@@ -83,9 +88,12 @@ function setupConsumerProject(name: string): string {
   // Copy type files
   cpSync(SDK_DTS, join(pkgDir, 'src', 'entrypoints', 'sdk.d.ts'))
   cpSync(CORE_TYPES_TS, join(pkgDir, 'src', 'entrypoints', 'sdk', 'coreTypes.generated.ts'))
+  cpSync(join(ROOT, 'src', 'entrypoints', 'harness.ts'), join(pkgDir, 'src', 'entrypoints', 'harness.ts'))
+  cpSync(join(ROOT, 'src', 'agent-runs'), join(pkgDir, 'src', 'agent-runs'), { recursive: true })
 
   // Dummy dist file so module resolution doesn't fail
   writeFileSync(join(pkgDir, 'dist', 'sdk.mjs'), 'export {}')
+  writeFileSync(join(pkgDir, 'dist', 'harness.mjs'), 'export {}')
 
   return tmpDir
 }
@@ -204,6 +212,31 @@ describe('package consumer types', () => {
 
     expect(tsc(tmpDir)).toBe('')
   }, 30_000)
+
+  test('agent harness types compile for external consumers', () => {
+    const tmpDir = setupConsumerProject('harness')
+
+    writeFileSync(
+      join(tmpDir, 'consumer.ts'),
+      [
+        `import { registerAgentHarness, resolveAgentHarness, type AgentHarness } from '@gitlawb/openclaude/harness'`,
+        ``,
+        `const harness: AgentHarness = {`,
+        `  id: 'fixture',`,
+        `  label: 'Fixture',`,
+        `  supports: () => ({ supported: true, priority: 1 }),`,
+        `  runAttempt: async () => ({ status: 'completed', finalMessage: 'ok' }),`,
+        `}`,
+        ``,
+        `registerAgentHarness(harness)`,
+        `const resolved = resolveAgentHarness({ provider: 'fixture', model: 'fixture/model' })`,
+        `const id: string = resolved.harness.id`,
+        `console.log(id)`,
+      ].join('\n'),
+    )
+
+    expect(tsc(tmpDir)).toBe('')
+  }, 30_000)
 })
 
 describe('package exports resolution', () => {
@@ -216,6 +249,9 @@ describe('package exports resolution', () => {
     expect(pkgJson.exports['./sdk']).toBeDefined()
     expect(pkgJson.exports['./sdk'].import).toBe('./dist/sdk.mjs')
     expect(pkgJson.exports['./sdk'].types).toBe('./src/entrypoints/sdk.d.ts')
+    expect(pkgJson.exports['./harness']).toBeDefined()
+    expect(pkgJson.exports['./harness'].import).toBe('./dist/harness.mjs')
+    expect(pkgJson.exports['./harness'].types).toBe('./src/entrypoints/harness.ts')
   })
 
   test('root export is not defined (intentionally blocked)', () => {
@@ -233,6 +269,8 @@ describe('package exports resolution', () => {
     expect(existsSync(join(ROOT, 'package.json'))).toBe(true)
     expect(existsSync(join(ROOT, 'dist', 'cli.mjs'))).toBe(true)
     expect(existsSync(join(ROOT, 'dist', 'sdk.mjs'))).toBe(true)
+    expect(existsSync(join(ROOT, 'dist', 'harness.mjs'))).toBe(true)
     expect(existsSync(join(ROOT, 'src', 'entrypoints', 'sdk.d.ts'))).toBe(true)
+    expect(existsSync(join(ROOT, 'src', 'entrypoints', 'harness.ts'))).toBe(true)
   })
 })

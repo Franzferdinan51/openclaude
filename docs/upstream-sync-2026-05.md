@@ -64,6 +64,8 @@ DuckHive now ports the compatible pieces that fit its architecture:
 - `src/services/api/fetchWithProxyRetry.ts` strips symbol metadata from plain header dictionaries before native `fetch`.
 - `src/services/telegram/TelegramService.ts` keeps long polling alive after empty Telegram batches and bounds Bot API calls with an abort timeout.
 - `src/channels/TelegramAdapter.ts` buffers all updates from a batch and continues past filtered/non-text updates instead of dropping later valid messages.
+- `src/agent-runs/*` adds DuckHive's AgentRun control plane and experimental `duckhive/harness` split: DuckHive core owns provider/model/session/tool/channel policy, while a harness only claims and executes a prepared attempt.
+- Telegram now exposes AgentRun control commands (`/runs`, `/run`, `/tail`, `/pause`, `/resume`, `/stop`, `/approve`) with chunked replies, Markdown fallback, and optional `DUCKHIVE_TELEGRAM_ALLOWED_CHAT_ID` filtering.
 
 The deeper OpenClaw Codex OAuth doctor route-repair and guarded Undici dispatcher lifecycle are still larger gateway/plugin slices. DuckHive already carries adjacent provider profile and WebFetch SSRF surfaces, but those should be ported as separate runtime-backed changes rather than copied wholesale from OpenClaw's gateway-specific stack.
 

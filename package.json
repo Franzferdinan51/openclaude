@@ -12,13 +12,20 @@
     "./sdk": {
       "types": "./src/entrypoints/sdk.d.ts",
       "import": "./dist/sdk.mjs"
+    },
+    "./harness": {
+      "types": "./src/entrypoints/harness.ts",
+      "import": "./dist/harness.mjs"
     }
   },
   "files": [
     "bin/",
     "dist/cli.mjs",
     "dist/sdk.mjs",
+    "dist/harness.mjs",
     "src/entrypoints/sdk.d.ts",
+    "src/entrypoints/harness.ts",
+    "src/agent-runs/",
     "src/entrypoints/sdk/coreTypes.generated.ts",
     "tui/duckhive-tui",
     "README.md"
