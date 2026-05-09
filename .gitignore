@@ -10,6 +10,7 @@ GEMINI.md
 CLAUDE.md
 package-lock.json
 /.claude
+/.agents
 coverage/
 agent.log
 .gitnexus

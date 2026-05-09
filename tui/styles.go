@@ -101,7 +101,7 @@ var Styles = struct {
 		Bold(true),
 
 	AccentTimer: lipgloss.NewStyle().
-		Foreground(lipgloss.Color("#6FD3A3")). // Green timer
+		Foreground(lipgloss.Color("#6FD3A3")), // Green timer
 }
 
 const (

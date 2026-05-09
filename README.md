@@ -1,6 +1,6 @@
 # 🦆 DuckHive
 
-![DuckHive](https://img.shields.io/badge/DuckHive-v0.9.0-gold?style=for-the-badge&logo=buymeacoffee)
+![DuckHive](https://img.shields.io/badge/DuckHive-v0.9.2-gold?style=for-the-badge&logo=buymeacoffee)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue?style=for-the-badge&logo=typescript)](package.json)
 [![Bun](https://img.shields.io/badge/Bun-1.3-yellow?style=for-the-badge&logo=bun)](package.json)
@@ -791,7 +791,7 @@ DuckHive adds 40+ custom tools on top of the OpenClaude base:
 ## Architecture
 
 ```
-DuckHive v0.9.0
+DuckHive v0.9.2
 ├── MiniMax M2.7 (default model)
 ├── DuckHive mmx (MiniMax CLI integration)
 │   ├── Image generation
@@ -994,7 +994,7 @@ duckhive config path
 ./bin/duckhive --version
 
 # Command ownership check
-duckhive --version      # 0.9.0 (DuckHive)
+duckhive --version      # 0.9.2 (DuckHive)
 openclaude --version    # upstream OpenClaude, if installed separately
 ```
 
@@ -1018,7 +1018,7 @@ Recent verification snapshot:
 - `bun test`: `2415 pass`, `0 fail`
 - `bun run build`, `bun run smoke`, `bun run verify:privacy`, and `bun run doctor:runtime`: passing
 - `cd tui && go test ./...`: passing
-- `duckhive --version`: `0.9.0 (DuckHive)`
+- `duckhive --version`: `0.9.2 (DuckHive)`
 - `openclaude --version`: upstream OpenClaude remains separately owned when installed
 - package dry-run includes `config/`, `duckhive/sdk`, `duckhive/harness`, and `skills/newest-desktop-control/`
 

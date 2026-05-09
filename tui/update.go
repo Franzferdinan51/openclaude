@@ -30,6 +30,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// --- Timer tick (triggered by model) ---
 	case timerTickMsg:
 		// Just trigger a re-render for timer updates
+		if m.isTimerActive {
+			return m, StartTimerCmd()
+		}
 		return m, nil
 
 	// --- Keyboard input ---
@@ -269,22 +272,9 @@ type timerTickMsg struct{}
 
 // StartTimerCmd returns a command to start a periodic timer tick.
 func StartTimerCmd() tea.Cmd {
-	return func() tea.Msg {
-		ticker := time.NewTicker(time.Second)
-		ch := make(chan tea.Msg)
-		go func() {
-			for range ticker.C {
-				select {
-				case <-ch:
-					ticker.Stop()
-					return
-				default:
-					ch <- timerTickMsg{}
-				}
-			}
-		}()
-		return nil
-	}()
+	return tea.Tick(time.Second, func(time.Time) tea.Msg {
+		return timerTickMsg{}
+	})
 }
 
 // vpDeltaMsg carries viewport scroll delta from mouse events.
