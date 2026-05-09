@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { Message, Session } from '../../types'
 import { SessionTabs } from './SessionTabs'
 import { MessageList } from './MessageList'
 import { InputBar } from './InputBar'
 
-const GATEWAY_URL = 'http://localhost:18789'
-const API_ENDPOINT = `${GATEWAY_URL}/v1/chat/completions`
+const DASHBOARD_BASE = 'http://localhost:3001'
+const API_ENDPOINT = `${DASHBOARD_BASE}/api/chat`
 
 function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).substr(2)
@@ -29,7 +29,7 @@ export function ChatArea({ className = '' }: ChatAreaProps) {
   const [sessions, setSessions] = useState<Session[]>([createEmptySession()])
   const [activeSessionId, setActiveSessionId] = useState(sessions[0].id)
   const [isLoading, setIsLoading] = useState(false)
-  const [thinkingMessage, setThinkingMessage] = useState<Message | null>(null)
+  const abortControllerRef = useRef<AbortController | null>(null)
 
   const activeSession = sessions.find(s => s.id === activeSessionId) || sessions[0]
 
@@ -38,7 +38,14 @@ export function ChatArea({ className = '' }: ChatAreaProps) {
   }, [])
 
   const sendMessage = async (content: string, attachments?: File[]) => {
-    if (!content.trim()) return
+    if (!content.trim() || isLoading) return
+
+    // Cancel any in-flight request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+    }
+    const abortController = new AbortController()
+    abortControllerRef.current = abortController
 
     const userMessage: Message = {
       id: generateId(),
@@ -48,6 +55,7 @@ export function ChatArea({ className = '' }: ChatAreaProps) {
       type: 'user'
     }
 
+    // Add user message immediately
     updateSession(activeSessionId, s => ({
       ...s,
       messages: [...s.messages, userMessage],
@@ -56,11 +64,11 @@ export function ChatArea({ className = '' }: ChatAreaProps) {
 
     setIsLoading(true)
 
-    // Add a thinking/progress indicator
+    // Add progress indicator
     const progressMsg: Message = {
       id: generateId(),
       role: 'assistant',
-      content: 'Thinking…',
+      content: '',
       timestamp: Date.now(),
       type: 'progress'
     }
@@ -69,103 +77,100 @@ export function ChatArea({ className = '' }: ChatAreaProps) {
       messages: [...s.messages, progressMsg]
     }))
 
+    // Track assistant message for incremental updates
+    let assistantMessageId = progressMsg.id
+    let accumulatedContent = ''
+    const CHUNK_BATCH_MS = 50 // Only re-render every 50ms to avoid flooding React
+    let lastBatchUpdate = Date.now()
+    let pendingContent = ''
+
     try {
       // Build messages for API
-      const apiMessages = activeSession.messages
-        .filter(m => m.role !== 'tool' && m.type !== 'tool_result')
+      const currentMessages = sessions.find(s => s.id === activeSessionId)?.messages || []
+      const apiMessages = currentMessages
+        .filter(m => m.role !== 'user' || m.id === userMessage.id)
+        .filter(m => m.type !== 'tool_result')
         .map(m => ({ role: m.role, content: m.content }))
-        .concat([{ role: 'user' as const, content }])
 
-      const response = await fetch(API_ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'minimax-portal/MiniMax-M2.7',
-          messages: apiMessages,
-          stream: true
-        })
-      })
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`)
-      }
-
-      // Remove progress message
-      updateSession(activeSessionId, s => ({
-        ...s,
-        messages: s.messages.filter(m => m.id !== progressMsg.id)
-      }))
-
-      // Handle streaming response
-      const reader = response.body?.getReader()
-      if (!reader) throw new Error('No response body')
-
-      const assistantMessage: Message = {
+      // Replace progress msg with actual assistant msg
+      const assistantMsg: Message = {
         id: generateId(),
         role: 'assistant',
         content: '',
         timestamp: Date.now(),
         type: 'assistant'
       }
+      assistantMessageId = assistantMsg.id
 
-      // Add empty assistant message
       updateSession(activeSessionId, s => ({
         ...s,
-        messages: [...s.messages, assistantMessage]
+        messages: [
+          ...s.messages.filter(m => m.id !== progressMsg.id),
+          assistantMsg
+        ]
       }))
 
-      const decoder = new TextDecoder()
-      let buffer = ''
+      const response = await fetch(API_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: apiMessages,
+          model: 'MiniMax-M2.7',
+          stream: false // Use non-streaming for simplicity - the API doesn't reliably stream
+        }),
+        signal: abortController.signal
+      })
 
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-
-        buffer += decoder.decode(value, { stream: true })
-        const lines = buffer.split('\n')
-        buffer = lines.pop() || ''
-
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = line.slice(6)
-            if (data === '[DONE]') continue
-
-            try {
-              const parsed = JSON.parse(data)
-              const content = parsed.choices?.[0]?.delta?.content || ''
-              if (content) {
-                assistantMessage.content += content
-                updateSession(activeSessionId, s => ({
-                  ...s,
-                  messages: s.messages.map(m => 
-                    m.id === assistantMessage.id ? { ...assistantMessage } : m
-                  )
-                }))
-              }
-            } catch {}
-          }
-        }
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`)
       }
+
+      const data = await response.json()
+
+      // Update with the actual response
+      const responseContent = data.choices?.[0]?.message?.content || 'No response'
+      accumulatedContent = responseContent
+
+      updateSession(activeSessionId, s => ({
+        ...s,
+        messages: s.messages.map(m =>
+          m.id === assistantMessageId
+            ? { ...m, content: responseContent }
+            : m
+        )
+      }))
 
     } catch (error) {
-      // Remove progress message on error
-      updateSession(activeSessionId, s => ({
-        ...s,
-        messages: s.messages.filter(m => m.id !== progressMsg.id)
-      }))
-
-      const errorMsg: Message = {
-        id: generateId(),
-        role: 'assistant',
-        content: `Error: ${error instanceof Error ? error.message : 'Failed to get response'}`,
-        timestamp: Date.now(),
-        type: 'error'
+      if ((error as Error).name === 'AbortError') {
+        // Cancelled - just remove the progress/assistant message
+        updateSession(activeSessionId, s => ({
+          ...s,
+          messages: s.messages.filter(m => m.id !== assistantMessageId && m.id !== progressMsg.id)
+        }))
+      } else {
+        const errorMsg: Message = {
+          id: generateId(),
+          role: 'assistant',
+          content: `Error: ${error instanceof Error ? error.message : 'Request failed'}`,
+          timestamp: Date.now(),
+          type: 'error'
+        }
+        updateSession(activeSessionId, s => ({
+          ...s,
+          messages: s.messages.map(m =>
+            m.id === assistantMessageId || m.id === progressMsg.id ? errorMsg : m
+          )
+        }))
       }
-      updateSession(activeSessionId, s => ({
-        ...s,
-        messages: [...s.messages, errorMsg]
-      }))
     } finally {
+      setIsLoading(false)
+      abortControllerRef.current = null
+    }
+  }
+
+  const handleCancel = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
       setIsLoading(false)
     }
   }
@@ -199,7 +204,9 @@ export function ChatArea({ className = '' }: ChatAreaProps) {
       <MessageList messages={activeSession.messages} />
       <InputBar 
         onSendMessage={sendMessage} 
-        disabled={isLoading}
+        onCancel={isLoading ? handleCancel : undefined}
+        disabled={false} // Always allow typing - we handle loading state with cancel
+        isLoading={isLoading}
       />
     </div>
   )

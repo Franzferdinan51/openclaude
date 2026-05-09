@@ -2,20 +2,29 @@ import React, { useState, useRef } from 'react'
 
 interface InputBarProps {
   onSendMessage: (message: string, attachments?: File[]) => void
+  onCancel?: () => void
   disabled?: boolean
+  isLoading?: boolean
 }
 
-export function InputBar({ onSendMessage, disabled = false }: InputBarProps) {
+export function InputBar({ onSendMessage, onCancel, disabled = false, isLoading = false }: InputBarProps) {
   const [message, setMessage] = useState('')
   const [attachments, setAttachments] = useState<File[]>([])
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (message.trim() && !disabled) {
+    if (message.trim() && !disabled && !isLoading) {
       onSendMessage(message, attachments)
       setMessage('')
       setAttachments([])
+    }
+  }
+
+  const handleCancel = () => {
+    if (onCancel) {
+      onCancel()
+      setMessage('')
     }
   }
 
@@ -56,7 +65,7 @@ export function InputBar({ onSendMessage, disabled = false }: InputBarProps) {
           onChange={handleAttachment}
           style={{ display: 'none' }}
         />
-        <label htmlFor="attachment-input" className="attach-btn">
+        <label htmlFor="attachment-input" className="attach-btn" style={{ opacity: disabled ? 0.5 : 1 }}>
           📎
         </label>
         <textarea
@@ -65,17 +74,28 @@ export function InputBar({ onSendMessage, disabled = false }: InputBarProps) {
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Type your message... (Enter to send, Shift+Enter for new line)"
-          disabled={disabled}
+          placeholder={isLoading ? "Waiting for response..." : "Type your message... (Enter to send, Shift+Enter for new line)"}
+          disabled={false} // Always allow typing
           rows={1}
         />
-        <button 
-          type="submit" 
-          className="send-btn"
-          disabled={!message.trim() || disabled}
-        >
-          Send
-        </button>
+        {isLoading ? (
+          <button 
+            type="button" 
+            className="cancel-btn"
+            onClick={handleCancel}
+            style={{ backgroundColor: '#dc3545' }}
+          >
+            Stop
+          </button>
+        ) : (
+          <button 
+            type="submit" 
+            className="send-btn"
+            disabled={!message.trim() || disabled}
+          >
+            Send
+          </button>
+        )}
       </div>
     </form>
   )
