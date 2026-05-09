@@ -398,13 +398,6 @@ async function main(): Promise<void> {
   }
 
 
-  // Register --yolo with commander so it implies permissionMode: 'bypassPermissions'
-  // This makes the CLI flag actually trigger the permission bypass, not just set an env var
-  program.addOption(new Option('--yolo', 'Bypass all permission checks (equivalent to --permission-mode bypassPermissions). Use with caution.').implies({
-    permissionMode: 'bypassPermissions',
-  }));
-
-  // No special flags detected, load and run the full CLI
   if (process.env.OPENCLAUDE_DISABLE_EARLY_INPUT !== '1') {
     const {
       startCapturingEarlyInput
