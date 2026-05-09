@@ -1,10 +1,10 @@
 # LiteLLM Setup
 
-OpenClaude can connect to LiteLLM through LiteLLM's OpenAI-compatible proxy.
+DuckHive can connect to LiteLLM through LiteLLM's OpenAI-compatible proxy.
 
 ## Overview
 
-LiteLLM is an open-source LLM gateway that provides a unified API to 100+ model providers. By running the LiteLLM Proxy, you can route OpenClaude requests through LiteLLM to access any of its supported providers — all while using OpenClaude's existing OpenAI-compatible provider path.
+LiteLLM is an open-source LLM gateway that provides a unified API to 100+ model providers. By running the LiteLLM Proxy, you can route DuckHive requests through LiteLLM to access any of its supported providers while using DuckHive's OpenAI-compatible provider path inherited from the OpenClaude base.
 
 ## Prerequisites
 
@@ -128,8 +128,8 @@ duckhive
 
 - `OPENAI_MODEL` must match the **LiteLLM model alias** defined in your config, not the upstream raw provider model name.
 - If your proxy requires authentication, use the proxy key (or `master_key`) in `OPENAI_API_KEY`.
-- LiteLLM's OpenAI-compatible endpoint accepts the same request format as OpenAI, so OpenClaude works without any code changes.
-- You can switch between any provider configured in LiteLLM by simply changing the `OPENAI_MODEL` value — no need to reconfigure OpenClaude.
+- LiteLLM's OpenAI-compatible endpoint accepts the same request format as OpenAI, so DuckHive works without any LiteLLM-specific code changes.
+- You can switch between any provider configured in LiteLLM by simply changing the `OPENAI_MODEL` value — no need to reconfigure DuckHive.
 
 ## 5. Troubleshooting
 

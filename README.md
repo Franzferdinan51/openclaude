@@ -55,6 +55,7 @@ Current TUI foundations:
 - Kimi-style `Ctrl-X` shell toggle inside the TUI
 - Session rail for bridge state, checkpoints, context files, and imported capability status
 - Transcript rail toggle and tracked TUI backlog files
+- Quieter terminal-first styling with inspector/transcript rails kept opt-in
 
 Harness capability tracking currently lives in:
 
@@ -159,7 +160,7 @@ DUCKHIVE_AGENT_HARNESS_FALLBACK=builtin  # default fallback
 DUCKHIVE_AGENT_HARNESS_FALLBACK=none     # fail if no harness supports the run
 ```
 
-The AgentRun store persists under DuckHive's config home by default, or under `DUCKHIVE_AGENT_RUN_STORE_DIR` when set. `duckhive/harness` is intentionally separate from `duckhive/sdk` and builds to `dist/harness.mjs`.
+The AgentRun store persists under DuckHive's config home by default, or under `DUCKHIVE_AGENT_RUN_STORE_DIR` when set. Shared run-control operations now cover list/inspect/tail-style event access, pause, resume, stop/cancel, approval, and recovery so Telegram, TUI, SDK/headless, and future harness plugins can use one lifecycle instead of separate state paths. `duckhive/harness` is intentionally separate from `duckhive/sdk` and builds to `dist/harness.mjs`.
 
 ### Telegram Remote Control
 
@@ -1012,7 +1013,16 @@ bun run doctor:runtime
 cd tui && go test ./...
 ```
 
-Known debt: `bun run typecheck` is still a repo-wide hardening task. The remaining errors are broad pre-existing TypeScript debt in dormant optional modules, legacy command surfaces, and older UI/test typing. Runtime build, tests, SDK bundle checks, privacy verification, smoke, doctor, and TUI Go tests are the current green gates.
+Recent verification snapshot:
+
+- `bun test`: `2415 pass`, `0 fail`
+- `bun run build`, `bun run smoke`, `bun run verify:privacy`, and `bun run doctor:runtime`: passing
+- `cd tui && go test ./...`: passing
+- `duckhive --version`: `0.9.0 (DuckHive)`
+- `openclaude --version`: upstream OpenClaude remains separately owned when installed
+- package dry-run includes `config/`, `duckhive/sdk`, `duckhive/harness`, and `skills/newest-desktop-control/`
+
+Known debt: `bun run typecheck` is still a repo-wide hardening task. The current pass has already added missing transport/OAuth/optional-integration type surfaces, but remaining errors are broad pre-existing TypeScript debt in dormant optional modules, legacy command surfaces, ACP/bridge paths, telemetry, and older UI/test typing. Runtime build, tests, SDK bundle checks, privacy verification, smoke, doctor, and TUI Go tests are the current green gates.
 
 ---
 
