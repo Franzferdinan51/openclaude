@@ -14,6 +14,7 @@ interface ChatContextValue {
   setActiveSession: (id: string) => void;
   sendMessage: (content: string) => Promise<void>;
   cancelLoading: () => void;
+  clearMessages: () => void;
   loadSessions: () => Promise<void>;
 }
 
@@ -26,6 +27,7 @@ const ChatContext = createContext<ChatContextValue>({
   setActiveSession: () => {},
   sendMessage: async () => {},
   cancelLoading: () => {},
+  clearMessages: () => {},
   loadSessions: async () => {},
 });
 
@@ -98,10 +100,19 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     }
   }, [isLoading]); // depends on isLoading to prevent concurrent sends
 
+  const clearMessages = useCallback(() => {
+    if (abortRef.current) {
+      abortRef.current.abort();
+      abortRef.current = null;
+    }
+    setMessages([]);
+    setIsLoading(false);
+  }, []);
+
   return (
     <ChatContext.Provider value={{
       sessions, activeSession, messages, isLoading,
-      createSession: createNewSession, setActiveSession, sendMessage, cancelLoading, loadSessions,
+      createSession: createNewSession, setActiveSession, sendMessage, cancelLoading, clearMessages, loadSessions,
     }}>
       {children}
     </ChatContext.Provider>

@@ -4,7 +4,7 @@ import { AgentsPanel } from './AgentsPanel';
 import { McpPanel } from './McpPanel';
 import { MemoryPanel } from './MemoryPanel';
 import { CostPanel } from './CostPanel';
-import { useGateway } from '../../context/GatewayContext';
+import { QuickActions, SystemStatus } from './QuickActions';
 
 type Tab = 'tools' | 'agents' | 'mcp' | 'memory' | 'cost';
 
@@ -16,13 +16,15 @@ const tabs: { id: Tab; label: string }[] = [
   { id: 'cost', label: '💰' },
 ];
 
-export function RightPanel() {
+interface RightPanelProps {
+  onClearChat?: () => void;
+}
+
+export function RightPanel({ onClearChat }: RightPanelProps) {
   const [activeTab, setActiveTab] = React.useState<Tab>('tools');
-  const { connected } = useGateway();
 
   return (
     <aside className="right-panel">
-      {/* Tab bar */}
       <div className="rp-tabs">
         {tabs.map(tab => (
           <button
@@ -35,12 +37,6 @@ export function RightPanel() {
         ))}
       </div>
 
-      {/* Connection badge */}
-      <div className={`connection-badge ${connected ? '' : 'offline'}`}>
-        {connected ? 'Gateway Connected' : 'Gateway Offline'}
-      </div>
-
-      {/* Tab content */}
       <div className="rp-content">
         {activeTab === 'tools' && <ToolsPanel />}
         {activeTab === 'agents' && <AgentsPanel />}
@@ -48,6 +44,9 @@ export function RightPanel() {
         {activeTab === 'memory' && <MemoryPanel />}
         {activeTab === 'cost' && <CostPanel />}
       </div>
+
+      <QuickActions onClearChat={onClearChat} />
+      <SystemStatus />
     </aside>
   );
 }
