@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, useRef, type ReactNode } from 'react';
 import { sendChat, createSession, listSessions, getSession, type ChatMessage, type SessionInfo } from '../api/gateway';
-// Simple ID generator (no external dep needed)
+
 function generateId(): string {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
 }
@@ -33,6 +33,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
 
+  // FIX: useRef to always get current messages (avoids stale closure in sendMessage)
+  const messagesRef = useRef<ChatMessage[]>([]);
+  messagesRef.current = messages;
+
   const loadSessions = useCallback(async () => {
     const list = await listSessions();
     setSessions(list);
@@ -54,12 +58,13 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     setMessages(data?.messages ?? []);
   }, []);
 
+  // FIX: use messagesRef.current instead of stale `messages` from closure
   const sendMessage = useCallback(async (content: string) => {
     const userMsg: ChatMessage = { role: 'user', content };
     setMessages(prev => [...prev, userMsg]);
     setLoading(true);
 
-    const allMessages = [...messages, userMsg];
+    const allMessages = [...messagesRef.current, userMsg];
     const reply = await sendChat(allMessages);
 
     setLoading(false);
@@ -67,7 +72,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       const assistantMsg = reply.choices[0].message as ChatMessage;
       setMessages(prev => [...prev, assistantMsg]);
     }
-  }, [messages]);
+  }, []); // no deps - uses ref instead of closure
 
   return (
     <ChatContext.Provider value={{

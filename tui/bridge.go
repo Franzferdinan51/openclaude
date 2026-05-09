@@ -76,6 +76,7 @@ func (b *Bridge) Close() error {
 func (b *Bridge) readLoop() {
 	dec := json.NewDecoder(b.conn)
 	for {
+		// FIX: declare raw inside loop to prevent heap retention between iterations
 		var raw json.RawMessage
 		if err := dec.Decode(&raw); err != nil {
 			if err == io.EOF || b.closed {

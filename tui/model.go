@@ -112,6 +112,14 @@ func NewModel(width, height int) *Model {
 // AddMessage appends a message to the list.
 func (m *Model) AddMessage(msg Message) {
 	m.messages = append(m.messages, msg)
+	// FIX: truncate to last 200 messages to prevent unbounded memory growth
+	if len(m.messages) > 200 {
+		m.messages = m.messages[len(m.messages)-200:]
+	}
+	// FIX: truncate to last 200 messages to prevent unbounded memory growth
+	if len(m.messages) > 200 {
+		m.messages = m.messages[len(m.messages)-200:]
+	}
 }
 
 // AddStreamingMessage adds or updates a streaming message.
