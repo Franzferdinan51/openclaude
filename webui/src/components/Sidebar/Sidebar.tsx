@@ -7,6 +7,7 @@ import { FilesPanel } from './FilesPanel';
 import { McpPanel } from './McpPanel';
 import { HistoryPanel } from './HistoryPanel';
 import { SettingsPanel } from './SettingsPanel';
+import { DUCKHIVE_API_BASE } from '../../api/gateway';
 
 interface SidebarProps {
   gatewayUrl?: string;
@@ -16,16 +17,16 @@ interface SidebarProps {
 type NavSection = 'agents' | 'tasks' | 'teams' | 'files' | 'mcp' | 'history' | 'settings';
 
 const NAV_ITEMS: { id: NavSection; label: string; icon: string }[] = [
-  { id: 'agents', label: 'Agents', icon: '🤖' },
-  { id: 'tasks', label: 'Tasks', icon: '⚡' },
-  { id: 'teams', label: 'Teams', icon: '👥' },
-  { id: 'files', label: 'Files', icon: '📁' },
-  { id: 'mcp', label: 'MCP', icon: '🔌' },
-  { id: 'history', label: 'History', icon: '📜' },
-  { id: 'settings', label: 'Settings', icon: '⚙️' },
+  { id: 'agents', label: 'Agents', icon: 'A' },
+  { id: 'tasks', label: 'Tasks', icon: 'R' },
+  { id: 'teams', label: 'Teams', icon: 'T' },
+  { id: 'files', label: 'Files', icon: 'F' },
+  { id: 'mcp', label: 'MCP', icon: 'M' },
+  { id: 'history', label: 'History', icon: 'H' },
+  { id: 'settings', label: 'Settings', icon: 'S' },
 ];
 
-export function Sidebar({ gatewayUrl = 'http://localhost:18789', width = 220 }: SidebarProps) {
+export function Sidebar({ gatewayUrl = DUCKHIVE_API_BASE, width = 220 }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [activeSection, setActiveSection] = useState<NavSection>('agents');
 

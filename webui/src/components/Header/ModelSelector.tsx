@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getSystemStatus } from '../../api/gateway';
 
 export interface ModelOption {
   id: string;
@@ -26,17 +27,17 @@ export function ModelSelector({ currentModel, onModelChange }: ModelSelectorProp
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    // Try to load from OpenClaw gateway
-    fetch('http://localhost:18789/v1/models')
-      .then(r => r.json())
-      .then(data => {
-        if (data?.data && Array.isArray(data.data)) {
-          const fetched: ModelOption[] = data.data.map((m: { id: string; name?: string; provider?: string }) => ({
-            id: m.id,
-            label: m.name ?? m.id,
-            provider: m.provider,
-          }));
-          if (fetched.length > 0) setModels(fetched);
+    getSystemStatus()
+      .then(status => {
+        if (status.provider?.model && status.provider.model !== 'auto') {
+          setModels(prev => [
+            {
+              id: status.provider!.model,
+              label: status.provider!.model,
+              provider: status.provider!.provider,
+            },
+            ...prev.filter(model => model.id !== status.provider!.model),
+          ]);
         }
       })
       .catch(() => { /* use defaults */ });

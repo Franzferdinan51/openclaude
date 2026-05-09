@@ -3,9 +3,7 @@ import { Message, Session } from '../../types'
 import { SessionTabs } from './SessionTabs'
 import { MessageList } from './MessageList'
 import { InputBar } from './InputBar'
-
-const DASHBOARD_BASE = 'http://localhost:3001'
-const API_ENDPOINT = `${DASHBOARD_BASE}/api/chat`
+import { sendChat } from '../../api/gateway'
 
 function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).substr(2)
@@ -79,11 +77,6 @@ export function ChatArea({ className = '' }: ChatAreaProps) {
 
     // Track assistant message for incremental updates
     let assistantMessageId = progressMsg.id
-    let accumulatedContent = ''
-    const CHUNK_BATCH_MS = 50 // Only re-render every 50ms to avoid flooding React
-    let lastBatchUpdate = Date.now()
-    let pendingContent = ''
-
     try {
       // Build messages for API
       const currentMessages = sessions.find(s => s.id === activeSessionId)?.messages || []
@@ -110,26 +103,10 @@ export function ChatArea({ className = '' }: ChatAreaProps) {
         ]
       }))
 
-      const response = await fetch(API_ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: apiMessages,
-          model: 'MiniMax-M2.7',
-          stream: false // Use non-streaming for simplicity - the API doesn't reliably stream
-        }),
-        signal: abortController.signal
-      })
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`)
-      }
-
-      const data = await response.json()
+      const data = await sendChat(apiMessages, { stream: false })
 
       // Update with the actual response
-      const responseContent = data.choices?.[0]?.message?.content || 'No response'
-      accumulatedContent = responseContent
+      const responseContent = data?.choices?.[0]?.message?.content || 'No response'
 
       updateSession(activeSessionId, s => ({
         ...s,

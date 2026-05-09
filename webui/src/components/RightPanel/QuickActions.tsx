@@ -1,4 +1,5 @@
 import React from 'react';
+import { Command, MessageSquarePlus, RotateCcw, Trash2 } from 'lucide-react';
 import { useGateway } from '../../context/GatewayContext';
 
 interface QuickActionsProps {
@@ -6,16 +7,20 @@ interface QuickActionsProps {
 }
 
 const QUICK_ACTIONS = [
-  { label: '💬 New Chat', action: 'new-chat', color: '#f0b429' },
-  { label: '🧠 Memory', action: 'memory', color: '#06b6d4' },
-  { label: '⚡ Commands', action: 'commands', color: '#8b5cf6' },
-  { label: '🗑️ Clear', action: 'clear', color: '#ef4444' },
+  { label: 'New Chat', action: 'new-chat', color: '#f0b429', icon: MessageSquarePlus },
+  { label: 'Refresh', action: 'refresh', color: '#06b6d4', icon: RotateCcw },
+  { label: 'Commands', action: 'commands', color: '#8b5cf6', icon: Command },
+  { label: 'Clear', action: 'clear', color: '#ef4444', icon: Trash2 },
 ];
 
 export function QuickActions({ onClearChat }: QuickActionsProps) {
+  const { refresh } = useGateway();
   const handleClick = (action: string) => {
     if (action === 'clear' && onClearChat) {
       onClearChat();
+    }
+    if (action === 'refresh') {
+      refresh();
     }
   };
 
@@ -30,6 +35,7 @@ export function QuickActions({ onClearChat }: QuickActionsProps) {
             onClick={() => handleClick(act.action)}
             style={{ '--accent': act.color } as React.CSSProperties}
           >
+            <act.icon size={14} />
             {act.label}
           </button>
         ))}
@@ -39,7 +45,7 @@ export function QuickActions({ onClearChat }: QuickActionsProps) {
 }
 
 export function SystemStatus() {
-  const { connected } = useGateway();
+  const { connected, status } = useGateway();
 
   if (!connected) return null;
 
@@ -47,7 +53,7 @@ export function SystemStatus() {
     <div className="system-status-bar">
       <div className="status-item">
         <span className="status-dot" style={{ background: '#22c55e' }} />
-        <span>Gateway</span>
+        <span>{status?.desktopControl?.configured ? 'Desktop ready' : 'Gateway'}</span>
       </div>
     </div>
   );

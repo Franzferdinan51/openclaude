@@ -8,6 +8,7 @@ function generateId(): string {
 interface ChatContextValue {
   sessions: SessionInfo[];
   activeSession: string | null;
+  activeRunId: string | null;
   messages: ChatMessage[];
   isLoading: boolean;
   createSession: (title?: string) => Promise<string | null>;
@@ -21,6 +22,7 @@ interface ChatContextValue {
 const ChatContext = createContext<ChatContextValue>({
   sessions: [],
   activeSession: null,
+  activeRunId: null,
   messages: [],
   isLoading: false,
   createSession: async () => null,
@@ -34,6 +36,7 @@ const ChatContext = createContext<ChatContextValue>({
 export function ChatProvider({ children }: { children: ReactNode }) {
   const [sessions, setSessions] = useState<SessionInfo[]>([]);
   const [activeSession, setActiveSessionState] = useState<string | null>(null);
+  const [activeRunId, setActiveRunId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
@@ -52,6 +55,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     if (s) {
       setSessions(prev => [s, ...prev]);
       setActiveSessionState(s.id);
+      setActiveRunId(s.runId ?? null);
       setMessages([]);
     }
     return s?.id ?? null;
@@ -61,6 +65,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     setActiveSessionState(id);
     const data = await getSession(id);
     setMessages(data?.messages ?? []);
+    setActiveRunId(data?.runId ?? null);
   }, []);
 
   const cancelLoading = useCallback(() => {
@@ -84,11 +89,19 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     const allMessages = [...messagesRef.current, userMsg];
 
     try {
-      const reply = await sendChat(allMessages, { stream: false });
+      const reply = await sendChat(allMessages, { stream: false, sessionId: activeSession ?? undefined });
 
       if (reply?.choices?.[0]?.message) {
         const assistantMsg = reply.choices[0].message as ChatMessage;
         setMessages(prev => [...prev, assistantMsg]);
+        setActiveRunId(reply.runId ?? reply.session?.runId ?? null);
+        if (reply.session) {
+          setActiveSessionState(reply.session.id);
+          setSessions(prev => {
+            const without = prev.filter(session => session.id !== reply.session!.id);
+            return [reply.session!, ...without];
+          });
+        }
       }
     } catch (error) {
       if ((error as Error).name !== 'AbortError') {
@@ -98,7 +111,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       setIsLoading(false);
       abortRef.current = null;
     }
-  }, [isLoading]); // depends on isLoading to prevent concurrent sends
+  }, [activeSession, isLoading]); // depends on isLoading to prevent concurrent sends
 
   const clearMessages = useCallback(() => {
     if (abortRef.current) {
@@ -111,7 +124,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
   return (
     <ChatContext.Provider value={{
-      sessions, activeSession, messages, isLoading,
+      sessions, activeSession, activeRunId, messages, isLoading,
       createSession: createNewSession, setActiveSession, sendMessage, cancelLoading, clearMessages, loadSessions,
     }}>
       {children}

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { SidebarItem } from './SidebarItem';
+import { getMcpServers } from '../../api/gateway';
 
 interface McpServer {
   id: string;
@@ -18,11 +19,8 @@ export function McpPanel() {
   const [servers, setServers] = useState<McpServer[]>(DEFAULT_MCP);
 
   useEffect(() => {
-    fetch('http://localhost:18789/api/mcp/servers')
-      .then(r => r.json())
-      .then(data => {
-        if (Array.isArray(data)) setServers(data);
-      })
+    getMcpServers()
+      .then(data => setServers(data.length ? data : DEFAULT_MCP))
       .catch(() => { /* use defaults */ });
   }, []);
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { SidebarItem } from './SidebarItem';
+import { DUCKHIVE_API_BASE, getAgents } from '../../api/gateway';
 
 interface AgentInfo {
   id: string;
@@ -22,15 +23,12 @@ const STATUS_COLORS: Record<AgentInfo['status'], string> = {
   offline: '#6b7280',
 };
 
-export function AgentsPanel({ gatewayUrl = 'http://localhost:18789' }: { gatewayUrl?: string }) {
+export function AgentsPanel({ gatewayUrl = DUCKHIVE_API_BASE }: { gatewayUrl?: string }) {
   const [agents, setAgents] = useState<AgentInfo[]>(DEFAULT_AGENTS);
 
   useEffect(() => {
-    fetch(`${gatewayUrl}/api/mesh/agents`)
-      .then(r => r.json())
-      .then(data => {
-        if (Array.isArray(data)) setAgents(data);
-      })
+    getAgents()
+      .then(data => setAgents(data.length ? data : DEFAULT_AGENTS))
       .catch(() => { /* use defaults */ });
   }, [gatewayUrl]);
 

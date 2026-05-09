@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { SidebarItem } from './SidebarItem';
+import { listRuns } from '../../api/gateway';
 
 interface TaskInfo {
   id: string;
@@ -12,13 +13,13 @@ export function TasksPanel() {
   const [tasks, setTasks] = useState<TaskInfo[]>([]);
 
   useEffect(() => {
-    // Poll for background tasks from gateway
     const fetchTasks = () => {
-      fetch('http://localhost:18789/api/tasks')
-        .then(r => r.json())
-        .then(data => {
-          if (Array.isArray(data)) setTasks(data);
-        })
+      listRuns()
+        .then(runs => setTasks(runs.map(run => ({
+          id: run.id,
+          label: run.title,
+          status: run.status === 'completed' ? 'done' : run.status === 'failed' ? 'error' : run.status === 'queued' ? 'pending' : 'running',
+        }))))
         .catch(() => setTasks([]));
     };
     fetchTasks();
@@ -27,10 +28,10 @@ export function TasksPanel() {
   }, []);
 
   const STATUS_ICONS: Record<TaskInfo['status'], string> = {
-    running: '⚡',
-    pending: '⏳',
-    done: '✅',
-    error: '❌',
+    running: 'RUN',
+    pending: 'WAIT',
+    done: 'OK',
+    error: 'ERR',
   };
 
   return (

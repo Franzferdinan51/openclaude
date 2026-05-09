@@ -1,4 +1,5 @@
 import React from 'react';
+import { Bot, Coins, Hammer, MemoryStick, Network, type LucideIcon } from 'lucide-react';
 import { ToolsPanel } from './ToolsPanel';
 import { AgentsPanel } from './AgentsPanel';
 import { McpPanel } from './McpPanel';
@@ -8,12 +9,12 @@ import { QuickActions, SystemStatus } from './QuickActions';
 
 type Tab = 'tools' | 'agents' | 'mcp' | 'memory' | 'cost';
 
-const tabs: { id: Tab; label: string }[] = [
-  { id: 'tools', label: '🔧' },
-  { id: 'agents', label: '🤖' },
-  { id: 'mcp', label: '🔌' },
-  { id: 'memory', label: '🧠' },
-  { id: 'cost', label: '💰' },
+const tabs: { id: Tab; label: string; icon: LucideIcon }[] = [
+  { id: 'tools', label: 'Tools', icon: Hammer },
+  { id: 'agents', label: 'Agents', icon: Bot },
+  { id: 'mcp', label: 'MCP', icon: Network },
+  { id: 'memory', label: 'Memory', icon: MemoryStick },
+  { id: 'cost', label: 'Cost', icon: Coins },
 ];
 
 interface RightPanelProps {
@@ -26,15 +27,19 @@ export function RightPanel({ onClearChat }: RightPanelProps) {
   return (
     <aside className="right-panel">
       <div className="rp-tabs">
-        {tabs.map(tab => (
-          <button
-            key={tab.id}
-            className={`rp-tab ${activeTab === tab.id ? 'active' : ''}`}
-            onClick={() => setActiveTab(tab.id)}
-          >
-            {tab.label}
-          </button>
-        ))}
+        {tabs.map(tab => {
+          const Icon = tab.icon;
+          return (
+            <button
+              key={tab.id}
+              className={`rp-tab ${activeTab === tab.id ? 'active' : ''}`}
+              onClick={() => setActiveTab(tab.id)}
+              title={tab.label}
+            >
+              <Icon size={15} />
+            </button>
+          );
+        })}
       </div>
 
       <div className="rp-content">

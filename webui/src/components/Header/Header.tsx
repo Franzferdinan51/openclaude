@@ -3,6 +3,7 @@ import { Logo } from './Logo';
 import { StatusBadge } from './StatusBadge';
 import { ModelSelector } from './ModelSelector';
 import { ThemePicker } from './ThemePicker';
+import { DUCKHIVE_API_BASE } from '../../api/gateway';
 
 type Theme = 'claw' | 'knot' | 'dash';
 
@@ -14,7 +15,7 @@ interface HeaderProps {
 }
 
 export function Header({
-  gatewayUrl = 'http://localhost:18789',
+  gatewayUrl = DUCKHIVE_API_BASE,
   initialTheme = 'claw',
   onThemeChange,
   onModelChange,

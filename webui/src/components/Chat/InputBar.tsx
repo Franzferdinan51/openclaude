@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react'
+import { Paperclip, Send, Square } from 'lucide-react'
 
 interface InputBarProps {
   onSendMessage: (message: string, attachments?: File[]) => void
@@ -66,7 +67,7 @@ export function InputBar({ onSendMessage, onCancel, disabled = false, isLoading 
           style={{ display: 'none' }}
         />
         <label htmlFor="attachment-input" className="attach-btn" style={{ opacity: disabled ? 0.5 : 1 }}>
-          📎
+          <Paperclip size={17} />
         </label>
         <textarea
           ref={textareaRef}
@@ -83,8 +84,8 @@ export function InputBar({ onSendMessage, onCancel, disabled = false, isLoading 
             type="button" 
             className="cancel-btn"
             onClick={handleCancel}
-            style={{ backgroundColor: '#dc3545' }}
           >
+            <Square size={15} />
             Stop
           </button>
         ) : (
@@ -93,6 +94,7 @@ export function InputBar({ onSendMessage, onCancel, disabled = false, isLoading 
             className="send-btn"
             disabled={!message.trim() || disabled}
           >
+            <Send size={15} />
             Send
           </button>
         )}

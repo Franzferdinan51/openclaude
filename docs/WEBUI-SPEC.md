@@ -255,7 +255,8 @@ web/
 
 ### Backend Communication
 - **HTTP REST** for stateless requests (agents, tasks, settings)
-  - Base URL: `http://localhost:18789` (OpenClaw gateway) or `http://localhost:3000` (DuckHive CLI port)
+  - Base URL: `http://localhost:3017` by default via `VITE_DUCKHIVE_API_BASE`
+  - The API is DuckHive-owned; `OPENCLAW_GATEWAY_URL` is optional status/diagnostics input only.
 - **WebSocket** for streaming chat responses and real-time task updates
 - **SSE** as fallback for streaming (simpler than WebSocket)
 
@@ -266,7 +267,7 @@ web/
 | Task/background jobs | DuckHive `src/components/tasks/` | Same pattern |
 | Teams dialog | DuckHive `src/components/teams/` | Same pattern |
 | MCP management | DuckHive `src/components/mcp/` | Same pattern |
-| Chat messages | OpenClaw WebUI (localhost:18789) | Study patterns, replicate |
+| Chat messages | DuckHive WebUI API (`localhost:3017`) | Register chat requests in AgentRun and mirror events |
 | Theme system | OpenClaw WebUI (claw/knot/dash) | Adopt CSS variable approach |
 | Session management | OpenClaw WebUI | Implement tabs/routing for sessions |
 | Settings/provider config | OpenClaw WebUI | Adopt provider manager UI |
@@ -360,7 +361,7 @@ WS     /ws/stream              → real-time streaming
 | Reference | What to Borrow |
 |-----------|---------------|
 | Codex Desktop app | Session tabs, file browser, terminal integration, dense professional layout |
-| OpenClaw WebUI (localhost:18789) | Theme system, settings dialogs, chat message design, permission mode UI |
+| OpenClaw WebUI | Theme concepts, settings/dialog patterns, permission-mode inspiration only |
 | DuckHive TUI (Ink components) | Agent/task/team management logic, color picker, model selector, MCP tool browser |
 | VS Code | Activity bar + sidebar pattern, panel toggles, status bar |
 | Warp Terminal | Command palette (Cmd+K), terminal aesthetics |

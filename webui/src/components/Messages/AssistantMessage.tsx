@@ -9,7 +9,7 @@ interface AssistantMessageProps {
 export function AssistantMessage({ message }: AssistantMessageProps) {
   return (
     <div className="message assistant-message">
-      <span className="message-avatar">🦆</span>
+      <span className="message-avatar">DH</span>
       <div className="message-bubble">
         <MarkdownRenderer content={message.content} />
       </div>

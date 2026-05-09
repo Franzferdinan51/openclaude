@@ -1,22 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { SidebarItem } from './SidebarItem';
+import { DUCKHIVE_API_BASE, listSessions } from '../../api/gateway';
 
 interface HistoryEntry {
   id: string;
   title: string;
-  timestamp: string;
+  timestamp: string | number;
   model?: string;
 }
 
-export function HistoryPanel({ gatewayUrl = 'http://localhost:18789' }: { gatewayUrl?: string }) {
+export function HistoryPanel({ gatewayUrl = DUCKHIVE_API_BASE }: { gatewayUrl?: string }) {
   const [sessions, setSessions] = useState<HistoryEntry[]>([]);
 
   useEffect(() => {
-    fetch(`${gatewayUrl}/api/sessions`)
-      .then(r => r.json())
-      .then(data => {
-        if (Array.isArray(data)) setSessions(data);
-      })
+    listSessions()
+      .then(data => setSessions(data.map(session => ({
+        id: session.id,
+        title: session.title,
+        timestamp: session.updatedAt,
+      }))))
       .catch(() => setSessions([]));
   }, [gatewayUrl]);
 
@@ -51,7 +53,7 @@ export function HistoryPanel({ gatewayUrl = 'http://localhost:18789' }: { gatewa
           key={session.id}
           label={session.title}
           onClick={() => {}}
-          icon={<span style={{ fontSize: '11px', opacity: 0.5 }}>💬</span>}
+          icon={<span style={{ fontSize: '11px', opacity: 0.5 }}>S</span>}
         />
       ))}
     </div>

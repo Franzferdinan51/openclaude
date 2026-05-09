@@ -114,6 +114,37 @@ DuckHive is distributed as a `duckhive` launcher that boots the TypeScript agent
 
 The TypeScript agent core (`dist/cli.mjs`) is built via `bun run build` and runs under the Go CLI harness. All integrated services (council daemon on port 3007, MCP servers) are started on-demand.
 
+### WebUI: Hybrid Agent Console
+
+DuckHive ships a dedicated WebUI for a Codex-style workbench with OpenClaw-style operational visibility. The WebUI is backed by a DuckHive-owned API instead of depending on an OpenClaw dashboard process.
+
+```bash
+# Terminal 1: DuckHive WebUI API
+DUCKHIVE_WEBUI_API_PORT=3017 bun run webui:api
+
+# Terminal 2: React WebUI
+cd webui
+VITE_DUCKHIVE_API_BASE=http://localhost:3017 npm run dev
+```
+
+The WebUI API exposes health, status, agents, tools, MCP servers, sessions, AgentRun inspection, and run controls. It also streams run lifecycle events over Server-Sent Events at `/api/events`.
+
+Useful endpoints:
+
+| Endpoint | Purpose |
+| --- | --- |
+| `GET /health` | DuckHive WebUI API health/version |
+| `GET /api/status` | provider, Telegram, desktop/Android, OpenClaw optional status |
+| `GET /api/runs` | AgentRun list and root run tree |
+| `GET /api/runs/:id/events` | compact run event tail |
+| `POST /api/runs/:id/pause` | pause a run |
+| `POST /api/runs/:id/resume` | resume a run |
+| `POST /api/runs/:id/stop` | cancel a run |
+| `POST /api/runs/:id/approve` | approve a pending run action |
+| `POST /api/runs/:id/recover` | mark a run for recovery |
+
+Optional OpenClaw visibility is configured with `OPENCLAW_GATEWAY_URL`; DuckHive still owns the provider/model/session/tool/channel policy and the `duckhive` command.
+
 ### DuckHive SDK
 
 DuckHive exposes the OpenClaude SDKv2-compatible runtime at `duckhive/sdk`. The SDK entrypoint is intentionally separate from the CLI bundle and builds to `dist/sdk.mjs` so consumers can import session/query APIs without pulling in React, Ink, or TUI-only modules.
