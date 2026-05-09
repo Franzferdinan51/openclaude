@@ -325,56 +325,74 @@ DuckHive automatically finds and loads the nearest `DUCK.md` up the directory tr
 
 ---
 
-### Desktop Control
+### Desktop And Android Control
 
-DuckHive has full macOS desktop automation via the `desktop_control` tool and `/desktop` command, powered by [desktop-control-lobster-edition-skill](https://github.com/Franzferdinan51/desktop-control-lobster-edition-skill). Mouse, keyboard, screenshot, OCR, window management, app launching, and AI vision — all from the CLI.
+DuckHive ships the bundled `newest-desktop-control` MCP gateway in `skills/newest-desktop-control`. It consolidates cross-platform desktop automation, Android ADB control, and Codex Computer Use detection behind one MCP surface. The older `desktop_control` tool and `/desktop` command remain available for the legacy Python/OpenClaw workflow, but new agent integrations should prefer the MCP gateway because it exposes stable tool names and compatibility aliases.
 
 **Setup (one-time):**
 ```bash
-pip3 install --break-system-packages -r ~/.openclaw/workspace/desktop-control-lobster-edition-skill/requirements.txt
+python3 -m pip install pyautogui pillow
+adb devices -l   # optional, for Android devices/emulators
 ```
 
-**Screenshot, OCR, windows (safe — no approval needed):**
-```
-desktop_control screenshot
-desktop_control get_screen_size
-desktop_control get_pixel_color x=100 y=200
-desktop_control ocr_text_from_region region=[0,0,800,600]
-desktop_control find_text_on_screen search_text="Submit"
-desktop_control get_all_windows
-desktop_control get_active_window
-```
-
-**Mouse + keyboard (approval required):**
-```
-desktop_control move_mouse x=500 y=400
-desktop_control click x=500 y=400
-desktop_control double_click x=800 y=300
-desktop_control type_text text="Hello World" paste=true
-desktop_control hotkey keys=["cmd","s"]
-desktop_control press key="enter"
+**MCP config:**
+```json
+{
+  "newest-desktop-control": {
+    "command": "node",
+    "args": ["${SKILL_DIR}/newest-desktop-control/src/server.js"]
+  }
+}
 ```
 
-**App control (approval required):**
+**Desktop MCP tools:**
 ```
-desktop_control open_app app_name="Safari"
-desktop_control run_applescript script="tell application \"Finder\" to activate"
-desktop_control browser_navigate url="https://github.com"
+mcp__newest-desktop-control__desktop_screenshot
+mcp__newest-desktop-control__desktop_mouse_move
+mcp__newest-desktop-control__desktop_mouse_click
+mcp__newest-desktop-control__desktop_mouse_scroll
+mcp__newest-desktop-control__desktop_keyboard_type
+mcp__newest-desktop-control__desktop_keyboard_press
+mcp__newest-desktop-control__desktop_keyboard_hotkey
+mcp__newest-desktop-control__desktop_clipboard_read
+mcp__newest-desktop-control__desktop_clipboard_write
+mcp__newest-desktop-control__desktop_get_screen_size
+mcp__newest-desktop-control__desktop_get_pixel_color
+mcp__newest-desktop-control__desktop_window_list
+mcp__newest-desktop-control__desktop_window_activate
+mcp__newest-desktop-control__desktop_launch_app
+mcp__newest-desktop-control__desktop_terminal
+mcp__newest-desktop-control__desktop_file_read
+mcp__newest-desktop-control__desktop_file_write
 ```
 
-**Workflow + evidence:**
+**Android MCP tools:**
 ```
-desktop_control capture_evidence evidence_prefix="bug-report"
-desktop_control annotate_screenshot image_path="/tmp/screen.png" annotation_text="BUG HERE"
-desktop_control compare_screenshots before_file="/tmp/before.png" after_file="/tmp/after.png"
-desktop_control get_action_log
+mcp__newest-desktop-control__android_devices
+mcp__newest-desktop-control__android_screenshot
+mcp__newest-desktop-control__android_screen_size
+mcp__newest-desktop-control__android_current_activity
+mcp__newest-desktop-control__android_tap
+mcp__newest-desktop-control__android_swipe
+mcp__newest-desktop-control__android_text
+mcp__newest-desktop-control__android_key
+mcp__newest-desktop-control__android_launch_app
+mcp__newest-desktop-control__android_ui_dump
+mcp__newest-desktop-control__android_logcat
 ```
 
-**AI vision assist:**
+**Diagnostics and aliases:**
 ```
-desktop_control vision_assist vision_prompt="What buttons are visible on screen?"
-desktop_control set_resource_broker vision_endpoint="http://localhost:1234" vision_model="qwen3.5-9b"
+mcp__newest-desktop-control__backend_status
+mcp__newest-desktop-control__permissions_check
+mcp__newest-desktop-control__codex_mcp_config
+
+# Legacy aliases are preserved by the gateway:
+screenshot, mouse_click, keyboard, terminal, file_read, run_script,
+computer_use_screenshot, computer_use_mouse_click, computer_use_keyboard
 ```
+
+Desktop mouse/keyboard/app actions may require Accessibility and Screen Recording permissions on macOS. Android actions require Developer Options plus USB debugging or an emulator. Codex Computer Use is detected through supported Codex app integration points; DuckHive does not patch or bypass proprietary Codex binaries.
 
 ---
 

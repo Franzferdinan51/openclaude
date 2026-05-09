@@ -94,11 +94,13 @@ mcp__newest-desktop-control__desktop_launch_app
 mcp__newest-desktop-control__desktop_activate_window
 mcp__newest-desktop-control__android_screenshot
 mcp__newest-desktop-control__android_tap
-mcp__newest-desktop-control__android_input_text
+mcp__newest-desktop-control__android_text
 mcp__newest-desktop-control__android_key
-mcp__newest-desktop-control__android_dump
+mcp__newest-desktop-control__android_ui_dump
 mcp__newest-desktop-control__android_logcat
-mcp__newest-desktop-control__codex_detect
+mcp__newest-desktop-control__backend_status
+mcp__newest-desktop-control__permissions_check
+mcp__newest-desktop-control__codex_mcp_config
 ```
 
 ---

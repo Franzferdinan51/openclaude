@@ -27,6 +27,8 @@
     "src/entrypoints/harness.ts",
     "src/agent-runs/",
     "src/entrypoints/sdk/coreTypes.generated.ts",
+    "config/",
+    "skills/newest-desktop-control/",
     "tui/duckhive-tui",
     "README.md"
   ],
