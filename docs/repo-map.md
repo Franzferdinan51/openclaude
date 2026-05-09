@@ -10,7 +10,7 @@ The repo map feature gives the AI model structural awareness of your codebase at
 4. **PageRank** — Ranks files by structural importance using PageRank. Files imported by many others rank highest
 5. **Rendering** — Walks ranked files top-down, emitting file paths and definition signatures, stopping when the token budget is reached
 
-Results are cached to disk (`~/.openclaude/repomap-cache/`) keyed by file path, mtime, and size. Only changed files are re-parsed on subsequent runs.
+Results are cached to disk (`~/.openclaude/repomap-cache/`) for upstream compatibility, keyed by file path, mtime, and size. Only changed files are re-parsed on subsequent runs.
 
 ## Supported languages
 
@@ -27,7 +27,7 @@ The repo map is gated behind the `REPO_MAP` feature flag, **off by default**. To
 Set the environment variable before launching:
 
 ```bash
-REPO_MAP=1 openclaude
+REPO_MAP=1 duckhive
 ```
 
 Or add it to your shell profile for persistent use.

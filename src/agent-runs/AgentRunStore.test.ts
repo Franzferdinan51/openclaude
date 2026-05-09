@@ -113,4 +113,26 @@ describe('AgentRunStore', () => {
       permissionState: { pendingApprovalIds: ['approval-1'] },
     })
   })
+
+  test('provides shared run control operations for remote and TUI surfaces', () => {
+    const store = createAgentRunStore({ persist: false })
+    const run = store.createRun({
+      title: 'Remote controlled run',
+      status: 'running',
+      permissionState: { pendingApprovalIds: ['approval-1', 'approval-2'] },
+    })
+
+    expect(store.pauseRun(run.id)?.status).toBe('paused')
+    expect(store.resumeRun(run.id)?.status).toBe('running')
+    expect(store.approveRun(run.id, 'approval-1')?.permissionState).toEqual({
+      pendingApprovalIds: ['approval-2'],
+      lastDecision: 'allow',
+    })
+    expect(store.recoverRun(run.id, 'Retrying provider failure')?.recoveryAttempts).toBe(1)
+    expect(store.cancelRun(run.id)?.status).toBe('cancelled')
+    expect(store.tailEvents(run.id, 2).map(event => event.type)).toEqual([
+      'run_recovered',
+      'run_cancelled',
+    ])
+  })
 })

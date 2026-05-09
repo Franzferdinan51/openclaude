@@ -9,17 +9,17 @@ import (
 
 var (
 	// Base
-	ColorBG       = lipgloss.Color("#101010")
-	ColorSurface  = lipgloss.Color("#161616")
-	ColorSurface2 = lipgloss.Color("#1B1B1B")
-	ColorBorder   = lipgloss.Color("#343434")
-	ColorText     = lipgloss.Color("#E8E6E3")
-	ColorDim      = lipgloss.Color("#68625C")
-	ColorMuted    = lipgloss.Color("#A8A19A")
+	ColorBG       = lipgloss.Color("#0F1115")
+	ColorSurface  = lipgloss.Color("#151820")
+	ColorSurface2 = lipgloss.Color("#1A1F29")
+	ColorBorder   = lipgloss.Color("#303640")
+	ColorText     = lipgloss.Color("#E7EAF0")
+	ColorDim      = lipgloss.Color("#68707D")
+	ColorMuted    = lipgloss.Color("#A5ADBA")
 
 	// Brand
-	ColorAccent = lipgloss.Color("#F3B33D")
-	ColorDuck   = lipgloss.Color("#7CC7A6")
+	ColorAccent = lipgloss.Color("#D6A84F")
+	ColorDuck   = lipgloss.Color("#75B99C")
 
 	// Semantic
 	ColorError    = lipgloss.Color("#F87171")
@@ -28,13 +28,13 @@ var (
 	ColorWarning  = lipgloss.Color("#F3B33D")
 
 	// Header / footer
-	ColorHeaderBG = lipgloss.Color("#141414")
+	ColorHeaderBG = lipgloss.Color("#11141A")
 
 	// Message bubbles
-	ColorUserBubble  = lipgloss.Color("#1A2733")
-	ColorAssistantBG = lipgloss.Color("#171A1D")
-	ColorSystemBG    = lipgloss.Color("#14181C")
-	ColorToolBG      = lipgloss.Color("#1B2025")
+	ColorUserBubble  = ColorSurface2
+	ColorAssistantBG = ColorSurface
+	ColorSystemBG    = ColorSurface
+	ColorToolBG      = ColorSurface2
 )
 
 // Header renders the top bar with logo, session info, and model name.
@@ -107,14 +107,12 @@ var CardMuted = lipgloss.NewStyle().
 	Foreground(ColorMuted)
 
 var GoodBadge = lipgloss.NewStyle().
-	Foreground(ColorBG).
-	Background(ColorSuccess).
+	Foreground(ColorSuccess).
 	Padding(0, 1).
 	Bold(true)
 
 var WarnBadge = lipgloss.NewStyle().
-	Foreground(ColorBG).
-	Background(ColorWarning).
+	Foreground(ColorWarning).
 	Padding(0, 1).
 	Bold(true)
 
@@ -131,8 +129,7 @@ var ComposerFrame = lipgloss.NewStyle().
 	Padding(0, 1)
 
 var ModePill = lipgloss.NewStyle().
-	Foreground(ColorBG).
-	Background(ColorAccent).
+	Foreground(ColorAccent).
 	Padding(0, 1).
 	Bold(true)
 
@@ -141,20 +138,17 @@ var MetaPill = lipgloss.NewStyle().
 	Padding(0, 1)
 
 var PillActive = lipgloss.NewStyle().
-	Foreground(ColorBG).
-	Background(ColorDuck).
+	Foreground(ColorDuck).
 	Padding(0, 1).
 	Bold(true)
 
 var PillOk = lipgloss.NewStyle().
-	Foreground(ColorBG).
-	Background(ColorSuccess).
+	Foreground(ColorSuccess).
 	Padding(0, 1).
 	Bold(true)
 
 var PillWarn = lipgloss.NewStyle().
-	Foreground(ColorBG).
-	Background(ColorWarning).
+	Foreground(ColorWarning).
 	Padding(0, 1).
 	Bold(true)
 

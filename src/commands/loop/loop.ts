@@ -46,9 +46,10 @@ function getLoops(): Loop[] {
 }
 
 async function saveLoops(loops: Loop[]): Promise<void> {
-  const config = getGlobalConfig()
-  ;(config as Record<string, unknown>)[LOOPS_STORAGE_KEY] = loops
-  await saveGlobalConfig(config)
+  saveGlobalConfig(config => ({
+    ...config,
+    [LOOPS_STORAGE_KEY]: loops,
+  }))
 }
 
 function formatLoop(loop: Loop): string {
@@ -88,6 +89,7 @@ function parseLoopArgs(args: string[]): {
   prompt?: string
   everyMinutes?: number
   times?: number
+  remaining?: number
   outputMode?: 'silent' | 'notify' | 'full'
 } {
   const result: ReturnType<typeof parseLoopArgs> = {}
@@ -249,6 +251,10 @@ ${bold('Examples:')}
 `.trim()
 }
 
+export async function call(args: string): Promise<{ type: 'text'; value: string }> {
+  return { type: 'text', value: await loopCommand(splitCommandArgs(args)) }
+}
+
 export default async function loopCommand(args: string[]): Promise<string> {
   const subcommand = args[0]?.toLowerCase()
 
@@ -282,4 +288,8 @@ export default async function loopCommand(args: string[]): Promise<string> {
     default:
       return showHelp()
   }
+}
+
+function splitCommandArgs(args: string): string[] {
+  return args.match(/"[^"]*"|'[^']*'|\S+/g)?.map(arg => arg.replace(/^["']|["']$/g, '')) ?? []
 }

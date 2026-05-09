@@ -55,7 +55,7 @@ litellm --config litellm_config.yaml --port 4000
 
 The proxy will start at `http://localhost:4000` by default.
 
-## 2. Point OpenClaude to LiteLLM
+## 2. Point DuckHive to LiteLLM
 
 ### Option A: Environment Variables
 
@@ -64,7 +64,7 @@ export CLAUDE_CODE_USE_OPENAI=1
 export OPENAI_BASE_URL=http://localhost:4000/v1
 export OPENAI_API_KEY=<your-master-key-or-placeholder>
 export OPENAI_MODEL=<your-litellm-model-alias>
-openclaude
+duckhive
 ```
 
 Replace `<your-litellm-model-alias>` with a model name from your `litellm_config.yaml` (e.g., `gpt-4o`, `claude-sonnet-4`, `gemini-2.5-flash`).
@@ -74,7 +74,7 @@ be omitted when you configure env vars manually.
 
 ### Option B: Using /provider
 
-1. Run `openclaude`
+1. Run `duckhive`
 2. Type `/provider` to open the provider setup flow
 3. Choose the **OpenAI-compatible** option
 4. When prompted for the API key, enter the key required by your LiteLLM proxy.
@@ -116,12 +116,12 @@ litellm_settings:
 # Start proxy with a master key
 litellm --config litellm_config.yaml --port 4000 --master_key sk-my-master-key
 
-# Connect OpenClaude
+# Connect DuckHive
 export CLAUDE_CODE_USE_OPENAI=1
 export OPENAI_BASE_URL=http://localhost:4000/v1
 export OPENAI_API_KEY=sk-my-master-key
 export OPENAI_MODEL=gpt-4o
-openclaude
+duckhive
 ```
 
 ## 4. Notes

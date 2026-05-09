@@ -141,6 +141,48 @@ export class AgentRunStore {
     return this.events.filter(event => (runId ? event.runId === runId : true))
   }
 
+  tailEvents(runId: string, limit = 20): AgentRunEvent[] {
+    return this.listEvents(runId).slice(-Math.max(0, limit))
+  }
+
+  pauseRun(runId: string): AgentRun | undefined {
+    return this.updateRun(runId, { status: 'paused' })
+  }
+
+  resumeRun(runId: string): AgentRun | undefined {
+    return this.updateRun(runId, { status: 'running' })
+  }
+
+  cancelRun(runId: string): AgentRun | undefined {
+    return this.updateRun(runId, { status: 'cancelled' })
+  }
+
+  approveRun(runId: string, approvalId?: string): AgentRun | undefined {
+    const run = this.runs.get(runId)
+    if (!run) return undefined
+    const pendingApprovalIds = approvalId
+      ? run.permissionState?.pendingApprovalIds?.filter(id => id !== approvalId)
+      : []
+    return this.updateRun(runId, {
+      status: 'running',
+      permissionState: {
+        ...run.permissionState,
+        pendingApprovalIds,
+        lastDecision: 'allow',
+      },
+    })
+  }
+
+  recoverRun(runId: string, summary?: string): AgentRun | undefined {
+    const run = this.runs.get(runId)
+    if (!run) return undefined
+    return this.updateRun(runId, {
+      status: 'recovering',
+      recoveryAttempts: run.recoveryAttempts + 1,
+      progress: summary ? { summary } : undefined,
+    })
+  }
+
   linkChildRun(parentRunId: string, childRunId: string, shouldSave = true): void {
     const parent = this.runs.get(parentRunId)
     const child = this.runs.get(childRunId)

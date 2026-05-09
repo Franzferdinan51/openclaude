@@ -60,9 +60,10 @@ function getGoals(): Goal[] {
 }
 
 async function saveGoals(goals: Goal[]): Promise<void> {
-  const config = getGlobalConfig()
-  ;(config as Record<string, unknown>)[GOALS_STORAGE_KEY] = goals
-  await saveGlobalConfig(config)
+  saveGlobalConfig(config => ({
+    ...config,
+    [GOALS_STORAGE_KEY]: goals,
+  }))
 }
 
 function formatGoal(goal: Goal, detailed = false): string {
@@ -345,6 +346,10 @@ async function handleStepCommand(args: string[]): Promise<string> {
   }
 }
 
+export async function call(args: string): Promise<{ type: 'text'; value: string }> {
+  return { type: 'text', value: await goalCommand(splitCommandArgs(args)) }
+}
+
 export default async function goalCommand(args: string[]): Promise<string> {
   const subcommand = args[0]?.toLowerCase()
 
@@ -396,4 +401,8 @@ export default async function goalCommand(args: string[]): Promise<string> {
       }
       return createGoal(args)
   }
+}
+
+function splitCommandArgs(args: string): string[] {
+  return args.match(/"[^"]*"|'[^']*'|\S+/g)?.map(arg => arg.replace(/^["']|["']$/g, '')) ?? []
 }

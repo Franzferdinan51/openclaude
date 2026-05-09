@@ -1,15 +1,15 @@
 # Upstream Sync - May 2026
 
-DuckHive checked the live upstream repositories on May 7, 2026 and ported the safest high-value fixes into `0.8.1` and the SDKv2 sync line.
+DuckHive checked the live upstream repositories on May 7, 2026 and refreshed the live heads on May 9, 2026 before the hardening pass. The safest high-value fixes from the earlier check were ported into `0.8.1` and the SDKv2 sync line.
 
 ## Repositories Checked
 
 | Project | Repository | Latest checked state | DuckHive action |
 | --- | --- | --- | --- |
-| OpenClaude | https://github.com/Gitlawb/openclaude | `main` checked at `4b1e516fc70c07da6ad678df35030fa114cc8918` on 2026-05-07 | Ported SDKv2/runtime/build surfaces plus post-release CLI/provider/web-search fixes |
+| OpenClaude | https://github.com/Gitlawb/openclaude | `main` refreshed at `ed7b6972f9cd7d36cd604738f5160064061ab254` on 2026-05-09; previous sync base `4b1e516fc70c07da6ad678df35030fa114cc8918` | Ported SDKv2/runtime/build surfaces plus post-release CLI/provider/web-search fixes |
 | OpenAI Codex | https://github.com/openai/codex | `main` pushed 2026-05-07; latest stable `rust-v0.128.0`, newest prerelease `rust-v0.129.0-alpha.13` | Reviewed stable/prerelease split; deferred alpha-only imports |
-| OpenClaw | https://github.com/openclaw/openclaw | `main` checked at `350889dd75f494f448733d310f38a400448d0944` on 2026-05-08; latest checked release line `v2026.5.7` | Ported compatible fetch header normalization and Telegram polling/buffering reliability fixes into DuckHive's smaller channel/harness surfaces |
-| Hermes Agent | https://github.com/NousResearch/hermes-agent | `main` pushed 2026-05-07; latest release `v2026.4.30` | Reviewed curator, self-improvement, MiniMax OAuth, remote model catalog, and goal-loop features for DuckHive-shaped follow-up work |
+| OpenClaw | https://github.com/openclaw/openclaw | `main` refreshed at `e22730e1c53e2032dd743e07cd38ac52a9b31b6c` on 2026-05-09; latest checked release line `v2026.5.7` | Ported compatible fetch header normalization and Telegram polling/buffering reliability fixes into DuckHive's smaller channel/harness surfaces |
+| Hermes Agent | https://github.com/NousResearch/hermes-agent | `main` refreshed at `a7e7921dbc0a593027f40b571861f50a71221aec` on 2026-05-09; latest checked tag `v2026.5.7` | Reviewed curator, self-improvement, MiniMax OAuth, remote model catalog, and goal-loop features for DuckHive-shaped follow-up work |
 
 ## Ported In 0.8.1
 
