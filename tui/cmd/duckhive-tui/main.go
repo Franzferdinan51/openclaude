@@ -96,6 +96,7 @@ const (
 	localTUICommandDeck       localTUICommand = "deck"
 	localTUICommandStatus     localTUICommand = "status"
 	localTUICommandSuperAgent localTUICommand = "super-agent"
+	localTUICommandRuns       localTUICommand = "runs"
 	localTUICommandCouncil    localTUICommand = "council"
 	localTUICommandProvider   localTUICommand = "provider"
 	localTUICommandSearch     localTUICommand = "search"
@@ -315,17 +316,17 @@ func (m *MainModel) renderComposerPane(width int) string {
 }
 
 func (m *MainModel) renderEmptyState(width int) string {
-	cardWidth := maxInt(48, width-8)
+	cardWidth := maxInt(48, width-10)
 	innerWidth := maxInt(40, cardWidth-8)
 	quickStart := []string{
 		"Ask for a code change, bug fix, repo review, or plan.",
-		"/help opens this deck. /status shows bridge/provider state.",
+		"/help opens this deck. /runs explains AgentRun control.",
 		"/repl returns to the classic REPL without changing your default.",
 	}
 	superAgent := []string{
-		"Super Agent: meta agents + teams + council + subagents.",
+		"Agent platform: runs + teams + council + subagents.",
 		"/orchestrate <task> --dry-run previews routing.",
-		"/team templates and /council expose Hive Nation.",
+		"/agents and /council show local operator cards.",
 	}
 	system := []string{
 		fmt.Sprintf("Provider: %s / %s", m.displayProvider(), truncate(m.displayModel(), 28)),
@@ -337,7 +338,7 @@ func (m *MainModel) renderEmptyState(width int) string {
 		lipgloss.JoinVertical(
 			lipgloss.Left,
 			tui.HeroTitle.Render("DuckHive Super Agent"),
-			tui.EmptyBody.Render("One operator shell for coding, local tools, AI Council, Agent Teams, search, media, MCP, and provider routing."),
+			tui.EmptyBody.Render("A quiet operator shell for coding, local tools, AgentRuns, council review, search, media, MCP, and provider routing."),
 			"",
 			m.renderMiniDeck(innerWidth, "Start", quickStart),
 			"",
@@ -790,6 +791,11 @@ func parseLocalTUICommand(text string) (localTUICommand, bool) {
 			return "", false
 		}
 		return localTUICommandSuperAgent, true
+	case "/runs", "/run", "/tasks", "/agent-runs":
+		if hasArgs {
+			return "", false
+		}
+		return localTUICommandRuns, true
 	case "/council":
 		if hasArgs {
 			return "", false
@@ -835,6 +841,8 @@ func localCommandStatus(command localTUICommand) string {
 		return "status snapshot"
 	case localTUICommandSuperAgent:
 		return "super agent surface"
+	case localTUICommandRuns:
+		return "agent run surface"
 	case localTUICommandCouncil:
 		return "council surface"
 	case localTUICommandProvider:
@@ -852,6 +860,8 @@ func (m *MainModel) localCommandContent(command localTUICommand) string {
 		return m.statusSnapshot()
 	case localTUICommandSuperAgent:
 		return m.superAgentSnapshot()
+	case localTUICommandRuns:
+		return m.runsSnapshot()
 	case localTUICommandCouncil:
 		return m.councilSnapshot()
 	case localTUICommandProvider:
@@ -869,6 +879,7 @@ func (m *MainModel) commandDeckText() string {
 		"",
 		"Super Agent",
 		"  /agents - show the unified operator surface for meta agents, Agent Teams, subagents, and swarm routing.",
+		"  /runs - show the shared AgentRun lifecycle and remote-control commands.",
 		"  /orchestrate <task> --dry-run - analyze complexity, council need, and team plan in the JS backend.",
 		"  /team templates - list Agent Team templates; /team spawn <name> <type> starts one when Hive Nation is online.",
 		"",
@@ -882,7 +893,7 @@ func (m *MainModel) commandDeckText() string {
 		"  /search-provider <mode> - in the classic REPL, persist auto/native/ddg/searxng/tavily/exa/you/jina/bing/mojeek/linkup/custom.",
 		"",
 		"Session controls",
-		"  /status - status snapshot. /provider - model/provider snapshot. /repl - return to the classic REPL.",
+		"  /status - status snapshot. /runs - AgentRun control plane. /repl - return to the classic REPL.",
 		"  Ctrl+T toggles the side deck. Ctrl+O toggles transcript. Ctrl+X toggles local shell mode.",
 	}, "\n")
 }
@@ -899,6 +910,7 @@ func (m *MainModel) statusSnapshot() string {
 		fmt.Sprintf("Mode: %s", m.state.InputMode.String()),
 		fmt.Sprintf("Fast mode: %s", boolLabel(m.state.IsFastMode, "on", "off")),
 		fmt.Sprintf("Active tasks: %d", m.state.ActiveTaskCount),
+		fmt.Sprintf("AgentRun control: %s", boolLabel(true, "enabled", "disabled")),
 		fmt.Sprintf("Checkpoints: %d", m.cap.checkpointCount),
 		"",
 		"Use /doctor in the classic REPL for the full backend diagnostic UI.",
@@ -914,13 +926,35 @@ func (m *MainModel) superAgentSnapshot() string {
 		fmt.Sprintf("AI Council: %s", boolLabel(m.cap.hasCouncil, "wired", "not detected")),
 		fmt.Sprintf("MCP services: %s", boolLabel(m.cap.hasMCP, "detected", "not detected")),
 		fmt.Sprintf("ACP bridge: %s", boolLabel(m.cap.hasACP, "detected", "not detected")),
+		fmt.Sprintf("AgentRun control: %s", boolLabel(true, "wired", "missing")),
 		"",
 		"Backend commands:",
+		"  /runs",
 		"  /orchestrate <task> --dry-run",
 		"  /orchestrate <task> --council --team=code",
 		"  /team templates",
 		"  /team spawn <name> code",
 		"  /spawn <agent>",
+	}
+	return strings.Join(lines, "\n")
+}
+
+func (m *MainModel) runsSnapshot() string {
+	lines := []string{
+		"AgentRun control plane",
+		"",
+		"Lifecycle: queued -> preparing -> running -> awaiting_approval -> paused -> recovering -> completed|failed|cancelled.",
+		fmt.Sprintf("Active task mirrors: %d", m.state.ActiveTaskCount),
+		fmt.Sprintf("Bridge: %s", boolLabel(m.state.BridgeConnected, "connected", "local only")),
+		fmt.Sprintf("Provider/model: %s / %s", m.displayProvider(), m.displayModel()),
+		"",
+		"Surfaces:",
+		"  Local agent tasks mirror into AgentRuns.",
+		"  Hybrid orchestration creates coordinator and child runs.",
+		"  Telegram can inspect/control runs with /runs, /run, /tail, /pause, /resume, /stop, /approve.",
+		"",
+		"Next useful upgrades:",
+		"  show live run tree in this rail, dependency-aware worker retries, and verification handoff per child run.",
 	}
 	return strings.Join(lines, "\n")
 }
@@ -1274,6 +1308,7 @@ func (m *MainModel) renderCommandRail() string {
 		lipgloss.Left,
 		tui.CardMuted.Render("/help deck"),
 		tui.CardMuted.Render("/status snapshot"),
+		tui.CardMuted.Render("/runs agent runs"),
 		tui.CardMuted.Render("/provider models"),
 		tui.CardMuted.Render("/search-provider search"),
 		tui.CardMuted.Render("/agents super agent"),
@@ -1285,7 +1320,7 @@ func (m *MainModel) renderCommandRail() string {
 func (m *MainModel) renderFooter() string {
 	status := m.state.StatusMsg
 	if status == "" {
-		status = "ready · /help deck · /agents super agent · /search-provider web · /repl classic"
+		status = "ready · /help deck · /runs agent runs · /agents super agent · /repl classic"
 	}
 
 	help := formatHelp(tui.ActiveBindings(m.keys, m.currentContext()))

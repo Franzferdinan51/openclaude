@@ -5,21 +5,21 @@ import (
 )
 
 // Style definitions for all DuckHive TUI components.
-// Uses a flatter terminal-first look closer to a coding shell than a chat app.
+// Keep this terminal-first: restrained chrome, no full-screen painted backdrop.
 
 var (
 	// Base
-	ColorBG       = lipgloss.Color("#111315")
-	ColorSurface  = lipgloss.Color("#171A1D")
-	ColorSurface2 = lipgloss.Color("#1E2227")
-	ColorBorder   = lipgloss.Color("#2E343B")
-	ColorText     = lipgloss.Color("#E6E8EA")
-	ColorDim      = lipgloss.Color("#5E6873")
-	ColorMuted    = lipgloss.Color("#98A2AD")
+	ColorBG       = lipgloss.Color("#101010")
+	ColorSurface  = lipgloss.Color("#161616")
+	ColorSurface2 = lipgloss.Color("#1B1B1B")
+	ColorBorder   = lipgloss.Color("#343434")
+	ColorText     = lipgloss.Color("#E8E6E3")
+	ColorDim      = lipgloss.Color("#68625C")
+	ColorMuted    = lipgloss.Color("#A8A19A")
 
 	// Brand
 	ColorAccent = lipgloss.Color("#F3B33D")
-	ColorDuck   = lipgloss.Color("#57B8FF")
+	ColorDuck   = lipgloss.Color("#7CC7A6")
 
 	// Semantic
 	ColorError    = lipgloss.Color("#F87171")
@@ -28,7 +28,7 @@ var (
 	ColorWarning  = lipgloss.Color("#F3B33D")
 
 	// Header / footer
-	ColorHeaderBG = lipgloss.Color("#14181C")
+	ColorHeaderBG = lipgloss.Color("#141414")
 
 	// Message bubbles
 	ColorUserBubble  = lipgloss.Color("#1A2733")
@@ -39,7 +39,6 @@ var (
 
 // Header renders the top bar with logo, session info, and model name.
 var Header = lipgloss.NewStyle().
-	Background(ColorHeaderBG).
 	Foreground(ColorText).
 	Padding(0, 1)
 
@@ -86,20 +85,17 @@ var InputArea = lipgloss.NewStyle().
 // InputField is the actual text input border/prompt area.
 var InputField = lipgloss.NewStyle().
 	Foreground(ColorAccent).
-	Background(ColorSurface2).
 	Border(lipgloss.NormalBorder()).
 	BorderForeground(ColorBorder).
 	Padding(0, 1)
 
 // StatusBar is the bottom footer.
 var StatusBar = lipgloss.NewStyle().
-	Background(ColorHeaderBG).
 	Foreground(ColorMuted).
 	Padding(0, 1)
 
 var Card = lipgloss.NewStyle().
-	Background(ColorSurface).
-	Border(lipgloss.RoundedBorder()).
+	Border(lipgloss.NormalBorder()).
 	BorderForeground(ColorBorder).
 	Padding(0, 1)
 
@@ -124,15 +120,12 @@ var WarnBadge = lipgloss.NewStyle().
 
 var SoftBadge = lipgloss.NewStyle().
 	Foreground(ColorAccent).
-	Background(ColorHeaderBG).
 	Padding(0, 1)
 
 var MainPane = lipgloss.NewStyle().
-	Background(ColorBG).
 	Padding(0, 1, 1, 1)
 
 var ComposerFrame = lipgloss.NewStyle().
-	Background(ColorSurface2).
 	Border(lipgloss.NormalBorder()).
 	BorderForeground(ColorBorder).
 	Padding(0, 1)
@@ -145,7 +138,6 @@ var ModePill = lipgloss.NewStyle().
 
 var MetaPill = lipgloss.NewStyle().
 	Foreground(ColorMuted).
-	Background(ColorHeaderBG).
 	Padding(0, 1)
 
 var PillActive = lipgloss.NewStyle().
@@ -168,19 +160,16 @@ var PillWarn = lipgloss.NewStyle().
 
 var PillMuted = lipgloss.NewStyle().
 	Foreground(ColorMuted).
-	Background(ColorSurface).
 	Border(lipgloss.NormalBorder()).
 	BorderForeground(ColorBorder).
 	Padding(0, 1)
 
 var EmptyCard = lipgloss.NewStyle().
-	Background(ColorSurface).
 	Border(lipgloss.NormalBorder()).
 	BorderForeground(ColorBorder).
 	Padding(1, 1)
 
 var SideCard = lipgloss.NewStyle().
-	Background(ColorSurface).
 	Border(lipgloss.NormalBorder()).
 	BorderForeground(ColorBorder).
 	Padding(1, 1)
@@ -191,8 +180,7 @@ var EmptyTitle = lipgloss.NewStyle().
 
 var HeroTitle = lipgloss.NewStyle().
 	Foreground(ColorAccent).
-	Bold(true).
-	Underline(true)
+	Bold(true)
 
 var EmptyBody = lipgloss.NewStyle().
 	Foreground(ColorMuted)
@@ -246,8 +234,7 @@ var DimText = lipgloss.NewStyle().
 
 // Dialog is a centered overlay panel.
 var Dialog = lipgloss.NewStyle().
-	Background(ColorSurface).
-	Border(lipgloss.RoundedBorder()).
+	Border(lipgloss.NormalBorder()).
 	BorderForeground(ColorAccent).
 	Padding(2, 4).
 	MarginTop(4).

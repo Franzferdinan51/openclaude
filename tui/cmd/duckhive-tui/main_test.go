@@ -111,6 +111,8 @@ func TestParseLocalTUICommand(t *testing.T) {
 		{name: "doctor opens status", input: "/doctor", wantCommand: localTUICommandStatus, wantHandled: true},
 		{name: "agents opens super agent", input: "/agents", wantCommand: localTUICommandSuperAgent, wantHandled: true},
 		{name: "teams opens super agent", input: "/teams", wantCommand: localTUICommandSuperAgent, wantHandled: true},
+		{name: "runs opens agent run surface", input: "/runs", wantCommand: localTUICommandRuns, wantHandled: true},
+		{name: "tasks opens agent run surface", input: "/tasks", wantCommand: localTUICommandRuns, wantHandled: true},
 		{name: "council opens council", input: "/council", wantCommand: localTUICommandCouncil, wantHandled: true},
 		{name: "provider opens provider card", input: "/provider", wantCommand: localTUICommandProvider, wantHandled: true},
 		{name: "search opens search provider card", input: "/search-provider", wantCommand: localTUICommandSearch, wantHandled: true},
@@ -148,12 +150,34 @@ func TestLocalCommandContentSurfacesCoreAgentFeatures(t *testing.T) {
 	for _, want := range []string{
 		"Super Agent",
 		"Agent Teams",
+		"AgentRun",
 		"AI Council",
 		"Search providers",
 		"/search-provider",
 	} {
 		if !strings.Contains(content, want) {
 			t.Fatalf("local command content missing %q:\n%s", want, content)
+		}
+	}
+}
+
+func TestRunsSnapshotSurfacesAgentRunLifecycle(t *testing.T) {
+	m := &MainModel{
+		state: model.NewAppState(),
+	}
+	m.state.ActiveTaskCount = 2
+	m.state.BridgeConnected = true
+
+	content := m.localCommandContent(localTUICommandRuns)
+	for _, want := range []string{
+		"AgentRun control plane",
+		"queued -> preparing -> running",
+		"Active task mirrors: 2",
+		"Telegram can inspect/control runs",
+		"verification handoff",
+	} {
+		if !strings.Contains(content, want) {
+			t.Fatalf("runs snapshot missing %q:\n%s", want, content)
 		}
 	}
 }
