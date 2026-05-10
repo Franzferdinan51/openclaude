@@ -38,7 +38,7 @@ export function createAgentTaskRun(
     env,
   ).harness
 
-  return store.createRun({
+  const run = store.createRun({
     id: task.id,
     title: task.description,
     description: task.prompt,
@@ -52,6 +52,11 @@ export function createAgentTaskRun(
     transcriptPath: task.transcriptPath,
     progress: progressFromAgentProgress(task.progress),
   })
+
+  // pi-style: emit agent_start and turn_start when task begins
+  store.emitEvent('agent_start', { runId: run.id, prompt: task.prompt, agentType: task.agentType })
+  store.emitEvent('turn_start', { runId: run.id, turnNumber: 1 })
+  return run
 }
 
 export function progressAgentTaskRun(
@@ -63,12 +68,25 @@ export function progressAgentTaskRun(
     status: 'running',
     progress: progressFromAgentProgress(progress),
   })
+
+  // pi-style: emit tool_execution_start/end for each tool in recentActivities
+  const last = progress.lastActivity
+  if (last) {
+    // Emit as message_delta with tool activity context
+    store.emitEvent('message_delta', {
+      runId,
+      role: 'assistant',
+      delta: `[${last.toolName}] ${last.activityDescription ?? ''}`,
+    })
+  }
 }
 
 export function completeAgentTaskRun(
   runId: string,
   store: AgentRunStore = getAgentRunStore(),
 ): void {
+  store.emitEvent('turn_end', { runId, turnNumber: 1, toolResults: 0 })
+  store.emitEvent('agent_end', { runId })
   store.updateRun(runId, { status: 'completed' })
 }
 
@@ -77,6 +95,8 @@ export function failAgentTaskRun(
   error: string,
   store: AgentRunStore = getAgentRunStore(),
 ): void {
+  store.emitEvent('turn_end', { runId, turnNumber: 1, toolResults: 0 })
+  store.emitEvent('agent_end', { runId })
   store.updateRun(runId, {
     status: 'failed',
     progress: { summary: error },

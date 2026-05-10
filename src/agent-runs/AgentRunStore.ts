@@ -210,6 +210,14 @@ export class AgentRunStore {
     }
   }
 
+  // Public emitter for pi-style events — use this in harness/task code
+  emitEvent(type: AgentRunEventType, payload: Record<string, unknown> = {}): void {
+    const runId = payload.runId as string | undefined
+    if (!runId) return
+    delete payload.runId
+    this.recordEvent(type, runId, payload)
+  }
+
   resetForTesting(): void {
     this.runs.clear()
     this.events.splice(0)
@@ -299,6 +307,31 @@ function eventTypeForUpdate(update: AgentRunUpdate): AgentRunEventType {
   if (update.status === 'cancelled') return 'run_cancelled'
   if (update.status === 'recovering') return 'run_recovered'
   return 'run_progress'
+}
+
+// pi-style convenience emitters — emit named event types with typed payloads
+function emitToolExecutionStart(store: AgentRunStore, runId: string, toolName: string, args: Record<string, unknown>): void {
+  store['recordEvent']('tool_execution_start', runId, { toolName, args })
+}
+
+function emitToolExecutionEnd(store: AgentRunStore, runId: string, toolName: string, result: Record<string, unknown>): void {
+  store['recordEvent']('tool_execution_end', runId, { toolName, result })
+}
+
+function emitMessageDelta(store: AgentRunStore, runId: string, role: string, delta: string): void {
+  store['recordEvent']('message_delta', runId, { role, delta })
+}
+
+function emitMessageEnd(store: AgentRunStore, runId: string, role: string): void {
+  store['recordEvent']('message_end', runId, { role })
+}
+
+function emitTurnStart(store: AgentRunStore, runId: string, turnNumber: number): void {
+  store['recordEvent']('turn_start', runId, { turnNumber })
+}
+
+function emitTurnEnd(store: AgentRunStore, runId: string, turnNumber: number, toolResults: number): void {
+  store['recordEvent']('turn_end', runId, { turnNumber, toolResults })
 }
 
 function sanitizePayload(update: AgentRunUpdate): Record<string, unknown> {

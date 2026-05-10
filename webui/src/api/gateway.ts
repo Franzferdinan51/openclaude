@@ -110,6 +110,14 @@ export interface AgentRunEvent {
     | 'run_failed'
     | 'run_cancelled'
     | 'run_recovered'
+    | 'tool_execution_start'
+    | 'tool_execution_end'
+    | 'message_delta'
+    | 'message_end'
+    | 'turn_start'
+    | 'turn_end'
+    | 'agent_start'
+    | 'agent_end'
   timestamp: number
   payload?: Record<string, unknown>
 }
@@ -284,7 +292,15 @@ export function subscribeToEvents(onEvent: (event: AgentRunEvent) => void, onSna
     'run_completed',
     'run_failed',
     'run_cancelled',
-    'run_recovered',
+        'run_recovered',
+    'tool_execution_start',
+    'tool_execution_end',
+    'message_delta',
+    'message_end',
+    'turn_start',
+    'turn_end',
+    'agent_start',
+    'agent_end',
   ]) {
     source.addEventListener(type, event => {
       try {

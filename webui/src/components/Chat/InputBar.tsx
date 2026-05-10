@@ -76,8 +76,7 @@ export function InputBar({ onSendMessage, onCancel, disabled = false, isLoading 
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={isLoading ? "Waiting for response..." : "Type your message... (Enter to send, Shift+Enter for new line)"}
-          disabled={false} // Always allow typing
-          rows={1}
+          rows={2}
           autoFocus
         />
         {isLoading ? (

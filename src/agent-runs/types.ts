@@ -22,6 +22,22 @@ export type AgentRunEventType =
   | 'run_failed'
   | 'run_cancelled'
   | 'run_recovered'
+  // pi-style turn/message events
+  | 'turn_start'
+  | 'turn_end'
+  | 'tool_execution_start'
+  | 'tool_execution_end'
+  | 'message_delta'
+  | 'message_end'
+  | 'agent_start'
+  | 'agent_end'
+  | 'message_start'
+  | 'message_delta'
+  | 'message_end'
+  | 'tool_execution_start'
+  | 'tool_execution_end'
+  | 'agent_start'
+  | 'agent_end'
 
 export type AgentRunChannelSource = {
   type: 'tui' | 'repl' | 'sdk' | 'telegram' | 'webhook' | 'email' | 'headless' | 'unknown'
