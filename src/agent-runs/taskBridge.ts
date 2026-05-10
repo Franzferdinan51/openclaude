@@ -69,10 +69,16 @@ export function progressAgentTaskRun(
     progress: progressFromAgentProgress(progress),
   })
 
-  // pi-style: emit tool_execution_start/end for each tool in recentActivities
+  // pi-style: emit run_progress + message_delta for activity updates
+  store.emitEvent('run_progress', { runId, progress: progressFromAgentProgress(progress) })
+
   const last = progress.lastActivity
   if (last) {
-    // Emit as message_delta with tool activity context
+    store.emitEvent('tool_call', {
+      runId,
+      toolName: last.toolName ?? 'unknown',
+      input: {},
+    })
     store.emitEvent('message_delta', {
       runId,
       role: 'assistant',

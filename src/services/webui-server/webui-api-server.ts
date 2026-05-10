@@ -9,6 +9,7 @@ import {
   type AgentRunEvent,
   type AgentRunStatus,
 } from '../../agent-runs/index.js'
+import type { DuckHiveSearchProvider } from '../../utils/duckhiveSearch.js'
 
 type JsonValue = Record<string, unknown> | unknown[] | string | number | boolean | null
 
@@ -115,6 +116,36 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
       return
     }
     sendJson(res, 200, session)
+    return
+  }
+
+  if (method === 'GET' && url.pathname === '/api/search-provider') {
+    sendJson(res, 200, searchProvider)
+    return
+  }
+
+  if (method === 'POST' && url.pathname === '/api/search-provider') {
+    const body = await readJson(req)
+    const provider = typeof body?.provider === 'string' ? body.provider : null
+    const searxngUrl = typeof body?.searxngUrl === 'string' ? body.searxngUrl : undefined
+    if (!provider) {
+      sendJson(res, 400, { error: 'provider is required' })
+      return
+    }
+    try {
+      const { setDuckHiveSearchPreferenceSync, normalizeDuckHiveSearchProvider } =
+        await import('../../utils/duckhiveSearch.js')
+      const normalized = normalizeDuckHiveSearchProvider(provider)
+      if (!normalized) {
+        sendJson(res, 400, { error: `Unknown provider: ${provider}` })
+        return
+      }
+      setDuckHiveSearchPreferenceSync(normalized as DuckHiveSearchProvider, { searxngUrl })
+      sendJson(res, 200, { provider: normalized, searxngUrl: searxngUrl ?? null })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      sendJson(res, 500, { error: message })
+    }
     return
   }
 
@@ -298,6 +329,25 @@ async function buildStatus(): Promise<Record<string, unknown>> {
     ? JSON.parse(readFileSync(desktopControlPath, 'utf8')) as { version?: string }
     : undefined
 
+  // Search provider status from duckhive config
+  let searchProvider: Record<string, unknown> = { configured: false }
+  try {
+    const duckhiveConfigPath = join(process.env.HOME ?? '', '.duckhive', 'config.json')
+    if (existsSync(duckhiveConfigPath)) {
+      const config = JSON.parse(readFileSync(duckhiveConfigPath, 'utf8')) as Record<string, unknown>
+      const search = config.search as Record<string, unknown> | undefined
+      if (search?.provider) {
+        searchProvider = {
+          configured: true,
+          provider: search.provider,
+          searxngUrl: search.searxngUrl ?? null,
+        }
+      }
+    }
+  } catch {
+    // ignore config read errors
+  }
+
   return {
     system: {
       cpuCount: cpus().length,
@@ -324,6 +374,7 @@ async function buildStatus(): Promise<Record<string, unknown>> {
       android: process.env.ANDROID_HOME || process.env.ADB ? 'configured' : 'not_configured',
     },
     openClaw,
+    searchProvider,
   }
 }
 

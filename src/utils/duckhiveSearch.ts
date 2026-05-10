@@ -87,13 +87,29 @@ export function getConfiguredDuckHiveSearchProvider(
   return normalizeDuckHiveSearchProvider(config?.search?.provider) ?? 'auto'
 }
 
+function deepMerge(target: Record<string, unknown>, ...sources: Record<string, unknown>[]): Record<string, unknown> {
+  for (const source of sources) {
+    for (const key of Object.keys(source)) {
+      if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key]) && isRecord(source[key])) {
+        if (!target[key] || typeof target[key] !== 'object' || Array.isArray(target[key])) {
+          target[key] = {}
+        }
+        deepMerge(target[key] as Record<string, unknown>, source[key] as Record<string, unknown>)
+      } else {
+        target[key] = source[key]
+      }
+    }
+  }
+  return target
+}
+
 export function setDuckHiveSearchPreferenceSync(
   provider: DuckHiveSearchProvider,
   options?: { searxngUrl?: string },
   configPath = getDuckHiveSearchConfigPath(),
 ): DuckHiveSearchSettings {
   const current = readDuckHiveSearchSettingsSync(configPath)
-  const currentSearch = isRecord(current.search) ? current.search : {}
+  const currentSearch = isRecord(current.search) ? (current.search as Record<string, unknown>) : {}
   const nextSearch: DuckHiveSearchConfig = {
     ...currentSearch,
     provider,
@@ -103,10 +119,7 @@ export function setDuckHiveSearchPreferenceSync(
     nextSearch.searxngUrl = options.searxngUrl
   }
 
-  const nextConfig: DuckHiveSearchSettings = {
-    ...current,
-    search: nextSearch,
-  }
+  const nextConfig: DuckHiveSearchSettings = deepMerge({}, current as Record<string, unknown>, { search: nextSearch } as Record<string, unknown>)
 
   mkdirSync(dirname(configPath), { recursive: true })
   writeFileSync(configPath, `${JSON.stringify(nextConfig, null, 2)}\n`, 'utf8')

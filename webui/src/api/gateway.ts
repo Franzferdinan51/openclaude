@@ -143,6 +143,23 @@ export interface CostStats {
   period?: string
 }
 
+export interface SearchProviderStatus {
+  configured: boolean
+  provider?: string
+  searxngUrl?: string | null
+}
+
+export async function getSearchProvider(): Promise<SearchProviderStatus> {
+  return request<SearchProviderStatus>('/api/search-provider', undefined, { configured: false })
+}
+
+export async function setSearchProvider(provider: string, searxngUrl?: string): Promise<SearchProviderStatus> {
+  return request<SearchProviderStatus>('/api/search-provider', {
+    method: 'POST',
+    body: JSON.stringify({ provider, searxngUrl }),
+  }, { configured: false })
+}
+
 export interface MemoryEntry {
   id?: string
   content: string
