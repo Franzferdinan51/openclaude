@@ -62,18 +62,24 @@ const searxngProvider: SearchProvider = {
     return true
   },
   async search(input, signal) {
-    if (!process.env.WEB_SEARCH_API && !process.env.WEB_URL_TEMPLATE) {
-      throw new Error(
-        'SearXNG search requires WEB_SEARCH_API or WEB_URL_TEMPLATE for your instance endpoint.',
-      )
-    }
-
+    // Set these before calling customProvider (which validates URLs)
+    const prevHttp = process.env.WEB_CUSTOM_ALLOW_HTTP
+    const prevPriv = process.env.WEB_CUSTOM_ALLOW_PRIVATE
     const previousProvider = process.env.WEB_PROVIDER
+    process.env.WEB_CUSTOM_ALLOW_HTTP = 'true'
+    process.env.WEB_CUSTOM_ALLOW_PRIVATE = 'true'
     process.env.WEB_PROVIDER = 'searxng'
     try {
+      if (!process.env.WEB_SEARCH_API && !process.env.WEB_URL_TEMPLATE && !process.env.WEB_PROVIDER) {
+        throw new Error(
+          'SearXNG search requires WEB_SEARCH_API or WEB_URL_TEMPLATE for your instance endpoint.',
+        )
+      }
       const result = await customProvider.search(input, signal)
       return { ...result, providerName: 'searxng' }
     } finally {
+      process.env.WEB_CUSTOM_ALLOW_HTTP = prevHttp ?? undefined
+      process.env.WEB_CUSTOM_ALLOW_PRIVATE = prevPriv ?? undefined
       if (previousProvider === undefined) {
         delete process.env.WEB_PROVIDER
       } else {

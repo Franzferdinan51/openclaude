@@ -66,7 +66,8 @@ const BUILT_IN_PROVIDERS: Record<string, ProviderPreset> = {
     // NOTE: default uses https://localhost — users must override WEB_SEARCH_API
     // for their actual instance. The http:// default was intentionally removed
     // to comply with the HTTPS-only guardrail.
-    urlTemplate: 'https://localhost:8080/search',
+    urlTemplate: 'http://127.0.0.1:9999/search',
+    method: 'POST',
     queryParam: 'q',
     jsonPath: 'results',
     responseAdapter(data: any) {
