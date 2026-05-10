@@ -1,0 +1,9 @@
+@@ -5,6 +5,8 @@
+   ToolResultBlockParam,
+   ToolUseBlock,
+ } from '@anthropic-ai/sdk/resources/index.mjs'
++import { emitToolStart, emitToolEnd } from '../../agent-runs/events.js'
++import { getAgentRunStore } from '../../agent-runs/AgentRunStore.js'
+ import { type MessageUpdateLazy, runToolUse } from './toolExecution.js'
+ 
+ function getMaxToolUseConcurrency(): number {

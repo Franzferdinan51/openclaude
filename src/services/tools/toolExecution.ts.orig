@@ -1,5 +1,4 @@
 import { feature } from 'bun:bundle'
-import { emitToolStart, emitToolEnd } from '../../agent-runs/events.js'
 import type {
   ContentBlockParam,
   ToolResultBlockParam,
@@ -343,8 +342,6 @@ export async function* runToolUse(
   toolUseContext: ToolUseContext,
 ): AsyncGenerator<MessageUpdateLazy, void> {
   const toolName = toolUse.name
-  const runId = toolUseContext.agentId ?? "unknown"
-  emitToolStart(runId, toolName, { input: toolUse.input })
   // First try to find in the available tools (what the model sees)
   let tool = findToolByName(toolUseContext.options.tools, toolName)
 
@@ -490,8 +487,6 @@ export async function* runToolUse(
         sourceToolAssistantUUID: assistantMessage.uuid,
       }),
     }
-  } finally {
-    emitToolEnd(runId, toolName)
   }
 }
 
