@@ -17,6 +17,9 @@ const ENV_KEYS = [
   'OPENAI_BASE_URL',
   'OPENAI_API_KEY',
   'OPENAI_MODEL',
+  'OPENROUTER_API_KEY',
+  'NVIDIA_API_KEY',
+  'NVIDIA_NIM',
   'GEMINI_MODEL',
   'MISTRAL_MODEL',
   'ANTHROPIC_MODEL',
@@ -43,6 +46,9 @@ const RESET_KEYS = [
   'OPENAI_BASE_URL',
   'OPENAI_API_KEY',
   'OPENAI_MODEL',
+  'OPENROUTER_API_KEY',
+  'NVIDIA_API_KEY',
+  'NVIDIA_NIM',
   'GEMINI_MODEL',
   'MISTRAL_MODEL',
   'ANTHROPIC_MODEL',
@@ -202,6 +208,39 @@ describe('applyProviderFlag - ollama', () => {
 
     expect(process.env.OPENAI_BASE_URL).toBe('http://remote-ollama.internal:11434/v1')
     expect(process.env.OPENAI_API_KEY).toBe('secret-token')
+  })
+})
+
+describe('applyProviderFlag - openrouter', () => {
+  test('sets OpenRouter base URL, default model, and hydrates key from OPENROUTER_API_KEY', () => {
+    process.env.OPENROUTER_API_KEY = 'sk-or-test'
+
+    const result = applyProviderFlag('openrouter', [])
+
+    expect(result.error).toBeUndefined()
+    expect(process.env.CLAUDE_CODE_USE_OPENAI).toBe('1')
+    expect(process.env.OPENAI_BASE_URL).toBe('https://openrouter.ai/api/v1')
+    expect(process.env.OPENAI_MODEL).toBe('openai/gpt-5-mini')
+    expect(process.env.OPENAI_API_KEY).toBe('sk-or-test')
+  })
+
+  test('sets OPENAI_MODEL when --model is provided', () => {
+    applyProviderFlag('openrouter', ['--model', 'openrouter/auto'])
+    expect(process.env.OPENAI_MODEL).toBe('openrouter/auto')
+  })
+})
+
+describe('applyProviderFlag - nvidia-nim', () => {
+  test('sets NVIDIA NIM base URL, marker flag, and hydrates key from NVIDIA_API_KEY', () => {
+    process.env.NVIDIA_API_KEY = 'nvapi-test'
+
+    const result = applyProviderFlag('nvidia-nim', [])
+
+    expect(result.error).toBeUndefined()
+    expect(process.env.CLAUDE_CODE_USE_OPENAI).toBe('1')
+    expect(process.env.OPENAI_BASE_URL).toBe('https://integrate.api.nvidia.com/v1')
+    expect(process.env.NVIDIA_NIM).toBe('1')
+    expect(process.env.OPENAI_API_KEY).toBe('nvapi-test')
   })
 })
 

@@ -14,6 +14,7 @@ import {
   buildLaunchEnv,
   buildOllamaProfileEnv,
   buildOpenAIProfileEnv,
+  buildOpenRouterProfileEnv,
   clearPersistedCodexOAuthProfile,
   createProfileFile,
   deleteProfileFile,
@@ -194,6 +195,39 @@ test('xai launch lets shell xAI key override persisted xAI key', async () => {
   assert.equal(env.OPENAI_MODEL, 'grok-3')
   assert.equal(env.OPENAI_API_KEY, 'xai-shell-key')
   assert.equal(env.XAI_API_KEY, 'xai-shell-key')
+})
+
+test('openrouter profile env uses OpenRouter defaults and stores both key aliases', () => {
+  const env = buildOpenRouterProfileEnv({
+    apiKey: 'sk-or-live',
+    processEnv: {},
+  })
+
+  assert.equal(env?.OPENAI_BASE_URL, 'https://openrouter.ai/api/v1')
+  assert.equal(env?.OPENAI_MODEL, 'openai/gpt-5-mini')
+  assert.equal(env?.OPENAI_API_KEY, 'sk-or-live')
+  assert.equal(env?.OPENROUTER_API_KEY, 'sk-or-live')
+})
+
+test('openrouter launch prefers shell OPENROUTER_API_KEY over persisted key', async () => {
+  const env = await buildLaunchEnv({
+    profile: 'openrouter',
+    persisted: profile('openrouter', {
+      OPENAI_BASE_URL: 'https://openrouter.ai/api/v1',
+      OPENAI_MODEL: 'openrouter/auto',
+      OPENROUTER_API_KEY: 'sk-or-persisted',
+    }),
+    goal: 'balanced',
+    processEnv: {
+      OPENROUTER_API_KEY: 'sk-or-shell',
+    },
+  })
+
+  assert.equal(env.CLAUDE_CODE_USE_OPENAI, '1')
+  assert.equal(env.OPENAI_BASE_URL, 'https://openrouter.ai/api/v1')
+  assert.equal(env.OPENAI_MODEL, 'openrouter/auto')
+  assert.equal(env.OPENAI_API_KEY, 'sk-or-shell')
+  assert.equal(env.OPENROUTER_API_KEY, 'sk-or-shell')
 })
 
 test('openai launch ignores codex shell transport hints', async () => {

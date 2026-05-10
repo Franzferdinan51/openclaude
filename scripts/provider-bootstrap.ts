@@ -12,8 +12,10 @@ import {
   buildCodexProfileEnv,
   buildGeminiProfileEnv,
   buildMistralProfileEnv,
+  buildNvidiaNimProfileEnv,
   buildOllamaProfileEnv,
   buildOpenAIProfileEnv,
+  buildOpenRouterProfileEnv,
   createProfileFile,
   saveProfileFile,
   selectAutoProfile,
@@ -38,7 +40,7 @@ function parseArg(name: string): string | null {
 
 function parseProviderArg(): ProviderProfile | 'auto' {
   const p = parseArg('--provider')?.toLowerCase()
-  if (p === 'openai' || p === 'ollama' || p === 'codex' || p === 'gemini' || p === 'mistral' || p === 'atomic-chat') return p
+  if (p === 'openai' || p === 'openrouter' || p === 'nvidia-nim' || p === 'ollama' || p === 'codex' || p === 'gemini' || p === 'mistral' || p === 'atomic-chat') return p
   return 'auto'
 }
 
@@ -103,6 +105,36 @@ async function main(): Promise<void> {
     if (!builtEnv) {
       console.error('Mistral profile requires an API key. Use --api-key or set MISTRAL_API_KEY.')
       console.error('Get a free key at: https://admin.mistral.ai/organization/api-keys')
+      process.exit(1)
+    }
+
+    env = builtEnv
+  } else if (selected === 'openrouter') {
+    const builtEnv = buildOpenRouterProfileEnv({
+      model: argModel || null,
+      baseUrl: argBaseUrl || null,
+      apiKey: argApiKey || process.env.OPENROUTER_API_KEY || null,
+      processEnv: process.env,
+    })
+
+    if (!builtEnv) {
+      console.error('OpenRouter profile requires an API key. Use --api-key or set OPENROUTER_API_KEY.')
+      console.error('Create a key at: https://openrouter.ai/keys')
+      process.exit(1)
+    }
+
+    env = builtEnv
+  } else if (selected === 'nvidia-nim') {
+    const builtEnv = buildNvidiaNimProfileEnv({
+      model: argModel || null,
+      baseUrl: argBaseUrl || null,
+      apiKey: argApiKey || process.env.NVIDIA_API_KEY || null,
+      processEnv: process.env,
+    })
+
+    if (!builtEnv) {
+      console.error('NVIDIA NIM profile requires an API key. Use --api-key or set NVIDIA_API_KEY.')
+      console.error('Create a key from NVIDIA API Catalog.')
       process.exit(1)
     }
 

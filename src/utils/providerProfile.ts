@@ -80,6 +80,7 @@ const PROFILE_ENV_KEYS = [
   'NVIDIA_NIM',
   'NVIDIA_API_KEY',
   'NVIDIA_MODEL',
+  'OPENROUTER_API_KEY',
   'MINIMAX_API_KEY',
   'MINIMAX_BASE_URL',
   'MINIMAX_MODEL',
@@ -108,6 +109,7 @@ const SECRET_ENV_KEYS = [
   'GEMINI_API_KEY',
   'GOOGLE_API_KEY',
   'NVIDIA_API_KEY',
+  'OPENROUTER_API_KEY',
   'MINIMAX_API_KEY',
   'MISTRAL_API_KEY',
   'BNKR_API_KEY',
@@ -122,6 +124,7 @@ export type ProviderProfile =
   | 'gemini'
   | 'atomic-chat'
   | 'nvidia-nim'
+  | 'openrouter'
   | 'minimax'
   | 'mistral'
   | 'github'
@@ -156,6 +159,7 @@ export type ProfileEnv = {
   GOOGLE_API_KEY?: string
   NVIDIA_NIM?: string
   NVIDIA_API_KEY?: string
+  OPENROUTER_API_KEY?: string
   MINIMAX_API_KEY?: string
   MINIMAX_BASE_URL?: string
   MINIMAX_MODEL?: string
@@ -182,6 +186,7 @@ type SecretValueSource = Partial<
     | 'GEMINI_API_KEY'
     | 'GOOGLE_API_KEY'
     | 'NVIDIA_API_KEY'
+    | 'OPENROUTER_API_KEY'
     | 'MINIMAX_API_KEY'
     | 'MISTRAL_API_KEY'
     | 'BNKR_API_KEY'
@@ -294,6 +299,7 @@ export function isProviderProfile(value: unknown): value is ProviderProfile {
     value === 'gemini' ||
     value === 'atomic-chat' ||
     value === 'nvidia-nim' ||
+    value === 'openrouter' ||
     value === 'minimax' ||
     value === 'mistral' ||
     value === 'github' ||
@@ -416,6 +422,46 @@ export function buildNvidiaNimProfileEnv(options: {
       'nvidia/llama-3.1-nemotron-70b-instruct',
     OPENAI_API_KEY: key,
     NVIDIA_NIM: '1',
+  }
+}
+
+export function buildOpenRouterProfileEnv(options: {
+  model?: string | null
+  baseUrl?: string | null
+  apiKey?: string | null
+  processEnv?: NodeJS.ProcessEnv
+}): ProfileEnv | null {
+  const processEnv = options.processEnv ?? process.env
+  const key = sanitizeApiKey(
+    options.apiKey ?? processEnv.OPENROUTER_API_KEY ?? processEnv.OPENAI_API_KEY,
+  )
+  if (!key) {
+    return null
+  }
+
+  const defaultBaseUrl =
+    getRouteDefaultBaseUrl('openrouter') ?? 'https://openrouter.ai/api/v1'
+  const defaultModel = getRouteDefaultModel('openrouter') ?? 'openai/gpt-5-mini'
+  const secretSource: SecretValueSource = {
+    OPENAI_API_KEY: key,
+    OPENROUTER_API_KEY: key,
+  }
+
+  return {
+    OPENAI_BASE_URL:
+      sanitizeProviderConfigValue(options.baseUrl, secretSource) ||
+      sanitizeProviderConfigValue(processEnv.OPENAI_BASE_URL, secretSource) ||
+      defaultBaseUrl,
+    OPENAI_MODEL:
+      normalizeProfileModel(
+        sanitizeProviderConfigValue(options.model, secretSource),
+      ) ||
+      normalizeProfileModel(
+        sanitizeProviderConfigValue(processEnv.OPENAI_MODEL, secretSource),
+      ) ||
+      defaultModel,
+    OPENAI_API_KEY: key,
+    OPENROUTER_API_KEY: key,
   }
 }
 
@@ -1166,6 +1212,48 @@ export async function buildLaunchEnv(options: {
       apiKey: xaiKey,
       processEnv,
     })
+    const customHeaders = shellCustomHeaders || persistedCustomHeaders
+    if (customHeaders) {
+      env.ANTHROPIC_CUSTOM_HEADERS = customHeaders
+    }
+
+    return buildCompatibilityProcessEnv({
+      processEnv,
+      compatibilityMode: 'openai',
+      profileEnv: env,
+    })
+  }
+
+  if (options.profile === 'openrouter') {
+    const openRouterKey =
+      sanitizeApiKey(processEnv.OPENROUTER_API_KEY) ||
+      sanitizeApiKey(persistedEnv.OPENROUTER_API_KEY) ||
+      sanitizeApiKey(processEnv.OPENAI_API_KEY) ||
+      sanitizeApiKey(persistedEnv.OPENAI_API_KEY)
+
+    const env = buildOpenRouterProfileEnv({
+      model: shellOpenAIModel || persistedOpenAIModel,
+      baseUrl: shellOpenAIBaseUrl || persistedOpenAIBaseUrl,
+      apiKey: openRouterKey,
+      processEnv,
+    })
+    if (!env) {
+      return buildCompatibilityProcessEnv({
+        processEnv,
+        compatibilityMode: 'openai',
+        profileEnv: {
+          OPENAI_BASE_URL:
+            persistedOpenAIBaseUrl ||
+            getRouteDefaultBaseUrl('openrouter') ||
+            'https://openrouter.ai/api/v1',
+          OPENAI_MODEL:
+            persistedOpenAIModel ||
+            getRouteDefaultModel('openrouter') ||
+            'openai/gpt-5-mini',
+        },
+      })
+    }
+
     const customHeaders = shellCustomHeaders || persistedCustomHeaders
     if (customHeaders) {
       env.ANTHROPIC_CUSTOM_HEADERS = customHeaders

@@ -36,6 +36,7 @@ const PREFERRED_PROVIDER_ORDER = [
   'vertex',
   'ollama',
   'nvidia-nim',
+  'openrouter',
   'minimax',
 ] as const
 
@@ -196,9 +197,12 @@ export function applyProviderFlag(
             process.env.OPENAI_API_KEY === process.env.XAI_API_KEY
           ? 'xai'
           : process.env.OPENAI_API_KEY !== undefined &&
-              process.env.OPENAI_API_KEY === process.env.MINIMAX_API_KEY
+            process.env.OPENAI_API_KEY === process.env.MINIMAX_API_KEY
             ? 'minimax'
-            : null
+            : process.env.OPENAI_API_KEY !== undefined &&
+                process.env.OPENAI_API_KEY === process.env.OPENROUTER_API_KEY
+              ? 'openrouter'
+              : null
 
   delete process.env.CLAUDE_CODE_USE_OPENAI
   delete process.env.CLAUDE_CODE_USE_GEMINI
@@ -264,6 +268,16 @@ export function applyProviderFlag(
         process.env.OPENAI_API_KEY = process.env.NVIDIA_API_KEY
       }
       process.env.OPENAI_MODEL ??= 'nvidia/llama-3.1-nemotron-70b-instruct'
+      if (model) process.env.OPENAI_MODEL = model
+      break
+
+    case 'openrouter':
+      process.env.CLAUDE_CODE_USE_OPENAI = '1'
+      process.env.OPENAI_BASE_URL ??= defaultBaseUrl ?? 'https://openrouter.ai/api/v1'
+      process.env.OPENAI_MODEL ??= defaultModel ?? 'openai/gpt-5-mini'
+      if (process.env.OPENROUTER_API_KEY && !process.env.OPENAI_API_KEY) {
+        process.env.OPENAI_API_KEY = process.env.OPENROUTER_API_KEY
+      }
       if (model) process.env.OPENAI_MODEL = model
       break
 

@@ -19,6 +19,7 @@ export type LegacyAPIProvider =
   | 'github'
   | 'codex'
   | 'nvidia-nim'
+  | 'openrouter'
   | 'minimax'
   | 'mistral'
   | 'xai'
@@ -47,6 +48,8 @@ export function getAPIProvider(): LegacyAPIProvider {
       return 'vertex'
     case 'nvidia-nim':
       return 'nvidia-nim'
+    case 'openrouter':
+      return 'openrouter'
     case 'minimax':
       return 'minimax'
     case 'xai':
@@ -55,6 +58,9 @@ export function getAPIProvider(): LegacyAPIProvider {
     case 'custom':
       if (isEnvTruthy(process.env.NVIDIA_NIM)) {
         return 'nvidia-nim'
+      }
+      if ((process.env.OPENAI_BASE_URL ?? '').toLowerCase().includes('openrouter.ai')) {
+        return 'openrouter'
       }
       return isCodexModel() ? 'codex' : 'openai'
     case 'anthropic':
@@ -71,6 +77,9 @@ export function getAPIProvider(): LegacyAPIProvider {
 
       if (isEnvTruthy(process.env.NVIDIA_NIM)) {
         return 'nvidia-nim'
+      }
+      if ((process.env.OPENAI_BASE_URL ?? '').toLowerCase().includes('openrouter.ai')) {
+        return 'openrouter'
       }
 
       return 'firstParty'

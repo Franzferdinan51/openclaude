@@ -21,6 +21,7 @@ import {
   buildMistralProfileEnv,
   buildNvidiaNimProfileEnv,
   buildOpenAIProfileEnv,
+  buildOpenRouterProfileEnv,
   buildVertexProfileEnv,
   clearManagedProfileEnv,
   type ProfileEnv,
@@ -637,6 +638,9 @@ export function applyProviderProfileToProcessEnv(profile: ProviderProfile): void
       if (route.routeId === 'xai' || profile.baseUrl.toLowerCase().includes('x.ai')) {
         openAIProfileEnv.XAI_API_KEY = profile.apiKey
       }
+      if (route.gatewayId === 'openrouter' || profile.baseUrl.toLowerCase().includes('openrouter.ai')) {
+        openAIProfileEnv.OPENROUTER_API_KEY = profile.apiKey
+      }
     }
     if (route.gatewayId === 'nvidia-nim') {
       openAIProfileEnv.NVIDIA_NIM = '1'
@@ -1034,6 +1038,19 @@ function buildStartupProfileFromActiveProfile(
           }) ?? null
         return env
           ? { profile: 'minimax', env: applySupportedProfileCustomHeaders(activeProfile, env) }
+          : null
+      }
+
+      if (route.gatewayId === 'openrouter') {
+        const env =
+          buildOpenRouterProfileEnv({
+            model: getPrimaryModel(activeProfile.model),
+            baseUrl: activeProfile.baseUrl,
+            apiKey: activeProfile.apiKey,
+            processEnv: process.env,
+          }) ?? null
+        return env
+          ? { profile: 'openrouter', env: applySupportedProfileCustomHeaders(activeProfile, env) }
           : null
       }
 

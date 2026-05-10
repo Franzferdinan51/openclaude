@@ -37,6 +37,7 @@ const API_PROVIDER_LABELS: Partial<Record<APIProvider, string>> = {
   gemini: 'Google Gemini',
   github: 'GitHub Models',
   'nvidia-nim': 'NVIDIA NIM',
+  openrouter: 'OpenRouter',
   minimax: 'MiniMax',
   mistral: 'Mistral',
   xai: 'xAI',
@@ -61,6 +62,10 @@ const OPENAI_COMPATIBLE_STATUS_METADATA: Partial<
   },
   'nvidia-nim': {
     baseUrlLabel: 'NVIDIA NIM base URL',
+  },
+  openrouter: {
+    baseUrlLabel: 'OpenRouter base URL',
+    resolveModelMetadata: true,
   },
   minimax: {
     baseUrlLabel: 'MiniMax base URL',
@@ -330,6 +335,8 @@ export function buildAPIProviderProperties(): Property[] {
     CODEX_API_KEY: process.env.CODEX_API_KEY,
     GEMINI_API_KEY: process.env.GEMINI_API_KEY,
     GOOGLE_API_KEY: process.env.GOOGLE_API_KEY,
+    NVIDIA_API_KEY: process.env.NVIDIA_API_KEY,
+    OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
     BNKR_API_KEY: process.env.BNKR_API_KEY,
     MISTRAL_API_KEY: process.env.MISTRAL_API_KEY
   };

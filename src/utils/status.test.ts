@@ -26,6 +26,7 @@ async function readPropertyValue(
     | 'openai'
     | 'codex'
     | 'nvidia-nim'
+    | 'openrouter'
     | 'minimax',
 ): Promise<unknown> {
   mock.restore()
@@ -59,6 +60,19 @@ test('buildAPIProviderProperties labels NVIDIA NIM sessions', async () => {
   expect(await readPropertyValue('Model', 'nvidia-nim')).toBe(
     'nvidia/llama-3.1-nemotron-70b-instruct',
   )
+})
+
+test('buildAPIProviderProperties labels OpenRouter sessions', async () => {
+  process.env.CLAUDE_CODE_USE_OPENAI = '1'
+  process.env.OPENAI_BASE_URL = 'https://openrouter.ai/api/v1'
+  process.env.OPENAI_MODEL = 'openrouter/auto'
+  process.env.OPENROUTER_API_KEY = 'sk-or-test'
+
+  expect(await readPropertyValue('API provider', 'openrouter')).toBe('OpenRouter')
+  expect(await readPropertyValue('OpenRouter base URL', 'openrouter')).toBe(
+    'https://openrouter.ai/api/v1',
+  )
+  expect(await readPropertyValue('Model', 'openrouter')).toBe('openrouter/auto')
 })
 
 test('buildAPIProviderProperties labels MiniMax sessions', async () => {

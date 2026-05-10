@@ -1,9 +1,18 @@
 import { describe, expect, test } from 'bun:test'
+import onboard from './commands/onboard/index.js'
 import { builtInCommandNames, formatDescriptionWithSource } from './commands.js'
 
 describe('builtInCommandNames', () => {
   test('includes the LSP command', () => {
     expect(builtInCommandNames()).toContain('lsp')
+  })
+})
+
+describe('/onboard command contract', () => {
+  test('loads as a local JSX command instead of a prompt expansion', async () => {
+    expect(onboard.type).toBe('local-jsx')
+    const module = await onboard.load()
+    expect(typeof module.call).toBe('function')
   })
 })
 

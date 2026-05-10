@@ -50,7 +50,7 @@ export function getSmallFastModel(): ModelName {
     return process.env.MISTRAL_MODEL || 'ministral-3b-latest'
   }
   // For OpenAI provider, use OPENAI_MODEL or a sensible default
-  if (getAPIProvider() === 'openai') {
+  if (getAPIProvider() === 'openai' || getAPIProvider() === 'openrouter') {
     return process.env.OPENAI_MODEL || 'gpt-4o-mini'
   }
   // Codex provider — OPENAI_MODEL is always set for Codex profiles; only fall
@@ -113,7 +113,7 @@ export function getUserSpecifiedModelSetting(): ModelSetting | undefined {
     // Read the model env var that matches the active provider to prevent
     // cross-provider leaks (e.g. ANTHROPIC_MODEL sent to the OpenAI API).
     //
-    // All OpenAI-shim providers (openai, codex, github, nvidia-nim, minimax)
+    // All OpenAI-shim providers (openai, codex, github, nvidia-nim, openrouter, minimax)
     // set CLAUDE_CODE_USE_OPENAI=1 + OPENAI_MODEL via
     // applyProviderProfileToProcessEnv. Earlier this check only included
     // openai/github — codex/nvidia-nim/minimax fell through to the stale
@@ -125,6 +125,7 @@ export function getUserSpecifiedModelSetting(): ModelSetting | undefined {
       provider === 'codex' ||
       provider === 'github' ||
       provider === 'nvidia-nim' ||
+      provider === 'openrouter' ||
       provider === 'minimax' ||
       provider === 'xai'
     specifiedModel =
@@ -182,7 +183,7 @@ export function getDefaultOpusModel(): ModelName {
     return process.env.MISTRAL_MODEL || 'devstral-latest'
   }
   // OpenAI provider: use user-specified model or default
-  if (getAPIProvider() === 'openai') {
+  if (getAPIProvider() === 'openai' || getAPIProvider() === 'openrouter') {
     return process.env.OPENAI_MODEL || 'gpt-4o'
   }
   // Codex provider: use user-specified model or default to gpt-5.5
@@ -228,7 +229,7 @@ export function getDefaultSonnetModel(): ModelName {
     return process.env.MISTRAL_MODEL || 'mistral-medium-latest'
   }
   // OpenAI provider
-  if (getAPIProvider() === 'openai') {
+  if (getAPIProvider() === 'openai' || getAPIProvider() === 'openrouter') {
     return process.env.OPENAI_MODEL || 'gpt-4o'
   }
   // Codex provider
@@ -268,7 +269,7 @@ export function getDefaultHaikuModel(): ModelName {
     return process.env.MISTRAL_MODEL || 'ministral-3b-latest'
   }
   // OpenAI provider
-  if (getAPIProvider() === 'openai') {
+  if (getAPIProvider() === 'openai' || getAPIProvider() === 'openrouter') {
     return process.env.OPENAI_MODEL || 'gpt-4o-mini'
   }
   // Codex provider
@@ -356,7 +357,7 @@ export function getDefaultMainLoopModelSetting(): ModelName | ModelAlias {
     return process.env.MISTRAL_MODEL || 'devstral-latest'
   }
   // OpenAI provider: always use the configured OpenAI model
-  if (getAPIProvider() === 'openai') {
+  if (getAPIProvider() === 'openai' || getAPIProvider() === 'openrouter') {
     return process.env.OPENAI_MODEL || 'gpt-4o'
   }
   // Codex provider: always use the configured Codex model (default gpt-5.5)
@@ -560,6 +561,7 @@ export function getPublicModelDisplayName(model: ModelName): string | null {
     getAPIProvider() === 'gemini' ||
     getAPIProvider() === 'codex' ||
     getAPIProvider() === 'github' ||
+    getAPIProvider() === 'openrouter' ||
     getAPIProvider() === 'xai' ||
     getAPIProvider() === 'minimax' ||
     getAPIProvider() === 'nvidia-nim' ||

@@ -29,9 +29,16 @@ const ENV_KEYS = [
   'CLAUDE_CODE_USE_BEDROCK',
   'CLAUDE_CODE_USE_VERTEX',
   'CLAUDE_CODE_USE_MISTRAL',
+  'CLAUDE_CODE_PROVIDER_PROFILE_ENV_APPLIED',
+  'CLAUDE_CODE_PROVIDER_PROFILE_ENV_APPLIED_ID',
   'OPENAI_BASE_URL',
+  'OPENAI_API_BASE',
   'OPENAI_API_KEY',
   'OPENAI_MODEL',
+  'CODEX_API_KEY',
+  'CHATGPT_ACCOUNT_ID',
+  'CODEX_ACCOUNT_ID',
+  'OPENROUTER_API_KEY',
   'GEMINI_MODEL',
   'MISTRAL_MODEL',
   'ANTHROPIC_MODEL',
@@ -91,7 +98,7 @@ function setupOpenAIMode(baseUrl: string, model: string): void {
 }
 
 describe('printStartupScreen logo', () => {
-  test('renders CLAUDE with a D-shaped D instead of an O-shaped block', () => {
+  test('renders the DuckHive logo instead of the upstream OpenClaude logo', () => {
     ;(globalThis as Record<string, unknown>).MACRO = { VERSION: 'test-version' }
     Object.defineProperty(process.stdout, 'isTTY', {
       configurable: true,
@@ -107,10 +114,10 @@ describe('printStartupScreen logo', () => {
     printStartupScreen()
 
     const plainOutput = stripAnsi(output)
-    expect(plainOutput).toContain('███████╗ ████████╗')
-    expect(plainOutput).toContain('██╔═══██╗ ██╔═════╝')
-    expect(plainOutput).toContain('███████╔╝ ████████╗')
-    expect(plainOutput).not.toContain('████████║ ████████╗')
+    expect(plainOutput).toContain('██████╗ ██╗   ██╗ ██████╗██╗  ██╗')
+    expect(plainOutput).toContain('██╗  ██╗██╗██╗   ██╗███████╗')
+    expect(plainOutput).not.toContain('OPENCLAUDE')
+    expect(plainOutput).not.toContain('CLAUDE')
   })
 })
 
@@ -267,6 +274,7 @@ describe('detectProvider — modelOverride from --model flag', () => {
   })
 
   test('modelOverride alias is resolved for Anthropic', () => {
+    process.env.ANTHROPIC_DEFAULT_OPUS_MODEL = 'claude-opus-test'
     const result = detectProvider('opus')
     expect(result.name).toBe('Anthropic')
     expect(result.model).toContain('opus')

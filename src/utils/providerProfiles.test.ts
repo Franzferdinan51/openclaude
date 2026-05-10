@@ -33,6 +33,7 @@ const RESTORED_KEYS = [
   'OPENAI_AUTH_SCHEME',
   'OPENAI_AUTH_HEADER_VALUE',
   'OPENAI_API_KEY',
+  'OPENROUTER_API_KEY',
   'CODEX_API_KEY',
   'CODEX_CREDENTIAL_SOURCE',
   'CHATGPT_ACCOUNT_ID',
@@ -303,6 +304,26 @@ describe('applyProviderProfileToProcessEnv', () => {
     expect(process.env.OPENAI_API_KEY).toBe('nvapi-test')
     expect(process.env.NVIDIA_API_KEY).toBe('nvapi-test')
     expect(process.env.NVIDIA_NIM).toBe('1')
+  })
+
+  test('openrouter profile keeps provider key alias for first-class routing', async () => {
+    const { applyProviderProfileToProcessEnv } =
+      await importFreshProviderProfileModules()
+
+    applyProviderProfileToProcessEnv(
+      buildProfile({
+        provider: 'openrouter',
+        baseUrl: 'https://openrouter.ai/api/v1',
+        model: 'openrouter/auto',
+        apiKey: 'sk-or-profile',
+      }),
+    )
+
+    expect(process.env.CLAUDE_CODE_USE_OPENAI).toBe('1')
+    expect(process.env.OPENAI_BASE_URL).toBe('https://openrouter.ai/api/v1')
+    expect(process.env.OPENAI_MODEL).toBe('openrouter/auto')
+    expect(process.env.OPENAI_API_KEY).toBe('sk-or-profile')
+    expect(process.env.OPENROUTER_API_KEY).toBe('sk-or-profile')
   })
 
   test('provider profile apply clears stale codex-managed credentials', async () => {
