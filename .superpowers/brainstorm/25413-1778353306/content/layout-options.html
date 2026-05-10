@@ -1,0 +1,118 @@
+<h2>DuckHive WebUI Direction</h2>
+<p class="subtitle">Pick the layout direction that should guide the implementation plan. These are structure choices, not final pixels.</p>
+
+<div class="cards">
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">A. Codex Workbench</div>
+        <div class="mockup-body">
+          <div style="display:grid;grid-template-columns:52px 260px 1fr 340px;gap:8px;height:260px">
+            <div class="mock-sidebar" style="padding:8px 4px;text-align:center">◆<br><br>⌘<br><br>⎇<br><br>⚙</div>
+            <div class="mock-sidebar">
+              <b>Runs</b><br><br>
+              Active agent task<br>
+              Refactor worker<br>
+              Telegram prompt<br><br>
+              <b>Files</b><br>
+              src/<br>
+              docs/
+            </div>
+            <div class="mock-content">
+              <b>Session transcript</b><br><br>
+              User prompt, assistant stream, tool events, approvals.<br><br>
+              <input class="mock-input" placeholder="Ask DuckHive to work..." />
+            </div>
+            <div class="mock-sidebar">
+              <b>Inspector</b><br><br>
+              Model: MiniMax-M2.7<br>
+              Runtime: builtin<br>
+              Budget: 42%<br>
+              Last tool: Bash
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A. Codex Workbench</h3>
+      <p>Best for coding-agent work: run tree, transcript, file context, and inspector visible together.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">B. OpenClaw Control Room</div>
+        <div class="mockup-body">
+          <div style="display:grid;grid-template-columns:240px 1fr 300px;grid-template-rows:54px 1fr;gap:8px;height:260px">
+            <div class="mock-sidebar" style="grid-row:1 / span 2">
+              <b>Gateway</b><br><br>
+              Agents<br>
+              Tools<br>
+              MCP<br>
+              Android<br>
+              Desktop<br>
+              Settings
+            </div>
+            <div class="mock-content" style="grid-column:2 / span 2">Health · providers · reconnect · permissions · channels</div>
+            <div class="mock-content">
+              <b>Chat / Commands</b><br><br>
+              Remote control prompt and command history.
+            </div>
+            <div class="mock-sidebar">
+              <b>Live status</b><br><br>
+              Telegram: ok<br>
+              Desktop MCP: ok<br>
+              Android: idle<br>
+              OpenClaw: optional
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B. OpenClaw Control Room</h3>
+      <p>Best for gateway and operations: health, channels, MCP/desktop/Android controls, and remote status.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">C. Hybrid Agent Console</div>
+        <div class="mockup-body">
+          <div style="display:grid;grid-template-columns:230px 1.35fr .9fr;gap:8px;height:260px">
+            <div class="mock-sidebar">
+              <b>Activity</b><br><br>
+              Runs<br>
+              Sessions<br>
+              Agents<br>
+              MCP<br>
+              Files<br>
+              Settings
+            </div>
+            <div class="mock-content">
+              <b>Active session</b><br><br>
+              Transcript with tool cards, streaming output, approval prompts.<br><br>
+              <input class="mock-input" placeholder="Message, slash command, or task..." />
+            </div>
+            <div class="mock-sidebar">
+              <b>Run Graph</b><br><br>
+              coordinator<br>
+              ├ worker: tests<br>
+              ├ worker: docs<br>
+              └ verification<br><br>
+              <b>Inspector tabs</b><br>
+              Tools · Memory · Channel
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C. Hybrid Agent Console</h3>
+      <p>Recommended: Codex-like session center plus OpenClaw-like operational panels, all backed by AgentRun.</p>
+    </div>
+  </div>
+</div>

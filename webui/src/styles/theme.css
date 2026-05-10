@@ -646,6 +646,10 @@ button {
   padding: 8px 2px;
   font-size: 14px;
   line-height: 1.45;
+  cursor: text;
+  caret-color: var(--color-accent);
+  pointer-events: auto;
+  user-select: text;
 }
 
 .inspector-hero {

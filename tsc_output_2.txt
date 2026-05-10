@@ -1,0 +1,16 @@
+src/components/Messages.tsx(682,73): error TS2322: Type '{ agentDefinitions: AgentDefinitionsResult | undefined; }' is not assignable to type 'IntrinsicAttributes & object'.
+  Property 'agentDefinitions' does not exist on type 'IntrinsicAttributes & object'.
+src/components/StructuredDiffList.tsx(26,25): error TS2322: Type '{ patch: StructuredPatchHunk; dim: boolean; width: number; filePath: string; firstLine: string | null; fileContent: string | undefined; }' is not assignable to type 'IntrinsicAttributes & object'.
+  Property 'patch' does not exist on type 'IntrinsicAttributes & object'.
+src/ink/components/ScrollBox.tsx(236,5): error TS2339: Property 'ink-box' does not exist on type 'JSX.IntrinsicElements'.
+src/screens/REPL.tsx(4645,20): error TS2604: JSX element type 'TungstenLiveMonitor' does not have any construct or call signatures.
+src/screens/REPL.tsx(4645,20): error TS2786: 'TungstenLiveMonitor' cannot be used as a JSX component.
+  Its type 'null' is not a valid JSX element type.
+src/screens/REPL.tsx(4649,122): error TS2322: Type '{ mode: any; spinnerTip: any; responseLengthRef: RefObject<number>; apiMetricsRef: RefObject<{ ttftMs: number; firstTokenTime: number; lastTokenTime: number; responseLengthBaseline: number; endResponseLength: number; }[]>; ... 9 more ...; leaderIsIdle: boolean; }' is not assignable to type 'IntrinsicAttributes & Props'.
+  Property 'apiMetricsRef' does not exist on type 'IntrinsicAttributes & Props'.
+src/screens/REPL.tsx(4913,107): error TS2304: Cannot find name 'UltraplanChoiceDialog'.
+src/screens/REPL.tsx(4916,107): error TS2304: Cannot find name 'UltraplanLaunchDialog'.
+src/screens/REPL.tsx(4966,134): error TS18047: 'skillImprovementSurvey.suggestion' is possibly 'null'.
+src/screens/REPL.tsx(4966,188): error TS18047: 'skillImprovementSurvey.suggestion' is possibly 'null'.
+src/tools/NotebookEditTool/UI.tsx(89,28): error TS2322: Type '{ code: string; filePath: string; }' is not assignable to type 'IntrinsicAttributes & object'.
+  Property 'code' does not exist on type 'IntrinsicAttributes & object'.

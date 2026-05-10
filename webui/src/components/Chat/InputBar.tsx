@@ -78,6 +78,7 @@ export function InputBar({ onSendMessage, onCancel, disabled = false, isLoading 
           placeholder={isLoading ? "Waiting for response..." : "Type your message... (Enter to send, Shift+Enter for new line)"}
           disabled={false} // Always allow typing
           rows={1}
+          autoFocus
         />
         {isLoading ? (
           <button 

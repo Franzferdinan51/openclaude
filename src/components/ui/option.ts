@@ -1,0 +1,6 @@
+
+const _stub: any = new Proxy({}, { get: () => () => ({} as any) });
+export default _stub;
+export const __stub = true;
+export const Option: any = undefined;
+export type Option = any;
