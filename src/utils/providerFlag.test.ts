@@ -1,9 +1,10 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import {
   parseProviderFlag,
-  applyModelFlagFromArgs,
+  parseModelFlag,
   applyProviderFlag,
   applyProviderFlagFromArgs,
+  applyModelFlagFromArgs,
   VALID_PROVIDERS,
 } from './providerFlag.js'
 
@@ -17,14 +18,14 @@ const ENV_KEYS = [
   'OPENAI_BASE_URL',
   'OPENAI_API_KEY',
   'OPENAI_MODEL',
-  'OPENROUTER_API_KEY',
+  'GEMINI_MODEL',
   'NVIDIA_API_KEY',
   'NVIDIA_NIM',
-  'GEMINI_MODEL',
+  'BNKR_API_KEY',
+  'XAI_API_KEY',
+  'MINIMAX_API_KEY',
   'MISTRAL_MODEL',
   'ANTHROPIC_MODEL',
-  'KIMI_API_KEY',
-  'MOONSHOT_API_KEY',
 ]
 
 const originalEnv: Record<string, string | undefined> = {}
@@ -46,14 +47,14 @@ const RESET_KEYS = [
   'OPENAI_BASE_URL',
   'OPENAI_API_KEY',
   'OPENAI_MODEL',
-  'OPENROUTER_API_KEY',
+  'GEMINI_MODEL',
   'NVIDIA_API_KEY',
   'NVIDIA_NIM',
-  'GEMINI_MODEL',
+  'BNKR_API_KEY',
+  'XAI_API_KEY',
+  'MINIMAX_API_KEY',
   'MISTRAL_MODEL',
   'ANTHROPIC_MODEL',
-  'KIMI_API_KEY',
-  'MOONSHOT_API_KEY',
 ] as const
 
 beforeEach(() => {
@@ -111,6 +112,16 @@ describe('applyProviderFlag - anthropic', () => {
   })
 })
 
+describe('VALID_PROVIDERS', () => {
+  test('includes descriptor-backed preset and route ids', () => {
+    expect(VALID_PROVIDERS).toContain('deepseek')
+    expect(VALID_PROVIDERS).toContain('moonshotai')
+    expect(VALID_PROVIDERS).toContain('openrouter')
+    expect(VALID_PROVIDERS).toContain('atomic-chat')
+    expect(VALID_PROVIDERS).toContain('zai')
+  })
+})
+
 describe('applyProviderFlag - openai', () => {
   test('sets CLAUDE_CODE_USE_OPENAI=1', () => {
     const result = applyProviderFlag('openai', [])
@@ -121,22 +132,6 @@ describe('applyProviderFlag - openai', () => {
   test('sets OPENAI_MODEL when --model is provided', () => {
     applyProviderFlag('openai', ['--model', 'gpt-4o'])
     expect(process.env.OPENAI_MODEL).toBe('gpt-4o')
-  })
-})
-
-describe('applyProviderFlag - kimi', () => {
-  test('sets Moonshot OpenAI-compatible defaults', () => {
-    const result = applyProviderFlag('kimi', [])
-    expect(result.error).toBeUndefined()
-    expect(process.env.CLAUDE_CODE_USE_OPENAI).toBe('1')
-    expect(process.env.OPENAI_BASE_URL).toBe('https://api.moonshot.ai/v1')
-    expect(process.env.OPENAI_MODEL).toBe('kimi-k2.6')
-  })
-
-  test('hydrates OPENAI_API_KEY from KIMI_API_KEY when present', () => {
-    process.env.KIMI_API_KEY = 'sk-kimi-test'
-    applyProviderFlag('kimi', [])
-    expect(process.env.OPENAI_API_KEY).toBe('sk-kimi-test')
   })
 })
 
@@ -185,8 +180,8 @@ describe('applyProviderFlag - ollama', () => {
     const result = applyProviderFlag('ollama', [])
     expect(result.error).toBeUndefined()
     expect(process.env.CLAUDE_CODE_USE_OPENAI).toBe('1')
-    expect(process.env.OPENAI_BASE_URL).toBe('http://localhost:11434/v1')
-    expect(process.env.OPENAI_API_KEY).toBe('ollama')
+    expect(process.env.OPENAI_BASE_URL!).toBe('http://localhost:11434/v1')
+    expect(process.env.OPENAI_API_KEY!).toBe('ollama')
   })
 
   test('sets OPENAI_MODEL when --model is provided', () => {
@@ -211,36 +206,163 @@ describe('applyProviderFlag - ollama', () => {
   })
 })
 
-describe('applyProviderFlag - openrouter', () => {
-  test('sets OpenRouter base URL, default model, and hydrates key from OPENROUTER_API_KEY', () => {
-    process.env.OPENROUTER_API_KEY = 'sk-or-test'
+describe('applyProviderFlag - descriptor-backed openai-compatible routes', () => {
+  test('deepseek applies generic openai-compatible routing with descriptor defaults', () => {
+    const result = applyProviderFlag('deepseek', [])
 
+    expect(result.error).toBeUndefined()
+    expect(process.env.CLAUDE_CODE_USE_OPENAI).toBe('1')
+    expect(process.env.OPENAI_BASE_URL).toBe('https://api.deepseek.com/v1')
+    expect(process.env.OPENAI_MODEL).toBe('deepseek-v4-pro')
+  })
+
+  test('openrouter applies gateway defaults from descriptors', () => {
     const result = applyProviderFlag('openrouter', [])
 
     expect(result.error).toBeUndefined()
     expect(process.env.CLAUDE_CODE_USE_OPENAI).toBe('1')
     expect(process.env.OPENAI_BASE_URL).toBe('https://openrouter.ai/api/v1')
-    expect(process.env.OPENAI_MODEL).toBe('openai/gpt-5-mini')
-    expect(process.env.OPENAI_API_KEY).toBe('sk-or-test')
   })
 
-  test('sets OPENAI_MODEL when --model is provided', () => {
-    applyProviderFlag('openrouter', ['--model', 'openrouter/auto'])
-    expect(process.env.OPENAI_MODEL).toBe('openrouter/auto')
+  test('clears stale NVIDIA_NIM marker when switching to another OpenAI-compatible route', () => {
+    process.env.NVIDIA_NIM = '1'
+
+    const result = applyProviderFlag('openrouter', [])
+
+    expect(result.error).toBeUndefined()
+    expect(process.env.CLAUDE_CODE_USE_OPENAI).toBe('1')
+    expect(process.env.NVIDIA_NIM).toBeUndefined()
+    expect(process.env.OPENAI_BASE_URL).toBe('https://openrouter.ai/api/v1')
+  })
+
+  test('clears NVIDIA_API_KEY copied into OPENAI_API_KEY when switching routes', () => {
+    process.env.NVIDIA_API_KEY = 'nvidia-live-key'
+
+    const nvidiaResult = applyProviderFlag('nvidia-nim', [])
+    expect(nvidiaResult.error).toBeUndefined()
+    expect(process.env.OPENAI_API_KEY).toBe('nvidia-live-key')
+
+    process.env.OPENAI_BASE_URL = 'https://openrouter.ai/api/v1'
+    const openrouterResult = applyProviderFlag('openrouter', [])
+
+    expect(openrouterResult.error).toBeUndefined()
+    expect(process.env.NVIDIA_NIM).toBeUndefined()
+    expect(process.env.OPENAI_API_KEY).toBeUndefined()
+    expect(process.env.OPENAI_BASE_URL).toBe('https://openrouter.ai/api/v1')
+  })
+
+  test('clears BNKR_API_KEY copied into OPENAI_API_KEY when switching routes', () => {
+    process.env.BNKR_API_KEY = 'bankr-live-key'
+
+    const bankrResult = applyProviderFlag('bankr', [])
+    expect(bankrResult.error).toBeUndefined()
+    expect(process.env.OPENAI_API_KEY).toBe('bankr-live-key')
+
+    process.env.OPENAI_BASE_URL = 'https://openrouter.ai/api/v1'
+    const openrouterResult = applyProviderFlag('openrouter', [])
+
+    expect(openrouterResult.error).toBeUndefined()
+    expect(process.env.OPENAI_API_KEY).toBeUndefined()
+    expect(process.env.OPENAI_BASE_URL).toBe('https://openrouter.ai/api/v1')
+  })
+
+  test('clears XAI_API_KEY copied into OPENAI_API_KEY when switching routes', () => {
+    process.env.XAI_API_KEY = 'xai-live-key'
+
+    const xaiResult = applyProviderFlag('xai', [])
+    expect(xaiResult.error).toBeUndefined()
+    expect(process.env.OPENAI_API_KEY).toBe('xai-live-key')
+
+    process.env.OPENAI_BASE_URL = 'https://openrouter.ai/api/v1'
+    const openrouterResult = applyProviderFlag('openrouter', [])
+
+    expect(openrouterResult.error).toBeUndefined()
+    expect(process.env.OPENAI_API_KEY).toBeUndefined()
+    expect(process.env.OPENAI_BASE_URL).toBe('https://openrouter.ai/api/v1')
+  })
+
+  test('clears MINIMAX_API_KEY copied into OPENAI_API_KEY when switching routes', () => {
+    process.env.MINIMAX_API_KEY = 'minimax-live-key'
+    process.env.OPENAI_API_KEY = 'minimax-live-key'
+    process.env.XAI_API_KEY = 'xai-live-key'
+
+    const xaiResult = applyProviderFlag('xai', [])
+
+    expect(xaiResult.error).toBeUndefined()
+    expect(process.env.OPENAI_API_KEY).toBe('xai-live-key')
+    expect(process.env.OPENAI_BASE_URL).toBe('https://api.x.ai/v1')
+  })
+})
+
+describe('applyProviderFlag - minimax', () => {
+  test('preserves MiniMax default base URL and model semantics', () => {
+    const result = applyProviderFlag('minimax', [])
+
+    expect(result.error).toBeUndefined()
+    expect(process.env.CLAUDE_CODE_USE_OPENAI).toBe('1')
+    expect(process.env.OPENAI_BASE_URL).toBe('https://api.minimax.io/v1')
+    expect(process.env.OPENAI_MODEL).toBe('MiniMax-M2.7')
   })
 })
 
 describe('applyProviderFlag - nvidia-nim', () => {
-  test('sets NVIDIA NIM base URL, marker flag, and hydrates key from NVIDIA_API_KEY', () => {
-    process.env.NVIDIA_API_KEY = 'nvapi-test'
+  test('maps NVIDIA_API_KEY into the OPENAI-compatible auth env when present', () => {
+    process.env.NVIDIA_API_KEY = 'nvidia-live-key'
 
     const result = applyProviderFlag('nvidia-nim', [])
 
     expect(result.error).toBeUndefined()
     expect(process.env.CLAUDE_CODE_USE_OPENAI).toBe('1')
-    expect(process.env.OPENAI_BASE_URL).toBe('https://integrate.api.nvidia.com/v1')
     expect(process.env.NVIDIA_NIM).toBe('1')
-    expect(process.env.OPENAI_API_KEY).toBe('nvapi-test')
+    expect(process.env.OPENAI_API_KEY).toBe('nvidia-live-key')
+    expect(process.env.OPENAI_BASE_URL).toBe('https://integrate.api.nvidia.com/v1')
+  })
+})
+
+describe('applyProviderFlag - zai', () => {
+  test('preserves Z.AI default base URL and model semantics', () => {
+    const result = applyProviderFlag('zai', [])
+
+    expect(result.error).toBeUndefined()
+    expect(process.env.CLAUDE_CODE_USE_OPENAI).toBe('1')
+    expect(process.env.OPENAI_BASE_URL).toBe('https://api.z.ai/api/coding/paas/v4')
+    expect(process.env.OPENAI_MODEL).toBe('GLM-5.1')
+  })
+})
+
+describe('applyProviderFlag - xai', () => {
+  test('sets CLAUDE_CODE_USE_OPENAI=1 with xAI defaults when unset', () => {
+    delete process.env.OPENAI_BASE_URL
+    delete process.env.OPENAI_API_KEY
+
+    const result = applyProviderFlag('xai', [])
+    expect(result.error).toBeUndefined()
+    expect(process.env.CLAUDE_CODE_USE_OPENAI).toBe('1')
+    expect(process.env.OPENAI_BASE_URL).toBe('https://api.x.ai/v1')
+    expect(process.env.OPENAI_MODEL).toBe('grok-4.3')
+  })
+
+  test('sets OPENAI_MODEL when --model is provided', () => {
+    applyProviderFlag('xai', ['--model', 'grok-3'])
+    expect(process.env.OPENAI_MODEL).toBe('grok-3')
+  })
+
+  test('propagates XAI_API_KEY to OPENAI_API_KEY when only XAI_API_KEY is set', () => {
+    delete process.env.OPENAI_API_KEY
+    process.env.XAI_API_KEY = 'xai-secret-key'
+
+    applyProviderFlag('xai', [])
+
+    expect(process.env.OPENAI_API_KEY).toBe('xai-secret-key')
+  })
+
+  test('does not override existing OPENAI_API_KEY when both keys are set', () => {
+    process.env.OPENAI_API_KEY = 'existing-openai-key'
+    process.env.XAI_API_KEY = 'xai-secret-key'
+
+    applyProviderFlag('xai', [])
+
+    expect(process.env.OPENAI_API_KEY).toBe('existing-openai-key')
   })
 })
 
@@ -266,8 +388,8 @@ describe('applyProviderFlagFromArgs', () => {
 
     expect(result?.error).toBeUndefined()
     expect(process.env.CLAUDE_CODE_USE_OPENAI).toBe('1')
-    expect(process.env.OPENAI_BASE_URL).toBe('http://localhost:11434/v1')
-    expect(process.env.OPENAI_API_KEY).toBe('ollama')
+    expect(process.env.OPENAI_BASE_URL!).toBe('http://localhost:11434/v1')
+    expect(process.env.OPENAI_API_KEY!).toBe('ollama')
     expect(process.env.OPENAI_MODEL).toBe('qwen2.5:3b')
   })
 
@@ -276,33 +398,81 @@ describe('applyProviderFlagFromArgs', () => {
   })
 })
 
+// --- parseModelFlag ---
+
+describe('parseModelFlag', () => {
+  test('returns model value when --model is present', () => {
+    expect(parseModelFlag(['--model', 'gpt-4o-mini'])).toBe('gpt-4o-mini')
+  })
+
+  test('returns null when --model is absent', () => {
+    expect(parseModelFlag(['--provider', 'openai'])).toBeNull()
+  })
+
+  test('returns null when --model has no value', () => {
+    expect(parseModelFlag(['--model'])).toBeNull()
+  })
+
+  test('returns null when --model value looks like another flag', () => {
+    expect(parseModelFlag(['--model', '--provider'])).toBeNull()
+  })
+})
+
+// --- applyModelFlagFromArgs (#808) ---
+
 describe('applyModelFlagFromArgs', () => {
-  test('routes --model to OPENAI_MODEL for active OpenAI-compatible providers', () => {
+  test('is a no-op when --model is absent', () => {
+    applyModelFlagFromArgs(['--ide'])
+    expect(process.env.OPENAI_MODEL).toBeUndefined()
+    expect(process.env.GEMINI_MODEL).toBeUndefined()
+    expect(process.env.ANTHROPIC_MODEL).toBeUndefined()
+  })
+
+  test('is a no-op when --provider is also present (handled by applyProviderFlagFromArgs)', () => {
     process.env.CLAUDE_CODE_USE_OPENAI = '1'
-    applyModelFlagFromArgs(['--model', 'gpt-5.4'])
-    expect(process.env.OPENAI_MODEL).toBe('gpt-5.4')
+    applyModelFlagFromArgs(['--provider', 'openai', '--model', 'gpt-4o'])
+    expect(process.env.OPENAI_MODEL).toBeUndefined()
   })
 
-  test('routes --model to GEMINI_MODEL for active Gemini provider', () => {
-    process.env.CLAUDE_CODE_USE_GEMINI = 'true'
-    applyModelFlagFromArgs(['--model', 'gemini-2.5-pro'])
-    expect(process.env.GEMINI_MODEL).toBe('gemini-2.5-pro')
+  test('sets OPENAI_MODEL when CLAUDE_CODE_USE_OPENAI is active', () => {
+    process.env.CLAUDE_CODE_USE_OPENAI = '1'
+    applyModelFlagFromArgs(['--model', 'gpt-4o-mini'])
+    expect(process.env.OPENAI_MODEL).toBe('gpt-4o-mini')
   })
 
-  test('routes --model to MISTRAL_MODEL for active Mistral provider', () => {
+  test('sets GEMINI_MODEL when CLAUDE_CODE_USE_GEMINI is active', () => {
+    process.env.CLAUDE_CODE_USE_GEMINI = '1'
+    applyModelFlagFromArgs(['--model', 'gemini-2.0-flash'])
+    expect(process.env.GEMINI_MODEL).toBe('gemini-2.0-flash')
+  })
+
+  test('sets MISTRAL_MODEL when CLAUDE_CODE_USE_MISTRAL is active', () => {
     process.env.CLAUDE_CODE_USE_MISTRAL = '1'
     applyModelFlagFromArgs(['--model', 'devstral-latest'])
     expect(process.env.MISTRAL_MODEL).toBe('devstral-latest')
   })
 
-  test('routes --model to ANTHROPIC_MODEL when no third-party provider is active', () => {
+  test('sets OPENAI_MODEL when CLAUDE_CODE_USE_GITHUB is active', () => {
+    process.env.CLAUDE_CODE_USE_GITHUB = '1'
+    applyModelFlagFromArgs(['--model', 'gpt-4.1'])
+    expect(process.env.OPENAI_MODEL).toBe('gpt-4.1')
+  })
+
+  test('falls back to ANTHROPIC_MODEL when no provider flag is set', () => {
     applyModelFlagFromArgs(['--model', 'claude-sonnet-4-6'])
     expect(process.env.ANTHROPIC_MODEL).toBe('claude-sonnet-4-6')
   })
 
-  test('does not run when --provider is present', () => {
+  test('overrides an existing *_MODEL value (saved profile override)', () => {
     process.env.CLAUDE_CODE_USE_OPENAI = '1'
-    applyModelFlagFromArgs(['--provider', 'openai', '--model', 'gpt-5.4'])
-    expect(process.env.OPENAI_MODEL).toBeUndefined()
+    process.env.OPENAI_MODEL = 'gpt-4o'
+    applyModelFlagFromArgs(['--model', 'gpt-4o-mini'])
+    expect(process.env.OPENAI_MODEL).toBe('gpt-4o-mini')
+  })
+
+  test('accepts --model value containing colons (ollama tag syntax)', () => {
+    process.env.CLAUDE_CODE_USE_OPENAI = '1'
+    applyModelFlagFromArgs(['--model', 'qwen2.5-coder:14b'])
+    expect(process.env.OPENAI_MODEL).toBe('qwen2.5-coder:14b')
   })
 })
