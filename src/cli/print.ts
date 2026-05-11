@@ -2873,7 +2873,7 @@ function runHeadlessStreaming(
             initialized,
             output,
             commands,
-            modelInfos,
+            modelInfos as any,
             structuredIO,
             !!options.enableAuthStatus,
             options,
@@ -4456,7 +4456,7 @@ async function handleInitializeRequest(
     })),
     output_style: outputStyle,
     available_output_styles: Object.keys(availableOutputStyles),
-    models: modelInfos,
+    models: modelInfos as any,
     account: {
       email: accountInfo?.email,
       organization: accountInfo?.organization,
