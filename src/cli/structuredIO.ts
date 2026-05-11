@@ -351,7 +351,7 @@ export class StructuredIO {
         // (CLAUDE_CODE_SESSION_ACCESS_TOKEN) which must be readable
         // by the REPL process itself, not just child Bash commands.
         const keys = Object.keys(message.variables)
-        for (const [key, value] of Object.entries(message.variables)) {
+        for (const [key, value] of Object.entries(message.variables as Record<string, string>)) {
           process.env[key] = value
         }
         logForDebugging(
