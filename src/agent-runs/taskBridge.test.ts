@@ -50,17 +50,23 @@ describe('agent task bridge', () => {
 
     progressAgentTaskRun(
       'a124',
-      { toolUseCount: 3, tokenCount: 100, summary: 'Checking sources' },
+      { toolUseCount: 3, tokenCount: 100, lastActivity: { toolName: 'read_file', activityDescription: 'Reading /src' } },
       store,
     )
     completeAgentTaskRun('a124', store)
     failAgentTaskRun('missing', 'ignored', store)
 
-    expect(store.getRun('a124')?.progress?.summary).toBe('Checking sources')
+    expect(store.getRun('a124')?.progress?.summary).toBe('Reading /src')
     expect(store.getRun('a124')?.status).toBe('completed')
     expect(store.listEvents('a124').map(event => event.type)).toEqual([
       'run_started',
+      'agent_start',
+      'turn_start',
       'run_progress',
+      'tool_call',
+      'message_delta',
+      'turn_end',
+      'agent_end',
       'run_completed',
     ])
   })

@@ -175,6 +175,7 @@ import rewind from './commands/rewind/index.js'
 import heapDump from './commands/heapdump/index.js'
 import mockLimits from './commands/mock-limits/index.js'
 import bridgeKick from './commands/bridge-kick.js'
+import channel from './commands/channel/index.js'
 import version from './commands/version.js'
 import wiki from './commands/wiki/index.js'
 import summary from './commands/summary/index.js'
@@ -276,6 +277,7 @@ export const INTERNAL_ONLY_COMMANDS = [
   ...(forceSnip ? [forceSnip] : []),
   mockLimits,
   bridgeKick,
+  channel,
   version,
   ...(ultraplan ? [ultraplan] : []),
   ...(subscribePr ? [subscribePr] : []),

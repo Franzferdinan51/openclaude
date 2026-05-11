@@ -69,9 +69,6 @@ export function progressAgentTaskRun(
     progress: progressFromAgentProgress(progress),
   })
 
-  // pi-style: emit run_progress + message_delta for activity updates
-  store.emitEvent('run_progress', { runId, progress: progressFromAgentProgress(progress) })
-
   const last = progress.lastActivity
   if (last) {
     store.emitEvent('tool_call', {
@@ -115,6 +112,6 @@ function progressFromAgentProgress(progress?: AgentProgress): AgentRun['progress
     toolUseCount: progress.toolUseCount,
     tokenCount: progress.tokenCount,
     lastActivity: progress.lastActivity?.activityDescription ?? progress.lastActivity?.toolName,
-    summary: progress.summary,
+    summary: progress.summary ?? progress.lastActivity?.activityDescription,
   }
 }

@@ -70,7 +70,9 @@ const searxngProvider: SearchProvider = {
     process.env.WEB_CUSTOM_ALLOW_PRIVATE = 'true'
     process.env.WEB_PROVIDER = 'searxng'
     try {
-      if (!process.env.WEB_SEARCH_API && !process.env.WEB_URL_TEMPLATE && !process.env.WEB_PROVIDER) {
+      // Check BEFORE setting WEB_PROVIDER — we need the original (or empty) value,
+      // not the one we just assigned. previousProvider is the saved original.
+      if (!process.env.WEB_SEARCH_API && !process.env.WEB_URL_TEMPLATE && !previousProvider) {
         throw new Error(
           'SearXNG search requires WEB_SEARCH_API or WEB_URL_TEMPLATE for your instance endpoint.',
         )
