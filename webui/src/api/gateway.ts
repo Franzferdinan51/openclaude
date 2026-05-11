@@ -1,9 +1,3 @@
-const DEFAULT_API_BASE = 'http://localhost:3017'
-
-export const DUCKHIVE_API_BASE =
-  (import.meta.env.VITE_DUCKHIVE_API_BASE as string | undefined)?.replace(/\/$/, '') ??
-  DEFAULT_API_BASE
-
 export interface GatewayHealth {
   status: 'ok' | 'degraded' | 'offline'
   version?: string
@@ -184,7 +178,42 @@ export interface ChatCompletionResponse {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Tauri detection — when running in the desktop shell, use invoke instead of fetch
+// ---------------------------------------------------------------------------
+
+declare global {
+  interface Window {
+    __TAURI__?: {
+      invoke: <T>(cmd: string, args?: Record<string, unknown>) => Promise<T>
+    }
+  }
+}
+
+const DEFAULT_API_BASE = 'http://localhost:3017'
+
+export const DUCKHIVE_API_BASE =
+  (import.meta.env.VITE_DUCKHIVE_API_BASE as string | undefined)?.replace(/\/$/, '') ??
+  DEFAULT_API_BASE
+
+const isTauri = typeof window !== 'undefined' && !!window.__TAURI__?.invoke
+
+async function tauriInvoke<T>(cmd: string, args?: Record<string, unknown>): Promise<T> {
+  if (!window.__TAURI__?.invoke) throw new Error('Tauri not available')
+  return window.__TAURI__.invoke<T>(cmd, args)
+}
+
+// ---------------------------------------------------------------------------
+// Transport-agnostic internal request helper
+// Uses Tauri invoke() when available, falls back to browser fetch()
+// ---------------------------------------------------------------------------
+
 async function request<T>(path: string, init?: RequestInit, fallback?: T): Promise<T> {
+  // When inside Tauri, proxy all calls through Rust IPC
+  if (isTauri) {
+    return tauriRequest<T>(path, init)
+  }
+  // Browser fallback — direct HTTP
   try {
     const res = await fetch(`${DUCKHIVE_API_BASE}${path}`, {
       ...init,
@@ -199,6 +228,89 @@ async function request<T>(path: string, init?: RequestInit, fallback?: T): Promi
     if (fallback !== undefined) return fallback
     throw new Error(`DuckHive API unavailable at ${DUCKHIVE_API_BASE}`)
   }
+}
+
+/**
+ * Tauri transport: map REST-like paths to Tauri invoke() commands.
+ * The Rust main.rs exposes IPC commands that proxy to council-api-server.
+ */
+async function tauriRequest<T>(path: string, init?: RequestInit): Promise<T> {
+  const method = init?.method ?? 'GET'
+  const body = init?.body ? JSON.parse(init.body as string) : undefined
+
+  // Map REST paths to Tauri command names (matches Rust main.rs IPC handlers)
+  switch (`${method} ${path}`) {
+    case 'GET /health':
+      return tauriInvoke<T>('get_health')
+    case 'GET /api/status':
+      return tauriInvoke<T>('get_system_status')
+    case 'GET /api/agents':
+      return tauriInvoke<T>('get_agents')
+    case 'GET /api/tools':
+      return tauriInvoke<T>('get_tools')
+    case 'GET /api/mcp/servers':
+      return tauriInvoke<T>('get_mcp_servers')
+    case 'POST /api/sessions':
+      return tauriInvoke<T>('create_session', { title: body?.title ?? null })
+    case 'GET /api/sessions':
+      return tauriInvoke<T>('list_sessions')
+    case `GET /api/sessions/${encodeURIComponent(path.split('/api/sessions/')[1] ?? '')}`:
+      if (method === 'GET' && path.startsWith('/api/sessions/')) {
+        const sessionId = path.split('/api/sessions/')[1]
+        return tauriInvoke<T>('get_session', { sessionId })
+      }
+      break
+    case 'POST /api/chat':
+      return tauriInvoke<T>('send_chat', {
+        messages: body?.messages ?? [],
+        options: {
+          model: body?.model ?? 'auto',
+          stream: body?.stream ?? false,
+          sessionId: body?.sessionId ?? null,
+        },
+      })
+    case 'GET /api/runs':
+      return tauriInvoke<T>('list_runs')
+    case `GET /api/runs/${encodeURIComponent(path.split('/api/runs/')[1]?.split('/')[0] ?? '')}`:
+      if (method === 'GET' && path.match(/^\/api\/runs\/[^/]+$/)) {
+        const runId = path.split('/api/runs/')[1]
+        return tauriInvoke<T>('get_run', { runId })
+      }
+      break
+    case `GET /api/runs/${encodeURIComponent(path.split('/api/runs/')[1]?.split('/')[0] ?? '')}/events`:
+      if (method === 'GET' && path.match(/^\/api\/runs\/[^/]+\/events/)) {
+        const runId = path.split('/api/runs/')[1].split('/')[0]
+        const limitMatch = path.match(/limit=(\d+)/)
+        const limit = limitMatch ? parseInt(limitMatch[1]) : null
+        return tauriInvoke<T>('get_run_events', { runId, limit })
+      }
+      break
+    case `POST /api/runs/${encodeURIComponent(path.split('/api/runs/')[1]?.split('/')[0] ?? '')}/${path.split('/api/runs/')[1]?.split('/')[1] ?? ''}`:
+      if (method === 'POST' && path.match(/^\/api\/runs\/[^/]+\/(pause|resume|stop|approve|recover)/)) {
+        const parts = path.split('/api/runs/')[1].split('/')
+        return tauriInvoke<T>('run_action', { runId: parts[0], action: parts[1], payload: body ?? {} })
+      }
+      break
+    case 'GET /api/search-provider':
+      return tauriInvoke<T>('get_search_provider')
+    case 'POST /api/search-provider':
+      return tauriInvoke<T>('set_search_provider', { provider: body?.provider, searxngUrl: body?.searxngUrl ?? null })
+    case 'GET /api/cost-stats':
+      return tauriInvoke<T>('get_cost_stats')
+  }
+
+  throw new Error(`No Tauri command mapping for ${method} ${path}`)
+}
+
+// Tauri event system uses plugin events instead of EventSource
+// In Tauri 2.x the event system requires @tauri-apps/api/event — placeholder for now
+function subscribeToEventsTauri(
+  _onEvent: (event: import('./gateway').AgentRunEvent) => void,
+  _onSnapshot?: (runs: import('./gateway').AgentRun[]) => void
+): () => void {
+  // Tauri 2.x event plugin would be used here for real-time run events.
+  // Browser fallback (EventSource in subscribeToEvents) is used when not in Tauri.
+  return () => {}
 }
 
 export async function getHealth(): Promise<GatewayHealth> {

@@ -62,7 +62,9 @@ import { parseCustomHeadersEnv } from '../../utils/providerCustomHeaders.js'
 import {
   getActiveOpenAIModelOptionsCache,
   getActiveProviderProfile,
+  getProviderProfiles,
   setActiveOpenAIModelOptionsCache,
+  setActiveProviderProfile,
 } from '../../utils/providerProfiles.js'
 
 type ModelDiscoveryContext =
@@ -685,6 +687,37 @@ function isSonnet1mUnavailable(model: string): boolean {
   )
 }
 
+function SwitchProviderAndClose({
+  profileId,
+  onDone,
+}: {
+  profileId: string
+  onDone: (result?: string, options?: { display?: CommandResultDisplay }) => void
+}) {
+  const setAppState = useSetAppState()
+
+  React.useEffect(() => {
+    const activeProfile = setActiveProviderProfile(profileId)
+    if (!activeProfile) {
+      onDone(`Provider profile '${profileId}' not found`, {
+        display: 'system',
+      })
+      return
+    }
+
+    const newModel = activeProfile.model
+    setAppState(prev => ({
+      ...prev,
+      mainLoopModel: newModel,
+      mainLoopModelForSession: null,
+    }))
+
+    onDone(`Switched to provider ${chalk.bold(activeProfile.name)} (model: ${chalk.bold(newModel)})`)
+  }, [profileId, onDone, setAppState])
+
+  return null
+}
+
 function ShowModelAndClose({
   onDone,
 }: {
@@ -790,7 +823,7 @@ export const call: LocalJSXCommandCall = async (onDone, _context, args) => {
 
   if (COMMON_HELP_ARGS.includes(trimmedArgs)) {
     onDone(
-      'Run /model to open the model selection menu, /model refresh to reload provider models, or /model [modelName] to set the model.',
+      'Run /model to open the model selection menu, /model refresh to reload provider models, /model [providerName] to switch provider, or /model [modelName] to set the model.',
       {
         display: 'system',
       },
@@ -803,6 +836,20 @@ export const call: LocalJSXCommandCall = async (onDone, _context, args) => {
       display: 'system',
     })
     return
+  }
+
+  // Check if argument matches a provider profile name (switch provider)
+  if (trimmedArgs) {
+    const profiles = getProviderProfiles()
+    const matchingProfile = profiles.find(
+      p => p.name.toLowerCase() === trimmedArgs.toLowerCase() || p.id.toLowerCase() === trimmedArgs.toLowerCase(),
+    )
+    if (matchingProfile) {
+      logEvent('tengu_model_command_inline', {
+        args: trimmedArgs as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
+      })
+      return <SwitchProviderAndClose profileId={matchingProfile.id} onDone={onDone} />
+    }
   }
 
   if (trimmedArgs) {

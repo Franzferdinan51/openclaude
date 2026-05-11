@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "tauri:dev": "cd ../src-tauri && cargo run",
+    "tauri:build": "cd ../src-tauri && cargo build --release"
   },
   "dependencies": {
     "lucide-react": "^0.468.0",
