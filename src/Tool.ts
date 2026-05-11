@@ -156,6 +156,7 @@ export type CompactProgressEvent =
   | { type: 'compact_end' }
 
 export type ToolUseContext = {
+  stdout?: { write(str: string): void }
   options: {
     commands: Command[]
     debug: boolean
