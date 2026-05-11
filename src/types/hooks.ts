@@ -227,7 +227,8 @@ export type HookCallback = {
 
 export type HookCallbackMatcher = {
   matcher?: string
-  hooks: HookCallback[]
+  hookCallbackIds: string[]
+  timeout?: number
   pluginName?: string
 }
 

@@ -4424,8 +4424,8 @@ async function handleInitializeRequest(
   const accountInfo = getAccountInformation()
   if (request.hooks) {
     const hooks: Partial<Record<HookEvent, HookCallbackMatcher[]>> = {}
-    for (const [event, matchers] of Object.entries(request.hooks)) {
-      hooks[event as HookEvent] = matchers.map(matcher => {
+    for (const [event, matchers] of Object.entries((request.hooks ?? {}) as Record<HookEvent, HookCallbackMatcher[]>)) {
+      hooks[event as HookEvent] = matchers.map((matcher) => {
         const callbacks = matcher.hookCallbackIds.map(callbackId => {
           return structuredIO.createHookCallback(callbackId, matcher.timeout)
         })
