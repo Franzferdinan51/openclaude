@@ -31,7 +31,7 @@ Write-Host "Building DuckHive..." -ForegroundColor Yellow
 bun run build
 
 # Set PATH
-$duckhivePath = $PWD.Path
+$duckhivePath = $PSScriptRoot
 $currentPath = [Environment]::GetEnvironmentVariable("Path", "User")
 if ($currentPath -notlike "*$duckhivePath*") {
     [Environment]::SetEnvironmentVariable("Path", "$currentPath;$duckhivePath", "User")

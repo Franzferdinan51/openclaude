@@ -266,7 +266,9 @@ export async function exec(
   //   • outer spawn is also /bin/sh -c to parse the runtime's POSIX output
   // /bin/sh exists on every platform where sandbox is supported.
   const isSandboxedPowerShell = shouldUseSandbox && shellType === 'powershell'
-  const sandboxBinShell = isSandboxedPowerShell ? '/bin/sh' : binShell
+  const sandboxBinShell = isSandboxedPowerShell
+    ? (getPlatform() === 'windows' ? 'cmd.exe' : '/bin/sh')
+    : binShell
 
   if (shouldUseSandbox) {
     commandString = await SandboxManager.wrapWithSandbox(
@@ -284,7 +286,9 @@ export async function exec(
     }
   }
 
-  const spawnBinary = isSandboxedPowerShell ? '/bin/sh' : binShell
+  const spawnBinary = isSandboxedPowerShell
+    ? (getPlatform() === 'windows' ? 'cmd.exe' : '/bin/sh')
+    : binShell
   const shellArgs = isSandboxedPowerShell
     ? ['-c', commandString]
     : provider.getSpawnArgs(commandString)
