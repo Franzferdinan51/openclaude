@@ -6,7 +6,7 @@ import {
   formatBenchmarkResults,
   isBenchmarkSupported,
 } from '../utils/model/benchmark.js'
-import { getOllamaModelOptions } from '../utils/model/ollamaModels.js'
+import { getCachedOllamaModelOptions } from '../utils/model/ollamaModels.js'
 
 async function runBenchmark(
   model?: string,
@@ -25,7 +25,7 @@ async function runBenchmark(
   if (model) {
     modelsToBenchmark = [model]
   } else {
-    const ollamaModels = getOllamaModelOptions()
+    const ollamaModels = getCachedOllamaModelOptions()
     modelsToBenchmark = ollamaModels.slice(0, 3).map((m) => m.value)
   }
 
