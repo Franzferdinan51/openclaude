@@ -45,6 +45,9 @@ export const COMMON_EXTERNALS: string[] = [
   // Language processing — native WASM modules with platform binaries
   'js-tiktoken',
   'tree-sitter',
+  // Native SQLite binding — platform binary shipped alongside index.js,
+  // bundling would freeze build-host paths; keep external.
+  'better-sqlite3',
   'tree-sitter-wasms',
   'web-tree-sitter',
   // Knowledge graph / RAG

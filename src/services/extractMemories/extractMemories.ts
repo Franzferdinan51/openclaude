@@ -61,6 +61,7 @@ import {
   buildExtractAutoOnlyPrompt,
   buildExtractCombinedPrompt,
 } from './prompts.js'
+import { checkAndCreateSkills } from '../autonomousSkillCreation.js'
 
 /* eslint-disable @typescript-eslint/no-require-imports */
 const teamMemPaths = feature('TEAMMEM')
@@ -546,6 +547,11 @@ export function initExtractMemories(): void {
         team_memories_saved: teamCount,
         duration_ms: Date.now() - startTime,
       })
+
+      // Autonomous skill creation: check for repeated patterns after extraction
+      void checkAndCreateSkills(context).catch(err =>
+        logForDebugging(`[skillCreation] error: ${err}`),
+      )
 
       logForDebugging(
         `[extractMemories] writtenPaths=${writtenPaths.length} memoryPaths=${memoryPaths.length} appendSystemMessage defined=${appendSystemMessage != null}`,

@@ -9,6 +9,11 @@ import {
   type MemoryHeader,
   scanMemoryFiles,
 } from './memoryScan.js'
+import {
+  initFts5,
+  searchMemoriesFts5,
+  type Fts5Result,
+} from './fts5.js'
 
 export type RelevantMemory = {
   path: string
@@ -43,16 +48,32 @@ export async function findRelevantMemories(
   recentTools: readonly string[] = [],
   alreadySurfaced: ReadonlySet<string> = new Set(),
 ): Promise<RelevantMemory[]> {
+  // Fire-and-forget FTS5 init on first call
+  void initFts5().catch(() => {})
+
+  // Try FTS5 first as a fast pre-filter
+  const ftsResults = searchMemoriesFts5(query, 10)
+  if (ftsResults.length > 0) {
+    logForDebugging(`[memdir] FTS5 found ${ftsResults.length} results for query`)
+  }
+
   const memories = (await scanMemoryFiles(memoryDir, signal)).filter(
     m => !alreadySurfaced.has(m.filePath),
   )
   if (memories.length === 0) {
-    return []
+    return ftsResults.map(r => ({ path: r.path, mtimeMs: 0 }))
   }
+
+  // Blend FTS5 results into the Sonnet selection by boosting scores for FTS5 matches
+  const ftsPathSet = new Set(ftsResults.map(r => r.path))
+  const memoriesWithFts = memories.map(m => ({
+    ...m,
+    _ftsBoost: ftsPathSet.has(m.filePath) ? 1 : 0,
+  }))
 
   const selectedFilenames = await selectRelevantMemories(
     query,
-    memories,
+    memoriesWithFts as MemoryHeader[], // cast — _ftsBoost is extra field
     signal,
     recentTools,
   )
@@ -71,7 +92,19 @@ export async function findRelevantMemories(
     logMemoryRecallShape(memories, selected)
   }
 
-  return selected.map(m => ({ path: m.filePath, mtimeMs: m.mtimeMs }))
+  const sonnetResults = selected.map(m => ({ path: m.filePath, mtimeMs: m.mtimeMs }))
+
+  // If Sonnet returned fewer than 5, fill remaining slots from FTS5 results
+  if (sonnetResults.length < 5 && ftsResults.length > 0) {
+    const sonnetPaths = new Set(sonnetResults.map(r => r.path))
+    const ftsFill = ftsResults
+      .filter(r => !sonnetPaths.has(r.path))
+      .slice(0, 5 - sonnetResults.length)
+      .map(r => ({ path: r.path, mtimeMs: 0 } as RelevantMemory))
+    return [...sonnetResults, ...ftsFill]
+  }
+
+  return sonnetResults
 }
 
 async function selectRelevantMemories(
