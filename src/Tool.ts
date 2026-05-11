@@ -157,6 +157,7 @@ export type CompactProgressEvent =
 
 export type ToolUseContext = {
   stdout?: { write(str: string): void }
+  args?: Record<string, unknown>
   options: {
     commands: Command[]
     debug: boolean

@@ -44,7 +44,7 @@ async function runBenchmark(
   context?.stdout?.write('\n' + formatBenchmarkResults(results) + '\n')
 }
 
-export const benchmark: Command = {
+export const benchmark = {
   name: 'benchmark',
 
   async onExecute(context: ToolUseContext): Promise<void> {
