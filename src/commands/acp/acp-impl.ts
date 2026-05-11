@@ -176,7 +176,7 @@ async function handleMessage(client: ACPClient, raw: string): Promise<void> {
 
   switch (msg.type) {
     case 'initialize': {
-      const init = msg as InitializeMessage
+      const init = msg as unknown as InitializeMessage
       client.name = init.client_name
       client.version = init.client_version
       client.capabilities = init.capabilities || []
@@ -201,7 +201,7 @@ async function handleMessage(client: ACPClient, raw: string): Promise<void> {
     }
 
     case 'chat/message': {
-      const chat = msg as ChatMessage
+      const chat = msg as unknown as ChatMessage
       const session = sessions.get(client.sessionId!)
       if (!session) {
         send(client.socket, formatError(chat.id, 'No active session'))
@@ -255,7 +255,7 @@ async function handleMessage(client: ACPClient, raw: string): Promise<void> {
     }
 
     case 'tools/call': {
-      const call = msg as ToolsCallMessage
+      const call = msg as unknown as ToolsCallMessage
       // Placeholder tool responses - real implementation would execute tools
       send(client.socket, {
         type: 'tools/call_result',
@@ -271,7 +271,7 @@ async function handleMessage(client: ACPClient, raw: string): Promise<void> {
     }
 
     case 'tools/call_batch': {
-      const batch = msg as ToolsCallBatchMessage
+      const batch = msg as unknown as ToolsCallBatchMessage
       const results = batch.calls.map(call => ({
         tool: call.tool,
         result: {
