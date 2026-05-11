@@ -1471,7 +1471,7 @@ export function ManagePlugins({
                 updateSettingsForSource(source, {
                   enabledPlugins: {
                     ...settings.enabledPlugins,
-                    [pluginId_7]: undefined
+                    [pluginId_7]: false
                   }
                 });
                 success = true;
