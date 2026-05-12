@@ -466,7 +466,7 @@ function configureEffortParams(
     betas.push(EFFORT_BETA_HEADER)
   } else if (typeof effortValue === 'string') {
     // Send string effort level as is
-    outputConfig.effort = effortValue
+    outputConfig.effort = effortValue as any
     betas.push(EFFORT_BETA_HEADER)
   } else if (process.env.USER_TYPE === 'ant') {
     // Numeric effort override - internal-only (uses anthropic_internal)
@@ -979,7 +979,7 @@ export function stripExcessMediaItems(
   let toRemove = 0
   for (const msg of messages) {
     if (!Array.isArray(msg.message.content)) continue
-    for (const block of msg.message.content) {
+    for (const block of (msg.message.content as any)) {
       if (isMedia(block)) toRemove++
       if (isToolResult(block) && Array.isArray(block.content)) {
         for (const nested of block.content) {
@@ -1574,7 +1574,7 @@ async function* queryModel(
   let lastRequestBetas: string[] | undefined
 
   const paramsFromContext = (retryContext: RetryContext) => {
-    const betasParams = [...betas]
+    const betasParams: any[] = [...betas]
 
     // Append 1M beta from the latched experiment state (computed once before
     // the closure to avoid mid-retry GB flips changing the cache key).
