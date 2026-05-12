@@ -20,6 +20,8 @@ import { writeFile } from 'fs/promises';
 import { Box, Text, useStdin, useTheme, useTerminalFocus, useTerminalTitle, useTabStatus } from '../ink.js';
 import type { TabStatusKind } from '../ink/hooks/use-tab-status.js';
 import { CostThresholdDialog } from '../components/CostThresholdDialog.js';
+import { DisabledComponent } from '../components/DisabledComponent.js';
+import { UltraplanChoiceDialog, UltraplanLaunchDialog } from '../ultraplan-dialogs.js';
 import { IdleReturnDialog } from '../components/IdleReturnDialog.js';
 import * as React from 'react';
 import { useEffect, useMemo, useRef, useState, useCallback, useDeferredValue, useLayoutEffect, type RefObject } from 'react';
@@ -4636,7 +4638,7 @@ export function REPL({
         {toolJSX && !(toolJSX.isLocalJSXCommand && toolJSX.isImmediate) && !toolJsxCentered && <Box flexDirection="column" width="100%">
           {toolJSX.jsx}
         </Box>}
-        {false && <TungstenLiveMonitor />}
+        {/* TungstenLiveMonitor disabled */}
         {feature('WEB_BROWSER_TOOL') ? WebBrowserPanelModule && <WebBrowserPanelModule.WebBrowserPanel /> : null}
         <Box flexGrow={1} />
         {showSpinner && <SpinnerWithVerb mode={streamMode} spinnerTip={spinnerTip} responseLengthRef={responseLengthRef} apiMetricsRef={apiMetricsRef} overrideMessage={spinnerMessage} spinnerSuffix={stopHookSpinnerSuffix} verbose={verbose} loadingStartTimeRef={loadingStartTimeRef} totalPausedMsRef={totalPausedMsRef} pauseStartTimeRef={pauseStartTimeRef} overrideColor={spinnerColor} overrideShimmerColor={spinnerShimmerColor} hasActiveTools={inProgressToolUseIDs.size > 0} leaderIsIdle={!isLoading} />}
@@ -4934,7 +4936,7 @@ export function REPL({
                 appendStdout(msg);
               });
             };
-            void launchUltraplan({
+            void (launchUltraplan as any)({
               blurb,
               getAppState: () => store.getState(),
               setAppState,
