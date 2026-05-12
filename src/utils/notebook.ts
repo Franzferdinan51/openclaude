@@ -5,14 +5,13 @@ import type {
 } from '@anthropic-ai/sdk/resources/index.mjs'
 import { BASH_TOOL_NAME } from '../tools/BashTool/toolName.js'
 import { formatOutput } from '../tools/BashTool/utils.js'
-import type {
-  NotebookCell,
-  NotebookCellOutput,
-  NotebookCellSource,
-  NotebookCellSourceOutput,
-  NotebookContent,
-  NotebookOutputImage,
-} from '../types/notebook.js'
+// NotebookCell types are stubs
+type NotebookCell = any
+type NotebookCellOutput = any
+type NotebookCellSource = any
+type NotebookCellSourceOutput = any
+type NotebookContent = any
+type NotebookOutputImage = any
 import { getFsImplementation } from './fsOperations.js'
 import { expandPath } from './path.js'
 import { jsonParse } from './slowOperations.js'
@@ -117,7 +116,7 @@ function processCell(
 }
 
 function cellContentToToolResult(cell: NotebookCellSource): TextBlockParam {
-  const metadata = []
+  const metadata: string[] = []
   if (cell.cellType !== 'code') {
     metadata.push(`<cell_type>${cell.cellType}</cell_type>`)
   }
