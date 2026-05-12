@@ -488,7 +488,7 @@ async function checkBridgePrerequisites(): Promise<string | null> {
     const {
       isAssistantMode
     } = await import('../../assistant/index.js');
-    if (isAssistantMode) {
+    if (isAssistantMode()) {
       useV2 = false;
     }
   }
