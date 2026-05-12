@@ -368,7 +368,7 @@ function ModeIndicator({
   ...(false && hasTmuxSession ? [<TungstenPill key="tmux" selected={tmuxSelected} />] : []), ...(isAgentSwarmsEnabled() && hasTeams ? [<TeamStatus key="teams" teamsSelected={teamsSelected} showHint={showHint && !hasBackgroundTasks} />] : []), ...(shouldShowPrStatus ? [<PrBadge key="pr-status" number={prStatus.number!} url={prStatus.url!} reviewState={prStatus.reviewState!} />] : [])];
 
   // Check if any in-process teammates exist (for hint text cycling)
-  const hasAnyInProcessTeammates = Object.values(tasks).some(t_2 => t_2.type === 'in_process_teammate' && t_2.status === 'running');
+  const hasAnyInProcessTeammates = Object.values(tasks).some(t_2 => (t_2 as any).type === 'in_process_teammate' && (t_2 as any).status === 'running');
   const hasRunningAgentTasks = Object.values(tasks).some(t_3 => t_3.type === 'local_agent' && t_3.status === 'running');
 
   // Get hint parts separately for potential second-line rendering
@@ -514,3 +514,4 @@ function getSpinnerHintParts(isLoading: boolean, escShortcut: string, todosShort
 function isPrStatusEnabled(): boolean {
   return getGlobalConfig().prStatusFooterEnabled ?? true;
 }
+export const TungstenPill = () => null;
