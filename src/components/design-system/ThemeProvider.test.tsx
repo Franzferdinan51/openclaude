@@ -123,7 +123,7 @@ test('useTheme() reflects updated currentTheme after setThemeSetting call', asyn
     return <Text>current:{theme}</Text>
   }
 
-  let setThemeFn: ((s: string) => void) | null = null
+  let setThemeFn: ((s: any) => void) | null = null
   function ThemeSetter() {
     const [, setter] = useTheme()
     useEffect(() => { setThemeFn = setter })

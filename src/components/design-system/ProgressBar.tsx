@@ -46,9 +46,8 @@ export function ProgressBar(t0) {
   // Track animation frame for marching leading edge effect
   const animFrameRef = useRef(0);
   // eslint-disable-next-line react-hooks/rules-of-hooks
-  useAnimationFrame((elapsed) => {
-    animFrameRef.current = Math.floor(elapsed / ANIM_CYCLE_MS) % BLOCKS.length;
-  }, animated === true);
+  const [, elapsed] = useAnimationFrame(animated ? ANIM_CYCLE_MS : null);
+  animFrameRef.current = Math.floor(elapsed / ANIM_CYCLE_MS) % BLOCKS.length;
 
   const leadingChar = animated ? BLOCKS[animFrameRef.current] : BLOCKS[Math.floor((ratio * width - whole) * BLOCKS.length)];
   let t1;
