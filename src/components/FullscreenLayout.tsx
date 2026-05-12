@@ -282,7 +282,7 @@ export function FullscreenLayout(t0) {
     hideSticky: t2,
     newMessageCount: t3,
     onPillClick
-  } = t0;
+  } = t0 as any;
   const hidePill = t1 === undefined ? false : t1;
   const hideSticky = t2 === undefined ? false : t2;
   const newMessageCount = t3 === undefined ? 0 : t3;
@@ -493,7 +493,7 @@ function NewMessagesPill(t0) {
   const {
     count,
     onClick
-  } = t0;
+  } = t0 as any;
   const [hover, setHover] = useState(false);
   let t1;
   let t2;
@@ -553,7 +553,7 @@ function StickyPromptHeader(t0) {
   const {
     text,
     onClick
-  } = t0;
+  } = t0 as any;
   const [hover, setHover] = useState(false);
   const t1 = hover ? "userMessageBackgroundHover" : "userMessageBackground";
   let t2;

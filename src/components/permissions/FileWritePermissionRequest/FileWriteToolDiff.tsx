@@ -20,7 +20,7 @@ export function FileWriteToolDiff(t0) {
     content,
     fileExists,
     oldContent
-  } = t0;
+  } = t0 as any;
   const {
     columns
   } = useTerminalSize();

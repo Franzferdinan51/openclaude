@@ -31,7 +31,7 @@ export function DiffDetailView(t0) {
     isBinary,
     isTruncated,
     isUntracked
-  } = t0;
+  } = t0 as any;
   const {
     columns
   } = useTerminalSize();

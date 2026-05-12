@@ -32,7 +32,7 @@ export function FileEditToolUseRejectedMessage(t0) {
     content,
     style,
     verbose
-  } = t0;
+  } = t0 as any;
   const {
     columns
   } = useTerminalSize();
