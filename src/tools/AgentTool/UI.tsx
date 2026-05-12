@@ -385,7 +385,7 @@ export function renderToolResultMessage(data: Output, progressMessagesForMessage
     }
   });
   return <Box flexDirection="column">
-      {"external" === 'ant' && <MessageResponse>
+      {false && <MessageResponse>
           <Text color="warning">
             [internal] API calls: {getDisplayPath(getDumpPromptsPath(agentId))}
           </Text>
@@ -591,7 +591,7 @@ export function renderToolUseRejectedMessage(_input: {
   const firstData = progressMessagesForMessage[0]?.data;
   const agentId = firstData && hasProgressMessage(firstData) ? firstData.agentId : undefined;
   return <>
-      {"external" === 'ant' && agentId && <MessageResponse>
+      {false && agentId && <MessageResponse>
           <Text color="warning">
             [internal] API calls: {getDisplayPath(getDumpPromptsPath(agentId))}
           </Text>

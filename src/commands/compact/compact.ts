@@ -265,7 +265,6 @@ async function getCacheSharingParams(
   const additionalWorkingDirectories = Array.from(
     appState.toolPermissionContext.additionalWorkingDirectories.keys(),
   )
-  // @ts-expect-error ToolUseContext.tools has broader type than getSystemPrompt expects
   const defaultSysPrompt = await getSystemPrompt(
     tools,
     mainLoopModel,

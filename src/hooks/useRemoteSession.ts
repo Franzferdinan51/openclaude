@@ -248,12 +248,12 @@ export function useRemoteSession({
         // and inProcessRunner.ts; without this the set grows unbounded for the
         // session lifetime (BQ: CCR cohort shows 5.2x higher RSS slope).
         if (setInProgressToolUseIDs && sdkMessage.type === 'user') {
-          const content = sdkMessage.message?.content
+          const content = sdkMessage.message?.content as Array<unknown>
           if (Array.isArray(content)) {
             const resultIds: string[] = []
             for (const block of content) {
-              if (block.type === 'tool_result') {
-                resultIds.push(block.tool_use_id)
+              if ((block as any).type === 'tool_result') {
+                resultIds.push((block as any).tool_use_id)
               }
             }
             if (resultIds.length > 0) {

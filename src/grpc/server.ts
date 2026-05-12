@@ -153,25 +153,24 @@ export class GrpcServer {
               }
             } else if (msg.type === 'user') {
               // Extract tool results
-              const content = msg.message.content
-              if (Array.isArray(content)) {
-                for (const block of content) {
-                  if (block.type === 'tool_result') {
-                    let outputStr = ''
-                    if (typeof block.content === 'string') {
-                      outputStr = block.content
-                    } else if (Array.isArray(block.content)) {
-                      outputStr = block.content.map(c => c.type === 'text' ? c.text : '').join('\n')
-                    }
-                    call.write({
-                      tool_result: {
-                        tool_name: toolNameById.get(block.tool_use_id) ?? block.tool_use_id,
-                        tool_use_id: block.tool_use_id,
-                        output: outputStr,
-                        is_error: block.is_error || false
-                      }
-                    })
+              const content = msg.message.content as Array<unknown>
+              for (const block of content) {
+                const b = block as any
+                if (b.type === 'tool_result') {
+                  let outputStr = ''
+                  if (typeof b.content === 'string') {
+                    outputStr = b.content
+                  } else if (Array.isArray(b.content)) {
+                    outputStr = b.content.map((c: any) => c.type === 'text' ? c.text : '').join('\n')
                   }
+                  call.write({
+                    tool_result: {
+                      tool_name: toolNameById.get(b.tool_use_id) ?? b.tool_use_id,
+                      tool_use_id: b.tool_use_id,
+                      output: outputStr,
+                      is_error: b.is_error || false
+                    }
+                  })
                 }
               }
             } else if (msg.type === 'result') {

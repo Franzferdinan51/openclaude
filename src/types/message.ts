@@ -44,7 +44,7 @@ export type GroupedToolUseMessage = any
 export type NormalizedAssistantMessage = any
 export type NormalizedMessage = any
 export type PartialCompactDirection = any
-export type ProgressMessage = any
+export type ProgressMessage<T = unknown> = any
 export type RenderableMessage = any
 export type RequestStartEvent = any
 export type StopHookInfo = any

@@ -27,7 +27,7 @@ export function createRecentActivityFeed(activities: LogOption[]): FeedConfig {
 }
 export function createWhatsNewFeed(releaseNotes: string[]): FeedConfig {
   const lines: FeedLine[] = releaseNotes.map(note => {
-    if ("external" === 'ant') {
+    if (false) {
       const match = note.match(/^(\d+\s+\w+\s+ago)\s+(.+)$/);
       if (match) {
         return {
@@ -45,9 +45,9 @@ export function createWhatsNewFeed(releaseNotes: string[]): FeedConfig {
       text: note
     };
   });
-  const emptyMessage = "external" === 'ant' ? 'Unable to fetch latest claude-cli-internal commits' : 'Check /release-notes for recent updates';
+  const emptyMessage = false ? 'Unable to fetch latest claude-cli-internal commits' : 'Check /release-notes for recent updates';
   return {
-    title: "external" === 'ant' ? "DuckHive Updates [internal-only: Latest DH commits]" : "DuckHive Updates",
+    title: false ? "DuckHive Updates [internal-only: Latest DH commits]" : "DuckHive Updates",
     lines,
     footer: lines.length > 0 ? '/release-notes for more' : undefined,
     emptyMessage

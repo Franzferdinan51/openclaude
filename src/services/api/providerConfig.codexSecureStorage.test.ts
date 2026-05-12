@@ -26,7 +26,7 @@ describe('resolveCodexApiCredentials with secure storage', () => {
       }),
     }))
 
-    // @ts-expect-error cache-busting query string for Bun module mocks
+
     const { resolveCodexApiCredentials } = await import(
       './providerConfig.js?codex-secure-storage'
     )
@@ -46,7 +46,7 @@ describe('resolveCodexApiCredentials with secure storage', () => {
       }),
     }))
 
-    // @ts-expect-error cache-busting query string for Bun module mocks
+
     const { resolveCodexApiCredentials } = await import(
       './providerConfig.js?codex-env-precedence'
     )
@@ -67,7 +67,7 @@ describe('resolveCodexApiCredentials with secure storage', () => {
       readCodexCredentials: () => undefined,
     }))
 
-    // @ts-expect-error cache-busting query string for Bun module mocks
+
     const { resolveCodexApiCredentials } = await import(
       './providerConfig.js?codex-env-nested-account'
     )
@@ -106,7 +106,7 @@ describe('resolveCodexApiCredentials with secure storage', () => {
     )
 
     try {
-      // @ts-expect-error cache-busting query string for Bun module mocks
+
       const { resolveCodexApiCredentials } = await import(
         './providerConfig.js?codex-auth-json-nested-account'
       )
@@ -132,7 +132,7 @@ describe('resolveCodexApiCredentials with secure storage', () => {
       }),
     }))
 
-    // @ts-expect-error cache-busting query string for Bun module mocks
+
     const { resolveCodexApiCredentials } = await import(
       './providerConfig.js?codex-secure-storage-no-auth-io'
     )
@@ -170,7 +170,7 @@ describe('resolveCodexApiCredentials with secure storage', () => {
       }),
     }))
 
-    // @ts-expect-error cache-busting query string for Bun module mocks
+
     const { resolveCodexApiCredentials } = await import(
       './providerConfig.js?codex-refresh-cooldown-fallback'
     )
@@ -208,7 +208,7 @@ describe('resolveCodexApiCredentials with secure storage', () => {
       }),
     }))
 
-    // @ts-expect-error cache-busting query string for Bun module mocks
+
     const { resolveCodexApiCredentials } = await import(
       './providerConfig.js?codex-refresh-cooldown-account-id-fallback'
     )
