@@ -58,7 +58,7 @@ function getToolBuckets(): ToolBuckets {
     },
     EXECUTION: {
       name: 'Execution tools',
-      toolNames: new Set([BashTool.name, false ? TungstenTool.name : undefined].filter(n => n !== undefined))
+      toolNames: new Set([BashTool.name, false ? TungstenTool?.name : undefined].filter(n => n !== undefined))
     },
     MCP: {
       name: 'MCP tools',
@@ -163,7 +163,7 @@ export function ToolSelector(t0) {
   } else {
     t5 = $[13];
   }
-  const selectedSet = t5;
+  const selectedSet: Set<string> = t5 as Set<string>;
   const isAllSelected = validSelectedTools.length === customAgentTools.length && customAgentTools.length > 0;
   let t6;
   if ($[14] === Symbol.for("react.memo_cache_sentinel")) {
