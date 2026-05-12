@@ -13,7 +13,10 @@ const yolo = {
   get immediate() {
     return shouldInferenceConfigCommandBeImmediate()
   },
-  load: () => import('./yolo.js'),
+  load: async () => {
+    const mod = await import('./yolo.tsx' as any)
+    return mod.default as unknown as { call: (args: string, ctx: any) => Promise<unknown> }
+  },
 } satisfies Command
 
 export default yolo

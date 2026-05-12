@@ -3915,49 +3915,45 @@ export async function loadTranscriptFile(
           contextCollapseCommits.length = 0
           contextCollapseSnapshot = undefined
         }
-      } else if (entry.type === 'summary' && entry.leafUuid) {
-        summaries.set(entry.leafUuid, entry.summary)
-      } else if (entry.type === 'custom-title' && entry.sessionId) {
-        customTitles.set(entry.sessionId, entry.customTitle)
-      } else if (entry.type === 'tag' && entry.sessionId) {
-        tags.set(entry.sessionId, entry.tag)
-      } else if (entry.type === 'agent-name' && entry.sessionId) {
-        agentNames.set(entry.sessionId, entry.agentName)
-      } else if (entry.type === 'agent-color' && entry.sessionId) {
-        agentColors.set(entry.sessionId, entry.agentColor)
-      } else if (entry.type === 'agent-setting' && entry.sessionId) {
-        agentSettings.set(entry.sessionId, entry.agentSetting)
-      } else if (entry.type === 'mode' && entry.sessionId) {
-        modes.set(entry.sessionId, entry.mode)
-      } else if (entry.type === 'worktree-state' && entry.sessionId) {
-        worktreeStates.set(entry.sessionId, entry.worktreeSession)
-      } else if (entry.type === 'pr-link' && entry.sessionId) {
-        prNumbers.set(entry.sessionId, entry.prNumber)
-        prUrls.set(entry.sessionId, entry.prUrl)
-        prRepositories.set(entry.sessionId, entry.prRepository)
-      } else if (entry.type === 'file-history-snapshot') {
-        fileHistorySnapshots.set(entry.messageId, entry)
-      } else if (entry.type === 'attribution-snapshot') {
-        attributionSnapshots.set(entry.messageId, entry)
-      } else if (entry.type === 'content-replacement') {
-        // Subagent decisions key by agentId (sidechain resume); main-thread
-        // decisions key by sessionId (/resume).
-        if (entry.agentId) {
-          const existing = agentContentReplacements.get(entry.agentId) ?? []
-          agentContentReplacements.set(entry.agentId, existing)
-          existing.push(...entry.replacements)
-        } else {
-          const existing = contentReplacements.get(entry.sessionId) ?? []
-          contentReplacements.set(entry.sessionId, existing)
-          existing.push(...entry.replacements)
+      } else {
+        // Handle all metadata entries by type
+        // At this point entry is 'never' from TypeScript's perspective (all
+        // transcript cases exhausted), but the actual value is a metadata
+        // Entry. Use 'any' to escape the narrowing and access .type.
+        const item = entry as any
+        switch (item.type) {
+          case 'summary':
+            summaries.set(item.leafUuid, item.summary)
+            break
+          case 'custom-title':
+            customTitles.set(item.sessionId, item.customTitle)
+            break
+          case 'tag':
+            tags.set(item.sessionId, item.tag)
+            break
+          case 'agent-name':
+            agentNames.set(item.sessionId, item.agentName)
+            break
+          case 'agent-color':
+            agentColors.set(item.sessionId, item.agentColor)
+            break
+          case 'agent-setting':
+            agentSettings.set(item.sessionId, item.agentSetting)
+            break
+          case 'mode':
+            modes.set(item.sessionId, item.mode)
+            break
+          case 'worktree-state':
+            worktreeStates.set(item.sessionId, item.worktreeSession)
+            break
+          case 'pr-link':
+            prNumbers.set(item.sessionId, item.prNumber)
+            prUrls.set(item.sessionId, item.prUrl)
+            prRepositories.set(item.sessionId, item.prRepository)
+            break
         }
-      } else if (entry.type === 'marble-origami-commit') {
-        contextCollapseCommits.push(entry)
-      } else if (entry.type === 'marble-origami-snapshot') {
-        contextCollapseSnapshot = entry
       }
-    })
-  } catch {
+    })  } catch {
     // File doesn't exist or can't be read
   }
 

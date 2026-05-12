@@ -8,11 +8,11 @@
 import type { Command } from '../../commands.js'
 
 const spawn = {
-  type: 'local-jsx',
+  type: 'local-jsx' as const,
   name: 'spawn',
   aliases: ['subagent', 'deep-dive'],
   description: 'Spawn a subagent teammate for deep analysis',
-  load: () => import('./spawn.js'),
+  load: async () => (await import('./spawn.js')).default,
 } satisfies Command
 
 export default spawn

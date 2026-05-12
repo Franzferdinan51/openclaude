@@ -7,6 +7,7 @@
 import React, { useState } from 'react'
 import { Box, Text } from '../../ink.js'
 import { sessions_spawn } from '../../subagentSystem.js'
+import type { ToolUseContext } from '../../Tool.js'
 
 interface SpawnProps {
   args: string[]
