@@ -44,7 +44,7 @@ export function usePostCompactSurvey(messages, isLoading, t0, t1) {
     enabled: t3
   } = t2;
   const enabled = t3 === undefined ? true : t3;
-  const [gateEnabled, setGateEnabled] = useState<boolean>(null);
+  const [gateEnabled, setGateEnabled] = useState<boolean | null>(null);
   let t4;
   if ($[2] === Symbol.for("react.memo_cache_sentinel")) {
     t4 = new Set();
