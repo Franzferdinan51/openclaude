@@ -102,7 +102,7 @@ export const StructuredDiff = memo(function StructuredDiff(t0) {
     fileContent,
     width,
     skipHighlighting: t1
-  } = t0;
+  } = t0 as any;
   const skipHighlighting = t1 === undefined ? false : t1;
   const [theme] = useTheme();
   const settings = useSettings();
