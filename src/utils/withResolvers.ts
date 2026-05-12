@@ -1,3 +1,9 @@
+interface PromiseWithResolvers<T> {
+  promise: Promise<T>
+  resolve: (value: T | PromiseLike<T>) => void
+  reject: (reason?: unknown) => void
+}
+
 /**
  * Polyfill for Promise.withResolvers() (ES2024, Node 22+).
  * Native on every supported runtime now that engines.node is >=22.0.0; kept as a

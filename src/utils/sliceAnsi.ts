@@ -5,6 +5,9 @@ import {
   tokenize,
   undoAnsiCodes,
 } from '@alcalzone/ansi-tokenize'
+import type { Token } from '@alcalzone/ansi-tokenize'
+
+const tokenizeSafe = (text: string): Token[] => tokenize(text)
 import { stringWidth } from '../ink/stringWidth.js'
 
 // A code is an "end code" if its code equals its endCode (e.g., hyperlink close)
@@ -30,7 +33,7 @@ export default function sliceAnsi(
 ): string {
   // Don't pass `end` to tokenize — it counts code units, not display cells,
   // so it drops tokens early for text with zero-width combining marks.
-  const tokens = tokenize(str)
+  const tokens = tokenizeSafe(str)
   let activeCodes: AnsiCode[] = []
   let position = 0
   let result = ''
@@ -42,8 +45,9 @@ export default function sliceAnsi(
     // advanced position past `end` early and truncated the slice. Callers
     // pass start/end in display cells (via stringWidth), so position must
     // track the same units.
+    const charToken = token as { fullWidth?: boolean; value?: string }
     const width =
-      token.type === 'ansi' ? 0 : token.fullWidth ? 2 : stringWidth(token.value)
+      token.type === 'ansi' ? 0 : (charToken.fullWidth ?? false) ? 2 : stringWidth(charToken.value ?? '')
 
     // Break AFTER trailing zero-width marks — a combining mark attaches to
     // the preceding base char, so "भा" (भ + ा, 1 display cell) sliced at
@@ -77,7 +81,7 @@ export default function sliceAnsi(
       }
 
       if (include) {
-        result += token.value
+        result += (token as { value?: string }).value ?? ''
       }
 
       position += width

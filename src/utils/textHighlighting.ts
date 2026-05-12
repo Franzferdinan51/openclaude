@@ -2,10 +2,13 @@ import {
   type AnsiCode,
   ansiCodesToString,
   reduceAnsiCodes,
-  type Token,
   tokenize,
   undoAnsiCodes,
 } from '@alcalzone/ansi-tokenize'
+import type { Token } from '@alcalzone/ansi-tokenize'
+
+// Cast tokenize result to work around moduleResolution issues
+const tokenizeSafe = (text: string): Token[] => tokenize(text)
 import type { Theme } from './theme.js'
 
 export type TextHighlight = {
@@ -70,7 +73,7 @@ class HighlightSegmenter {
   private codes: AnsiCode[] = []
 
   constructor(private readonly text: string) {
-    this.tokens = tokenize(text)
+    this.tokens = tokenizeSafe(text)
   }
 
   segment(highlights: TextHighlight[]): TextSegment[] {
@@ -128,14 +131,15 @@ class HighlightSegmenter {
         this.tokenIdx++
       } else {
         const charsNeeded = targetVisiblePos - this.visiblePos
-        const charsAvailable = token.value.length - this.charIdx
+        const tokenValue = (token as { value?: string }).value ?? ''
+        const charsAvailable = tokenValue.length - this.charIdx
         const charsToTake = Math.min(charsNeeded, charsAvailable)
 
         this.stringPos += charsToTake
         this.visiblePos += charsToTake
         this.charIdx += charsToTake
 
-        if (this.charIdx >= token.value.length) {
+        if (this.charIdx >= tokenValue.length) {
           this.tokenIdx++
           this.charIdx = 0
         }

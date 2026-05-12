@@ -12,7 +12,7 @@
  */
 
 import { z } from 'zod/v4'
-import { sample } from 'lodash-es/sample.js'
+import sample from 'lodash-es/sample'
 import { logForDebugging } from './debug.js'
 import { getLastPeerDmSummary, readMailbox, writeToMailbox } from './teammateMailbox.js'
 
