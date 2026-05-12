@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "ignoreDeprecations": 6,
     "target": "ES2023",
     "lib": ["ES2023", "DOM"],
     "module": "ESNext",
