@@ -307,7 +307,7 @@ async function cachedMicrocompactPath(
 ): Promise<MicrocompactResult> {
   const mod = await getCachedMCModule()
   const state = ensureCachedMCState()
-  const config = mod.getCachedMCConfig()
+  const config = (mod as any).getCachedMCConfig()
 
   const compactableToolIds = new Set(collectCompactableToolIds(messages))
   // Second pass: register tool results grouped by user message
@@ -318,21 +318,21 @@ async function cachedMicrocompactPath(
         if (
           block.type === 'tool_result' &&
           compactableToolIds.has(block.tool_use_id) &&
-          !state.registeredTools.has(block.tool_use_id)
+          !(state as any).registeredTools.has(block.tool_use_id)
         ) {
-          mod.registerToolResult(state, block.tool_use_id)
+          (mod as any).registerToolResult((state as any), block.tool_use_id)
           groupIds.push(block.tool_use_id)
         }
       }
-      mod.registerToolMessage(state, groupIds)
+      (mod as any).registerToolMessage((state as any), groupIds)
     }
   }
 
-  const toolsToDelete = mod.getToolResultsToDelete(state)
+  const toolsToDelete = (mod as any).getToolResultsToDelete((state as any))
 
   if (toolsToDelete.length > 0) {
     // Create and queue the cache_edits block for the API layer
-    const cacheEdits = mod.createCacheEditsBlock(state, toolsToDelete)
+    const cacheEdits = (mod as any).createCacheEditsBlock((state as any), toolsToDelete)
     if (cacheEdits) {
       pendingCacheEdits = cacheEdits
     }
