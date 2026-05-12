@@ -259,13 +259,18 @@ async function getCacheSharingParams(
   forkContextMessages: Message[]
 }> {
   const appState = context.getAppState()
+  const tools = context.options.tools
+  const mainLoopModel = context.options.mainLoopModel
+  const mcpClients = context.options.mcpClients
+  const additionalWorkingDirectories = Array.from(
+    appState.toolPermissionContext.additionalWorkingDirectories.keys(),
+  )
+  // @ts-expect-error ToolUseContext.tools has broader type than getSystemPrompt expects
   const defaultSysPrompt = await getSystemPrompt(
-    context.options.tools,
-    context.options.mainLoopModel,
-    Array.from(
-      appState.toolPermissionContext.additionalWorkingDirectories.keys(),
-    ),
-    context.options.mcpClients
+    tools,
+    mainLoopModel,
+    additionalWorkingDirectories,
+    mcpClients,
   )
   const systemPrompt = buildEffectiveSystemPrompt({
     mainThreadAgentDefinition: undefined,
