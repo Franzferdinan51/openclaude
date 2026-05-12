@@ -10,6 +10,8 @@ import { isCoordinatorMode } from '../../coordinator/coordinatorMode.js';
 import { startAgentSummarization } from '../../services/AgentSummary/agentSummary.js';
 import { getFeatureValue_CACHED_MAY_BE_STALE } from '../../services/analytics/growthbook.js';
 import { type AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS, logEvent } from '../../services/analytics/index.js';
+import { type TracingConfig, DEFAULT_TRACING_CONFIG, isTracingEnabled } from '../../services/tracing/types.js';
+import { getTracingIntegration } from '../../services/tracing/integration.js';
 import { clearDumpState } from '../../services/api/dumpPrompts.js';
 import { completeAgentTask as completeAsyncAgent, createActivityDescriptionResolver, createProgressTracker, enqueueAgentNotification, failAgentTask as failAsyncAgent, getProgressUpdate, getTokenCountFromTracker, isLocalAgentTask, killAsyncAgent, registerAgentForeground, registerAsyncAgent, unregisterAgentForeground, updateAgentProgress as updateAsyncAgentProgress, updateProgressFromMessage } from '../../tasks/LocalAgentTask/LocalAgentTask.js';
 import { checkRemoteAgentEligibility, formatPreconditionError, getRemoteTaskSessionUrl, registerRemoteAgentTask } from '../../tasks/RemoteAgentTask/RemoteAgentTask.js';
@@ -426,6 +428,15 @@ export const AgentTool = buildTool({
       is_async: (run_in_background === true || selectedAgent.background === true) && !isBackgroundTasksDisabled,
       is_fork: isForkPath
     });
+
+    // Emit agent spawn event for tracing (lazy import to keep tracing optional)
+    // Use the agentId that will be assigned during agent execution
+    const _tracing = await getTracingIntegration();
+    _tracing.emitAgentSpawn(
+      selectedAgent.agentType,
+      'pending', // agentId will be set during runAgent execution
+      toolUseContext.agentId
+    );
 
     // Resolve effective isolation mode (explicit param overrides agent def)
     const effectiveIsolation = isolation ?? selectedAgent.isolation;
@@ -1030,6 +1041,9 @@ export const AgentTool = buildTool({
                     }
                     const errMsg = errorMessage(error);
                     failAsyncAgent(backgroundedTaskId, errMsg, rootSetAppState);
+                    // Emit agent failure tracing
+                    const tracing = await getTracingIntegration();
+                    tracing.emitAgentEnd(selectedAgent.agentType, backgroundedTaskId, false);
                     const worktreeResult = await cleanupWorktreeIfNeeded();
                     enqueueAgentNotification({
                       taskId: backgroundedTaskId,
@@ -1162,6 +1176,10 @@ export const AgentTool = buildTool({
 
           // Store the error to handle after cleanup
           syncAgentError = toError(error);
+
+          // Emit agent failure tracing for sync agents
+          const tracing = await getTracingIntegration();
+          tracing.emitAgentEnd(metadata.agentType, syncAgentId, false);
         } finally {
           // Clear the background hint UI
           if (toolUseContext.setToolJSX) {

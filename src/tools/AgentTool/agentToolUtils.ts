@@ -12,6 +12,7 @@ import {
   type AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
   logEvent,
 } from '../../services/analytics/index.js'
+import { getTracingIntegration } from '../../services/tracing/integration.js'
 import { clearDumpState } from '../../services/api/dumpPrompts.js'
 import type { AppState } from '../../state/AppState.js'
 import type {
@@ -333,6 +334,9 @@ export function finalizeAgentTool(
     is_built_in_agent: isBuiltInAgent,
     is_async: isAsync,
   })
+
+  // Emit agent end event for tracing (fire-and-forget, non-blocking)
+  getTracingIntegration().then(tracing => tracing.emitAgentEnd(agentType, agentId, true))
 
   // Signal to inference that this subagent's cache chain can be evicted.
   const lastRequestId = lastAssistantMessage.requestId
