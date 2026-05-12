@@ -125,7 +125,7 @@ function StatsContent(t0) {
     onClose
   } = t0;
   const allTimeResult = use(allTimePromise);
-  const [dateRange, setDateRange] = useState("all");
+  const [dateRange, setDateRange] = useState<any>("all");
   let t1;
   if ($[0] === Symbol.for("react.memo_cache_sentinel")) {
     t1 = {};
@@ -135,7 +135,7 @@ function StatsContent(t0) {
   }
   const [statsCache, setStatsCache] = useState(t1);
   const [isLoadingFiltered, setIsLoadingFiltered] = useState(false);
-  const [activeTab, setActiveTab] = useState("Overview");
+  const [activeTab, setActiveTab] = useState<any>("Overview");
   const [copyStatus, setCopyStatus] = useState(null);
   let t2;
   let t3;
@@ -216,7 +216,7 @@ function StatsContent(t0) {
         setDateRange(getNextDateRange(dateRange));
       }
       if (key.ctrl && input === "s" && displayStats) {
-        handleScreenshot(displayStats, activeTab, setCopyStatus);
+        handleScreenshot(displayStats, activeTab, setCopyStatus as any);
       }
     };
     $[8] = activeTab;
@@ -228,18 +228,18 @@ function StatsContent(t0) {
     t6 = $[12];
   }
   useInput(t6);
-  if (allTimeResult.type === "error") {
+  if ((allTimeResult as any).type === "error") {
     let t7;
-    if ($[13] !== allTimeResult.message) {
-      t7 = <Box marginTop={1}><Text color="error">Failed to load stats: {allTimeResult.message}</Text></Box>;
-      $[13] = allTimeResult.message;
+    if ($[13] !== (allTimeResult as any).message) {
+      t7 = <Box marginTop={1}><Text color="error">Failed to load stats: {(allTimeResult as any).message}</Text></Box>;
+      $[13] = (allTimeResult as any).message;
       $[14] = t7;
     } else {
       t7 = $[14];
     }
     return t7;
   }
-  if (allTimeResult.type === "empty") {
+  if ((allTimeResult as any).type === "empty") {
     let t7;
     if ($[15] === Symbol.for("react.memo_cache_sentinel")) {
       t7 = <Box marginTop={1}><Text color="warning">No stats available yet. Start using OpenClaude!</Text></Box>;
