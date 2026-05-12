@@ -491,7 +491,7 @@ export async function* runToolUse(
       }),
     }
   } finally {
-    emitToolEnd(runId, toolName)
+    emitToolEnd(runId, toolName, {})
   }
 }
 
@@ -788,7 +788,7 @@ async function checkPermissionsAndCallTool(
     )
   }
 
-  const resultingMessages = []
+  const resultingMessages: any[] = []
 
   // Defense-in-depth: strip _simulatedSedEdit from model-provided Bash input.
   // This field is internal-only — it must only be injected by the permission
@@ -1434,7 +1434,7 @@ async function checkPermissionsAndCallTool(
 
     // Run PostToolUse hooks
     let toolOutput = result.data
-    const hookResults = []
+    const hookResults: any[] = []
     const toolContextModifier = result.contextModifier
     const mcpMeta = result.mcpMeta
 
