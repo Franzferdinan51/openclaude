@@ -101,7 +101,7 @@ export function ToolSelector(t0) {
     initialTools,
     onComplete,
     onCancel
-  } = t0;
+  } = t0 as any;
   let t1;
   if ($[0] !== tools) {
     t1 = filterToolsForAgent({

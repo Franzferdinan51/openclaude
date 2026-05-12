@@ -22,7 +22,7 @@ export const HighlightedCode = memo(function HighlightedCode(t0) {
     filePath,
     width,
     dim: t1
-  } = t0;
+  } = t0 as any;
   const dim = t1 === undefined ? false : t1;
   const ref = useRef(null);
   const [measuredWidth, setMeasuredWidth] = useState(width || DEFAULT_WIDTH);
@@ -139,7 +139,7 @@ function CodeLine(t0) {
   const {
     line,
     gutterWidth
-  } = t0;
+  } = t0 as any;
   let t1;
   if ($[0] !== gutterWidth || $[1] !== line) {
     t1 = sliceAnsi(line, 0, gutterWidth);

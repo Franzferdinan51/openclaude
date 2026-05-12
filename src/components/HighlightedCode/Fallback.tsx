@@ -43,7 +43,7 @@ export function HighlightedCodeFallback(t0) {
     filePath,
     dim: t1,
     skipColoring: t2
-  } = t0;
+  } = t0 as any;
   const dim = t1 === undefined ? false : t1;
   const skipColoring = t2 === undefined ? false : t2;
   let t3;
@@ -126,7 +126,7 @@ function Highlighted(t0) {
   const {
     codeWithSpaces,
     language
-  } = t0;
+  } = t0 as any;
   let t1;
   if ($[0] === Symbol.for("react.memo_cache_sentinel")) {
     t1 = getCliHighlightPromise();
