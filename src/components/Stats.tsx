@@ -149,7 +149,7 @@ function StatsContent(t0) {
       }
       let cancelled = false;
       setIsLoadingFiltered(true);
-      aggregateClaudeCodeStatsForRange(dateRange).then(data => {
+      aggregateClaudeCodeStatsForRange(dateRange as any).then(data => {
         if (!cancelled) {
           setStatsCache(prev => ({
             ...prev,
@@ -176,8 +176,8 @@ function StatsContent(t0) {
     t3 = $[4];
   }
   useEffect(t2, t3);
-  const displayStats = dateRange === "all" ? allTimeResult.type === "success" ? allTimeResult.data : null : statsCache[dateRange] ?? (allTimeResult.type === "success" ? allTimeResult.data : null);
-  const allTimeStats = allTimeResult.type === "success" ? allTimeResult.data : null;
+  const displayStats = dateRange === "all" ? (allTimeResult as any).type === "success" ? (allTimeResult as any).data : null : statsCache[dateRange] ?? ((allTimeResult as any).type === "success" ? (allTimeResult as any).data : null);
+  const allTimeStats = (allTimeResult as any).type === "success" ? (allTimeResult as any).data : null;
   let t4;
   if ($[5] !== onClose) {
     t4 = () => {
