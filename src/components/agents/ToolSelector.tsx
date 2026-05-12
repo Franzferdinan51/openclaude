@@ -251,7 +251,7 @@ export function ToolSelector(t0) {
   let t9;
   if ($[22] !== selectedSet) {
     t9 = bucketTools => {
-      const selected = count(bucketTools, t_5 => selectedSet.has(t_5.name));
+      const selected = count(bucketTools, t_5 => selectedSet.has((t_5 as any).name));
       const needsSelection = selected < bucketTools.length;
       return () => {
         const toolNames_1 = bucketTools.map(_temp4);
