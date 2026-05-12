@@ -100,7 +100,7 @@ export function getPinnedCacheEdits(): import('./cachedMicrocompact.js').PinnedC
   if (!cachedMCState) {
     return []
   }
-  return cachedMCState.pinnedEdits
+  return (cachedMCState as any).pinnedEdits
 }
 
 /**
@@ -112,7 +112,7 @@ export function pinCacheEdits(
   block: any,
 ): void {
   if (cachedMCState) {
-    cachedMCState.pinnedEdits.push({ userMessageIndex, block })
+    (cachedMCState as any).pinnedEdits.push({ userMessageIndex, block })
   }
 }
 
