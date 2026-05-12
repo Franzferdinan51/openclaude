@@ -218,7 +218,7 @@ type State = {
   continuationNudgeCount: number
   // Why the previous iteration continued. Undefined on first iteration.
   // Lets tests assert recovery paths fired without inspecting message contents.
-  transition: Continue | undefined
+  transition: any | undefined
 }
 
 export async function* query(
