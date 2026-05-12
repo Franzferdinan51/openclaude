@@ -72,7 +72,7 @@ function NotebookEditToolDiffInner(t0) {
     verbose,
     width,
     promise
-  } = t0;
+  } = t0 as any;
   const edit_mode = t1 === undefined ? "replace" : t1;
   const notebookData = use(promise);
   let t2;
