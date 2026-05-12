@@ -12,10 +12,10 @@ export function getDefaultCharacters(): string[] {
 
 // Interpolate between two RGB colors
 export function interpolateColor(
-  color1: RGBColorType,
-  color2: RGBColorType,
+  color1: any,
+  color2: any,
   t: number, // 0 to 1
-): RGBColorType {
+): any {
   return {
     r: Math.round(color1.r + (color2.r - color1.r) * t),
     g: Math.round(color1.g + (color2.g - color1.g) * t),
@@ -24,12 +24,12 @@ export function interpolateColor(
 }
 
 // Convert RGB object to rgb() color string for Text component
-export function toRGBColor(color: RGBColorType): RGBColorString {
+export function toRGBColor(color: any): RGBColorString {
   return `rgb(${color.r},${color.g},${color.b})`
 }
 
 // HSL hue (0-360) to RGB, using voice-mode waveform parameters (s=0.7, l=0.6).
-export function hueToRgb(hue: number): RGBColorType {
+export function hueToRgb(hue: number): any {
   const h = ((hue % 360) + 360) % 360
   const s = 0.7
   const l = 0.6
@@ -67,7 +67,7 @@ export function hueToRgb(hue: number): RGBColorType {
 
 const RGB_CACHE = new Map<string, RGBColorType | null>()
 
-export function parseRGB(colorStr: string): RGBColorType | null {
+export function parseRGB(colorStr: string): any | null {
   const cached = RGB_CACHE.get(colorStr)
   if (cached !== undefined) return cached
 
