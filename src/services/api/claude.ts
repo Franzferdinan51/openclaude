@@ -1005,14 +1005,14 @@ export function stripExcessMediaItems(
           !Array.isArray(block.content)
         )
           return block
-        const filtered = block.content.filter(n => {
+        const filtered = (block.content as any).filter((n: any) => {
           if (toRemove > 0 && isMedia(n)) {
             toRemove--
             return false
           }
           return true
         })
-        return filtered.length === block.content.length
+        return filtered.length === (block.content as any).length
           ? block
           : { ...block, content: filtered }
       })
@@ -1213,13 +1213,13 @@ async function* queryModel(
       getCachedMCConfig,
     } = await import('../compact/cachedMicrocompact.js')
     const betas = await import('src/constants/betas.js')
-    cacheEditingBetaHeader = betas.CACHE_EDITING_BETA_HEADER
+    cacheEditingBetaHeader = (betas as any).CACHE_EDITING_BETA_HEADER
     const featureEnabled = isCachedMicrocompactEnabled()
     const modelSupported = isModelSupportedForCacheEditing(options.model)
     cachedMCEnabled = featureEnabled && modelSupported
     const config = getCachedMCConfig()
     logForDebugging(
-      `Cached MC gate: enabled=${featureEnabled} modelSupported=${modelSupported} model=${options.model} supportedModels=${jsonStringify(config?.supportedModels)}`,
+      `Cached MC gate: enabled=${featureEnabled} modelSupported=${modelSupported} model=${options.model} supportedModels=${jsonStringify((config as any)?.supportedModels)}`,
     )
   }
 
