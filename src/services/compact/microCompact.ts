@@ -128,7 +128,7 @@ export function markToolsSentToAPIState(): void {
 
 export function resetMicrocompactState(): void {
   if (cachedMCState && cachedMCModule) {
-    cachedMCModule.resetCachedMCState(cachedMCState)
+    (cachedMCModule as any).resetCachedMCState(cachedMCState)
   }
   pendingCacheEdits = null
 }
