@@ -69,7 +69,7 @@ async function getCachedMCModule(): Promise<
 
 function ensureCachedMCState(): import('./cachedMicrocompact.js').CachedMCState {
   if (!cachedMCState && cachedMCModule) {
-    cachedMCState = cachedMCModule.createCachedMCState()
+    cachedMCState = (cachedMCModule as any).createCachedMCState()
   }
   if (!cachedMCState) {
     throw new Error(
@@ -122,7 +122,7 @@ export function pinCacheEdits(
  */
 export function markToolsSentToAPIState(): void {
   if (cachedMCState && cachedMCModule) {
-    cachedMCModule.markToolsSentToAPI(cachedMCState)
+    (cachedMCModule as any).markToolsSentToAPI(cachedMCState)
   }
 }
 

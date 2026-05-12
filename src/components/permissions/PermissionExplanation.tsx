@@ -100,7 +100,7 @@ export function usePermissionExplainerUI(props) {
   }
   const enabled = t0;
   const [visible, setVisible] = useState(false);
-  const [promise, setPromise] = useState<Promise<boolean> | null>(null);
+  const [promise, setPromise] = useState<any>(null);
   let t1;
   if ($[1] !== promise || $[2] !== props || $[3] !== visible) {
     t1 = () => {
