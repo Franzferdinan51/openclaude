@@ -158,7 +158,7 @@ function ExplanationResult(t0) {
   const {
     promise
   } = t0;
-  const explanation = use(promise);
+  const explanation: any = use(promise);
   if (!explanation) {
     let t1;
     if ($[0] === Symbol.for("react.memo_cache_sentinel")) {
