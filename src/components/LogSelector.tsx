@@ -20,6 +20,8 @@ import { getLogDisplayTitle } from '../utils/log.js';
 import { getFirstMeaningfulUserMessageTextContent, getSessionIdFromLog, isCustomTitleEnabled, saveCustomTitle } from '../utils/sessionStorage.js';
 import { getTheme } from '../utils/theme.js';
 import { ConfigurableShortcutHint } from './ConfigurableShortcutHint.js';
+import type { LogEntry } from '../history.js'
+// DeepSearchResult is inlined below
 import { Select } from './CustomSelect/select.js';
 import { Byline } from './design-system/Byline.js';
 import { Divider } from './design-system/Divider.js';
@@ -212,7 +214,7 @@ export function LogSelector(t0) {
     t7 = $[6];
   }
   const [expandedGroupSessionIds, setExpandedGroupSessionIds] = React.useState(t7);
-  const [focusedNode, setFocusedNode] = useState<string | null>(null);
+  const [focusedNode, setFocusedNode] = useState<{id: string; value: {log: LogEntry; indexInFiltered?: number}; label?: string} | null>(null);
   const [focusedIndex, setFocusedIndex] = React.useState(1);
   const [viewMode, setViewMode] = React.useState("list");
   const [previewLog, setPreviewLog] = useState<LogEntry | null>(null);
@@ -229,7 +231,7 @@ export function LogSelector(t0) {
   }
   const [agenticSearchState, setAgenticSearchState] = React.useState(t8);
   const [isAgenticSearchOptionFocused, setIsAgenticSearchOptionFocused] = React.useState(false);
-  const agenticSearchAbortRef = React.useRef(null);
+  const agenticSearchAbortRef = React.useRef<AbortController | null>(null);
   const t9 = viewMode === "search" && agenticSearchState.status !== "searching";
   let t10;
   let t11;
@@ -299,7 +301,7 @@ export function LogSelector(t0) {
     t16 = $[16];
   }
   React.useEffect(t15, t16);
-  const [deepSearchResults, setDeepSearchResults] = useState<DeepSearchResult[] | null>(null);
+  const [deepSearchResults, setDeepSearchResults] = useState<{query: string; results: {log: string; searchableText?: string}[]} | null>(null);
   const [isSearching, setIsSearching] = React.useState(false);
   let t17;
   let t18;
@@ -703,24 +705,24 @@ export function LogSelector(t0) {
     t30 = t31;
   }
   const flatOptions = t30;
-  const focusedLog = focusedNode?.value.log ?? null;
+  const focusedLog = focusedNode ?? null;
   let t31;
   if ($[84] !== displayedLogs || $[85] !== expandedGroupSessionIds || $[86] !== focusedLog) {
     t31 = () => {
       if (!isResumeWithRenameEnabled || !focusedLog) {
         return "";
       }
-      const sessionId_0 = getSessionIdFromLog(focusedLog);
+      const sessionId_0 = getSessionIdFromLog(focusedLog.value.log as any);
       if (!sessionId_0) {
         return "";
       }
-      const sessionLogs = displayedLogs.filter(log_10 => getSessionIdFromLog(log_10) === sessionId_0);
+      const sessionLogs = displayedLogs.filter(log_10 => getSessionIdFromLog(log_10.value?.log) === sessionId_0);
       const hasMultipleLogs = sessionLogs.length > 1;
       if (!hasMultipleLogs) {
         return "";
       }
       const isExpanded = expandedGroupSessionIds.has(sessionId_0);
-      const isChildNode = sessionLogs.indexOf(focusedLog) > 0;
+      const isChildNode = sessionLogs.indexOf(focusedLog.value.log) > 0;
       if (isChildNode) {
         return "\u2190 to collapse";
       }
@@ -737,14 +739,14 @@ export function LogSelector(t0) {
   let t32;
   if ($[88] !== focusedLog || $[89] !== onLogsChanged || $[90] !== renameValue) {
     t32 = async () => {
-      const sessionId_1 = focusedLog ? getSessionIdFromLog(focusedLog) : undefined;
+      const sessionId_1 = focusedLog ? getSessionIdFromLog(focusedLog.value.log) : undefined;
       if (!focusedLog || !sessionId_1) {
         setViewMode("list");
         setRenameValue("");
         return;
       }
       if (renameValue.trim()) {
-        await saveCustomTitle(sessionId_1, renameValue.trim(), focusedLog.fullPath);
+        await saveCustomTitle(sessionId_1, renameValue.trim(), (focusedLog.value.log as any).fullPath);
         if (isResumeWithRenameEnabled && onLogsChanged) {
           onLogsChanged();
         }
@@ -1128,7 +1130,7 @@ export function LogSelector(t0) {
                       setPreviewLog(focusedLog);
                       setViewMode("preview");
                       logEvent("tengu_session_preview_opened", {
-                        messageCount: focusedLog.messageCount
+                        messageCount: 0
                       });
                     } else {
                       if (focusedLog && keyIsNotCtrlOrMeta && input.length > 0 && !/^\s+$/.test(input)) {
@@ -1353,10 +1355,10 @@ export function LogSelector(t0) {
     t69 = $[201];
   }
   let t70;
-  if ($[202] !== agenticSearchState.status || $[203] !== branchFilterEnabled || $[204] !== columns || $[205] !== displayedLogs || $[206] !== expandedGroupSessionIds || $[207] !== flatOptions || $[208] !== focusedLog || $[209] !== focusedNode?.id || $[210] !== handleFlatOptionsSelectFocus || $[211] !== handleRenameSubmit || $[212] !== handleTreeSelectFocus || $[213] !== isAgenticSearchOptionFocused || $[214] !== onCancel || $[215] !== onSelect || $[216] !== renameCursorOffset || $[217] !== renameValue || $[218] !== treeNodes || $[219] !== viewMode || $[220] !== visibleCount) {
+  if ($[202] !== agenticSearchState.status || $[203] !== branchFilterEnabled || $[204] !== columns || $[205] !== displayedLogs || $[206] !== expandedGroupSessionIds || $[207] !== flatOptions || $[208] !== focusedLog || $[209] !== focusedNode || $[210] !== handleFlatOptionsSelectFocus || $[211] !== handleRenameSubmit || $[212] !== handleTreeSelectFocus || $[213] !== isAgenticSearchOptionFocused || $[214] !== onCancel || $[215] !== onSelect || $[216] !== renameCursorOffset || $[217] !== renameValue || $[218] !== treeNodes || $[219] !== viewMode || $[220] !== visibleCount) {
     t70 = agenticSearchState.status === "searching" ? null : viewMode === "rename" && focusedLog ? <Box paddingLeft={2} flexDirection="column"><Text bold={true}>Rename session:</Text><Box paddingTop={1}><TextInput value={renameValue} onChange={setRenameValue} onSubmit={handleRenameSubmit} placeholder={getLogDisplayTitle(focusedLog, "Enter new session name")} columns={columns} cursorOffset={renameCursorOffset} onChangeCursorOffset={setRenameCursorOffset} showCursor={true} /></Box></Box> : isResumeWithRenameEnabled ? <TreeSelect nodes={treeNodes} onSelect={node_0 => {
       onSelect(node_0.value.log);
-    }} onFocus={handleTreeSelectFocus} onCancel={onCancel} focusNodeId={focusedNode?.id} visibleOptionCount={visibleCount} layout="expanded" isDisabled={viewMode === "search" || isAgenticSearchOptionFocused} hideIndexes={false} isNodeExpanded={nodeId => {
+    }} onFocus={handleTreeSelectFocus} onCancel={onCancel} focusNodeId={focusedNode} visibleOptionCount={visibleCount} layout="expanded" isDisabled={viewMode === "search" || isAgenticSearchOptionFocused} hideIndexes={false} isNodeExpanded={nodeId => {
       if (viewMode === "search" || branchFilterEnabled) {
         return true;
       }
@@ -1383,7 +1385,7 @@ export function LogSelector(t0) {
       if (log_13) {
         onSelect(log_13);
       }
-    }} visibleOptionCount={visibleCount} onCancel={onCancel} onFocus={handleFlatOptionsSelectFocus} defaultFocusValue={focusedNode?.id.toString()} layout="expanded" isDisabled={viewMode === "search" || isAgenticSearchOptionFocused} onUpFromFirstItem={enterSearchMode} />;
+    }} visibleOptionCount={visibleCount} onCancel={onCancel} onFocus={handleFlatOptionsSelectFocus} defaultFocusValue={focusedNode.toString()} layout="expanded" isDisabled={viewMode === "search" || isAgenticSearchOptionFocused} onUpFromFirstItem={enterSearchMode} />;
     $[202] = agenticSearchState.status;
     $[203] = branchFilterEnabled;
     $[204] = columns;
@@ -1391,7 +1393,7 @@ export function LogSelector(t0) {
     $[206] = expandedGroupSessionIds;
     $[207] = flatOptions;
     $[208] = focusedLog;
-    $[209] = focusedNode?.id;
+    $[209] = focusedNode;
     $[210] = handleFlatOptionsSelectFocus;
     $[211] = handleRenameSubmit;
     $[212] = handleTreeSelectFocus;

@@ -216,7 +216,7 @@ export async function* getHistory(): AsyncGenerator<HistoryEntry> {
   }
 }
 
-type LogEntry = {
+export type LogEntry = {
   display: string
   pastedContents: Record<number, StoredPastedContent>
   timestamp: number

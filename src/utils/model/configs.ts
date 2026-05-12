@@ -48,7 +48,7 @@ export const CLAUDE_3_7_SONNET_CONFIG = {
   'nvidia-nim': 'nvidia/llama-3.1-nemotron-70b-instruct',
   minimax: 'MiniMax-M2.5',
   xai: 'grok-4.3',
-} as const satisfies LegacyProviderModelConfig
+} as LegacyProviderModelConfig
 
 export const CLAUDE_3_5_V2_SONNET_CONFIG = {
   firstParty: 'claude-3-5-sonnet-20241022',
@@ -63,7 +63,7 @@ export const CLAUDE_3_5_V2_SONNET_CONFIG = {
   'nvidia-nim': 'nvidia/llama-3.1-nemotron-70b-instruct',
   minimax: 'MiniMax-M2.5',
   xai: 'grok-4.3',
-} as const satisfies LegacyProviderModelConfig
+} as LegacyProviderModelConfig
 
 export const CLAUDE_3_5_HAIKU_CONFIG = {
   firstParty: 'claude-3-5-haiku-20241022',
@@ -78,7 +78,7 @@ export const CLAUDE_3_5_HAIKU_CONFIG = {
   'nvidia-nim': 'nvidia/llama-3.1-nemotron-70b-instruct',
   minimax: 'MiniMax-M2.5',
   xai: 'grok-4.3',
-} as const satisfies LegacyProviderModelConfig
+} as LegacyProviderModelConfig
 
 export const CLAUDE_HAIKU_4_5_CONFIG = {
   firstParty: 'claude-haiku-4-5-20251001',
@@ -93,7 +93,7 @@ export const CLAUDE_HAIKU_4_5_CONFIG = {
   'nvidia-nim': 'nvidia/llama-3.1-nemotron-70b-instruct',
   minimax: 'MiniMax-M2.5',
   xai: 'grok-4.3',
-} as const satisfies LegacyProviderModelConfig
+} as LegacyProviderModelConfig
 
 export const CLAUDE_SONNET_4_CONFIG = {
   firstParty: 'claude-sonnet-4-20250514',
@@ -108,7 +108,7 @@ export const CLAUDE_SONNET_4_CONFIG = {
   'nvidia-nim': 'nvidia/llama-3.1-nemotron-70b-instruct',
   minimax: 'MiniMax-M2.5',
   xai: 'grok-4.3',
-} as const satisfies LegacyProviderModelConfig
+} as LegacyProviderModelConfig
 
 export const CLAUDE_SONNET_4_5_CONFIG = {
   firstParty: 'claude-sonnet-4-5-20250929',
@@ -123,7 +123,7 @@ export const CLAUDE_SONNET_4_5_CONFIG = {
   'nvidia-nim': 'nvidia/llama-3.1-nemotron-70b-instruct',
   minimax: 'MiniMax-M2.5',
   xai: 'grok-4.3',
-} as const satisfies LegacyProviderModelConfig
+} as LegacyProviderModelConfig
 
 export const CLAUDE_OPUS_4_CONFIG = {
   firstParty: 'claude-opus-4-20250514',
@@ -138,7 +138,7 @@ export const CLAUDE_OPUS_4_CONFIG = {
   'nvidia-nim': 'nvidia/llama-3.1-nemotron-70b-instruct',
   minimax: 'MiniMax-M2.5',
   xai: 'grok-4.3',
-} as const satisfies LegacyProviderModelConfig
+} as LegacyProviderModelConfig
 
 export const CLAUDE_OPUS_4_1_CONFIG = {
   firstParty: 'claude-opus-4-1-20250805',
@@ -153,7 +153,7 @@ export const CLAUDE_OPUS_4_1_CONFIG = {
   'nvidia-nim': 'nvidia/llama-3.1-nemotron-70b-instruct',
   minimax: 'MiniMax-M2.5',
   xai: 'grok-4.3',
-} as const satisfies LegacyProviderModelConfig
+} as LegacyProviderModelConfig
 
 export const CLAUDE_OPUS_4_5_CONFIG = {
   firstParty: 'claude-opus-4-5-20251101',
@@ -168,7 +168,7 @@ export const CLAUDE_OPUS_4_5_CONFIG = {
   'nvidia-nim': 'nvidia/llama-3.1-nemotron-70b-instruct',
   minimax: 'MiniMax-M2.5',
   xai: 'grok-4.3',
-} as const satisfies LegacyProviderModelConfig
+} as LegacyProviderModelConfig
 
 export const CLAUDE_OPUS_4_6_CONFIG = {
   firstParty: 'claude-opus-4-6',
@@ -183,7 +183,7 @@ export const CLAUDE_OPUS_4_6_CONFIG = {
   'nvidia-nim': 'nvidia/llama-3.1-nemotron-70b-instruct',
   minimax: 'MiniMax-M2.5',
   xai: 'grok-4.3',
-} as const satisfies LegacyProviderModelConfig
+} as LegacyProviderModelConfig
 
 export const CLAUDE_OPUS_4_7_CONFIG = {
   firstParty: 'claude-opus-4-7',
@@ -198,7 +198,7 @@ export const CLAUDE_OPUS_4_7_CONFIG = {
   'nvidia-nim': 'nvidia/llama-3.1-nemotron-70b-instruct',
   minimax: 'MiniMax-M2.5',
   xai: 'grok-4.3',
-} as const satisfies LegacyProviderModelConfig
+} as LegacyProviderModelConfig
 
 export const CLAUDE_SONNET_4_6_CONFIG = {
   firstParty: 'claude-sonnet-4-6',
@@ -213,7 +213,7 @@ export const CLAUDE_SONNET_4_6_CONFIG = {
   'nvidia-nim': 'nvidia/llama-3.1-nemotron-70b-instruct',
   minimax: 'MiniMax-M2.5',
   xai: 'grok-4.3',
-} as const satisfies LegacyProviderModelConfig
+} as LegacyProviderModelConfig
 
 // @[MODEL LAUNCH]: Register the new config here.
 export const LEGACY_PROVIDER_MODEL_CONFIGS = {
