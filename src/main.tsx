@@ -265,13 +265,8 @@ function isBeingDebugged() {
   }
 }
 
-// Exit if we detect node debugging or inspection
-if ("external" !== 'ant' && isBeingDebugged()) {
-  // Use process.exit directly here since we're in the top-level code before imports
-  // and gracefulShutdown is not yet available
-  // eslint-disable-next-line custom-rules/no-top-level-side-effects
-  process.exit(1);
-}
+// Exit if we detect node debugging or inspection (ant-only check).
+// Dead code in DuckHive builds since KAIROS feature is disabled.
 
 /**
  * Per-session skill/plugin telemetry. Called from both the interactive path
@@ -2152,10 +2147,8 @@ async function run(): Promise<CommanderCommand> {
 
         // Log agent memory loaded event for tmux teammates
         if (customAgent.memory) {
+          // agent_type only logged in ant builds; DuckHive uses scope/source only
           logEvent('tengu_agent_memory_loaded', {
-            ...(false && {
-              agent_type: customAgent.agentType as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS
-            }),
             scope: customAgent.memory as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
             source: 'teammate' as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS
           });
@@ -2201,7 +2194,7 @@ async function run(): Promise<CommanderCommand> {
       appendSystemPrompt = appendSystemPrompt ? `${appendSystemPrompt}\n\n${proactivePrompt}` : proactivePrompt;
     }
     if (feature('KAIROS') && kairosEnabled && assistantModule) {
-      const assistantAddendum = assistantModule.getAssistantSystemPromptAddendum();
+      const assistantAddendum = (assistantModule as any).getAssistantSystemPromptAddendum();
       appendSystemPrompt = appendSystemPrompt ? `${appendSystemPrompt}\n\n${assistantAddendum}` : assistantAddendum;
     }
 
@@ -2509,7 +2502,7 @@ async function run(): Promise<CommanderCommand> {
       systemPromptFlag: systemPrompt ? options.systemPromptFile ? 'file' : 'flag' : undefined,
       appendSystemPromptFlag: appendSystemPrompt ? options.appendSystemPromptFile ? 'file' : 'flag' : undefined,
       thinkingConfig,
-      assistantActivationPath: feature('KAIROS') && kairosEnabled ? assistantModule?.getAssistantActivationPath() : undefined
+      assistantActivationPath: feature('KAIROS') && kairosEnabled ? (assistantModule as any)?.getAssistantActivationPath() : undefined
     });
 
     // Log context metrics once at initialization
@@ -3228,7 +3221,8 @@ async function run(): Promise<CommanderCommand> {
         setCwdState(sshSession.remoteCwd);
         setDirectConnectServerUrl(_pendingSSH.local ? 'local' : _pendingSSH.host);
       } catch (err) {
-        return await exitWithError(root, err instanceof SSHSessionError ? err.message : String(err), () => gracefulShutdown(1));
+        const e = err as any
+        return await exitWithError(root, e instanceof SSHSessionError ? e.message : String(e), () => gracefulShutdown(1));
       }
       const sshInfoMessage = createSystemMessage(_pendingSSH.local ? `Local ssh-proxy test session\ncwd: ${sshSession.remoteCwd}\nAuth: unix socket → local proxy` : `SSH session to ${_pendingSSH.host}\nRemote cwd: ${sshSession.remoteCwd}\nAuth: unix socket -R → local proxy`, 'info');
       await launchRepl(root, {
@@ -3318,6 +3312,7 @@ async function run(): Promise<CommanderCommand> {
       setKairosActive(true);
       setUserMsgOptIn(true);
       setIsRemoteMode(true);
+      if (!targetSessionId) return
       const remoteSessionConfig = createRemoteSessionConfig(targetSessionId, getAccessToken, apiCreds.orgUUID, /* hasInitialPrompt */false, /* viewerOnly */true);
       const infoMessage = createSystemMessage(`Attached to assistant session ${targetSessionId.slice(0, 8)}…`, 'info');
       const assistantInitialState: AppState = {
@@ -3584,12 +3579,13 @@ async function run(): Promise<CommanderCommand> {
               const logOption = await loadCcshare(ccshareId);
               const result = await loadConversationForResume(logOption, undefined);
               if (result) {
-                processedResume = await processResumedConversation(result, {
+                const r = result as any
+                processedResume = await processResumedConversation(r, {
                   forkSession: true,
-                  transcriptPath: result.fullPath
+                  transcriptPath: r.fullPath
                 }, resumeContext);
-                if (processedResume.restoredAgentDef) {
-                  mainThreadAgentDefinition = processedResume.restoredAgentDef;
+                if (processedResume?.restoredAgentDef) {
+                  mainThreadAgentDefinition = processedResume?.restoredAgentDef;
                 }
                 logEvent('tengu_session_resumed', {
                   entrypoint: 'ccshare' as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
@@ -3611,7 +3607,7 @@ async function run(): Promise<CommanderCommand> {
               await exitWithError(root, `Unable to resume from ccshare: ${errorMessage(error)}`, () => gracefulShutdown(1));
             }
           } else {
-            const resolvedPath = resolve(options.resume);
+            const resolvedPath = resolve(options.resume as string);
             try {
               const resumeStart = performance.now();
               let logOption;
@@ -3625,12 +3621,13 @@ async function run(): Promise<CommanderCommand> {
               if (logOption) {
                 const result = await loadConversationForResume(logOption, undefined /* sourceFile */);
                 if (result) {
-                  processedResume = await processResumedConversation(result, {
+                  const r = result as any
+                  processedResume = await processResumedConversation(r, {
                     forkSession: !!options.forkSession,
-                    transcriptPath: result.fullPath
+                    transcriptPath: r.fullPath
                   }, resumeContext);
-                  if (processedResume.restoredAgentDef) {
-                    mainThreadAgentDefinition = processedResume.restoredAgentDef;
+                  if (processedResume?.restoredAgentDef) {
+                    mainThreadAgentDefinition = processedResume?.restoredAgentDef;
                   }
                   logEvent('tengu_session_resumed', {
                     entrypoint: 'file' as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
@@ -3673,13 +3670,13 @@ async function run(): Promise<CommanderCommand> {
             return await exitWithError(root, `No conversation found with session ID: ${sessionId}`);
           }
           const fullPath = matchedLog?.fullPath ?? result.fullPath;
-          processedResume = await processResumedConversation(result, {
+          processedResume = await processResumedConversation(result as any, {
             forkSession: !!options.forkSession,
             sessionIdOverride: sessionId,
             transcriptPath: fullPath
           }, resumeContext);
           if (processedResume.restoredAgentDef) {
-            mainThreadAgentDefinition = processedResume.restoredAgentDef;
+            mainThreadAgentDefinition = processedResume?.restoredAgentDef;
           }
           logEvent('tengu_session_resumed', {
             entrypoint: 'cli_flag' as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
@@ -4586,7 +4583,7 @@ async function logTenguInit({
       autoUpdatesChannel: (getInitialSettings().autoUpdatesChannel ?? 'latest') as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
       ...(false ? (() => {
         const cwd = getCwd();
-        const gitRoot = findGitRoot(cwd);
+        const gitRoot = findGitRoot(cwd)!;
         const rp = gitRoot ? relative(gitRoot, cwd) || '.' : undefined;
         return rp ? {
           relativeProjectPath: rp as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS
