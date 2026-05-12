@@ -446,7 +446,7 @@ export const AgentTool = buildTool({
     if (false && effectiveIsolation === 'remote') {
       const eligibility = await checkRemoteAgentEligibility();
       if (!eligibility.eligible) {
-        const reasons = eligibility.errors.map(formatPreconditionError).join('\n');
+        const reasons = (eligibility as any).errors.map(formatPreconditionError).join('\n');
         throw new Error(`Cannot launch remote agent:\n${reasons}`);
       }
       let bundleFailHint: string | undefined;
@@ -467,8 +467,8 @@ export const AgentTool = buildTool({
       } = registerRemoteAgentTask({
         remoteTaskType: 'remote-agent',
         session: {
-          id: session.id,
-          title: session.title || description
+          id: (session as any).id,
+          title: (session as any).title || description
         },
         command: prompt,
         context: toolUseContext,
