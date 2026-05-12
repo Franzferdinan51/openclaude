@@ -142,11 +142,11 @@ export const getInferenceProfileBackingModel = memoize(async function (
   profileId: string,
 ): Promise<string | null> {
   try {
-    const [client, { GetInferenceProfileCommand }] = await Promise.all([
+    const [client, cmdModule] = await Promise.all([
       createBedrockClient(),
       import('@aws-sdk/client-bedrock'),
     ])
-    const command = new GetInferenceProfileCommand({
+    const command = new (cmdModule as any).GetInferenceProfileCommand({
       inferenceProfileIdentifier: profileId,
     })
     const response = await client.send(command)
