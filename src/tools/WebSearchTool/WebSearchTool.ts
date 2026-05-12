@@ -242,7 +242,7 @@ function pushCodexTextResult(
 
 function addCodexSource(
   sourceMap: Map<string, { title: string; url: string }>,
-  source: unknown,
+  source: any,
 ): void {
   if (typeof source?.url !== 'string' || !source.url) return
   sourceMap.set(source.url, {
