@@ -2,7 +2,7 @@ import { c as _c } from "react-compiler-runtime";
 import chalk from 'chalk';
 import figures from 'figures';
 import Fuse from 'fuse.js';
-import React from 'react';
+import React, { useState } from 'react';
 import { getOriginalCwd, getSessionId } from '../bootstrap/state.js';
 import { useExitOnCtrlCDWithKeybindings } from '../hooks/useExitOnCtrlCDWithKeybindings.js';
 import { useSearchInput } from '../hooks/useSearchInput.js';

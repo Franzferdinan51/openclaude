@@ -4,4 +4,4 @@
  * These stubs satisfy TypeScript type-checking only.
  */
 
-export const isAssistantMode = false
+export function isAssistantMode(): boolean { return false }

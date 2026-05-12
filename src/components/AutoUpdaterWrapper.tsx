@@ -1,6 +1,6 @@
 import { c as _c } from "react-compiler-runtime";
 import { feature } from 'bun:bundle';
-import * as React from 'react';
+import * as React from 'react'; import { useState } from 'react';
 import type { AutoUpdaterResult } from '../utils/autoUpdater.js';
 import { isAutoUpdaterDisabled } from '../utils/config.js';
 import { logForDebugging } from '../utils/debug.js';
