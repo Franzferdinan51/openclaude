@@ -391,7 +391,7 @@ function ThinkbackFlow(t0) {
   } = t0;
   const [installComplete, setInstallComplete] = useState(false);
   const [installError, setInstallError] = useState<boolean | null>(null);
-  const [skillDir, setSkillDir] = useState<boolean | null>(null);
+  const [skillDir, setSkillDir] = useState<string | null>(null);
   const [hasGenerated, setHasGenerated] = useState<boolean | null>(null);
   let t1;
   if ($[0] === Symbol.for("react.memo_cache_sentinel")) {

@@ -138,7 +138,7 @@ function ToggleTagAndClose(t0) {
       t4 = async () => {
         logEvent("tengu_tag_command_remove_confirmed", {});
         const fullPath_0 = getTranscriptPath();
-        await saveTag(sessionId, "", fullPath_0);
+        await saveTag(sessionId as UUID, "", fullPath_0);
         onDone(`Removed tag ${chalk.cyan(`#${normalizedTag}`)}`, {
           display: "system"
         });
