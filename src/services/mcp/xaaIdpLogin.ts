@@ -99,7 +99,7 @@ export function issuerKey(issuer: string): string {
 export function getCachedIdpIdToken(idpIssuer: string): string | undefined {
   const storage = getSecureStorage()
   const data = storage.read()
-  const entry = data?.mcpXaaIdp?.[issuerKey(idpIssuer)]
+  const entry = (data as any)?.mcpXaaIdp?.[issuerKey(idpIssuer)]
   if (!entry) return undefined
   const remainingMs = entry.expiresAt - Date.now()
   if (remainingMs <= ID_TOKEN_EXPIRY_BUFFER_S * 1000) return undefined
@@ -144,8 +144,8 @@ export function clearIdpIdToken(idpIssuer: string): void {
   const storage = getSecureStorage()
   const existing = storage.read()
   const key = issuerKey(idpIssuer)
-  if (!existing?.mcpXaaIdp?.[key]) return
-  delete existing.mcpXaaIdp[key]
+  if (!(existing as any)?.mcpXaaIdp?.[key]) return
+  delete (existing as any).mcpXaaIdp[key]
   storage.update(existing)
 }
 
