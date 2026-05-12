@@ -112,7 +112,7 @@ function saveIdpIdToken(
   expiresAt: number,
 ): void {
   const storage = getSecureStorage()
-  const existing = storage.read() || {}
+  const existing = (storage.read() || {}) as any
   storage.update({
     ...existing,
     mcpXaaIdp: {
@@ -161,7 +161,7 @@ export function saveIdpClientSecret(
   clientSecret: string,
 ): { success: boolean; warning?: string } {
   const storage = getSecureStorage()
-  const existing = storage.read() || {}
+  const existing = (storage.read() || {}) as any
   return storage.update({
     ...existing,
     mcpXaaIdpConfig: {
