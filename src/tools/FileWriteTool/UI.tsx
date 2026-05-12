@@ -293,10 +293,10 @@ function WriteRejectionBody(t0) {
     return t1;
   }
   let t1;
-  if ($[1] !== data.oldContent || $[2] !== data.patch || $[3] !== filePath || $[4] !== firstLine || $[5] !== style || $[6] !== verbose) {
-    t1 = <FileEditToolUseRejectedMessage file_path={filePath} operation="update" patch={data.patch} firstLine={firstLine} fileContent={data.oldContent} style={style} verbose={verbose} />;
-    $[1] = data.oldContent;
-    $[2] = data.patch;
+  if ($[1] !== (data as any).oldContent || $[2] !== (data as any).patch || $[3] !== filePath || $[4] !== firstLine || $[5] !== style || $[6] !== verbose) {
+    t1 = <FileEditToolUseRejectedMessage file_path={filePath} operation="update" patch={(data as any).patch} firstLine={firstLine} fileContent={(data as any).oldContent} style={style} verbose={verbose} />;
+    $[1] = (data as any).oldContent;
+    $[2] = (data as any).patch;
     $[3] = filePath;
     $[4] = firstLine;
     $[5] = style;
