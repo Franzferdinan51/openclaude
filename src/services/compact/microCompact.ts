@@ -55,7 +55,7 @@ export function isCompactableTool(name: string): boolean {
 let cachedMCModule: typeof import('./cachedMicrocompact.js') | null = null
 let cachedMCState: import('./cachedMicrocompact.js').CachedMCState | null = null
 let pendingCacheEdits:
-  | import('./cachedMicrocompact.js').CacheEditsBlock
+  | any
   | null = null
 
 async function getCachedMCModule(): Promise<
@@ -85,7 +85,7 @@ function ensureCachedMCState(): import('./cachedMicrocompact.js').CachedMCState 
  * Clears the pending state (caller must pin them after insertion).
  */
 export function consumePendingCacheEdits():
-  | import('./cachedMicrocompact.js').CacheEditsBlock
+  | any
   | null {
   const edits = pendingCacheEdits
   pendingCacheEdits = null
@@ -109,7 +109,7 @@ export function getPinnedCacheEdits(): import('./cachedMicrocompact.js').PinnedC
  */
 export function pinCacheEdits(
   userMessageIndex: number,
-  block: import('./cachedMicrocompact.js').CacheEditsBlock,
+  block: any,
 ): void {
   if (cachedMCState) {
     cachedMCState.pinnedEdits.push({ userMessageIndex, block })
