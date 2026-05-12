@@ -55,16 +55,16 @@ export function messagesAfterAreOnlySynthetic(messages: Message[], fromIndex: nu
     // Skip known non-meaningful message types
     if (isSyntheticMessage(msg)) continue
     if (isToolUseResultMessage(msg)) continue
-    if (msg.type === 'progress') continue
-    if (msg.type === 'system') continue
-    if (msg.type === 'attachment') continue
-    if (msg.type === 'user' && msg.isMeta) continue
+    if ((msg as any).type === 'progress') continue
+    if ((msg as any).type === 'system') continue
+    if ((msg as any).type === 'attachment') continue
+    if ((msg as any).type === 'user' && (msg as any).isMeta) continue
 
     // Assistant with actual content = meaningful
-    if (msg.type === 'assistant') {
-      const content = msg.message.content
+    if ((msg as any).type === 'assistant') {
+      const content = (msg as any).message?.content
       if (Array.isArray(content)) {
-        const hasMeaningfulContent = content.some(block => block.type === 'text' && block.text.trim() || block.type === 'tool_use')
+        const hasMeaningfulContent = content.some(block => block.type === 'text' && (block as any).text?.trim() || block.type === 'tool_use')
         if (hasMeaningfulContent) return false
       }
       continue
