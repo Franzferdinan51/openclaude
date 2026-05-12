@@ -6,7 +6,7 @@
  */
 
 import { randomUUID } from "crypto";
-import { emitSessionLifecycleEvent } from "../../sessions/session-lifecycle-events.js";
+import { emitSessionLifecycleEvent } from "../session-lifecycle/session-lifecycle.js";
 
 export enum SubagentStatus {
   PENDING = "pending",
@@ -128,18 +128,15 @@ class SubagentRegistry {
   start(taskId: string): boolean {
     const meta = this.agents.get(taskId);
     if (!meta) return false;
-    
+
     meta.status = SubagentStatus.RUNNING;
     meta.startedAt = Date.now();
     this.config.onStatusChange?.(meta);
-    
-    // Emit session lifecycle event
+
     emitSessionLifecycleEvent({
-      type: "subagent_started",
-      taskId,
-      name: meta.name,
-      agentId: meta.agentId,
-      traceId: meta.traceId,
+      sessionKey: meta.taskId,
+      reason: 'subagent_started',
+      timestamp: Date.now(),
     });
 
     return true;
@@ -156,7 +153,7 @@ class SubagentRegistry {
     meta.endedAt = Date.now();
     if (result?.reason) meta.reason = result.reason;
     if (result?.tokenUsage) meta.tokenUsage = result.tokenUsage;
-    
+
     this.config.onStatusChange?.(meta);
     this.emitEndEvent(meta);
     return true;
@@ -326,16 +323,20 @@ class SubagentRegistry {
   }
 
   private emitEndEvent(meta: SubagentMetadata): void {
+    const reason = meta.status === SubagentStatus.COMPLETED
+      ? 'subagent_completed'
+      : meta.status === SubagentStatus.FAILED
+        ? 'subagent_failed'
+        : meta.status === SubagentStatus.CANCELLED
+          ? 'subagent_cancelled'
+          : meta.status === SubagentStatus.TIMED_OUT
+            ? 'subagent_timed_out'
+            : `subagent_${meta.status}`;
+
     emitSessionLifecycleEvent({
-      type: "subagent_ended",
-      taskId: meta.taskId,
-      name: meta.name,
-      status: meta.status,
-      reason: meta.reason,
-      durationMs: meta.startedAt && meta.endedAt ? meta.endedAt - meta.startedAt : undefined,
-      tokenUsage: meta.tokenUsage,
-      agentId: meta.agentId,
-      traceId: meta.traceId,
+      sessionKey: meta.taskId,
+      reason,
+      timestamp: Date.now(),
     });
   }
 }

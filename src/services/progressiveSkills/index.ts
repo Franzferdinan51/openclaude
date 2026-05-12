@@ -19,19 +19,16 @@
  *   unloadAllSkills()
  */
 
+// Re-export core registry and types from SkillRegistry
 export {
   SkillRegistry,
   registerSkillFromCommand,
-  type SkillMetadata,
-  type LoadedSkill,
 } from './SkillRegistry.js'
+export type { LoadedSkill, SkillMetadata } from './SkillRegistry.js'
 
-import {
-  onSessionLifecycleEvent,
-  type SessionLifecycleEvent,
-} from '../session-lifecycle/session-lifecycle.js'
-import { SkillRegistry } from './SkillRegistry.js'
-import type { PromptCommand } from '../../types/command.js'
+import { onSessionLifecycleEvent } from '../session-lifecycle/session-lifecycle.js'
+import { SkillRegistry, registerSkillFromCommand } from './SkillRegistry.js'
+import type { Command } from '../../types/command.js'
 
 /**
  * Subscribes to session lifecycle events to automatically unload skills
@@ -47,7 +44,7 @@ export function initProgressiveSkills(): void {
   if (sessionLifecycleUnsubscribe) return // Already initialized
 
   sessionLifecycleUnsubscribe = onSessionLifecycleEvent(
-    (event: SessionLifecycleEvent) => {
+    (event) => {
       // Unload skills when session is destroyed
       if (event.reason === 'destroyed') {
         SkillRegistry.unloadAllSkills()
@@ -76,7 +73,7 @@ export function shutdownProgressiveSkills(): void {
  */
 export async function loadSkillFull(
   skillName: string,
-): Promise<LoadedSkill | null> {
+): Promise<import('./SkillRegistry.js').LoadedSkill | null> {
   return SkillRegistry.loadSkillFull(skillName)
 }
 
@@ -101,14 +98,14 @@ export function unloadAllSkills(): void {
 /**
  * Returns all currently loaded (full-content) skills.
  */
-export function getLoadedSkills(): LoadedSkill[] {
+export function getLoadedSkills(): import('./SkillRegistry.js').LoadedSkill[] {
   return SkillRegistry.getLoadedSkills()
 }
 
 /**
  * Returns metadata for all registered skills.
  */
-export function getSkillMetadata(): SkillMetadata[] {
+export function getSkillMetadata(): import('./SkillRegistry.js').SkillMetadata[] {
   return SkillRegistry.getSkillMetadata()
 }
 
@@ -133,9 +130,6 @@ export function getLoadedCount(): number {
   return SkillRegistry.loadedCount
 }
 
-// Re-export types for convenience
-export type { LoadedSkill, SkillMetadata } from './SkillRegistry.js'
-
 /**
  * Integration helper for SkillTool.
  *
@@ -143,19 +137,13 @@ export type { LoadedSkill, SkillMetadata } from './SkillRegistry.js'
  * in the progressive loading system. It uses the existing command data
  * rather than re-reading the file.
  *
- * @param command The PromptCommand for the skill being invoked
+ * @param command The Command for the skill being invoked
  */
-export function trackSkillInvocation(command: PromptCommand): void {
+export function trackSkillInvocation(command: Command): void {
   if (command.type !== 'prompt') return
-
-  // If skill is already tracked as loaded, no-op
   if (SkillRegistry.isLoaded(command.name)) return
-
-  // Mark as activated - next getLoadedContent call will trigger lazy load
-  // For now, just mark it so subsequent calls don't re-process
   const metadata = SkillRegistry.getMetadata(command.name)
   if (!metadata) {
-    // Register metadata if not already present
     registerSkillFromCommand(command)
   }
 }

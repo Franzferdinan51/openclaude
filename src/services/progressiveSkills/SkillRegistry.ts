@@ -10,7 +10,7 @@
 
 import { getFsImplementation } from '../../utils/fsOperations.js'
 import { parseFrontmatter } from '../../utils/frontmatterParser.js'
-import type { Command, PromptCommand } from '../../types/command.js'
+import type { Command } from '../../types/command.js'
 
 export type SkillMetadata = {
   name: string
@@ -95,22 +95,25 @@ class SkillRegistryImpl {
           ? String(frontmatter.name)
           : this.extractNameFromPath(skillPath)
 
-      return {
-        name,
-        description: this.coerceDescription(frontmatter.description, name),
-        category,
-        path: skillPath,
-        source: frontmatter.source as string ?? 'unknown',
-        loadedFrom: frontmatter.loadedFrom as string ?? 'unknown',
-        isHidden: frontmatter['user-invocable'] === false,
-        allowedTools: this.parseAllowedTools(frontmatter['allowed-tools']),
-        model: frontmatter.model as string | undefined,
-        effort:
-          frontmatter.effort != null
-            ? parseInt(String(frontmatter.effort), 10)
-            : undefined,
-        whenToUse: frontmatter.when_to_use as string | undefined,
-      }
+        const userInvocableVal = frontmatter['user-invocable']
+        const isHiddenSkill = userInvocableVal != null && String(userInvocableVal) !== 'true' && String(userInvocableVal) !== '1'
+
+        return {
+          name,
+          description: this.coerceDescription(frontmatter.description, name),
+          category,
+          path: skillPath,
+          source: frontmatter.source as string ?? 'unknown',
+          loadedFrom: frontmatter.loadedFrom as string ?? 'unknown',
+          isHidden: isHiddenSkill,
+          allowedTools: this.parseAllowedTools(frontmatter['allowed-tools']),
+          model: frontmatter.model as string | undefined,
+          effort:
+            frontmatter.effort != null
+              ? parseInt(String(frontmatter.effort), 10)
+              : undefined,
+          whenToUse: frontmatter.when_to_use as string | undefined,
+        }
     } catch {
       return null
     }
@@ -310,9 +313,9 @@ export const SkillRegistry = new SkillRegistryImpl()
  * Registers skill metadata from an existing Command object.
  * Used by tools that already have skill data from loadSkillsDir.
  *
- * @param command PromptCommand from getCommands()
+ * @param command Command from getCommands() (prompt variant)
  */
-export function registerSkillFromCommand(command: PromptCommand): void {
+export function registerSkillFromCommand(command: Command): void {
   if (command.type !== 'prompt') return
 
   // Extract path from skillRoot or reconstruct from command
@@ -321,6 +324,11 @@ export function registerSkillFromCommand(command: PromptCommand): void {
     : undefined
 
   if (!path) return
+
+  let effort: number | undefined
+  if (command.effort !== undefined) {
+    effort = typeof command.effort === 'number' ? command.effort : undefined
+  }
 
   SkillRegistry.registerMetadata({
     name: command.name,
@@ -332,7 +340,7 @@ export function registerSkillFromCommand(command: PromptCommand): void {
     isHidden: command.isHidden ?? false,
     allowedTools: command.allowedTools,
     model: command.model,
-    effort: command.effort,
+    effort,
     whenToUse: command.whenToUse,
   })
 }
