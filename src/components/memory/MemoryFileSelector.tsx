@@ -200,7 +200,7 @@ export function MemoryFileSelector(t0) {
     t4 = $[11];
   }
   const dreamStatus = t4;
-  const [focusedToggle, setFocusedToggle] = useState<string | null>(null);
+  const [focusedToggle, setFocusedToggle] = useState<any>(null);
   const toggleFocused = focusedToggle !== null;
   const lastToggleIndex = showDreamRow ? 1 : 0;
   let t5;
@@ -253,10 +253,10 @@ export function MemoryFileSelector(t0) {
   let t8;
   if ($[17] !== focusedToggle || $[18] !== handleToggleAutoDream || $[19] !== handleToggleAutoMemory) {
     t8 = () => {
-      if (focusedToggle === 0) {
+      if ((focusedToggle as any) === 0) {
         handleToggleAutoMemory();
       } else {
-        if (focusedToggle === 1) {
+        if ((focusedToggle as any) === 1) {
           handleToggleAutoDream();
         }
       }
@@ -323,7 +323,7 @@ export function MemoryFileSelector(t0) {
     t13 = $[29];
   }
   useKeybinding("select:previous", t12, t13);
-  const t14 = focusedToggle === 0;
+  const t14 = (focusedToggle as any) === 0;
   const t15 = autoMemoryOn ? "on" : "off";
   let t16;
   if ($[30] !== t15) {
@@ -344,7 +344,7 @@ export function MemoryFileSelector(t0) {
   }
   let t18;
   if ($[35] !== autoDreamOn || $[36] !== dreamStatus || $[37] !== focusedToggle || $[38] !== isDreamRunning || $[39] !== showDreamRow) {
-    t18 = showDreamRow && <ListItem isFocused={focusedToggle === 1} styled={false}><Text color={focusedToggle === 1 ? "suggestion" : undefined}>Auto-dream: {autoDreamOn ? "on" : "off"}{dreamStatus && <Text dimColor={true}> · {dreamStatus}</Text>}{!isDreamRunning && autoDreamOn && <Text dimColor={true}> · /dream to run</Text>}</Text></ListItem>;
+    t18 = showDreamRow && <ListItem isFocused={(focusedToggle as any) === 1} styled={false}><Text color={(focusedToggle as any) === 1 ? "suggestion" : undefined}>Auto-dream: {autoDreamOn ? "on" : "off"}{dreamStatus && <Text dimColor={true}> · {dreamStatus}</Text>}{!isDreamRunning && autoDreamOn && <Text dimColor={true}> · /dream to run</Text>}</Text></ListItem>;
     $[35] = autoDreamOn;
     $[36] = dreamStatus;
     $[37] = focusedToggle;
