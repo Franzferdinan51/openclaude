@@ -59,7 +59,7 @@ function _temp2() {
   return null;
 }
 function _temp(content) {
-  return safeParseJSON(content) as NotebookContent | null;
+  return safeParseJSON(content) as any;
 }
 function NotebookEditToolDiffInner(t0) {
   const $ = _c(34);
