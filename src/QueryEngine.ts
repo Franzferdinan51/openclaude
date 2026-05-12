@@ -291,7 +291,7 @@ export class QueryEngine {
       tools,
       mainLoopModel: initialMainLoopModel,
       additionalWorkingDirectories: Array.from(
-        initialAppState.toolPermissionContext.additionalWorkingDirectories.keys(),
+        (initialAppState.toolPermissionContext.additionalWorkingDirectories as any).keys(),
       ),
       mcpClients,
       customSystemPrompt: customPrompt,
@@ -1073,9 +1073,9 @@ export class QueryEngine {
     // Capture for the error_during_execution diagnostic — isResultSuccessful
     // is a type predicate (message is Message), so inside the false branch
     // `result` narrows to never and these accesses don't typecheck.
-    const edeResultType = result?.type ?? 'undefined'
+    const edeResultType = (result as any)?.type ?? 'undefined'
     const edeLastContentType =
-      result?.type === 'assistant'
+      (result as any)?.type === 'assistant'
         ? (last(result.message.content)?.type ?? 'none')
         : 'n/a'
 
@@ -1133,7 +1133,7 @@ export class QueryEngine {
     let textResult = ''
     let isApiError = false
 
-    if (result.type === 'assistant') {
+    if ((result as any).type === 'assistant') {
       const lastContent = last(result.message.content)
       if (
         lastContent?.type === 'text' &&
@@ -1141,7 +1141,7 @@ export class QueryEngine {
       ) {
         textResult = lastContent.text
       }
-      isApiError = Boolean(result.isApiErrorMessage)
+      isApiError = Boolean((result as any).isApiErrorMessage)
     }
 
     yield {
