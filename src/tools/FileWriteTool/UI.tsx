@@ -279,10 +279,10 @@ function WriteRejectionBody(t0) {
     verbose
   } = t0;
   const data = use(promise);
-  if (data.type === "create") {
+  if ((data as any).type === "create") {
     return createFallback;
   }
-  if (data.type === "error") {
+  if ((data as any).type === "error") {
     let t1;
     if ($[0] === Symbol.for("react.memo_cache_sentinel")) {
       t1 = <MessageResponse><Text>(No changes)</Text></MessageResponse>;
