@@ -901,9 +901,9 @@ export function reorderMessagesInUI(
     // Handle pre-tool-use hooks
     if (
       isHookAttachmentMessage(message) &&
-      message.attachment.hookEvent === 'PreToolUse'
+      (message as any).attachment?.hookEvent === 'PreToolUse'
     ) {
-      const toolUseID = message.attachment.toolUseID
+      const toolUseID = (message as any).attachment?.toolUseID
       if (!toolUseGroups.has(toolUseID)) {
         toolUseGroups.set(toolUseID, {
           toolUse: null,
@@ -918,10 +918,10 @@ export function reorderMessagesInUI(
 
     // Handle tool results
     if (
-      message.type === 'user' &&
-      message.message.content[0]?.type === 'tool_result'
+      (message as any).type === 'user' &&
+      (message as any).message.content[0]?.type === 'tool_result'
     ) {
-      const toolUseID = message.message.content[0].tool_use_id
+      const toolUseID = (message as any).message.content[0].tool_use_id
       if (!toolUseGroups.has(toolUseID)) {
         toolUseGroups.set(toolUseID, {
           toolUse: null,
@@ -937,9 +937,9 @@ export function reorderMessagesInUI(
     // Handle post-tool-use hooks
     if (
       isHookAttachmentMessage(message) &&
-      message.attachment.hookEvent === 'PostToolUse'
+      (message as any).attachment.hookEvent === 'PostToolUse'
     ) {
-      const toolUseID = message.attachment.toolUseID
+      const toolUseID = (message as any).attachment.toolUseID
       if (!toolUseGroups.has(toolUseID)) {
         toolUseGroups.set(toolUseID, {
           toolUse: null,
@@ -985,23 +985,23 @@ export function reorderMessagesInUI(
     // Check if this message is part of a tool use group
     if (
       isHookAttachmentMessage(message) &&
-      (message.attachment.hookEvent === 'PreToolUse' ||
-        message.attachment.hookEvent === 'PostToolUse')
+      ((message as any).attachment.hookEvent === 'PreToolUse' ||
+        (message as any).attachment.hookEvent === 'PostToolUse')
     ) {
       // Skip - already handled in tool use groups
       continue
     }
 
     if (
-      message.type === 'user' &&
-      message.message.content[0]?.type === 'tool_result'
+      (message as any).type === 'user' &&
+      (message as any).message.content[0]?.type === 'tool_result'
     ) {
       // Skip - already handled in tool use groups
       continue
     }
 
     // Handle api error messages (only keep the last one)
-    if (message.type === 'system' && message.subtype === 'api_error') {
+    if ((message as any).type === 'system' && (message as any).subtype === 'api_error') {
       const last = result.at(-1)
       if (last?.type === 'system' && last.subtype === 'api_error') {
         result[result.length - 1] = message
@@ -1028,18 +1028,18 @@ export function reorderMessagesInUI(
 }
 
 function isHookAttachmentMessage(
-  message: Message,
-): message is AttachmentMessage<HookAttachment> {
+  message: any,
+): message is any {
   return (
     message.type === 'attachment' &&
-    (message.attachment.type === 'hook_blocking_error' ||
-      message.attachment.type === 'hook_cancelled' ||
-      message.attachment.type === 'hook_error_during_execution' ||
-      message.attachment.type === 'hook_non_blocking_error' ||
-      message.attachment.type === 'hook_success' ||
-      message.attachment.type === 'hook_system_message' ||
-      message.attachment.type === 'hook_additional_context' ||
-      message.attachment.type === 'hook_stopped_continuation')
+    ((message as any).attachment?.type === 'hook_blocking_error' ||
+      (message as any).attachment?.type === 'hook_cancelled' ||
+      (message as any).attachment?.type === 'hook_error_during_execution' ||
+      (message as any).attachment?.type === 'hook_non_blocking_error' ||
+      (message as any).attachment?.type === 'hook_success' ||
+      (message as any).attachment?.type === 'hook_system_message' ||
+      (message as any).attachment?.type === 'hook_additional_context' ||
+      (message as any).attachment?.type === 'hook_stopped_continuation')
   )
 }
 
@@ -1068,12 +1068,12 @@ function getResolvedHookCount(
   const uniqueHookNames = new Set(
     messages
       .filter(
-        (_): _ is AttachmentMessage<HookAttachmentWithName> =>
+        (_: any): _ is any =>
           isHookAttachmentMessage(_) &&
-          _.attachment.toolUseID === toolUseID &&
-          _.attachment.hookEvent === hookEvent,
+          _.attachment?.toolUseID === toolUseID &&
+          _.attachment?.hookEvent === hookEvent,
       )
-      .map(_ => _.attachment.hookName),
+      .map((_: any) => _?.attachment?.hookName),
   )
   return uniqueHookNames.size
 }
@@ -1466,12 +1466,12 @@ export function getToolUseIDs(
   return new Set(
     normalizedMessages
       .filter(
-        (_): _ is NormalizedAssistantMessage<BetaToolUseBlock> =>
+        (_: any): _ is any =>
           _.type === 'assistant' &&
-          Array.isArray(_.message.content) &&
-          _.message.content[0]?.type === 'tool_use',
+          Array.isArray(_.message?.content) &&
+          _.message?.content[0]?.type === 'tool_use',
       )
-      .map(_ => _.message.content[0].id),
+      .map((_: any) => _.message?.content?.[0]?.id),
   )
 }
 
@@ -2274,7 +2274,7 @@ export function normalizeMessagesForAPI(
         }
         case 'attachment': {
           const rawAttachmentMessage = normalizeAttachmentForAPI(
-            message.attachment,
+            (message as any).attachment,
           )
           const attachmentMessage = checkStatsigFeatureGate_CACHED_MAY_BE_STALE(
             'tengu_chair_sermon',
@@ -2772,7 +2772,7 @@ export function getToolUseID(message: NormalizedMessage): string | null {
   switch (message.type) {
     case 'attachment':
       if (isHookAttachmentMessage(message)) {
-        return message.attachment.toolUseID
+        return (message as any).attachment.toolUseID
       }
       return null
     case 'assistant':
@@ -2788,13 +2788,15 @@ export function getToolUseID(message: NormalizedMessage): string | null {
       if (message.message.content[0]?.type !== 'tool_result') {
         return null
       }
-      return message.message.content[0].tool_use_id
+      return (message as any).message.content[0].tool_use_id
     case 'progress':
       return message.toolUseID
     case 'system':
       return message.subtype === 'informational'
         ? (message.toolUseID ?? null)
         : null
+    default:
+      return null
   }
 }
 
