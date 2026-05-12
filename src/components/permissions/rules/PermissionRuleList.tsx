@@ -519,7 +519,7 @@ export function PermissionRuleList(t0) {
     t4 = $[3];
   }
   const handleDenialStateChange = t4;
-  const [selectedRule, setSelectedRule] = useState();
+  const [selectedRule, setSelectedRule] = useState<any>(undefined);
   const [lastFocusedRuleKey, setLastFocusedRuleKey] = useState();
   const [addingRuleToTab, setAddingRuleToTab] = useState(null);
   const [validatedRule, setValidatedRule] = useState(null);
@@ -598,7 +598,7 @@ export function PermissionRuleList(t0) {
             }
         }
       })();
-      const options = [];
+      const options: any[] = [];
       if (tab !== "workspace" && tab !== "recent" && !query) {
         options.push({
           label: `Add a new rule${figures.ellipsis}`,
