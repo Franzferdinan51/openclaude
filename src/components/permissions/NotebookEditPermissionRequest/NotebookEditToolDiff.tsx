@@ -29,7 +29,7 @@ type InnerProps = {
   edit_mode?: string;
   verbose: boolean;
   width: number;
-  promise: Promise<NotebookContent | null>;
+  promise: Promise<any>;
 };
 export function NotebookEditToolDiff(props) {
   const $ = _c(5);
@@ -84,8 +84,8 @@ function NotebookEditToolDiffInner(t0) {
       }
       const cellIndex = parseCellId(cell_id);
       if (cellIndex !== undefined) {
-        if (notebookData.cells[cellIndex]) {
-          const source = notebookData.cells[cellIndex].source;
+        if (notebookData?.cells[cellIndex]) {
+          const source = notebookData?.cells[cellIndex].source;
           let t3;
           if ($[3] !== source) {
             t3 = Array.isArray(source) ? source.join("") : source;
@@ -108,7 +108,7 @@ function NotebookEditToolDiffInner(t0) {
       } else {
         t3 = $[6];
       }
-      const cell_0 = notebookData.cells.find(t3);
+      const cell_0 = notebookData?.cells.find(t3);
       if (!cell_0) {
         t2 = "";
         break bb0;
