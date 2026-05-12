@@ -265,7 +265,7 @@ async function getCacheSharingParams(
     Array.from(
       appState.toolPermissionContext.additionalWorkingDirectories.keys(),
     ),
-    context.options.mcpClients,
+    context.options.mcpClients
   )
   const systemPrompt = buildEffectiveSystemPrompt({
     mainThreadAgentDefinition: undefined,

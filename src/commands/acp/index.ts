@@ -1,4 +1,4 @@
-import type { Command } from '../../commands.js'
+import type { Command, LocalCommandModule } from '../../types/command.js'
 
 const acpCommand = {
   type: 'local' as const,
@@ -6,7 +6,7 @@ const acpCommand = {
   description: 'Start ACP (Agent Client Protocol) server for IDE integrations',
   aliases: ['acp-server', 'acp-listen'],
   supportsNonInteractive: true,
-  load: () => import('./acp-impl.js'),
+  load: () => import('./acp-impl.js') as Promise<LocalCommandModule>,
 } satisfies Command
 
 export default acpCommand

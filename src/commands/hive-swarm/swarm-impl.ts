@@ -377,7 +377,7 @@ Flags:
   lines.push(`\n🚀 Spawning ${agents.length} agents in waves...`)
 
   // Wave-based spawning: spawn WAVE_SIZE agents, wait, then spawn more
-  const allSpawnResults: typeof spawnResults = []
+  const allSpawnResults: Array<{ agent: string; status: 'spawned' | 'failed'; name?: string; agentId?: string; error?: string }> = []
 
   for (let i = 0; i < agents.length; i += WAVE_SIZE) {
     const waveAgents = agents.slice(i, i + WAVE_SIZE)
@@ -402,14 +402,14 @@ Flags:
         )
         return {
           agent: agentId,
-          status: 'spawned',
+          status: 'spawned' as const,
           name: agent?.name,
           agentId: result.data.agent_id,
         }
       } catch (error) {
         return {
           agent: agentId,
-          status: 'failed',
+          status: 'failed' as const,
           name: agent?.name,
           error: error instanceof Error ? error.message : String(error),
         }
@@ -516,15 +516,15 @@ Flags:
 export function checkQualityGates(gates: QualityGates, results: Record<string, unknown>): { passed: boolean; failed: string[] } {
   const failed: string[] = []
 
-  if (results.testCoverage !== undefined && results.testCoverage < gates.testCoverage) {
+  if (results.testCoverage != null && (results.testCoverage as number) < gates.testCoverage) {
     failed.push(`Test coverage ${results.testCoverage}% below threshold ${gates.testCoverage}%`)
   }
 
-  if (results.securityIssues !== undefined && results.securityIssues > 0) {
+  if (results.securityIssues != null && (results.securityIssues as number) > 0) {
     failed.push(`Security issues found: ${results.securityIssues}`)
   }
 
-  if (results.avgResponseTime !== undefined && results.avgResponseTime > gates.performanceThreshold) {
+  if (results.avgResponseTime != null && (results.avgResponseTime as number) > gates.performanceThreshold) {
     failed.push(`Response time ${results.avgResponseTime}ms exceeds threshold ${gates.performanceThreshold}ms`)
   }
 

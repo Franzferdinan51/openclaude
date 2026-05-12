@@ -94,9 +94,13 @@ export function clearSessionCaches(
   // Clear tungsten session usage tracking
   if (process.env.USER_TYPE === 'ant') {
     void import('../../tools/TungstenTool/TungstenTool.js').then(
-      ({ clearSessionsWithTungstenUsage, resetInitializationState }) => {
-        clearSessionsWithTungstenUsage()
-        resetInitializationState()
+      (mod) => {
+        if ('clearSessionsWithTungstenUsage' in mod) {
+          (mod as { clearSessionsWithTungstenUsage: () => void }).clearSessionsWithTungstenUsage()
+        }
+        if ('resetInitializationState' in mod) {
+          (mod as { resetInitializationState: () => void }).resetInitializationState()
+        }
       },
     )
   }

@@ -20,7 +20,7 @@ function saveTelegramConfig(storage: SecureStorageData, config: TelegramConnecti
   if (!storage.pluginSecrets) {
     storage.pluginSecrets = {}
   }
-  storage.pluginSecrets.telegram = config
+  storage.pluginSecrets.telegram = config as Record<string, string>
 }
 
 function formatStatus(config: TelegramConnectionConfig): string {

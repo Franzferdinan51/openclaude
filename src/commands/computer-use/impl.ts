@@ -112,7 +112,7 @@ export async function addToDuckHiveMCP(
       '../../services/mcp/config.js'
     )
     const config = buildCodexCUConfig(binPath)
-    await addMcpConfig(PLUGIN_NAME, config)
+    await addMcpConfig(PLUGIN_NAME, config, 'project')
     return { ok: true }
   } catch (err) {
     return {
@@ -132,7 +132,7 @@ export async function removeFromDuckHiveMCP(): Promise<
     const { removeMcpConfig } = await import(
       '../../services/mcp/config.js'
     )
-    await removeMcpConfig(PLUGIN_NAME)
+    await removeMcpConfig(PLUGIN_NAME, 'project')
     return { ok: true }
   } catch (err) {
     return {
@@ -148,7 +148,7 @@ export async function removeFromDuckHiveMCP(): Promise<
 export async function isInDuckHiveMCPConfig(): Promise<boolean> {
   try {
     const { getCurrentProjectConfig } = await import(
-      '../../services/mcp/config.js'
+      '../../utils/config.js'
     )
     const cfg = getCurrentProjectConfig()
     return Boolean(cfg.mcpServers?.[PLUGIN_NAME])

@@ -192,6 +192,7 @@ import { OAuthService } from 'src/services/oauth/index.js'
 import { installOAuthTokens } from 'src/cli/handlers/auth.js'
 import { getAPIProvider } from 'src/utils/model/providers.js'
 import type { HookCallbackMatcher } from 'src/types/hooks.js'
+import type { RegisteredHookMatcher } from 'src/bootstrap/state.js'
 import { AwsAuthStatusManager } from 'src/utils/awsAuthStatusManager.js'
 import type { HookEvent } from 'src/entrypoints/agentSdkTypes.js'
 import {
@@ -4423,7 +4424,7 @@ async function handleInitializeRequest(
   // Get account information
   const accountInfo = getAccountInformation()
   if (request.hooks) {
-    const hooks: Partial<Record<HookEvent, HookCallbackMatcher[]>> = {}
+    const hooks: Partial<Record<HookEvent, RegisteredHookMatcher[]>> = {}
     for (const [event, matchers] of Object.entries((request.hooks ?? {}) as Record<HookEvent, HookCallbackMatcher[]>)) {
       hooks[event as HookEvent] = matchers.map((matcher) => {
         const callbacks = matcher.hookCallbackIds.map(callbackId => {

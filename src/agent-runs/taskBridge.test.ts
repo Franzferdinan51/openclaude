@@ -50,7 +50,7 @@ describe('agent task bridge', () => {
 
     progressAgentTaskRun(
       'a124',
-      { toolUseCount: 3, tokenCount: 100, lastActivity: { toolName: 'read_file', activityDescription: 'Reading /src' } },
+      { toolUseCount: 3, tokenCount: 100, lastActivity: { toolName: 'read_file', input: {}, activityDescription: 'Reading /src' } },
       store,
     )
     completeAgentTaskRun('a124', store)

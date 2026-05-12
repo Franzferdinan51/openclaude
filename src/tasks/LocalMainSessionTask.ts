@@ -325,7 +325,7 @@ const MAX_RECENT_ACTIVITIES = 5
 
 type ToolActivity = {
   toolName: string
-  input: Record<string, unknown>
+  input?: Record<string, unknown>
 }
 
 /**

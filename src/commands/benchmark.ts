@@ -20,7 +20,7 @@ async function runBenchmark(
     return
   }
 
-  let modelsToBenchmark: string[]
+  let modelsToBenchmark: (string | null)[]
 
   if (model) {
     modelsToBenchmark = [model]
@@ -32,7 +32,7 @@ async function runBenchmark(
   context?.stdout?.write(`Benchmarking ${modelsToBenchmark.length} model(s)...\n`)
 
   const results = await benchmarkMultipleModels(
-    modelsToBenchmark,
+    modelsToBenchmark.filter((m): m is string => m !== null),
     (completed, total, result) => {
       context?.stdout?.write(
         `[${completed}/${total}] ${result.model}: ` +

@@ -212,7 +212,7 @@ function buildDeps() {
 
     setConfig: async (key: string, value: string): Promise<{ ok: boolean; error?: string }> => {
       try {
-        const { getGlobalClaudeFile } = await import('../../utils/config.js');
+        const { getGlobalClaudeFile } = await import('../../utils/env.js');
         const { jsonStringify } = await import('../../utils/slowOperations.js');
         const file = getGlobalClaudeFile();
         saveConfigWithLock(
@@ -245,6 +245,7 @@ function buildDeps() {
       if (mmxKey) {
         findings.push(`✅ MINIMAX_API_KEY found in environment`);
         try {
+          const { getGlobalClaudeFile } = await import('../../utils/env.js');
           const file = getGlobalClaudeFile();
           saveConfigWithLock(
             file,
@@ -288,6 +289,7 @@ function buildDeps() {
 
     setDefaultModel: async (model: string): Promise<{ ok: boolean; error?: string }> => {
       try {
+        const { getGlobalClaudeFile } = await import('../../utils/env.js');
         const file = getGlobalClaudeFile();
         saveConfigWithLock(
           file,
