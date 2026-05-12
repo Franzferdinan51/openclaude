@@ -190,7 +190,7 @@ export function LogSelector(t0) {
   }
   const highlightColor = t5;
   const isAgenticSearchEnabled = false;
-  const [currentBranch, setCurrentBranch] = React.useState(null);
+  const [currentBranch, setCurrentBranch] = useState<string | null>(null);
   const [branchFilterEnabled, setBranchFilterEnabled] = React.useState(false);
   const [showAllWorktrees, setShowAllWorktrees] = React.useState(false);
   const [hasMultipleWorktrees, setHasMultipleWorktrees] = React.useState(false);
@@ -212,10 +212,10 @@ export function LogSelector(t0) {
     t7 = $[6];
   }
   const [expandedGroupSessionIds, setExpandedGroupSessionIds] = React.useState(t7);
-  const [focusedNode, setFocusedNode] = React.useState(null);
+  const [focusedNode, setFocusedNode] = useState<string | null>(null);
   const [focusedIndex, setFocusedIndex] = React.useState(1);
   const [viewMode, setViewMode] = React.useState("list");
-  const [previewLog, setPreviewLog] = React.useState(null);
+  const [previewLog, setPreviewLog] = useState<LogEntry | null>(null);
   const prevFocusedIdRef = React.useRef(null);
   const [selectedTagIndex, setSelectedTagIndex] = React.useState(0);
   let t8;
@@ -299,7 +299,7 @@ export function LogSelector(t0) {
     t16 = $[16];
   }
   React.useEffect(t15, t16);
-  const [deepSearchResults, setDeepSearchResults] = React.useState(null);
+  const [deepSearchResults, setDeepSearchResults] = useState<DeepSearchResult[] | null>(null);
   const [isSearching, setIsSearching] = React.useState(false);
   let t17;
   let t18;

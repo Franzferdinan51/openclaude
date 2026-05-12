@@ -24,7 +24,7 @@ export function SessionPreview(t0) {
     onExit,
     onSelect
   } = t0;
-  const [fullLog, setFullLog] = React.useState(null);
+  const [fullLog, setFullLog] = useState<string | null>(null);
   let t1;
   let t2;
   if ($[0] !== log) {

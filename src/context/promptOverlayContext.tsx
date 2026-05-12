@@ -36,8 +36,8 @@ export function PromptOverlayProvider(t0) {
   const {
     children
   } = t0;
-  const [data, setData] = useState(null);
-  const [dialog, setDialog] = useState(null);
+  const [data, setData] = useState<OverlayData | null>(null);
+  const [dialog, setDialog] = useState<OverlayDialog | null>(null);
   let t1;
   if ($[0] !== children || $[1] !== dialog) {
     t1 = <DialogContext.Provider value={dialog}>{children}</DialogContext.Provider>;
