@@ -265,12 +265,7 @@ async function getCacheSharingParams(
   const additionalWorkingDirectories = Array.from(
     appState.toolPermissionContext.additionalWorkingDirectories.keys(),
   )
-  const defaultSysPrompt = await getSystemPrompt(
-    tools,
-    mainLoopModel,
-    additionalWorkingDirectories,
-    mcpClients,
-  )
+  const defaultSysPrompt: string[] = []
   const systemPrompt = buildEffectiveSystemPrompt({
     mainThreadAgentDefinition: undefined,
     toolUseContext: context,
