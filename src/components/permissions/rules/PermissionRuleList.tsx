@@ -914,9 +914,9 @@ export function PermissionRuleList(t0) {
   }
   if (validatedRule) {
     let t22;
-    if ($[47] !== validatedRule.ruleValue) {
-      t22 = [validatedRule.ruleValue];
-      $[47] = validatedRule.ruleValue;
+    if ($[47] !== (validatedRule as any).ruleValue) {
+      t22 = [(validatedRule as any).ruleValue];
+      $[47] = (validatedRule as any).ruleValue;
       $[48] = t22;
     } else {
       t22 = $[48];
@@ -935,12 +935,12 @@ export function PermissionRuleList(t0) {
       t23 = $[50];
     }
     let t24;
-    if ($[51] !== t22 || $[52] !== t23 || $[53] !== toolPermissionContext || $[54] !== validatedRule.ruleBehavior) {
-      t24 = <AddPermissionRules onAddRules={handleAddRulesSuccess} onCancel={handleAddRuleCancel} ruleValues={t22} ruleBehavior={validatedRule.ruleBehavior} initialContext={toolPermissionContext} setToolPermissionContext={t23} />;
+    if ($[51] !== t22 || $[52] !== t23 || $[53] !== toolPermissionContext || $[54] !== (validatedRule as any).ruleBehavior) {
+      t24 = <AddPermissionRules onAddRules={handleAddRulesSuccess} onCancel={handleAddRuleCancel} ruleValues={t22} ruleBehavior={(validatedRule as any).ruleBehavior} initialContext={toolPermissionContext} setToolPermissionContext={t23} />;
       $[51] = t22;
       $[52] = t23;
       $[53] = toolPermissionContext;
-      $[54] = validatedRule.ruleBehavior;
+      $[54] = (validatedRule as any).ruleBehavior;
       $[55] = t24;
     } else {
       t24 = $[55];
