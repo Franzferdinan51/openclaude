@@ -188,13 +188,13 @@ function enqueueRemoteNotification(taskId: string, title: string, status: 'compl
  */
 function markTaskNotified(taskId: string, setAppState: SetAppState): boolean {
   let shouldEnqueue = false;
-  updateTaskState(taskId, setAppState, task => {
+  updateTaskState(taskId, setAppState, (task: any) => {
     if (task.notified) {
       return task;
     }
     shouldEnqueue = true;
     return {
-      ...task,
+      ...(task as any),
       notified: true
     };
   });

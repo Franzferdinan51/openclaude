@@ -16,7 +16,7 @@ type Props = {
   notebook_path: string;
   cell_id: string | undefined;
   new_source: string;
-  cell_type?: NotebookCellType;
+  cell_type?: any;
   edit_mode?: string;
   verbose: boolean;
   width: number;
@@ -25,7 +25,7 @@ type InnerProps = {
   notebook_path: string;
   cell_id: string | undefined;
   new_source: string;
-  cell_type?: NotebookCellType;
+  cell_type?: any;
   edit_mode?: string;
   verbose: boolean;
   width: number;
