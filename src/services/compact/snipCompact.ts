@@ -13,3 +13,4 @@ export function shouldNudgeForSnips(_messages: unknown[]): boolean {
 }
 
 export const SNIP_NUDGE_TEXT = ''
+export function snipCompactIfNeeded(messages: unknown[]): { messages: unknown[]; tokensFreed: number; boundaryMessage?: unknown } { return { messages, tokensFreed: 0 }; }
