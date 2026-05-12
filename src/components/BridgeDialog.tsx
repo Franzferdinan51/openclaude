@@ -22,7 +22,7 @@ export function BridgeDialog(t0) {
   const {
     onDone
   } = t0;
-  useRegisterOverlay("bridge-dialog");
+  useRegisterOverlay("bridge-dialog", { enabled: true });
   const connected = useAppState(_temp);
   const sessionActive = useAppState(_temp2);
   const reconnecting = useAppState(_temp3);

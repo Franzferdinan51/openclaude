@@ -49,7 +49,8 @@ export function AutoUpdater({
     if (isUpdatingRef.current) {
       return;
     }
-    if ("production" === 'test' || "production" === 'development') {
+    // Skip update check in test/dev - only run in production
+    if (typeof process !== 'undefined' && process.env?.NODE_ENV !== 'production') {
       logForDebugging('AutoUpdater: Skipping update check in test/dev environment');
       return;
     }

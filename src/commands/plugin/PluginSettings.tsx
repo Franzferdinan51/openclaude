@@ -341,7 +341,7 @@ function removeExtraMarketplace(name: string, sources: Array<{
       };
       for (const pluginId in updatedPlugins) {
         if (pluginId.endsWith(suffix)) {
-          updatedPlugins[pluginId] = undefined;
+          updatedPlugins[pluginId] = undefined as any;
           removedPlugins = true;
         }
       }
