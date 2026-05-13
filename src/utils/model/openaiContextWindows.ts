@@ -308,7 +308,7 @@ const OPENAI_MAX_OUTPUT_TOKENS: Record<string, number> = {
 
   // DeepSeek
   'deepseek-chat':              8_192,
-  'deepseek-reasoner':         32_768,
+  'deepseek-reasoner':         65_536,
 
   // Groq
   'llama-3.3-70b-versatile':  32_768,
@@ -413,6 +413,59 @@ const OPENAI_MAX_OUTPUT_TOKENS: Record<string, number> = {
   'moonshot-v1-128k':          32_768,
 }
 
+function getOpenAIBaseUrlHost(): string | undefined {
+  const baseUrl = process.env.OPENAI_BASE_URL ?? process.env.OPENAI_API_BASE
+  if (!baseUrl?.trim()) return undefined
+
+  try {
+    return new URL(baseUrl).hostname.toLowerCase()
+  } catch {
+    return undefined
+  }
+}
+
+function parseNumberOverrides(envName: string): Record<string, number> | undefined {
+  const raw = process.env[envName]
+  if (!raw?.trim()) return undefined
+
+  try {
+    const parsed = JSON.parse(raw) as unknown
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return undefined
+    }
+
+    const overrides: Record<string, number> = {}
+    for (const [key, value] of Object.entries(parsed)) {
+      if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
+        overrides[key] = value
+      }
+    }
+    return overrides
+  } catch {
+    return undefined
+  }
+}
+
+function lookupOverrideByModel(
+  envName: string,
+  model: string,
+): number | undefined {
+  const overrides = parseNumberOverrides(envName)
+  if (!overrides) return undefined
+
+  const host = getOpenAIBaseUrlHost()
+  if (host) {
+    const hostModel = `${host}:${model}`
+    if (overrides[hostModel] !== undefined) return overrides[hostModel]
+    if (overrides[model] !== undefined) return overrides[model]
+
+    const hostPrefix = lookupByKey(overrides, hostModel)
+    if (hostPrefix !== undefined) return hostPrefix
+  }
+
+  return lookupByKey(overrides, model)
+}
+
 function lookupByModel<T>(table: Record<string, T>, model: string): T | undefined {
   // Try provider-qualified key first: "{OPENAI_MODEL}:{model}" so that
   // e.g. "github:copilot:claude-haiku-4.5" can have different limits than
@@ -446,6 +499,12 @@ function lookupByKey<T>(table: Record<string, T>, model: string): T | undefined 
  * "gpt-4o-2024-11-20" resolve to the base "gpt-4o" entry.
  */
 export function getOpenAIContextWindow(model: string): number | undefined {
+  const override = lookupOverrideByModel(
+    'CLAUDE_CODE_OPENAI_CONTEXT_WINDOWS',
+    model,
+  )
+  if (override !== undefined) return override
+
   return lookupByModel(OPENAI_CONTEXT_WINDOWS, model)
 }
 
@@ -454,5 +513,11 @@ export function getOpenAIContextWindow(model: string): number | undefined {
  * Returns undefined if the model is not in the table.
  */
 export function getOpenAIMaxOutputTokens(model: string): number | undefined {
+  const override = lookupOverrideByModel(
+    'CLAUDE_CODE_OPENAI_MAX_OUTPUT_TOKENS',
+    model,
+  )
+  if (override !== undefined) return override
+
   return lookupByModel(OPENAI_MAX_OUTPUT_TOKENS, model)
 }

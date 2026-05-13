@@ -1,6 +1,14 @@
 node_modules/
 dist/
 *.tsbuildinfo
+.DS_Store
+.tmp/
+.superpowers/
+tsc_output*.txt
+missing_modules.txt
+fix_*.cjs
+fix_*.js
+fix_*.ts
 .env
 .env.*
 !.env.example
