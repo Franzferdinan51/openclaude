@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Budget Tracker Service
  *

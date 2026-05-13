@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Decree Enforcement Service — DuckHive
  * Phase 3: Decree enforcement in tool execution

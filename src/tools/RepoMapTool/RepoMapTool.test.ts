@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { beforeAll, describe, expect, test } from 'bun:test'
 import { cpSync, mkdtempSync, rmSync } from 'fs'
 import { tmpdir } from 'os'

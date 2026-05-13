@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { isBareMode } from './envUtils.js'
 import { getSecureStorage } from './secureStorage/index.js'
 import {

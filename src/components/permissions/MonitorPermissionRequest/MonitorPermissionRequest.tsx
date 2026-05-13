@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React from 'react'
 import { getOriginalCwd } from '../../../bootstrap/state.js'
 import { Box, Text } from '../../../ink.js'

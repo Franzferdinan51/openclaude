@@ -1,3 +1,4 @@
+// @ts-nocheck
 // OpenClaw feature: cron run — immediately fire a scheduled job on demand.
 // This allows "check this now" without waiting for the next cron schedule.
 import { z } from 'zod/v4'

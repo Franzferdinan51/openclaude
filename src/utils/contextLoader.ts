@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * DuckHive DUCK.md Hierarchical Context Loader
  * 

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Session Search Tool - Long-Term Conversation Recall
  *

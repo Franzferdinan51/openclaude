@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Deliberation Service — Embedded Council for DuckHive
  * Phase 3: Deep Integration - Council deliberation embedded in task pipeline

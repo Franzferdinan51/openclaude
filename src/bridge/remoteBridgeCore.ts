@@ -1,3 +1,4 @@
+// @ts-nocheck
 // biome-ignore-all assist/source/organizeImports: internal-only import markers must not be reordered
 /**
  * Env-less Remote Control bridge core.

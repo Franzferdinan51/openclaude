@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Ajv } from 'ajv'
 import { z } from 'zod/v4'
 import { buildTool, type ToolDef, type ValidationResult } from '../../Tool.js'

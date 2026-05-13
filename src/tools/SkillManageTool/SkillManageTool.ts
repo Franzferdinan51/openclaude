@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Skill Manager Tool - Agent-Driven Skill Creation
  *

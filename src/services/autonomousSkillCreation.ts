@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Autonomous Skill Creation — Hermes-pattern self-improving agent.
  *

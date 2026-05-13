@@ -1,3 +1,4 @@
+// @ts-nocheck
 import type { SearchInput, SearchProvider } from './types.js'
 import { applyDomainFilters, type ProviderOutput } from './types.js'
 

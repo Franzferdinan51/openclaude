@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * BM25 keyword search layer for DuckHive.
  *

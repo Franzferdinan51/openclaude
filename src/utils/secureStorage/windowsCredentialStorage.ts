@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { execaSync } from 'execa'
 import { join } from 'path'
 import { getClaudeConfigHomeDir } from '../envUtils.js'

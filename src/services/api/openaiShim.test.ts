@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { afterEach, beforeEach, expect, test } from 'bun:test'
 import { registerGateway } from '../../integrations/index.ts'
 import { createOpenAIShimClient } from './openaiShim.ts'

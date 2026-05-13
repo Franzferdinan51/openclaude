@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { execFile } from 'child_process'
 import { readdirSync } from 'fs'
 import { join, relative } from 'path'

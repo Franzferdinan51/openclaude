@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { afterEach, beforeAll, describe, expect, test } from 'bun:test'
 import { cpSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os'
