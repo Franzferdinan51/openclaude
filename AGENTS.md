@@ -3,7 +3,7 @@
 
 This project is indexed by GitNexus as **DuckHive** (65517 symbols, 106610 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
-> If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
+> If any GitNexus tool warns the index is stale, run `npm run gitnexus -- analyze` in terminal first. The project runner pins a GitNexus build that avoids the current npm 11/Node 24 `npx gitnexus` install crash.
 
 ## Always Do
 
