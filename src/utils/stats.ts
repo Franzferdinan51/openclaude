@@ -197,8 +197,8 @@ async function processSessionFiles(
       for (const entry of entries) {
         if (isTranscriptMessage(entry)) {
           messages.push(entry)
-        } else if (entry.type === 'speculation-accept') {
-          totalSpeculationTimeSavedMs += entry.timeSavedMs
+        } else if ((entry as { type?: string }).type === 'speculation-accept') {
+          totalSpeculationTimeSavedMs += (entry as { timeSavedMs?: number }).timeSavedMs ?? 0
         }
       }
 

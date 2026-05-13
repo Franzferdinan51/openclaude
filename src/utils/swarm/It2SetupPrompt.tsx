@@ -96,7 +96,7 @@ export function It2SetupPrompt(t0) {
         return;
       }
       setStep("installing");
-      const result_0 = await installIt2(packageManager);
+      const result_0 = await installIt2(packageManager as PythonPackageManager);
       if (result_0.success) {
         setStep("api-instructions");
       } else {
