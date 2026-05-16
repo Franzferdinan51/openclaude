@@ -54,13 +54,22 @@ export function paintLine(text: string, stops: readonly RGB[], lineT: number): s
 
 // ─── Filled Block Text Logo ───────────────────────────────────────────────────
 
-const LOGO_OPEN = [
-  `  \u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557 \u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557 \u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557 \u2588\u2588\u2557  \u2588\u2588\u2557`,
-  `  \u2588\u2588\u2554\u2550\u2550\u2550\u2588\u2588\u2551 \u2588\u2588\u2554\u2550\u2550\u2550\u2588\u2588\u2551 \u2588\u2588\u2554\u2550\u2550\u2550\u2550\u2550\u255d \u2588\u2588\u2588\u2557 \u2588\u2588\u2551`,
-  `  \u2588\u2588\u2551   \u2588\u2588\u2551 \u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2551 \u2588\u2588\u2588\u2588\u2588\u2588\u2557   \u2588\u2588\u2588\u2588\u2557\u2588\u2588\u2551`,
-  `  \u2588\u2588\u2551   \u2588\u2588\u2551 \u2588\u2588\u2554\u2550\u2550\u2550\u2550\u2550\u255d \u2588\u2588\u2554\u2550\u2550\u2550\u255d   \u2588\u2588\u2554\u2588\u2588\u2588\u2588\u2551`,
-  `  \u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2551 \u2588\u2588\u2551       \u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557 \u2588\u2588\u2551 \u255a\u2588\u2588\u2588\u2551`,
-  `  \u255a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u255d \u255a\u2550\u255d       \u255a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u255d \u255a\u2550\u255d  \u255a\u2550\u2550\u255d`,
+const LOGO_DUCK = [
+  ,
+  ,
+  ,
+  ,
+  ,
+  ,
+]
+
+const LOGO_HIVE = [
+  ,
+  ,
+  ,
+  ,
+  ,
+  ,
 ]
 
 const LOGO_CLAUDE = [
@@ -191,7 +200,7 @@ export function printStartupScreen(modelOverride?: string): void {
   out.push('')
 
   // Gradient logo
-  const allLogo = [...LOGO_OPEN, '', ...LOGO_CLAUDE]
+  const allLogo = [...LOGO_DUCK, '', ...LOGO_HIVE, '', ...LOGO_CLAUDE]
   const total = allLogo.length
   for (let i = 0; i < total; i++) {
     const t = total > 1 ? i / (total - 1) : 0
