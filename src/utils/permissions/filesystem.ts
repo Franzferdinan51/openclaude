@@ -67,6 +67,7 @@ export const DANGEROUS_FILES = [
   '.profile',
   '.ripgreprc',
   '.mcp.json',
+  '.duckhive.json',
   '.openclaude.json',
   '.claude.json',
 ] as const
@@ -81,6 +82,7 @@ export const DANGEROUS_DIRECTORIES = [
   '.idea',
   '.claude',
   '.openclaude',
+  '.duckhive',
 ] as const
 
 /**
@@ -115,6 +117,10 @@ export function getClaudeSkillScope(
     {
       dir: expandPath(join(getOriginalCwd(), '.claude', 'skills')),
       prefix: '/.claude/skills/',
+    },
+    {
+      dir: expandPath(join(homedir(), '.duckhive', 'skills')),
+      prefix: '~/.duckhive/skills/',
     },
     {
       dir: expandPath(join(homedir(), '.openclaude', 'skills')),
@@ -219,6 +225,8 @@ export function isClaudeSettingsPath(filePath: string): boolean {
 
   // Use platform separator so endsWith checks work on both Unix (/) and Windows (\)
   if (
+    normalizedPath.endsWith(`${sep}.duckhive${sep}settings.json`) ||
+    normalizedPath.endsWith(`${sep}.duckhive${sep}settings.local.json`) ||
     normalizedPath.endsWith(`${sep}.openclaude${sep}settings.json`) ||
     normalizedPath.endsWith(`${sep}.openclaude${sep}settings.local.json`) ||
     normalizedPath.endsWith(`${sep}.claude${sep}settings.json`) ||
@@ -246,6 +254,9 @@ function isClaudeConfigFilePath(filePath: string): boolean {
   const commandsDir = join(getOriginalCwd(), '.claude', 'commands')
   const agentsDir = join(getOriginalCwd(), '.claude', 'agents')
   const skillsDir = join(getOriginalCwd(), '.claude', 'skills')
+  const duckCommandsDir = join(getOriginalCwd(), '.duckhive', 'commands')
+  const duckAgentsDir = join(getOriginalCwd(), '.duckhive', 'agents')
+  const duckSkillsDir = join(getOriginalCwd(), '.duckhive', 'skills')
   const openCommandsDir = join(getOriginalCwd(), '.openclaude', 'commands')
   const openAgentsDir = join(getOriginalCwd(), '.openclaude', 'agents')
   const openSkillsDir = join(getOriginalCwd(), '.openclaude', 'skills')
@@ -254,6 +265,9 @@ function isClaudeConfigFilePath(filePath: string): boolean {
     pathInWorkingPath(filePath, commandsDir) ||
     pathInWorkingPath(filePath, agentsDir) ||
     pathInWorkingPath(filePath, skillsDir) ||
+    pathInWorkingPath(filePath, duckCommandsDir) ||
+    pathInWorkingPath(filePath, duckAgentsDir) ||
+    pathInWorkingPath(filePath, duckSkillsDir) ||
     pathInWorkingPath(filePath, openCommandsDir) ||
     pathInWorkingPath(filePath, openAgentsDir) ||
     pathInWorkingPath(filePath, openSkillsDir)

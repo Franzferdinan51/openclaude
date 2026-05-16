@@ -11,7 +11,7 @@ import { join } from 'path'
 import type { CacheData, CacheEntry, CacheStats, Tag } from './types.js'
 
 const CACHE_VERSION = 1
-const CACHE_DIR = join(homedir(), '.openclaude', 'repomap-cache')
+const CACHE_DIR = join(homedir(), '.duckhive', 'repomap-cache')
 
 function getCacheFilePath(root: string): string {
   const hash = createHash('sha1').update(root).digest('hex')

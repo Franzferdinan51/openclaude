@@ -34,7 +34,7 @@ export function getDefaultPlansDirectory({
   if (configDirEnv) {
     return join(configDirEnv.normalize('NFC'), 'plans')
   }
-  return join(homeDir, '.openclaude', 'plans').normalize('NFC')
+  return join(homeDir, '.duckhive', 'plans').normalize('NFC')
 }
 
 /**

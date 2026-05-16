@@ -36,7 +36,7 @@ export function isInClaudeFolder(filePath: string): boolean {
 export function isInGlobalClaudeFolder(filePath: string): boolean {
   const absolutePath = expandPath(filePath);
   const normalizedAbsolutePath = normalizeCaseForComparison(absolutePath);
-  const globalClaudeFolderPaths = [join(homedir(), '.openclaude'), join(homedir(), '.claude')];
+  const globalClaudeFolderPaths = [join(homedir(), '.duckhive'), join(homedir(), '.openclaude'), join(homedir(), '.claude')];
 
   return globalClaudeFolderPaths.some(globalClaudeFolderPath => {
     const normalizedGlobalClaudeFolderPath = normalizeCaseForComparison(globalClaudeFolderPath);

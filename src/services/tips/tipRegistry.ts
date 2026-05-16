@@ -392,7 +392,7 @@ const externalTips: Tip[] = [
   {
     id: 'custom-commands',
     content: async () =>
-      'Create skills at .claude/skills/<name>/SKILL.md in your project or ~/.openclaude/skills/<name>/SKILL.md for skills that work in any project',
+      'Create skills at .claude/skills/<name>/SKILL.md in your project or ~/.duckhive/skills/<name>/SKILL.md for skills that work in any project',
     cooldownSessions: 15,
     async isRelevant() {
       const config = getGlobalConfig()

@@ -26,7 +26,7 @@ export function resolveGlobalClaudeFile(options: {
   const oauthSuffix = options.oauthSuffix ?? ''
   const configDir = options.configDirEnv || options.homeDir || homedir()
   const hasExplicitConfigDir = Boolean(options.configDirEnv)
-  const newFilename = `.openclaude${oauthSuffix}.json`
+  const newFilename = `.duckhive${oauthSuffix}.json`
   const legacyFilename = `.claude${oauthSuffix}.json`
 
   if (

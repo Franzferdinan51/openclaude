@@ -114,7 +114,7 @@ export function migrateLegacyClaudeConfigHome(options?: {
   }
 
   const homeDir = options?.homeDir ?? homedir()
-  const openClaudeDir = join(homeDir, '.openclaude')
+  const duckhiveDir = join(homeDir, '.duckhive')
   const legacyClaudeDir = join(homeDir, '.claude')
 
   try {
@@ -126,14 +126,14 @@ export function migrateLegacyClaudeConfigHome(options?: {
     }
 
     if (legacyDirExists) {
-      copyMissingPathSync(legacyClaudeDir, openClaudeDir)
+      copyMissingPathSync(legacyClaudeDir, duckhiveDir)
     }
 
     for (const legacyFile of legacyGlobalConfigFiles) {
-      const openClaudeFile = legacyFile.replace(/^\.claude/, '.openclaude')
+      const duckhiveFile = legacyFile.replace(/^\.claude/, '.duckhive')
       copyMissingPathSync(
         join(homeDir, legacyFile),
-        join(homeDir, openClaudeFile),
+        join(homeDir, duckhiveFile),
       )
     }
     return true
@@ -151,9 +151,9 @@ export function resolveClaudeConfigHomeDir(options?: {
   }
 
   const homeDir = options?.homeDir ?? homedir()
-  const openClaudeDir = join(homeDir, '.openclaude')
+  const duckhiveDir = join(homeDir, '.duckhive')
 
-  return openClaudeDir.normalize('NFC')
+  return duckhiveDir.normalize('NFC')
 }
 
 let claudeConfigHomeDirOverride: string | undefined
@@ -178,13 +178,13 @@ export const getClaudeConfigHomeDir = memoize(
       configDirEnv,
       homeDir,
     })
-    const openClaudeDir = join(homeDir, '.openclaude')
+    const duckhiveDir = join(homeDir, '.duckhive')
     const legacyClaudeDir = join(homeDir, '.claude')
 
     if (
       !configDirEnv &&
       !migrationSucceeded &&
-      !pathIsDirectory(openClaudeDir) &&
+      !pathIsDirectory(duckhiveDir) &&
       pathExists(legacyClaudeDir)
     ) {
       return legacyClaudeDir.normalize('NFC')
