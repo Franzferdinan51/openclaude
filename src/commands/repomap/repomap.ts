@@ -1,6 +1,39 @@
 import type { LocalCommandCall } from '../../types/command.js'
 import { getCwd } from '../../utils/cwd.js'
 
+type RepoMapResult = Awaited<ReturnType<typeof import('../../context/repoMap/index.js').buildRepoMap>>
+type RepoMapDeps = {
+  buildRepoMap: typeof import('../../context/repoMap/index.js').buildRepoMap
+  getCacheStats: typeof import('../../context/repoMap/index.js').getCacheStats
+  getCwd: typeof getCwd
+  invalidateCache: typeof import('../../context/repoMap/index.js').invalidateCache
+}
+
+let repomapTestDeps: Partial<RepoMapDeps> | null = null
+
+function getRepomapDeps(): RepoMapDeps {
+  return {
+    buildRepoMap: async options => {
+      const { buildRepoMap } = await import('../../context/repoMap/index.js')
+      return buildRepoMap(options)
+    },
+    getCacheStats: root => {
+      const mod = require('../../context/repoMap/index.js') as typeof import('../../context/repoMap/index.js')
+      return mod.getCacheStats(root)
+    },
+    getCwd,
+    invalidateCache: root => {
+      const mod = require('../../context/repoMap/index.js') as typeof import('../../context/repoMap/index.js')
+      return mod.invalidateCache(root)
+    },
+    ...repomapTestDeps,
+  }
+}
+
+export function setRepomapTestDeps(overrides: Partial<RepoMapDeps> | null): void {
+  repomapTestDeps = overrides
+}
+
 /** Parse CLI-style arguments from the command string. */
 export function parseArgs(args: string): {
   tokens: number
@@ -36,15 +69,9 @@ export function parseArgs(args: string): {
 }
 
 export const call: LocalCommandCall = async (args) => {
+  const { buildRepoMap, getCacheStats, getCwd, invalidateCache } = getRepomapDeps()
   const root = getCwd()
   const { tokens, focus, invalidate, stats } = parseArgs(args ?? '')
-
-  // Lazy import to avoid loading tree-sitter at startup
-  const {
-    buildRepoMap,
-    invalidateCache,
-    getCacheStats,
-  } = await import('../../context/repoMap/index.js')
 
   if (stats) {
     const cacheStats = getCacheStats(root)
