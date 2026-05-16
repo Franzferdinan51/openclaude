@@ -84,6 +84,18 @@ describe('builtInCommandNames', () => {
     expect(builtInCommandNames()).toContain('mcpm')
     expect(builtInCommandNames()).toContain('mcpg')
   })
+
+  test('includes Hive Nation team and governance commands', () => {
+    expect(builtInCommandNames()).toContain('council')
+    expect(builtInCommandNames()).toContain('team')
+    expect(builtInCommandNames()).toContain('swarm')
+    expect(builtInCommandNames()).toContain('hive-swarm')
+    expect(builtInCommandNames()).toContain('code-swarm')
+    expect(builtInCommandNames()).toContain('senate')
+    expect(builtInCommandNames()).toContain('decree')
+    expect(builtInCommandNames()).toContain('law')
+    expect(builtInCommandNames()).toContain('rule')
+  })
 })
 
 describe('isCommand', () => {

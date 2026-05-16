@@ -7,7 +7,12 @@ import goodClaude from './commands/good-claude/index.js'
 import issue from './commands/issue/index.js'
 import feedback from './commands/feedback/index.js'
 import goal from './commands/goal/index.js'
+import council from './commands/hive-council/index.js'
+import decree from './commands/hive-decree/index.js'
 import orchestrate from './commands/hive-orchestrate/index.js'
+import senate from './commands/hive-senate/index.js'
+import swarm from './commands/hive-swarm/index.js'
+import team from './commands/hive-team/index.js'
 import clear from './commands/clear/index.js'
 import color from './commands/color/index.js'
 import commit from './commands/commit.js'
@@ -302,6 +307,8 @@ const COMMANDS = memoize((): Command[] => [
   computerUse,
   config,
   copy,
+  council,
+  decree,
   desktop,
   context,
   contextNonInteractive,
@@ -360,7 +367,10 @@ const COMMANDS = memoize((): Command[] => [
   rewind,
   searchProvider,
   securityReview,
+  senate,
   terminalSetup,
+  swarm,
+  team,
   upgrade,
   extraUsage,
   extraUsageNonInteractive,

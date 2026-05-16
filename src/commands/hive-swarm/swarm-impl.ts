@@ -258,6 +258,25 @@ const DOMAIN_AGENTS: Record<SwarmDomain, string[]> = {
   mobile: ['mobile-architect', 'ios-dev', 'android-dev', 'qa-engineer'],
 }
 
+type SwarmDeps = {
+  spawnTeammate: typeof spawnTeammate
+  sleep: (ms: number) => Promise<void>
+}
+
+let swarmTestDeps: Partial<SwarmDeps> | null = null
+
+function getSwarmDeps(): SwarmDeps {
+  return {
+    spawnTeammate,
+    sleep: ms => new Promise(resolve => setTimeout(resolve, ms)),
+    ...swarmTestDeps,
+  }
+}
+
+export function setSwarmTestDeps(overrides: Partial<SwarmDeps> | null): void {
+  swarmTestDeps = overrides
+}
+
 function classifyTaskDomain(task: string): SwarmDomain {
   const msg = task.toLowerCase()
 
@@ -297,6 +316,7 @@ Provide your analysis and implementation.`
 }
 
 export const call: LocalCommandCall = async (args: string, context: ToolUseContext) => {
+  const { spawnTeammate, sleep } = getSwarmDeps()
   const parsedArgs = args.trim().split(/\s+/).filter(Boolean)
   const flags: Record<string, string | boolean> = {}
   const positional: string[] = []
@@ -315,6 +335,22 @@ export const call: LocalCommandCall = async (args: string, context: ToolUseConte
   const count = Math.min(Number(flags.count) || 4, 8)
   const dryRun = flags['dry-run'] === true || flags.dry === true
 
+  if (flags.list) {
+    const lines = ['Available swarm agents:', '-'.repeat(50)]
+    for (const [id, agent] of Object.entries(SWARM_AGENTS)) {
+      lines.push(`- ${id}: ${agent.name} (${agent.role})`)
+    }
+    return { type: 'text', value: lines.join('\n') }
+  }
+
+  if (flags['list-domain']) {
+    const lines = ['Agents by domain:', '-'.repeat(50)]
+    for (const [domain, agents] of Object.entries(DOMAIN_AGENTS)) {
+      lines.push(`\n${domain.toUpperCase()}: ${agents.join(', ')}`)
+    }
+    return { type: 'text', value: lines.join('\n') }
+  }
+
   if (!task) {
     return {
       type: 'text',
@@ -332,22 +368,6 @@ Flags:
   --list            List available agents
   --list-domain     List agents by domain`,
     }
-  }
-
-  if (flags.list === true) {
-    const lines = ['🐝 Available Swarm Agents:', '━'.repeat(50)]
-    for (const [id, agent] of Object.entries(SWARM_AGENTS)) {
-      lines.push(`• ${id}: ${agent.name} (${agent.role})`)
-    }
-    return { type: 'text', value: lines.join('\n') }
-  }
-
-  if (flags['list-domain'] === true) {
-    const lines = ['🐝 Agents by Domain:', '━'.repeat(50)]
-    for (const [domain, agents] of Object.entries(DOMAIN_AGENTS)) {
-      lines.push(`\n${domain.toUpperCase()}: ${agents.join(', ')}`)
-    }
-    return { type: 'text', value: lines.join('\n') }
   }
 
   const domain = domainFlag ?? classifyTaskDomain(task)
@@ -422,7 +442,7 @@ Flags:
     // Wait between waves (except after last wave)
     if (i + WAVE_SIZE < agents.length) {
       lines.push(`⏳ Waiting for wave ${waveNum} agents to initialize...`)
-      await new Promise(resolve => setTimeout(resolve, 2000)) // 2 second delay between waves
+      await sleep(2000)
     }
   }
 
