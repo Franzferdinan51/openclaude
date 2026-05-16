@@ -69,7 +69,7 @@ export const MCPManageTool = buildTool({
       case 'health':
         return { data: { success: true, action: 'health', servers: Object.entries(servers).map(([n, s]) => ({ name: n, transport: s.type ?? 'stdio', url: s.url ?? s.command ?? '', status: 'configured' })) } }
       case 'reload':
-        return { data: { success: true, action: 'reload', hint: 'Restart OpenClaude to reload MCP servers', servers: Object.entries(servers).map(([n, s]) => ({ name: n, transport: s.type ?? 'stdio', url: s.url ?? s.command ?? '', status: 'pending-reload' })) } }
+        return { data: { success: true, action: 'reload', hint: 'Restart DuckHive to reload MCP servers', servers: Object.entries(servers).map(([n, s]) => ({ name: n, transport: s.type ?? 'stdio', url: s.url ?? s.command ?? '', status: 'pending-reload' })) } }
       default:
         return { data: { success: false, action, error: `Unknown action: ${action}` } }
     }

@@ -3,7 +3,7 @@ import { isInBundledMode } from 'src/utils/bundledMode.js';
 import { getCurrentInstallationType } from 'src/utils/doctorDiagnostic.js';
 import { isEnvTruthy } from 'src/utils/envUtils.js';
 import { useStartupNotification } from './useStartupNotification.js';
-const NPM_DEPRECATION_MESSAGE = 'OpenClaude has switched from npm to the native installer. Run `openclaude install` or see https://github.com/Gitlawb/openclaude#quick-start for more options.';
+const NPM_DEPRECATION_MESSAGE = 'DuckHive has switched from npm to the native installer. Run `duckhive install` or see https://github.com/Franzferdinan51/DuckHive#quick-start for more options.';
 export function useNpmDeprecationNotification() {
   useStartupNotification(_temp);
 }

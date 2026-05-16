@@ -57,7 +57,7 @@ function slugify(name: string): string {
  * Strips date prefix (2026-05-10-), .md suffix, and normalizes.
  * e.g. "2026-05-10-fix-search-provider-config.md" → "fix-search-provider-config"
  */
-function extractTopicFromFilename(filename: string): string | null {
+export function extractTopicFromFilename(filename: string): string | null {
   const base = filename.replace(/\.md$/, '')
   // Strip ISO date prefix: 2026-05-10-
   const stripped = base.replace(/^\d{4}-\d{2}-\d{2}-/, '')
@@ -69,12 +69,12 @@ function extractTopicFromFilename(filename: string): string | null {
  * Scan memory files for topic frequencies.
  * Returns a map of topic → occurrence count.
  */
-function scanMemoryTopics(): Map<string, number> {
+export function scanMemoryTopicsAtPath(memoryDir: string): Map<string, number> {
   const topics = new Map<string, number>()
-  if (!existsSync(MEMORY_DIR)) return topics
+  if (!existsSync(memoryDir)) return topics
 
   try {
-    const files = readdirSync(MEMORY_DIR).filter(f => f.endsWith('.md'))
+    const files = readdirSync(memoryDir).filter(f => f.endsWith('.md'))
     for (const file of files) {
       const topic = extractTopicFromFilename(file)
       if (topic) {
@@ -86,6 +86,10 @@ function scanMemoryTopics(): Map<string, number> {
   }
 
   return topics
+}
+
+function scanMemoryTopics(): Map<string, number> {
+  return scanMemoryTopicsAtPath(MEMORY_DIR)
 }
 
 // ─── Skill Authoring ──────────────────────────────────────────────────────────

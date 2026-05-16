@@ -166,21 +166,21 @@ function buildDeps() {
       catch (e) { return { reachable: false, error: String(e) }; }
     },
 
-    // DuckHive is primarily a CLI tool. The "gateway" probe checks if DuckHive
-    // has an active background server (e.g. via `duckhived` or the IPC socket).
+    // DuckHive is primarily a CLI tool in the open build. The "gateway" probe
+    // checks whether a background socket is already active.
     checkGateway: async () => {
-      // Probe DuckHive IPC socket if present
+      // Probe DuckHive IPC socket if present.
       try {
         const { existsSync } = await import('node:fs');
         const socketPath = `${getClaudeConfigHomeDir()}/duckhive.sock`;
         if (existsSync(socketPath)) {
-          return { reachable: true, version: 'duckhived active', error: undefined };
+          return { reachable: true, version: 'background socket active', error: undefined };
         }
       } catch { /* best-effort */ }
       return {
         reachable: false,
         version: undefined,
-        error: 'DuckHive runs as CLI (no background gateway). Use `duckhived` to start a persistent server.',
+        error: 'DuckHive open build runs as a CLI and does not install a managed gateway daemon.',
       };
     },
 
@@ -196,17 +196,7 @@ function buildDeps() {
       });
     },
 
-    restartGateway: async () => {
-      // DuckHive has no persistent gateway by default.
-      // This attempts `duckhived restart` if the daemon is installed.
-      const { spawn } = await import('node:child_process');
-      return new Promise<void>(resolve => {
-        const child = spawn('duckhived', ['restart'], { stdio: 'ignore' });
-        child.on('error', () => resolve()); // daemon not running — nothing to restart
-        child.on('exit', () => resolve());
-        setTimeout(resolve, 2000);
-      });
-    },
+
 
     // ── Config ───────────────────────────────────────────────────────────────
 
@@ -410,3 +400,4 @@ function buildDeps() {
     },
   };
 }
+

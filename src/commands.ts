@@ -6,10 +6,13 @@ import btw from './commands/btw/index.js'
 import goodClaude from './commands/good-claude/index.js'
 import issue from './commands/issue/index.js'
 import feedback from './commands/feedback/index.js'
+import goal from './commands/goal/index.js'
+import orchestrate from './commands/hive-orchestrate/index.js'
 import clear from './commands/clear/index.js'
 import color from './commands/color/index.js'
 import commit from './commands/commit.js'
 import commitMessage from './commands/commit-message/index.js'
+import connect from './commands/connect/index.js'
 import copy from './commands/copy/index.js'
 import desktop from './commands/desktop/index.js'
 import commitPushPr from './commands/commit-push-pr.js'
@@ -21,6 +24,7 @@ import diff from './commands/diff/index.js'
 import dream from './commands/dream/index.js'
 import ctx_viz from './commands/ctx_viz/index.js'
 import doctor from './commands/doctor/index.js'
+import duckcustodian from './commands/duckcustodian/index.js'
 import onboardGithub from './commands/onboard-github/index.js'
 import knowledge from './commands/knowledge/index.js'
 import memory from './commands/memory/index.js'
@@ -32,11 +36,13 @@ import keybindings from './commands/keybindings/index.js'
 import lsp from './commands/lsp/index.js'
 import login from './commands/login/index.js'
 import logout from './commands/logout/index.js'
+import loop from './commands/loop/index.js'
 import installGitHubApp from './commands/install-github-app/index.js'
 import installSlackApp from './commands/install-slack-app/index.js'
 import breakCache from './commands/break-cache/index.js'
 import cacheProbe from './commands/cache-probe/index.js'
 import cacheStats from './commands/cacheStats/index.js'
+import checkpoint from './commands/checkpoint/index.js'
 import mcp from './commands/mcp/index.js'
 import mobile from './commands/mobile/index.js'
 import onboarding from './commands/onboarding/index.js'
@@ -51,6 +57,7 @@ import skills from './commands/skills/index.js'
 import status from './commands/status/index.js'
 import tasks from './commands/tasks/index.js'
 import teleport from './commands/teleport/index.js'
+import spawn from './commands/spawn/index.js'
 /* eslint-disable @typescript-eslint/no-require-imports */
 const agentsPlatform =
   process.env.USER_TYPE === 'ant'
@@ -202,7 +209,7 @@ import stats from './commands/stats/index.js'
 const usageReport: Command = {
   type: 'prompt',
   name: 'insights',
-  description: 'Generate a report analyzing your OpenClaude sessions',
+  description: 'Generate a report analyzing your DuckHive sessions',
   contentLength: 0,
   progressMessage: 'analyzing your sessions',
   source: 'builtin',
@@ -277,11 +284,13 @@ const COMMANDS = memoize((): Command[] => [
   btw,
   cacheProbe,
   cacheStats,
+  checkpoint,
   chrome,
   clear,
   color,
   compact,
   commitMessage,
+  connect,
   config,
   copy,
   desktop,
@@ -291,10 +300,12 @@ const COMMANDS = memoize((): Command[] => [
   diff,
   dream,
   doctor,
+  duckcustodian,
   effort,
   exit,
   fast,
   files,
+  goal,
   heapDump,
   help,
   ide,
@@ -302,6 +313,8 @@ const COMMANDS = memoize((): Command[] => [
   keybindings,
   knowledge,
   lsp,
+  loop,
+  orchestrate,
   installGitHubApp,
   installSlackApp,
   mcp,
@@ -320,6 +333,7 @@ const COMMANDS = memoize((): Command[] => [
   resume,
   session,
   skills,
+  spawn,
   stats,
   status,
   statusline,

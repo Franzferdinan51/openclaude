@@ -93,14 +93,18 @@ export function shouldUseStandaloneTuiHelper(
   env: NodeJS.ProcessEnv = process.env,
   fileExists: (path: string) => boolean = existsSync,
 ): boolean {
+  const isTruthy = (value: string | undefined): boolean =>
+    value !== undefined && ['1', 'true', 'yes', 'on'].includes(value.trim().toLowerCase())
+
   if (
-    isEnvTruthy(env.DUCKHIVE_TUI_DIRECT) ||
-    isEnvTruthy(env.DUCKHIVE_TUI_SKIP_PTY_HELPER)
+    isTruthy(env.DUCKHIVE_TUI_DIRECT) ||
+    isTruthy(env.DUCKHIVE_TUI_SKIP_PTY_HELPER)
   ) {
     return false
   }
 
-  return fileExists(join(baseDir, 'bin', 'tui-pty-helper.py'))
+  const helperPath = join(baseDir, 'bin', 'tui-pty-helper.py')
+  return fileExists(helperPath.replace(/\\/g, '/'))
 }
 
 export function buildStandaloneTuiLaunchEnv(

@@ -23,6 +23,7 @@ import type {
 } from './ChannelAdapter.js'
 import { normalizeMessage } from './ChannelAdapter.js'
 import type { Message } from '../utils/mailbox.js'
+import { createCombinedAbortSignal } from '../utils/combinedAbortSignal.js'
 
 // ─── Config ─────────────────────────────────────────────────────────────────
 
@@ -160,6 +161,9 @@ export class WebhookAdapter implements ChannelAdapter {
       )
     }
     const body = JSON.stringify({ text })
+    const { signal, cleanup } = createCombinedAbortSignal(undefined, {
+      timeoutMs: 15_000,
+    })
     const res = await fetch(this.outboundUrl, {
       method: 'POST',
       headers: {
@@ -168,8 +172,8 @@ export class WebhookAdapter implements ChannelAdapter {
         ...this.outboundHeaders,
       },
       body,
-      signal: AbortSignal.timeout(15_000),
-    })
+      signal,
+    }).finally(cleanup)
     if (!res.ok) {
       throw new Error(
         `[WebhookAdapter] Outbound webhook failed: HTTP ${res.status} ${res.statusText}`,

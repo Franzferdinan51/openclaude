@@ -50,13 +50,15 @@ export async function buildRepoMap(options: RepoMapOptions = {}): Promise<RepoMa
     // and metadata in name/line fields
     try {
       const meta = JSON.parse(cachedResult.name)
-      return {
-        map: cachedResult.signature,
-        cacheHit: true,
-        buildTimeMs: Date.now() - startTime,
-        fileCount: meta.fileCount ?? 0,
-        totalFileCount,
-        tokenCount: meta.tokenCount ?? 0,
+      if (cachedResult.signature.length > 0) {
+        return {
+          map: cachedResult.signature,
+          cacheHit: true,
+          buildTimeMs: 0,
+          fileCount: meta.fileCount ?? 0,
+          totalFileCount,
+          tokenCount: meta.tokenCount ?? 0,
+        }
       }
     } catch {
       // Invalid cached data, continue with full build
@@ -107,15 +109,17 @@ export async function buildRepoMap(options: RepoMapOptions = {}): Promise<RepoMa
   const { map, tokenCount, fileCount } = renderMap(ranked, fileTagsMap, maxTokens)
 
   // Cache the rendered result
-  cache.entries[renderedCacheKey] = {
-    tags: [{
-      kind: 'def',
-      name: JSON.stringify({ fileCount, tokenCount }),
-      line: 0,
-      signature: map,
-    }],
-    mtimeMs: Date.now(),
-    size: 0,
+  if (map.length > 0) {
+    cache.entries[renderedCacheKey] = {
+      tags: [{
+        kind: 'def',
+        name: JSON.stringify({ fileCount, tokenCount }),
+        line: 0,
+        signature: map,
+      }],
+      mtimeMs: Date.now(),
+      size: 0,
+    }
   }
 
   saveCache(root, cache)

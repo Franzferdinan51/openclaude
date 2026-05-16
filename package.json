@@ -1,7 +1,7 @@
 {
   "name": "@gitlawb/openclaude",
   "version": "0.11.0",
-  "description": "OpenClaude opens coding-agent workflows to any LLM — OpenAI, Gemini, DeepSeek, Ollama, and 200+ models",
+  "description": "DuckHive opens coding-agent workflows to any LLM - OpenAI, Gemini, DeepSeek, Ollama, and 200+ models",
   "type": "module",
   "bin": {
     "duckhive": "./bin/duckhive"
@@ -20,8 +20,10 @@
   },
   "files": [
     "bin/",
+    "config/",
     "dist/cli.mjs",
     "dist/sdk.mjs",
+    "skills/newest-desktop-control/",
     "src/entrypoints/sdk.d.ts",
     "src/entrypoints/harness.ts",
     "src/entrypoints/sdk/coreTypes.generated.ts",
@@ -86,10 +88,12 @@
     "@modelcontextprotocol/sdk": "1.29.0",
     "@orama/orama": "^3.1.18",
     "@orama/plugin-data-persistence": "^3.1.18",
+    "@types/better-sqlite3": "^7.6.13",
     "@vscode/ripgrep": "^1.17.1",
     "ajv": "8.18.0",
     "auto-bind": "5.0.1",
     "axios": "1.15.2",
+    "better-sqlite3": "^12.10.0",
     "bidi-js": "1.0.3",
     "chalk": "5.6.2",
     "chokidar": "4.0.3",
@@ -108,9 +112,12 @@
     "fuse.js": "7.1.0",
     "get-east-asian-width": "1.5.0",
     "google-auth-library": "9.15.1",
+    "graphology": "^0.26.0",
+    "graphology-pagerank": "^1.1.0",
     "https-proxy-agent": "7.0.6",
     "ignore": "7.0.5",
     "indent-string": "5.0.0",
+    "js-tiktoken": "^1.0.21",
     "jsonc-parser": "3.3.1",
     "lodash-es": "4.18.1",
     "lru-cache": "11.2.7",
@@ -130,11 +137,13 @@
     "strip-ansi": "7.2.0",
     "supports-hyperlinks": "3.2.0",
     "tree-kill": "1.2.2",
+    "tree-sitter-wasms": "^0.1.13",
     "turndown": "7.2.2",
     "type-fest": "4.41.0",
     "undici": "7.24.6",
     "usehooks-ts": "3.1.1",
     "vscode-languageserver-protocol": "3.17.5",
+    "web-tree-sitter": "^0.26.8",
     "wrap-ansi": "9.0.2",
     "ws": "8.20.0",
     "xss": "1.0.15",
@@ -153,7 +162,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/Gitlawb/openclaude.git"
+    "url": "https://github.com/Franzferdinan51/DuckHive.git"
   },
   "keywords": [
     "claude-code",

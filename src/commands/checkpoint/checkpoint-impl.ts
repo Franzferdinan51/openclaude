@@ -4,8 +4,9 @@
 import type { LocalCommandCall } from '../../types/command.js'
 import { join } from 'path'
 import { mkdirSync, readdirSync, writeFileSync, existsSync, rmSync } from 'fs'
+import { getClaudeConfigHomeDir } from '../../utils/envUtils.js'
 
-const CHECKPOINT_DIR = join(process.env.HOME ?? '/tmp', '.claude', 'checkpoints')
+const CHECKPOINT_DIR = join(getClaudeConfigHomeDir(), 'checkpoints')
 
 function ensureDir() {
   try { mkdirSync(CHECKPOINT_DIR, { recursive: true }) } catch {}

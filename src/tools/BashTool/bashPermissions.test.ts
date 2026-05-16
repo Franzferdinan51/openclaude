@@ -54,8 +54,8 @@ test('sandbox auto-allow still enforces Bash path constraints', async () => {
   )
 
   expect(result.behavior).toBe('ask')
-  expect(result.message).toContain('was blocked')
-  expect(result.message).toContain('passwd')
+  expect('message' in result ? result.message : '').toContain('was blocked')
+  expect('message' in result ? result.message : '').toContain('passwd')
 })
 
 // SEC-02 regression: array subscript with command substitution must NOT be stripped.

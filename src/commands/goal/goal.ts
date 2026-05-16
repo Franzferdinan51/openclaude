@@ -59,6 +59,71 @@ function getGoals(): Goal[] {
   }
 }
 
+function findGoalByReference(
+  goals: Goal[],
+  goalRef: string,
+): { goal?: Goal; error?: string } {
+  const exactMatch = goals.find((goal) => goal.id === goalRef)
+  if (exactMatch) {
+    return { goal: exactMatch }
+  }
+
+  const partialMatches = goals.filter((goal) => goal.id.includes(goalRef))
+  if (partialMatches.length === 0) {
+    return { error: `Goal not found: ${goalRef}` }
+  }
+
+  if (partialMatches.length > 1) {
+    return {
+      error:
+        `Goal reference is ambiguous: ${goalRef}\n` +
+        `Matches: ${partialMatches.map((goal) => goal.id).join(', ')}`,
+    }
+  }
+
+  return { goal: partialMatches[0] }
+}
+
+function getSingleActiveGoal(goals: Goal[]): { goal?: Goal; error?: string } {
+  return getSingleGoalByStatus(goals, 'active', {
+    missing:
+      'No active goal found. Create a goal first or specify a goal ID explicitly.',
+    ambiguous:
+      'Multiple active goals found. Specify a goal ID explicitly with `/goal step add <goal-id> <description>`.',
+  })
+}
+
+function getSingleGoalByStatus(
+  goals: Goal[],
+  status: GoalStatus,
+  messages: { missing: string; ambiguous: string },
+): { goal?: Goal; error?: string } {
+  const matchingGoals = goals.filter((goal) => goal.status === status)
+  if (matchingGoals.length === 0) {
+    return {
+      error: messages.missing,
+    }
+  }
+
+  if (matchingGoals.length > 1) {
+    return {
+      error: messages.ambiguous,
+    }
+  }
+
+  return { goal: matchingGoals[0] }
+}
+
+function resolveGoalTarget(
+  goals: Goal[],
+  goalRef?: string,
+): { goal?: Goal; error?: string } {
+  if (goalRef?.trim()) {
+    return findGoalByReference(goals, goalRef)
+  }
+  return getSingleActiveGoal(goals)
+}
+
 async function saveGoals(goals: Goal[]): Promise<void> {
   saveGlobalConfig(config => ({
     ...config,
@@ -160,8 +225,14 @@ async function listGoals(args: string[]): Promise<string> {
 }
 
 async function goalStatus(args: string[]): Promise<string> {
+  const goals = getGoals()
+
   if (args.length === 0) {
-    const goals = getGoals()
+    const activeGoal = getSingleActiveGoal(goals)
+    if (activeGoal.goal) {
+      return formatGoal(activeGoal.goal, true)
+    }
+
     const active = goals.filter((g) => g.status === 'active')
     const paused = goals.filter((g) => g.status === 'paused')
 
@@ -179,26 +250,22 @@ async function goalStatus(args: string[]): Promise<string> {
   }
 
   const goalId = args[0]
-  const goals = getGoals()
-  const goal = goals.find((g) => g.id === goalId || g.id.includes(goalId))
+  const { goal, error } = findGoalByReference(goals, goalId)
 
   if (!goal) {
-    return `Goal not found: ${goalId}`
+    return error ?? `Goal not found: ${goalId}`
   }
 
   return formatGoal(goal, true)
 }
 
 async function pauseGoal(args: string[]): Promise<string> {
-  if (args.length === 0) {
-    return `Usage: /goal pause <goal-id>\nTip: Use /goal list to find goal IDs`
-  }
-
-  const goalId = args[0]
   const goals = getGoals()
-  const goal = goals.find((g) => g.id === goalId || g.id.includes(goalId))
+  const { goal, error } = resolveGoalTarget(goals, args[0])
 
-  if (!goal) return `Goal not found: ${goalId}`
+  if (!goal) {
+    return error ?? `Usage: /goal pause [goal-id]\nTip: Use /goal list to find goal IDs`
+  }
   if (goal.status !== 'active') return `Goal is not active (current status: ${goal.status})`
 
   goal.status = 'paused'
@@ -209,15 +276,19 @@ async function pauseGoal(args: string[]): Promise<string> {
 }
 
 async function resumeGoal(args: string[]): Promise<string> {
-  if (args.length === 0) {
-    return `Usage: /goal resume <goal-id>\nTip: Use /goal list paused to find paused goals`
-  }
-
-  const goalId = args[0]
   const goals = getGoals()
-  const goal = goals.find((g) => g.id === goalId || g.id.includes(goalId))
+  const { goal, error } = args[0]?.trim()
+    ? findGoalByReference(goals, args[0])
+    : getSingleGoalByStatus(goals, 'paused', {
+      missing:
+        'No paused goal found. Pause a goal first or specify a goal ID explicitly.',
+      ambiguous:
+        'Multiple paused goals found. Specify a goal ID explicitly with `/goal resume <goal-id>`.',
+    })
 
-  if (!goal) return `Goal not found: ${goalId}`
+  if (!goal) {
+    return error ?? `Usage: /goal resume [goal-id]\nTip: Use /goal list paused to find paused goals`
+  }
   if (goal.status !== 'paused') return `Goal is not paused (current status: ${goal.status})`
 
   goal.status = 'active'
@@ -228,15 +299,10 @@ async function resumeGoal(args: string[]): Promise<string> {
 }
 
 async function completeGoal(args: string[]): Promise<string> {
-  if (args.length === 0) {
-    return 'Usage: /goal complete <goal-id>'
-  }
-
-  const goalId = args[0]
   const goals = getGoals()
-  const goal = goals.find((g) => g.id === goalId || g.id.includes(goalId))
+  const { goal, error } = resolveGoalTarget(goals, args[0])
 
-  if (!goal) return `Goal not found: ${goalId}`
+  if (!goal) return error ?? 'Usage: /goal complete [goal-id]'
 
   goal.status = 'completed'
   goal.completedAt = new Date().toISOString()
@@ -247,17 +313,40 @@ async function completeGoal(args: string[]): Promise<string> {
 }
 
 async function addStep(args: string[], goalId?: string): Promise<string> {
-  const targetGoalId = goalId || args[0]
-  const stepDesc = args.slice(goalId ? 1 : 1).join(' ')
-
-  if (!targetGoalId || !stepDesc) {
+  if (args.length === 0) {
     return `Usage: /goal step add <goal-id> <step-description>\n   or: /goal step add <step-description> (uses active goal)`
   }
 
   const goals = getGoals()
-  const goal = goals.find((g) => g.id === targetGoalId || g.id.includes(targetGoalId))
+  let goal: Goal | undefined
+  let stepDesc = ''
 
-  if (!goal) return `Goal not found: ${targetGoalId}`
+  if (goalId) {
+    const resolved = findGoalByReference(goals, goalId)
+    if (!resolved.goal) {
+      return resolved.error ?? `Goal not found: ${goalId}`
+    }
+    goal = resolved.goal
+    stepDesc = args.join(' ')
+  } else {
+    const firstArg = args[0]
+    const resolvedById = firstArg ? findGoalByReference(goals, firstArg) : {}
+    if (resolvedById.goal) {
+      goal = resolvedById.goal
+      stepDesc = args.slice(1).join(' ')
+    } else {
+      const activeGoal = getSingleActiveGoal(goals)
+      if (!activeGoal.goal) {
+        return activeGoal.error ?? 'No active goal found.'
+      }
+      goal = activeGoal.goal
+      stepDesc = args.join(' ')
+    }
+  }
+
+  if (!stepDesc.trim()) {
+    return `Usage: /goal step add <goal-id> <step-description>\n   or: /goal step add <step-description> (uses active goal)`
+  }
 
   const step: GoalStep = {
     id: `step_${Date.now()}`,
@@ -275,15 +364,12 @@ async function addStep(args: string[], goalId?: string): Promise<string> {
 }
 
 async function clearGoal(args: string[]): Promise<string> {
-  if (args.length === 0) {
-    return `Usage: /goal clear <goal-id>\nWarning: This cannot be undone!`
-  }
-
-  const goalId = args[0]
   const goals = getGoals()
-  const index = goals.findIndex((g) => g.id === goalId || g.id.includes(goalId))
-
-  if (index === -1) return `Goal not found: ${goalId}`
+  const { goal, error } = resolveGoalTarget(goals, args[0])
+  if (!goal) {
+    return error ?? `Usage: /goal clear [goal-id]\nWarning: This cannot be undone!`
+  }
+  const index = goals.indexOf(goal)
 
   const removed = goals.splice(index, 1)[0]
   await saveGoals(goals)
@@ -292,13 +378,10 @@ async function clearGoal(args: string[]): Promise<string> {
 }
 
 async function attachToGoal(args: string[]): Promise<string> {
-  if (args.length === 0) return 'Usage: /goal attach <goal-id>'
-
-  const goalId = args[0]
   const goals = getGoals()
-  const goal = goals.find((g) => g.id === goalId || g.id.includes(goalId))
+  const { goal, error } = resolveGoalTarget(goals, args[0])
 
-  if (!goal) return `Goal not found: ${goalId}`
+  if (!goal) return error ?? 'Usage: /goal attach [goal-id]'
 
   goal.sessionId = `session_${Date.now()}`
   goal.updatedAt = new Date().toISOString()

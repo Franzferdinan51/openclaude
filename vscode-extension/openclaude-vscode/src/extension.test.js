@@ -5,9 +5,9 @@ const { mock } = require('bun:test');
 function createStatus(overrides = {}) {
   return {
     installed: true,
-    executable: 'openclaude',
-    launchCommand: 'openclaude --project-aware',
-    terminalName: 'OpenClaude',
+    executable: 'duckhive',
+    launchCommand: 'duckhive --project-aware',
+    terminalName: 'DuckHive',
     shimEnabled: false,
     workspaceFolder: '/workspace/openclaude/very/long/path/example-project',
     workspaceSourceLabel: 'active editor workspace',
@@ -58,11 +58,11 @@ function loadExtension() {
   return require('./extension');
 }
 
-test('renderControlCenterHtml uses the OpenClaude wordmark, status rail, and warm action hierarchy', () => {
+test('renderControlCenterHtml uses the DuckHive wordmark, status rail, and warm action hierarchy', () => {
   const { renderControlCenterHtml } = loadExtension();
   const html = renderControlCenterHtml(createStatus(), { nonce: 'test-nonce', platform: 'win32' });
 
-  assert.match(html, /Open<span class="wordmark-accent">Claude<\/span>/);
+  assert.match(html, /Duck<span class="wordmark-accent">Hive<\/span>/);
   assert.match(html, /class="status-rail"/);
   assert.match(html, /\.sunset-gradient\s*\{/);
   assert.match(html, /class="action-button primary" id="launch"/);
@@ -137,7 +137,7 @@ test('resolveLaunchTargets anchors relative launch commands to the workspace roo
 
   assert.deepEqual(
     resolveLaunchTargets({
-      executable: './node_modules/.bin/openclaude',
+      executable: './node_modules/.bin/duckhive',
       activeFilePath: '/workspace/openclaude/src/panels/control-center.js',
       workspacePath: '/workspace/openclaude',
       workspaceSourceLabel: 'active editor workspace',
@@ -159,7 +159,7 @@ test('resolveLaunchTargets ignores active files outside the selected workspace',
 
   assert.deepEqual(
     resolveLaunchTargets({
-      executable: 'openclaude',
+      executable: 'duckhive',
       activeFilePath: '/tmp/notes/scratch.js',
       workspacePath: '/workspace/openclaude',
       workspaceSourceLabel: 'first workspace folder',
@@ -221,7 +221,7 @@ test('renderControlCenterHtml makes shared workspace-root launches explicit for 
   );
 
   assert.match(html, /Project-aware launch is anchored to the workspace root by the relative command · \/workspace\/openclaude/);
-  assert.match(html, /Same workspace-root target as Launch OpenClaude because the relative command resolves from the workspace root · \/workspace\/openclaude/);
+  assert.match(html, /Same workspace-root target as Launch DuckHive because the relative command resolves from the workspace root · \/workspace\/openclaude/);
 });
 
 test('renderControlCenterHtml escapes hostile text and title values', () => {

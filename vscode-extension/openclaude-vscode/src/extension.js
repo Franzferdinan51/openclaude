@@ -16,8 +16,8 @@ const { ChatController, OpenClaudeChatViewProvider, OpenClaudeChatPanelManager }
 const { SessionManager } = require('./chat/sessionManager');
 const { DiffContentProvider, SCHEME: DIFF_SCHEME } = require('./chat/diffController');
 
-const OPENCLAUDE_REPO_URL = 'https://github.com/Gitlawb/openclaude';
-const OPENCLAUDE_SETUP_URL = 'https://github.com/Gitlawb/openclaude/blob/main/README.md#quick-start';
+const OPENCLAUDE_REPO_URL = 'https://github.com/Franzferdinan51/DuckHive';
+const OPENCLAUDE_SETUP_URL = 'https://github.com/Franzferdinan51/DuckHive#quick-start';
 const PROFILE_FILE_NAME = '.openclaude-profile.json';
 
 function escapeHtml(value) {
@@ -205,8 +205,8 @@ function readWorkspaceProfile(profilePath) {
 
 async function collectControlCenterState() {
   const configured = vscode.workspace.getConfiguration('openclaude');
-  const launchCommand = configured.get('launchCommand', 'openclaude');
-  const terminalName = configured.get('terminalName', 'OpenClaude');
+  const launchCommand = configured.get('launchCommand', 'duckhive');
+  const terminalName = configured.get('terminalName', 'DuckHive');
   const shimEnabled = configured.get('useOpenAIShim', false);
   const executable = getExecutableFromCommand(launchCommand);
   const launchWorkspace = resolveLaunchWorkspace();
@@ -265,8 +265,8 @@ async function collectControlCenterState() {
 async function launchOpenClaude(options = {}) {
   const { requireWorkspace = false } = options;
   const configured = vscode.workspace.getConfiguration('openclaude');
-  const launchCommand = configured.get('launchCommand', 'openclaude');
-  const terminalName = configured.get('terminalName', 'OpenClaude');
+  const launchCommand = configured.get('launchCommand', 'duckhive');
+  const terminalName = configured.get('terminalName', 'DuckHive');
   const shimEnabled = configured.get('useOpenAIShim', false);
   const executable = getExecutableFromCommand(launchCommand);
   const launchWorkspace = resolveLaunchWorkspace();
@@ -291,7 +291,7 @@ async function launchOpenClaude(options = {}) {
 
   if (!installed) {
     const action = await vscode.window.showErrorMessage(
-      `OpenClaude command not found: ${executable}. Install it with: npm install -g @gitlawb/openclaude`,
+      `DuckHive command not found: ${executable}. Install it with: npm install -g @gitlawb/openclaude`,
       'Open Setup Guide',
       'Open Repository',
     );
@@ -423,7 +423,7 @@ function getWorkspaceRootActionDetail(status, fallbackDetail) {
   }
 
   if (status.launchActionsShareTargetReason === 'relative-launch-command') {
-    return `Same workspace-root target as Launch OpenClaude because the relative command resolves from the workspace root · ${status.workspaceRootCwdLabel}`;
+    return `Same workspace-root target as Launch DuckHive because the relative command resolves from the workspace root · ${status.workspaceRootCwdLabel}`;
   }
 
   return `Always starts at the workspace root · ${status.workspaceRootCwdLabel}`;
@@ -841,7 +841,7 @@ function renderControlCenterHtml(status, options = {}) {
         <div class="hero-top">
           <div class="brand">
             <div class="eyebrow">${escapeHtml(viewModel.header.eyebrow)}</div>
-            <div class="wordmark" aria-label="OpenClaude wordmark">Open<span class="wordmark-accent">Claude</span></div>
+            <div class="wordmark" aria-label="DuckHive wordmark">Duck<span class="wordmark-accent">Hive</span></div>
             <div class="headline">
               <h1 class="headline-title" id="control-center-title">${escapeHtml(viewModel.header.title)}</h1>
               <p class="headline-subtitle">${escapeHtml(viewModel.header.subtitle)}</p>
@@ -881,11 +881,11 @@ function renderControlCenterHtml(status, options = {}) {
             </button>
             <button class="support-link" id="repo" type="button">
               <span class="support-link-label">Open Repository</span>
-              <span class="summary-detail">Browse the upstream OpenClaude project.</span>
+              <span class="summary-detail">Browse the DuckHive repository.</span>
             </button>
             <button class="support-link" id="commands" type="button">
               <span class="support-link-label">Open Command Palette</span>
-              <span class="summary-detail">Access VS Code and OpenClaude commands quickly.</span>
+              <span class="summary-detail">Access VS Code and DuckHive commands quickly.</span>
             </button>
           </div>
         </section>
@@ -1073,24 +1073,24 @@ function activate(context) {
     vscode.StatusBarAlignment.Right,
     100,
   );
-  statusBarItem.text = '$(comment-discussion) OpenClaude';
-  statusBarItem.tooltip = 'Open OpenClaude Chat';
+  statusBarItem.text = '$(comment-discussion) DuckHive';
+  statusBarItem.tooltip = 'Open DuckHive Chat';
   statusBarItem.command = 'openclaude.openChat';
   statusBarItem.show();
 
   chatController.onDidChangeState((state) => {
     switch (state) {
       case 'streaming':
-        statusBarItem.text = '$(sync~spin) OpenClaude';
-        statusBarItem.tooltip = 'OpenClaude is generating...';
+        statusBarItem.text = '$(sync~spin) DuckHive';
+        statusBarItem.tooltip = 'DuckHive is generating...';
         break;
       case 'connected':
-        statusBarItem.text = '$(comment-discussion) OpenClaude';
-        statusBarItem.tooltip = 'OpenClaude connected';
+        statusBarItem.text = '$(comment-discussion) DuckHive';
+        statusBarItem.tooltip = 'DuckHive connected';
         break;
       default:
-        statusBarItem.text = '$(comment-discussion) OpenClaude';
-        statusBarItem.tooltip = 'Open OpenClaude Chat';
+        statusBarItem.text = '$(comment-discussion) DuckHive';
+        statusBarItem.tooltip = 'Open DuckHive Chat';
         break;
     }
   });

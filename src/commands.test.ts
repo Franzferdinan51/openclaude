@@ -9,6 +9,43 @@ describe('builtInCommandNames', () => {
   test('includes the LSP command', () => {
     expect(builtInCommandNames()).toContain('lsp')
   })
+
+  test('includes the loop command', () => {
+    expect(builtInCommandNames()).toContain('loop')
+  })
+
+  test('includes the goal command', () => {
+    expect(builtInCommandNames()).toContain('goal')
+    expect(builtInCommandNames()).toContain('g')
+  })
+
+  test('includes the orchestrate command', () => {
+    expect(builtInCommandNames()).toContain('orchestrate')
+    expect(builtInCommandNames()).toContain('orch')
+    expect(builtInCommandNames()).toContain('multi')
+  })
+
+  test('includes the duckcustodian command', () => {
+    expect(builtInCommandNames()).toContain('duckcustodian')
+    expect(builtInCommandNames()).toContain('custodian')
+  })
+
+  test('includes the spawn command', () => {
+    expect(builtInCommandNames()).toContain('spawn')
+    expect(builtInCommandNames()).toContain('subagent')
+    expect(builtInCommandNames()).toContain('deep-dive')
+  })
+
+  test('includes the checkpoint command', () => {
+    expect(builtInCommandNames()).toContain('checkpoint')
+    expect(builtInCommandNames()).toContain('snap')
+    expect(builtInCommandNames()).toContain('savepoint')
+  })
+
+  test('includes the connect command', () => {
+    expect(builtInCommandNames()).toContain('connect')
+    expect(builtInCommandNames()).toContain('telegram')
+  })
 })
 
 describe('isCommand', () => {

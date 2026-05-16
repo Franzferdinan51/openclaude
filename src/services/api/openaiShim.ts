@@ -964,6 +964,7 @@ async function* openaiStreamToAnthropic(
 
   const reader = response.body?.getReader()
   if (!reader) return
+  const streamReader = reader
 
   const decoder = new TextDecoder()
   let buffer = ''
@@ -978,7 +979,7 @@ async function* openaiStreamToAnthropic(
    * Respects the caller's AbortSignal — clears the idle timer on abort
    * so the rejection reason is AbortError, not a spurious idle timeout.
    */
-  async function readWithTimeout(): Promise<ReadableStreamReadResult<Uint8Array>> {
+  async function readWithTimeout(): Promise<Awaited<ReturnType<typeof streamReader.read>>> {
     return new Promise((resolve, reject) => {
       const timeoutId = setTimeout(() => {
         const elapsed = Math.round((Date.now() - lastDataTime) / 1000)
@@ -997,7 +998,7 @@ async function* openaiStreamToAnthropic(
         signal.addEventListener('abort', abortCleanup, { once: true })
       }
 
-      reader.read().then(
+      streamReader.read().then(
         result => {
           clearTimeout(timeoutId)
           if (signal && abortCleanup) signal.removeEventListener('abort', abortCleanup)
@@ -1169,9 +1170,9 @@ async function* openaiStreamToAnthropic(
                   input: {},
                   ...(tc.extra_content ? { extra_content: tc.extra_content } : {}),
                   // Extract Gemini signature from extra_content
-                  ...((tc.extra_content?.google as any)?.thought_signature
+                  ...(((tc.extra_content?.google) as any)?.thought_signature
                     ? {
-                        signature: (tc.extra_content.google as any)
+                        signature: ((tc.extra_content?.google) as any)
                           .thought_signature,
                       }
                     : {}),
@@ -2084,7 +2085,17 @@ class OpenAIShimMessages {
         throwClassifiedTransportError(error, requestUrl, failure)
       }
 
-      if (response.ok) {
+      const activeResponse = response
+      if (!activeResponse) {
+        throw APIError.generate(
+          500,
+          undefined,
+          'OpenAI shim: request produced no response',
+          new Headers(),
+        )
+      }
+
+      if (activeResponse.ok) {
         let tokensIn = 0
         let tokensOut = 0
         // Skip clone() for streaming responses - it blocks until full body is received,
@@ -2092,22 +2103,22 @@ class OpenAIShimMessages {
         // stream_options: { include_usage: true } and can be extracted from the stream.
         if (!params.stream) {
           try {
-            const clone = response.clone()
+            const clone = activeResponse.clone()
             const data = await clone.json()
             tokensIn = data.usage?.prompt_tokens ?? 0
             tokensOut = data.usage?.completion_tokens ?? 0
           } catch { /* ignore */ }
         }
         logApiCallEnd(correlationId, startTime, request.resolvedModel, 'success', tokensIn, tokensOut, false)
-        return response
+        return activeResponse
       }
 
       if (
         isGithub &&
-        response.status === 429 &&
+        activeResponse.status === 429 &&
         attempt < maxAttempts - 1
       ) {
-        await response.text().catch(() => {})
+        await activeResponse.text().catch(() => {})
         const delaySec = Math.min(
           GITHUB_429_BASE_DELAY_SEC * 2 ** attempt,
           GITHUB_429_MAX_DELAY_SEC,
@@ -2117,28 +2128,32 @@ class OpenAIShimMessages {
       }
       // Read body exactly once here — Response body is a stream that can only
       // be consumed a single time.
-      const errorBody = await response.text().catch(() => 'unknown error')
+      const errorBody = await activeResponse.text().catch(() => 'unknown error')
       const rateHint =
-        isGithub && response.status === 429 ? formatRetryAfterHint(response) : ''
+        isGithub && activeResponse.status === 429
+          ? formatRetryAfterHint(activeResponse)
+          : ''
 
       // If GitHub Copilot returns error about /chat/completions,
       // try the /responses endpoint (needed for GPT-5+ models)
-      if (isGithub && response.status === 400) {
+      if (isGithub && activeResponse.status === 400) {
         if (errorBody.includes('/chat/completions') || errorBody.includes('not accessible')) {
           const responsesUrl = `${request.baseUrl}/responses`
           const responsesBody = buildResponsesBody()
 
-          let responsesResponse: Response
-          try {
-            responsesResponse = await fetchWithProxyRetry(responsesUrl, {
-              method: 'POST',
-              headers,
-              body: stableStringifyJson(responsesBody),
-              signal: options?.signal,
-            })
-          } catch (error) {
-            throwClassifiedTransportError(error, responsesUrl)
-          }
+          const responsesResponse = await (async (): Promise<Response> => {
+            try {
+              return await fetchWithProxyRetry(responsesUrl, {
+                method: 'POST',
+                headers,
+                body: stableStringifyJson(responsesBody),
+                signal: options?.signal,
+              })
+            } catch (error) {
+              throwClassifiedTransportError(error, responsesUrl)
+              throw error
+            }
+          })()
 
           if (responsesResponse.ok) {
             return responsesResponse
@@ -2163,7 +2178,7 @@ class OpenAIShimMessages {
       }
 
       const failure = classifyOpenAIHttpFailure({
-        status: response.status,
+        status: activeResponse.status,
         body: errorBody,
       })
 
@@ -2204,10 +2219,10 @@ class OpenAIShimMessages {
       let errorResponse: object | undefined
       try { errorResponse = JSON.parse(errorBody) } catch { /* raw text */ }
       throwClassifiedHttpError(
-        response.status,
+        activeResponse.status,
         errorBody,
         errorResponse,
-        response.headers as unknown as Headers,
+        activeResponse.headers as unknown as Headers,
         requestUrl,
         rateHint,
         failure,
@@ -2303,8 +2318,8 @@ class OpenAIShimMessages {
           input,
           ...(tc.extra_content ? { extra_content: tc.extra_content } : {}),
           // Extract Gemini signature from extra_content
-          ...((tc.extra_content?.google as any)?.thought_signature
-            ? { signature: (tc.extra_content.google as any).thought_signature }
+          ...(((tc.extra_content?.google) as any)?.thought_signature
+            ? { signature: ((tc.extra_content?.google) as any).thought_signature }
             : {}),
         })
       }

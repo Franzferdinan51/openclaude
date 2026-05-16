@@ -67,7 +67,9 @@ export type GrowthBookUserAttributes = {
 }
 
 /** No-op: no background refresh to subscribe to. */
-export function onGrowthBookRefresh(): void {}
+export function onGrowthBookRefresh(_callback?: () => void): () => void {
+	return () => {}
+}
 
 /** Returns false — no env overrides when GrowthBook is disabled. */
 export function hasGrowthBookEnvOverride(_feature: string): boolean {
@@ -122,6 +124,7 @@ export function getFeatureValue_CACHED_MAY_BE_STALE<T>(
 export function getFeatureValue_CACHED_WITH_REFRESH<T>(
 	_featureName: string,
 	defaultValue: T,
+	_ttlMs?: number,
 ): T {
 	return _getFlagValue(_featureName, defaultValue)
 }

@@ -114,8 +114,8 @@ describe('printStartupScreen logo', () => {
     printStartupScreen()
 
     const plainOutput = stripAnsi(output)
-    expect(plainOutput).toContain('██████╗ ██╗   ██╗ ██████╗██╗  ██╗')
-    expect(plainOutput).toContain('██╗  ██╗██╗██╗   ██╗███████╗')
+    expect(plainOutput).toContain('Any model. Every tool. Zero limits.')
+    expect(plainOutput).toContain('Provider  Anthropic')
     expect(plainOutput).not.toContain('OPENCLAUDE')
     expect(plainOutput).not.toContain('CLAUDE')
   })

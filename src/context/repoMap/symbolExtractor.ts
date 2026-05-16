@@ -5,6 +5,121 @@ import { getLanguageForFile } from './gitFiles.js'
 import { createParser, loadLanguage, loadQuery } from './parser.js'
 import type { FileTags, Tag } from './types.js'
 
+function buildFallbackTags(
+  source: string,
+  filePath: string,
+  language: 'typescript' | 'javascript' | 'python',
+): FileTags {
+  const tags: Tag[] = []
+  const seen = new Set<string>()
+  const lines = source.split('\n')
+
+  const addTag = (
+    kind: 'def' | 'ref',
+    name: string,
+    lineIndex: number,
+    subKind?: string,
+  ) => {
+    const key = `${kind}:${name}:${lineIndex}`
+    if (!name || seen.has(key)) return
+    seen.add(key)
+    tags.push({
+      kind,
+      name,
+      line: lineIndex + 1,
+      signature: lines[lineIndex]?.trimEnd() ?? '',
+      subKind,
+    })
+  }
+
+  const definitionMatchers =
+    language === 'python'
+      ? [
+          { regex: /^\s*def\s+([A-Za-z_]\w*)\s*\(/, subKind: 'function' },
+          { regex: /^\s*class\s+([A-Za-z_]\w*)\b/, subKind: 'class' },
+        ]
+      : [
+          {
+            regex: /^\s*export\s+(?:default\s+)?(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(/,
+            subKind: 'function',
+          },
+          {
+            regex: /^\s*(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(/,
+            subKind: 'function',
+          },
+          {
+            regex: /^\s*export\s+class\s+([A-Za-z_$][\w$]*)\b/,
+            subKind: 'class',
+          },
+          {
+            regex: /^\s*class\s+([A-Za-z_$][\w$]*)\b/,
+            subKind: 'class',
+          },
+          {
+            regex: /^\s*export\s+interface\s+([A-Za-z_$][\w$]*)\b/,
+            subKind: 'interface',
+          },
+          {
+            regex: /^\s*export\s+type\s+([A-Za-z_$][\w$]*)\b/,
+            subKind: 'type',
+          },
+          {
+            regex:
+              /^\s*(?:export\s+)?(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:async\s*)?(?:function\b|\([^)]*\)\s*=>|[A-Za-z_$][\w$]*\s*=>)/,
+            subKind: 'variable',
+          },
+        ]
+
+  const importMatchers =
+    language === 'python'
+      ? [
+          /^\s*from\s+[\w.]+\s+import\s+(.+)$/,
+          /^\s*import\s+(.+)$/,
+        ]
+      : [
+          /^\s*import\s+type\s+\{([^}]+)\}\s+from\b/,
+          /^\s*import\s+\{([^}]+)\}\s+from\b/,
+          /^\s*import\s+([A-Za-z_$][\w$]*)\s+from\b/,
+        ]
+
+  for (const [lineIndex, line] of lines.entries()) {
+    for (const matcher of definitionMatchers) {
+      const match = line.match(matcher.regex)
+      if (match?.[1]) {
+        addTag('def', match[1], lineIndex, matcher.subKind)
+      }
+    }
+
+    for (const regex of importMatchers) {
+      const match = line.match(regex)
+      if (!match?.[1]) continue
+
+      const names = match[1]
+        .split(',')
+        .map(part => part.trim())
+        .map(part => part.replace(/^type\s+/, ''))
+        .map(part => part.replace(/\s+as\s+.+$/, ''))
+        .map(part => part.replace(/^\{|\}$/g, ''))
+        .filter(Boolean)
+
+      for (const name of names) {
+        addTag('ref', name, lineIndex, 'import')
+      }
+    }
+
+    const callRegex = /\b([A-Za-z_$][\w$]*)\s*\(/g
+    for (const match of line.matchAll(callRegex)) {
+      const name = match[1]
+      if (!name || ['if', 'for', 'while', 'switch', 'catch'].includes(name)) {
+        continue
+      }
+      addTag('ref', name, lineIndex, 'call')
+    }
+  }
+
+  return { path: filePath, tags }
+}
+
 /**
  * Extract definition and reference tags from a single source file.
  * Returns null if the file can't be parsed (unsupported language, parse error, etc).
@@ -27,12 +142,14 @@ export async function extractTags(
   const lines = source.split('\n')
 
   const parser = await createParser(language)
-  if (!parser) return null
+  if (!parser) {
+    return buildFallbackTags(source, filePath, language)
+  }
 
   const querySource = loadQuery(language)
   if (!querySource) {
     parser.delete()
-    return null
+    return buildFallbackTags(source, filePath, language)
   }
 
   try {
@@ -104,6 +221,6 @@ export async function extractTags(
     return { path: filePath, tags }
   } catch {
     parser.delete()
-    return null
+    return buildFallbackTags(source, filePath, language)
   }
 }

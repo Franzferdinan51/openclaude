@@ -18,7 +18,7 @@ function App() {
     document.documentElement.dataset.theme = theme
     document.documentElement.style.colorScheme = theme
     try {
-      localStorage.setItem('openclaude-theme', theme)
+      localStorage.setItem('duckhive-theme', theme)
     } catch {
       /* storage unavailable */
     }
@@ -30,9 +30,9 @@ function App() {
     <div className="site-shell">
       <header className="site-header">
         <nav className="nav" aria-label="primary">
-          <a className="brand" href="/" aria-label="openclaude home">
+          <a className="brand" href="/" aria-label="DuckHive home">
             <img src="/openclaude.png" alt="" />
-            <span>openclaude</span>
+            <span>DuckHive</span>
             <span className="ver">v0.7</span>
           </a>
           <div className="nav-right">
@@ -48,7 +48,7 @@ function App() {
               aria-label={`switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
               title={`switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
             >
-              {theme === 'dark' ? '☀' : '☾'}
+              {theme === 'dark' ? 'sun' : 'moon'}
             </button>
           </div>
         </nav>
@@ -67,7 +67,7 @@ function App() {
             {features.map(f => (
               <li key={f.title} className="feature-row">
                 <h3>{f.title}</h3>
-                <p>— {f.body}</p>
+                <p>- {f.body}</p>
               </li>
             ))}
           </ul>
@@ -85,14 +85,14 @@ function App() {
                 <span className="step-num">01</span>
                 <div>
                   <strong>install</strong>
-                  <p>requires node ≥ 20.</p>
+                  <p>requires node &gt;= 20.</p>
                 </div>
               </li>
               <li>
                 <span className="step-num">02</span>
                 <div>
                   <strong>start</strong>
-                  <p>run <code>openclaude</code> in any repo.</p>
+                  <p>run <code>duckhive</code> in any repo.</p>
                 </div>
               </li>
               <li>
@@ -111,14 +111,14 @@ function App() {
         <div className="footer-line">
           <span className="brand">
             <img src="/openclaude.png" alt="" />
-            <span>openclaude</span>
+            <span>DuckHive</span>
             <span className="ver">v0.7.0</span>
           </span>
           <span className="sep">|</span>
-          <a href="https://gitlawb.com">gitlawb ↗</a>
+          <a href="https://github.com/Franzferdinan51/DuckHive">github</a>
           <span className="sep">|</span>
-          <a href="https://github.com/Gitlawb/openclaude/blob/main/LICENSE">license</a>
-          <span className="sep">·</span>
+          <a href="https://github.com/Franzferdinan51/DuckHive/blob/main/LICENSE">license</a>
+          <span className="sep">.</span>
           <span>{new Date().getFullYear()}</span>
         </div>
       </footer>
@@ -131,7 +131,7 @@ function Hero() {
     <section className="hero" aria-labelledby="hero-heading">
       <div className="hero-eyebrow">
         <span className="dot" aria-hidden="true" />
-        open source · gitlawb-aligned · model-neutral
+        open source . model-neutral . terminal-first
       </div>
 
       <h1 id="hero-heading" className="hero-title">
@@ -140,14 +140,14 @@ function Hero() {
       </h1>
 
       <p className="hero-sub">
-        not a chatbot wrapper or another ide plugin. an open coding agent that runs in your
-        terminal, talks to any model, and keeps every change reviewable.
+        DuckHive is an open coding harness that runs in your terminal, talks to any model,
+        and keeps every change reviewable.
       </p>
 
       <div className="hero-cta">
         <CopyableCommand command={installCommand} variant="hero" />
-        <a className="button button-ghost" href="https://github.com/Gitlawb/openclaude">
-          view on github →
+        <a className="button button-ghost" href="https://github.com/Franzferdinan51/DuckHive">
+          view on github -&gt;
         </a>
       </div>
 
@@ -187,7 +187,7 @@ function CopyableCommand({
       <span className="copy-prefix">$</span>
       <span className="copy-text">{command}</span>
       <span className="copy-icon" aria-hidden="true">
-        {copied ? '✓ copied' : 'copy'}
+        {copied ? 'copied' : 'copy'}
       </span>
     </button>
   )

@@ -169,8 +169,20 @@ export function parseDuckCustodianOperation(input: string): DuckCustodianOperati
     }
 
     case 'setup':
-    case 'bootstrap':
+    case 'bootstrap': {
+      // "setup workspace <path> [model <model>]"
+      const parts = args.split(/\s+/);
+      if (parts[0] === 'workspace' && parts[1]) {
+        const ws = parts[1];
+        const modelIdx = parts.indexOf('model');
+        return {
+          kind: 'setup-workspace',
+          workspace: ws,
+          model: modelIdx > 0 ? parts[modelIdx + 1] : undefined,
+        };
+      }
       return { kind: 'setup' };
+    }
 
     case 'mmx':
     case 'mmx-status':
@@ -233,21 +245,6 @@ export function parseDuckCustodianOperation(input: string): DuckCustodianOperati
     case 'set-model':
       if (args) return { kind: 'set-default-model', model: args };
       return { kind: 'none', message: 'Usage: set-default-model <model-id>' };
-
-    case 'setup': {
-      // "setup workspace <path> [model <model>]"
-      const parts = args.split(/\s+/);
-      if (parts[0] === 'workspace' && parts[1]) {
-        const ws = parts[1];
-        const modelIdx = parts.indexOf('model');
-        return {
-          kind: 'setup-workspace',
-          workspace: ws,
-          model: modelIdx > 0 ? parts[modelIdx + 1] : undefined,
-        };
-      }
-      return { kind: 'setup' };
-    }
 
     default:
       return { kind: 'none', message: input };

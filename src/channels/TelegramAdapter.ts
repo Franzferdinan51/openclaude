@@ -23,6 +23,7 @@ import type {
 } from './ChannelAdapter.js'
 import { normalizeMessage } from './ChannelAdapter.js'
 import type { Message } from '../utils/mailbox.js'
+import { createCombinedAbortSignal } from '../utils/combinedAbortSignal.js'
 
 // ─── Telegram Bot API types ───────────────────────────────────────────────────
 
@@ -267,12 +268,15 @@ export class TelegramAdapter implements ChannelAdapter {
 
   private async apiCall<T>(method: string, params: Record<string, unknown>): Promise<T> {
     const url = `${this.apiBase}/bot${this.botToken}/${method}`
+    const { signal, cleanup } = createCombinedAbortSignal(undefined, {
+      timeoutMs: 30_000,
+    })
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(params),
-      signal: AbortSignal.timeout(30_000),
-    })
+      signal,
+    }).finally(cleanup)
     if (!res.ok) {
       throw new Error(`[TelegramAdapter] HTTP ${res.status} from ${method}`)
     }

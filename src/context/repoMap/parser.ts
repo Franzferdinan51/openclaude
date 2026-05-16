@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'fs'
 import { join, resolve } from 'path'
 import { fileURLToPath } from 'url'
+import { pathToFileURL } from 'url'
 import type { SupportedLanguage } from './types.js'
 
 // Resolve project root in both source and bundled modes.
@@ -33,20 +34,36 @@ let LanguageLoader: {
 
 let initialized = false
 const languageCache = new Map<SupportedLanguage, TreeSitterLanguage>()
+const failedLanguages = new Set<SupportedLanguage>()
 const queryCache = new Map<SupportedLanguage, string>()
+
+function formatParserError(err: unknown): string {
+  if (err instanceof Error) {
+    const trimmed = err.message.trim()
+    if (trimmed.length > 0) {
+      return trimmed
+    }
+    if (err.name && err.name !== 'Error') {
+      return err.name
+    }
+    return 'unknown error'
+  }
+
+  if (typeof err === 'string' && err.trim().length > 0) {
+    return err.trim()
+  }
+
+  return 'unknown error'
+}
 
 /** Resolve the path to the tree-sitter WASM file. */
 function getTreeSitterWasmPath(): string {
   // Try require.resolve first (works in source mode with node_modules)
   try {
-    const webTsDir = resolve(
-      require.resolve('web-tree-sitter/package.json'),
-      '..',
-    )
-    return join(webTsDir, 'tree-sitter.wasm')
+    return require.resolve('web-tree-sitter/web-tree-sitter.wasm')
   } catch {
     // Fallback: relative to project root
-    return join(__projectRoot, 'node_modules', 'web-tree-sitter', 'tree-sitter.wasm')
+    return join(__projectRoot, 'node_modules', 'web-tree-sitter', 'web-tree-sitter.wasm')
   }
 }
 
@@ -86,11 +103,11 @@ export async function initParser(): Promise<void> {
   try {
     const mod = await import('web-tree-sitter')
     ParserClass = mod.Parser as typeof ParserClass
-    LanguageLoader = mod.Language as typeof LanguageLoader
+    LanguageLoader = mod.Language as unknown as typeof LanguageLoader
 
     const wasmPath = getTreeSitterWasmPath()
     await ParserClass!.init({
-      locateFile: () => wasmPath,
+      locateFile: () => pathToFileURL(wasmPath).toString(),
     })
     initialized = true
   } catch (err) {
@@ -105,6 +122,9 @@ export async function loadLanguage(language: SupportedLanguage): Promise<TreeSit
   if (languageCache.has(language)) {
     return languageCache.get(language)!
   }
+  if (failedLanguages.has(language)) {
+    return null
+  }
 
   if (!initialized) {
     await initParser()
@@ -116,8 +136,14 @@ export async function loadLanguage(language: SupportedLanguage): Promise<TreeSit
     languageCache.set(language, lang)
     return lang
   } catch (err) {
+    failedLanguages.add(language)
+    const errorMessage = formatParserError(err)
+    const suffix =
+      errorMessage === 'unknown error'
+        ? ' Falling back to regex tag extraction.'
+        : ` (${errorMessage}). Falling back to regex tag extraction.`
     // eslint-disable-next-line no-console
-    console.error(`[repoMap] Failed to load ${language} grammar:`, err)
+    console.warn(`[repoMap] Failed to load ${language} grammar.${suffix}`)
     return null
   }
 }
@@ -159,6 +185,7 @@ export async function createParser(language: SupportedLanguage): Promise<TreeSit
 /** Clear all caches (useful for testing). */
 export function clearParserCaches(): void {
   languageCache.clear()
+  failedLanguages.clear()
   queryCache.clear()
   initialized = false
   ParserClass = null

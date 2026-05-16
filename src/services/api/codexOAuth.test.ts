@@ -1,6 +1,7 @@
 import { afterEach, expect, mock, test } from 'bun:test'
 import { acquireEnvMutex, releaseEnvMutex } from '../../entrypoints/sdk/shared.js'
 import { CodexOAuthService } from './codexOAuth.js'
+import type { ServerResponse, IncomingMessage } from 'node:http'
 
 type CodexOAuthTestSnapshot = {
   fetch: typeof globalThis.fetch
@@ -36,9 +37,14 @@ type FakeAuthCodeListenerInstance = {
   ) => Promise<string>
   handleSuccessRedirect: (
     scopes: string[],
-    customHandler?: (res: FakeServerResponse, scopes: string[]) => void,
+    customHandler?: (
+      res: ServerResponse<IncomingMessage>,
+      scopes: string[],
+    ) => void,
   ) => void
-  handleErrorRedirect: (customHandler?: (res: FakeServerResponse) => void) => void
+  handleErrorRedirect: (
+    customHandler?: (res: ServerResponse<IncomingMessage>) => void,
+  ) => void
   cancelPendingAuthorization: (error?: Error) => void
   close: () => void
 }
@@ -105,14 +111,17 @@ function createFakeAuthCodeListener(callbackPath: string): FakeAuthCodeListenerI
 
     handleSuccessRedirect(
       scopes: string[],
-      customHandler?: (res: FakeServerResponse, scopes: string[]) => void,
+      customHandler?: (
+        res: ServerResponse<IncomingMessage>,
+        scopes: string[],
+      ) => void,
     ): void {
       if (!this.pending || !this.capture) {
         return
       }
 
       const res = createFakeServerResponse(this.capture)
-      customHandler?.(res, scopes)
+      customHandler?.(res as unknown as ServerResponse<IncomingMessage>, scopes)
       if (!res.writableEnded) {
         res.end()
       }
@@ -120,14 +129,14 @@ function createFakeAuthCodeListener(callbackPath: string): FakeAuthCodeListenerI
     }
 
     handleErrorRedirect(
-      customHandler?: (res: FakeServerResponse) => void,
+      customHandler?: (res: ServerResponse<IncomingMessage>) => void,
     ): void {
       if (!this.pending || !this.capture) {
         return
       }
 
       const res = createFakeServerResponse(this.capture)
-      customHandler?.(res)
+      customHandler?.(res as unknown as ServerResponse<IncomingMessage>)
       if (!res.writableEnded) {
         res.end()
       }
@@ -217,12 +226,14 @@ test('serves updated success copy after a successful Codex OAuth flow', async ()
           headers: { 'Content-Type': 'application/json' },
         },
       )
-    }) as typeof fetch
+    }) as unknown as typeof fetch
 
     const service = new CodexOAuthService({
       callbackPort: 0,
       callbackHost: '127.0.0.1',
-      createAuthCodeListener: createFakeAuthCodeListener,
+      createAuthCodeListener: createFakeAuthCodeListener as (
+        callbackPath: string,
+      ) => ReturnType<typeof createFakeAuthCodeListener>,
     })
 
     let capturedAuthUrl = ''
@@ -238,10 +249,10 @@ test('serves updated success copy after a successful Codex OAuth flow', async ()
     )
     expect(fakeListenerInstance?.capture?.statusCode).toBe(200)
     expect(fakeListenerInstance?.capture?.body).toContain(
-      'You can return to OpenClaude now.',
+      'You can return to DuckHive now.',
     )
     expect(fakeListenerInstance?.capture?.body).toContain(
-      'OpenClaude will finish activating your new Codex OAuth login.',
+      'DuckHive will finish activating your new Codex OAuth login.',
     )
     expect(fakeListenerInstance?.capture?.body).not.toContain(
       'continue automatically',
@@ -284,12 +295,14 @@ test('cancellation during token exchange returns a cancelled page and rejects th
           { once: true },
         )
       })
-    }) as typeof fetch
+    }) as unknown as typeof fetch
 
     const service = new CodexOAuthService({
       callbackPort: 0,
       callbackHost: '127.0.0.1',
-      createAuthCodeListener: createFakeAuthCodeListener,
+      createAuthCodeListener: createFakeAuthCodeListener as (
+        callbackPath: string,
+      ) => ReturnType<typeof createFakeAuthCodeListener>,
     })
 
     const flowPromise = service.startOAuthFlow(async () => {})
@@ -303,7 +316,7 @@ test('cancellation during token exchange returns a cancelled page and rejects th
       'Codex login cancelled',
     )
     expect(fakeListenerInstance?.capture?.body).toContain(
-      'retry in OpenClaude',
+      'retry in DuckHive',
     )
   } finally {
     restoreCodexOAuthTestIsolation()

@@ -2,6 +2,7 @@
  * DuckCustodian Probes — health checks for mmx, LM Studio, OpenClaw, Git, Node.
  */
 import { spawn } from 'node:child_process';
+import { createCombinedAbortSignal } from '../utils/combinedAbortSignal.js';
 
 export type LocalCommandProbe = {
   command: string;
@@ -79,7 +80,8 @@ export async function probeOpenClawGateway(
     if (result.reachable) {
       // Try to get version
       try {
-        const r = await fetch(`http://localhost:${p}/health`, { signal: AbortSignal.timeout(3000) });
+        const { signal, cleanup } = createCombinedAbortSignal(undefined, { timeoutMs: 3000 });
+        const r = await fetch(`http://localhost:${p}/health`, { signal }).finally(cleanup);
         const json = await r.json().catch(() => ({}));
         return { reachable: true, version: json.version ?? json.tag ?? json.service ?? String(p), error: undefined };
       } catch {

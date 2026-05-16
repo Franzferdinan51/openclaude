@@ -1006,9 +1006,9 @@ export const connectToServer = memoize(
           // name stays 'claude-code' for compatibility with MCP servers that
           // gate features on the upstream client identifier.
           name: 'claude-code',
-          title: 'OpenClaude',
+          title: 'DuckHive',
           version: MACRO.VERSION ?? 'unknown',
-          description: 'OpenClaude — coding-agent CLI for any LLM provider',
+          description: 'DuckHive — coding-agent CLI for any LLM provider',
           websiteUrl: PRODUCT_URL,
         },
         {
@@ -3343,9 +3343,9 @@ export async function setupSdkMcpClients(
           // name stays 'claude-code' for compatibility with MCP servers that
           // gate features on the upstream client identifier.
           name: 'claude-code',
-          title: 'OpenClaude',
+          title: 'DuckHive',
           version: MACRO.VERSION ?? 'unknown',
-          description: 'OpenClaude — coding-agent CLI for any LLM provider',
+          description: 'DuckHive — coding-agent CLI for any LLM provider',
           websiteUrl: PRODUCT_URL,
         },
         {

@@ -129,4 +129,15 @@ export const INTENTIONALLY_BUNDLED: string[] = [
   'vscode-languageserver-protocol',
   // File watching
   'chokidar',
+  // SQLite
+  'better-sqlite3',
+  '@types/better-sqlite3',
+  // Graph analysis
+  'graphology',
+  'graphology-pagerank',
+  // Token counting
+  'js-tiktoken',
+  // Tree-sitter
+  'tree-sitter-wasms',
+  'web-tree-sitter',
 ]

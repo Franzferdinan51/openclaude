@@ -42,8 +42,8 @@ const ID_TOKEN_TYPE = 'urn:ietf:params:oauth:token-type:id_token'
  */
 function makeXaaFetch(abortSignal?: AbortSignal): FetchLike {
   return (url, init) => {
-    const { signal, cleanup } = createCombinedAbortSignal(init?.signal, {
-      signalB: abortSignal,
+    const { signal, cleanup } = createCombinedAbortSignal(init?.signal ?? undefined, {
+      signalB: abortSignal ?? undefined,
       timeoutMs: XAA_REQUEST_TIMEOUT_MS,
     })
     // eslint-disable-next-line eslint-plugin-n/no-unsupported-features/node-builtins

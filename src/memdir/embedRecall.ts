@@ -22,6 +22,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
 import { homedir } from 'os'
 import { join } from 'path'
+import { createCombinedAbortSignal } from '../utils/combinedAbortSignal.js'
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
@@ -60,6 +61,9 @@ const LM_STUDIO_URL = process.env['LM_STUDIO_URL'] ?? 'http://localhost:1234'
 
 async function getLmStudioEmbedding(text: string): Promise<Record<string, number> | null> {
   try {
+    const { signal, cleanup } = createCombinedAbortSignal(undefined, {
+      timeoutMs: 5000,
+    })
     const res = await fetch(`${LM_STUDIO_URL}/v1/embeddings`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -67,8 +71,8 @@ async function getLmStudioEmbedding(text: string): Promise<Record<string, number
         input: text,
         model: '',  // let LM Studio choose default
       }),
-      signal: AbortSignal.timeout(5000),
-    })
+      signal,
+    }).finally(cleanup)
     if (!res.ok) return null
     const data = (await res.json()) as { data?: { embedding?: number[] }[] }
     const embedding = data?.data?.[0]?.embedding

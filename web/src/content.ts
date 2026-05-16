@@ -3,11 +3,11 @@ export const installCommand = 'npm install -g @gitlawb/openclaude'
 export const features = [
   {
     title: 'any model, one terminal',
-    body: 'local ollama, openai-compatible apis, gemini, codex, github models — switch with one command, no rewrites.',
+    body: 'local ollama, openai-compatible apis, gemini, codex, github models - switch with one command, no rewrites.',
   },
   {
     title: 'real tools, not just chat',
-    body: 'bash, file edits, grep, glob, mcp servers, slash commands — wired into the agent loop, not bolted on.',
+    body: 'bash, file edits, grep, glob, mcp servers, slash commands - wired into the agent loop, not bolted on.',
   },
   {
     title: 'profiles per repo',
@@ -30,6 +30,6 @@ export const features = [
 export const navLinks = [
   { href: '#features', label: 'features' },
   { href: '#install', label: 'install' },
-  { href: 'https://github.com/Gitlawb/openclaude', label: 'github' },
-  { href: 'https://gitlawb.com/node/repos/z6MkqDnb/openclaude', label: 'gitlawb' },
+  { href: 'https://github.com/Franzferdinan51/DuckHive', label: 'github' },
+  { href: 'https://github.com/openai/codex', label: 'codex' },
 ] as const

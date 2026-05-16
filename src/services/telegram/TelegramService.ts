@@ -11,6 +11,7 @@
  */
 
 import { logForDebugging } from '../../utils/debug.js'
+import { createCombinedAbortSignal } from '../../utils/combinedAbortSignal.js'
 import { getSecureStorage } from '../../utils/secureStorage/index.js'
 import { getAgentRunStore } from '../../agent-runs/AgentRunStore.js'
 import type { AgentRun, AgentRunStatus } from '../../agent-runs/types.js'
@@ -52,12 +53,15 @@ class TelegramBotAPI {
 
   private async request<T>(method: string, body?: Record<string, unknown>): Promise<T> {
     const url = `${this.baseUrl}${this.token}/${method}`
+    const { signal, cleanup } = createCombinedAbortSignal(undefined, {
+      timeoutMs: this.timeoutMs,
+    })
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: body ? JSON.stringify(body) : undefined,
-      signal: AbortSignal.timeout(this.timeoutMs),
-    })
+      signal,
+    }).finally(cleanup)
     if (!response.ok) {
       throw new Error(`Telegram API error: ${response.status} ${response.statusText}`)
     }

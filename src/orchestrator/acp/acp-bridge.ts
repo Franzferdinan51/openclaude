@@ -7,6 +7,8 @@
  * Port: 18794 (OpenClaw ACP server)
  */
 
+import { createCombinedAbortSignal } from '../../utils/combinedAbortSignal.js'
+
 export interface ACPMessage {
   id: string
   type: 'request' | 'response' | 'notification' | 'handshake'
@@ -54,7 +56,10 @@ export class ACPBridge {
   /** Connect to ACP server */
   async connect(): Promise<boolean> {
     try {
-      const resp = await fetch(`${this.httpBase}/health`, { signal: AbortSignal.timeout(3000) })
+      const { signal, cleanup } = createCombinedAbortSignal(undefined, {
+        timeoutMs: 3000,
+      })
+      const resp = await fetch(`${this.httpBase}/health`, { signal }).finally(cleanup)
       return resp.ok
     } catch {
       return false

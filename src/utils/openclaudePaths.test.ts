@@ -282,7 +282,7 @@ describe('OpenClaude paths', () => {
     const { getLocalClaudePath } = await importFreshLocalInstaller()
 
     expect(getLocalClaudePath()).toBe(
-      join(homedir(), '.openclaude', 'local', 'openclaude'),
+      join(homedir(), '.openclaude', 'local', 'duckhive'),
     )
   })
 

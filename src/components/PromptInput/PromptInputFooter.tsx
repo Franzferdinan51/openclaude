@@ -222,7 +222,7 @@ function PromptInputFooter({
           <BridgeStatusIndicator bridgeSelected={bridgeSelected} />
         </Box>
       </Box>
-      {false && <CoordinatorTaskPanel />}
+      {coordinatorTaskCount > 0 && <CoordinatorTaskPanel />}
     </>;
 }
 export default memo(PromptInputFooter);

@@ -355,6 +355,36 @@ describe('Context overflow 500 fix', () => {
 })
 
 // ---------------------------------------------------------------------------
+// Fix N: Skill improvement survey was accidentally hard-disabled in REPL
+// ---------------------------------------------------------------------------
+describe('Skill improvement survey visibility', () => {
+  test('REPL does not hard-disable the skill improvement survey', async () => {
+    const content = await file('screens/REPL.tsx').text()
+
+    expect(content).toContain('skillImprovementSurvey')
+    expect(content).toContain('<SkillImprovementSurvey')
+    expect(content).not.toContain(
+      '{false && (skillImprovementSurvey as any).suggestion',
+    )
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Fix N: Ultraplan prompt override was accidentally hard-disabled
+// ---------------------------------------------------------------------------
+describe('Ultraplan prompt override visibility', () => {
+  test('ultraplan uses the intended ant-only prompt file gate instead of false &&', async () => {
+    const content = await file('commands/ultraplan.tsx').text()
+
+    expect(content).toContain("process.env.USER_TYPE === 'ant'")
+    expect(content).toContain('process.env.ULTRAPLAN_PROMPT_FILE')
+    expect(content).not.toContain(
+      'false && process.env.ULTRAPLAN_PROMPT_FILE',
+    )
+  })
+})
+
+// ---------------------------------------------------------------------------
 // Fix N: Project-scope MCP servers from .mcp.json not detected for 3P providers (issue #696)
 // ---------------------------------------------------------------------------
 describe('Project-scope MCP approval — third-party providers (issue #696)', () => {
