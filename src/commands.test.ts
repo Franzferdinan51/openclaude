@@ -3,6 +3,7 @@ import {
   builtInCommandNames,
   formatDescriptionWithSource,
 } from './commands.js'
+import onboard from './commands/onboard/index.js'
 import { isCommand } from './types/command.js'
 
 describe('builtInCommandNames', () => {
@@ -114,6 +115,14 @@ describe('builtInCommandNames', () => {
     expect(builtInCommandNames()).toContain('ui')
     expect(builtInCommandNames()).toContain('yolo')
     expect(builtInCommandNames()).toContain('bypass')
+  })
+
+  test('includes onboard setup without shadowing the init command', () => {
+    expect(builtInCommandNames()).toContain('onboard')
+    expect(builtInCommandNames()).toContain('setup')
+    expect(builtInCommandNames()).toContain('welcome')
+    expect(builtInCommandNames()).toContain('init')
+    expect(onboard.aliases).not.toContain('init')
   })
 })
 

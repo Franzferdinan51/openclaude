@@ -60,6 +60,7 @@ import channel from './commands/channel/index.js'
 import checkpoint from './commands/checkpoint/index.js'
 import mcp from './commands/mcp/index.js'
 import mobile from './commands/mobile/index.js'
+import onboard from './commands/onboard/index.js'
 import onboarding from './commands/onboarding/index.js'
 import pr_comments from './commands/pr_comments/index.js'
 import prSize from './commands/pr-size/index.js'
@@ -356,6 +357,7 @@ const COMMANDS = memoize((): Command[] => [
   mobile,
   model,
   mmx,
+  onboard,
   onboardGithub,
   outputStyle,
   remoteEnv,

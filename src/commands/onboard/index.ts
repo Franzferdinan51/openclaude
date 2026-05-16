@@ -4,7 +4,7 @@ import { shouldInferenceConfigCommandBeImmediate } from '../../utils/immediateCo
 const onboard = {
   type: 'local-jsx' as const,
   name: 'onboard',
-  aliases: ['setup', 'init', 'welcome'] as const,
+  aliases: ['setup', 'welcome'] as const,
   description: 'Start DuckHive setup wizard - configure providers, API keys, and preferences',
   argumentHint: '',
   get immediate() {
