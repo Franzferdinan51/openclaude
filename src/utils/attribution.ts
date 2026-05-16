@@ -90,11 +90,11 @@ export function getDefaultCommitCoAuthorName({
   }
 
   const sanitizedModel = sanitizeCoAuthorNamePart(model)
-  return sanitizedModel ? `OpenClaude (${sanitizedModel})` : 'OpenClaude'
+  return sanitizedModel ? `DuckHive (${sanitizedModel})` : 'DuckHive'
 }
 
 export function getDefaultCommitCoAuthorEmail(_apiProvider: string): string {
-  return 'openclaude@gitlawb.com'
+  return 'duckhive@gitlawb.com'
 }
 
 /**
@@ -133,7 +133,7 @@ export function getAttributionTexts(): AttributionTexts {
     isInternalRepo: isInternalModelRepoCached(),
   })
   const defaultAttribution =
-    '🤖 Generated with [OpenClaude](https://github.com/Gitlawb/openclaude)'
+    '🤖 Generated with [DuckHive](https://github.com/Franzferdinan51/DuckHive)'
   const coAuthorEmail = getDefaultCommitCoAuthorEmail(apiProvider)
   const defaultCommit = isEnvTruthy(
     process.env.OPENCLAUDE_DISABLE_CO_AUTHORED_BY,
@@ -388,7 +388,7 @@ export async function getEnhancedPRAttribution(
   }
 
   const defaultAttribution =
-    '🤖 Generated with [OpenClaude](https://github.com/Gitlawb/openclaude)'
+    '🤖 Generated with [DuckHive](https://github.com/Franzferdinan51/DuckHive)'
 
   // Get AppState first
   const appState = getAppState()
