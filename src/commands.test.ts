@@ -96,6 +96,25 @@ describe('builtInCommandNames', () => {
     expect(builtInCommandNames()).toContain('law')
     expect(builtInCommandNames()).toContain('rule')
   })
+
+  test('includes QOL and harness helper commands that are implemented locally', () => {
+    expect(builtInCommandNames()).toContain('acp')
+    expect(builtInCommandNames()).toContain('acp-server')
+    expect(builtInCommandNames()).toContain('changelog')
+    expect(builtInCommandNames()).toContain('curate')
+    expect(builtInCommandNames()).toContain('instruct')
+    expect(builtInCommandNames()).toContain('introspect')
+    expect(builtInCommandNames()).toContain('mmx')
+    expect(builtInCommandNames()).toContain('minimax')
+    expect(builtInCommandNames()).toContain('pr-size')
+    expect(builtInCommandNames()).toContain('prompt-suggest')
+    expect(builtInCommandNames()).toContain('shell-mode')
+    expect(builtInCommandNames()).toContain('sh')
+    expect(builtInCommandNames()).toContain('tui')
+    expect(builtInCommandNames()).toContain('ui')
+    expect(builtInCommandNames()).toContain('yolo')
+    expect(builtInCommandNames()).toContain('bypass')
+  })
 })
 
 describe('isCommand', () => {

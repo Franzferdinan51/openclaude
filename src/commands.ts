@@ -1,8 +1,10 @@
 // biome-ignore-all assist/source/organizeImports: internal-only import markers must not be reordered
 import addDir from './commands/add-dir/index.js'
+import acp from './commands/acp/index.js'
 import autofixPr from './commands/autofix-pr/index.js'
 import backfillSessions from './commands/backfill-sessions/index.js'
 import btw from './commands/btw/index.js'
+import changelog from './commands/changelog/index.js'
 import goodClaude from './commands/good-claude/index.js'
 import issue from './commands/issue/index.js'
 import feedback from './commands/feedback/index.js'
@@ -26,6 +28,7 @@ import computerUse from './commands/computer-use/index.js'
 import config from './commands/config/index.js'
 import { context, contextNonInteractive } from './commands/context/index.js'
 import cost from './commands/cost/index.js'
+import curate from './commands/curate/index.js'
 import diff from './commands/diff/index.js'
 import dream from './commands/dream/index.js'
 import ctx_viz from './commands/ctx_viz/index.js'
@@ -38,6 +41,8 @@ import help from './commands/help/index.js'
 import ide from './commands/ide/index.js'
 import init from './commands/init.js'
 import initVerifiers from './commands/init-verifiers.js'
+import instruct from './commands/instruct/index.js'
+import introspect from './commands/introspect/index.js'
 import keybindings from './commands/keybindings/index.js'
 import lmstudioInit from './commands/lmstudio-init/index.js'
 import lsp from './commands/lsp/index.js'
@@ -45,6 +50,7 @@ import login from './commands/login/index.js'
 import logout from './commands/logout/index.js'
 import loop from './commands/loop/index.js'
 import mcpManage from './commands/mcp-manage/index.js'
+import mmx from './commands/mmx/index.js'
 import installGitHubApp from './commands/install-github-app/index.js'
 import installSlackApp from './commands/install-slack-app/index.js'
 import breakCache from './commands/break-cache/index.js'
@@ -56,12 +62,15 @@ import mcp from './commands/mcp/index.js'
 import mobile from './commands/mobile/index.js'
 import onboarding from './commands/onboarding/index.js'
 import pr_comments from './commands/pr_comments/index.js'
+import prSize from './commands/pr-size/index.js'
+import promptSuggest from './commands/prompt-suggest/index.js'
 import releaseNotes from './commands/release-notes/index.js'
 import rename from './commands/rename/index.js'
 import resume from './commands/resume/index.js'
 import review, { ultrareview } from './commands/review.js'
 import searchProvider from './commands/search-provider/index.js'
 import session from './commands/session/index.js'
+import shellMode from './commands/shell-mode/index.js'
 import share from './commands/share/index.js'
 import skills from './commands/skills/index.js'
 import status from './commands/status/index.js'
@@ -69,6 +78,7 @@ import tasks from './commands/tasks/index.js'
 import teleport from './commands/teleport/index.js'
 import spawn from './commands/spawn/index.js'
 import trusted from './commands/trusted-folders/index.js'
+import tui from './commands/tui/index.js'
 /* eslint-disable @typescript-eslint/no-require-imports */
 const agentsPlatform =
   process.env.USER_TYPE === 'ant'
@@ -82,6 +92,7 @@ import usage from './commands/usage/index.js'
 import theme from './commands/theme/index.js'
 import logo from './commands/logo/index.js'
 import vim from './commands/vim/index.js'
+import yolo from './commands/yolo/index.js'
 import { feature } from 'bun:bundle'
 import { isBuddyEnabled } from './buddy/feature.js'
 // Dead code elimination: conditional imports
@@ -289,6 +300,7 @@ export const INTERNAL_ONLY_COMMANDS = [
 // since underlying functions read from config, which can't be read at module initialization time
 const COMMANDS = memoize((): Command[] => [
   addDir,
+  acp,
   advisor,
   agents,
   autoFix,
@@ -297,6 +309,7 @@ const COMMANDS = memoize((): Command[] => [
   cacheProbe,
   cacheStats,
   channel,
+  changelog,
   checkpoint,
   chrome,
   clear,
@@ -313,6 +326,7 @@ const COMMANDS = memoize((): Command[] => [
   context,
   contextNonInteractive,
   cost,
+  curate,
   diff,
   dream,
   doctor,
@@ -326,6 +340,8 @@ const COMMANDS = memoize((): Command[] => [
   help,
   ide,
   init,
+  instruct,
+  introspect,
   keybindings,
   knowledge,
   lmstudioInit,
@@ -339,12 +355,15 @@ const COMMANDS = memoize((): Command[] => [
   memory,
   mobile,
   model,
+  mmx,
   onboardGithub,
   outputStyle,
   remoteEnv,
   plugin,
   provider,
   pr_comments,
+  prSize,
+  promptSuggest,
   repomap,
   releaseNotes,
   reloadPlugins,
@@ -368,9 +387,11 @@ const COMMANDS = memoize((): Command[] => [
   searchProvider,
   securityReview,
   senate,
+  shellMode,
   terminalSetup,
   swarm,
   team,
+  tui,
   upgrade,
   extraUsage,
   extraUsageNonInteractive,
@@ -379,6 +400,7 @@ const COMMANDS = memoize((): Command[] => [
   usageReport,
   vim,
   wiki,
+  yolo,
   ...(webCmd ? [webCmd] : []),
   ...(forkCmd ? [forkCmd] : []),
   ...(buddy ? [buddy] : []),
