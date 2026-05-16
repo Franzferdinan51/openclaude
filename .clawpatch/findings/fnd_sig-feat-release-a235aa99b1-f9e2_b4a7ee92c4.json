@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "findingId": "fnd_sig-feat-release-a235aa99b1-f9e2_b4a7ee92c4",
+  "featureId": "feat_release_a235aa99b1",
+  "title": "Published package omits the harness entrypoint that the consumer contract expects",
+  "category": "build-release",
+  "severity": "high",
+  "confidence": "high",
+  "triage": "risk",
+  "evidence": [
+    {
+      "path": "package.json",
+      "startLine": 9,
+      "endLine": 23,
+      "symbol": "exports/files",
+      "quote": "\"./sdk\" is the only exported subpath and only SDK files are listed in files"
+    },
+    {
+      "path": "tests/sdk/package-consumer-types.test.ts",
+      "startLine": 243,
+      "endLine": 255,
+      "symbol": "package exports resolution",
+      "quote": "expect(pkgJson.exports['./harness']).toBeDefined()"
+    }
+  ],
+  "reasoning": "The owned package manifest only publishes the SDK subpath and SDK artifacts, but the included package-consumer test treats `@gitlawb/openclaude/harness` as part of the public API. That means a real `npm pack`/install cannot satisfy the harness import contract: the export map has no `./harness` entry and the `files` whitelist would not ship `dist/harness.mjs` or `src/entrypoints/harness.ts`. This is a concrete release/build hazard and an API contract mismatch, independent of the new `typecheck` script.",
+  "reproduction": "Create a fresh project, install the packed tarball, and `import { registerAgentHarness } from '@gitlawb/openclaude/harness'`; resolution fails because the subpath is not exported or packaged.",
+  "recommendation": "Add a `./harness` subpath to `exports` and include the harness runtime/type files in `files`, or remove the harness consumer expectation if that entrypoint is intentionally unsupported.",
+  "whyTestsDoNotAlreadyCoverThis": "The test file already documents the intended behavior, and it would fail against the current package.json. There is no passing regression in the owned manifest that preserves the expected harness export.",
+  "suggestedRegressionTest": "Keep the package export resolution test, but run it against an actual packed tarball and assert `@gitlawb/openclaude/harness` resolves without manually copying harness source files.",
+  "minimumFixScope": "Update `package.json` exports and files entries so the harness entrypoint is published alongside the SDK.",
+  "status": "open",
+  "history": [],
+  "signature": "sig_feat-release-a235aa99b1_f9e22669a1",
+  "linkedPatchAttemptIds": [],
+  "createdByRunId": "20260516T003107-a156e8",
+  "createdAt": "2026-05-16T00:32:04.940Z",
+  "updatedAt": "2026-05-16T00:32:04.940Z"
+}

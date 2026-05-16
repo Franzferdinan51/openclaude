@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "findingId": "fnd_sig-feat-config-7528cb5b98-0741b_3cd951f10a",
+  "featureId": "feat_config_7528cb5b98",
+  "title": "`package.json` omits the public `./harness` export and its packed files",
+  "category": "api-contract",
+  "severity": "high",
+  "confidence": "high",
+  "triage": "contract-mismatch",
+  "evidence": [
+    {
+      "path": "package.json",
+      "startLine": 9,
+      "endLine": 24,
+      "symbol": null,
+      "quote": null
+    },
+    {
+      "path": "tests/sdk/package-consumer-types.test.ts",
+      "startLine": 217,
+      "endLine": 255,
+      "symbol": null,
+      "quote": null
+    }
+  ],
+  "reasoning": "The test suite treats `@gitlawb/openclaude/harness` as a supported public entrypoint, but the real package manifest only exports `./package.json`, `./dist/cli.mjs`, and `./sdk`. The `files` whitelist also excludes `dist/harness.mjs` and `src/entrypoints/harness.ts`, so a published tarball cannot satisfy the harness import contract even though the consumer test expects it to work.",
+  "reproduction": null,
+  "recommendation": "Add a real `./harness` export in `package.json` and include the harness runtime/type files in `files`, or remove the harness consumer assertions if that entrypoint is not intended to ship.",
+  "whyTestsDoNotAlreadyCoverThis": "The synthetic consumer test fabricates its own package manifest, so by itself it would not catch a tarball missing the harness entrypoint. The separate exports-resolution test does catch the mismatch, but it currently describes the failure rather than preventing it.",
+  "suggestedRegressionTest": "Add an npm-pack-style test that installs the produced tarball into a temp project and compiles `import { registerAgentHarness } from '@gitlawb/openclaude/harness'` against the real packed artifact.",
+  "minimumFixScope": "`package.json` only",
+  "status": "open",
+  "history": [],
+  "signature": "sig_feat-config-7528cb5b98_0741b67cce",
+  "linkedPatchAttemptIds": [],
+  "createdByRunId": "20260516T003107-a156e8",
+  "createdAt": "2026-05-16T00:31:48.485Z",
+  "updatedAt": "2026-05-16T00:31:48.485Z"
+}

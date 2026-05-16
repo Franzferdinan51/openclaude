@@ -4,7 +4,7 @@
   "description": "OpenClaude opens coding-agent workflows to any LLM — OpenAI, Gemini, DeepSeek, Ollama, and 200+ models",
   "type": "module",
   "bin": {
-    "openclaude": "./bin/openclaude"
+    "duckhive": "./bin/duckhive"
   },
   "exports": {
     "./package.json": "./package.json",
@@ -12,6 +12,10 @@
     "./sdk": {
       "types": "./src/entrypoints/sdk.d.ts",
       "import": "./dist/sdk.mjs"
+    },
+    "./harness": {
+      "types": "./src/entrypoints/harness.ts",
+      "import": "./dist/harness.mjs"
     }
   },
   "files": [
@@ -19,6 +23,7 @@
     "dist/cli.mjs",
     "dist/sdk.mjs",
     "src/entrypoints/sdk.d.ts",
+    "src/entrypoints/harness.ts",
     "src/entrypoints/sdk/coreTypes.generated.ts",
     "README.md"
   ],

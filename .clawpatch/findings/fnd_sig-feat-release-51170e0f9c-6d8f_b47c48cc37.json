@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "findingId": "fnd_sig-feat-release-51170e0f9c-6d8f_b47c48cc37",
+  "featureId": "feat_release_51170e0f9c",
+  "title": "Published package omits the harness entrypoint that consumers and tests expect",
+  "category": "build-release",
+  "severity": "medium",
+  "confidence": "high",
+  "triage": "risk",
+  "evidence": [
+    {
+      "path": "package.json",
+      "startLine": 9,
+      "endLine": 23,
+      "symbol": "scripts/build",
+      "quote": null
+    },
+    {
+      "path": "tests/sdk/package-consumer-types.test.ts",
+      "startLine": 63,
+      "endLine": 81,
+      "symbol": "setupConsumerProject",
+      "quote": null
+    },
+    {
+      "path": "tests/sdk/package-consumer-types.test.ts",
+      "startLine": 217,
+      "endLine": 255,
+      "symbol": "package exports resolution",
+      "quote": null
+    }
+  ],
+  "reasoning": "The package manifest only publishes `bin/`, `dist/cli.mjs`, `dist/sdk.mjs`, and SDK type files. It does not export `./harness` and does not include `dist/harness.mjs` or `src/entrypoints/harness.ts` in the packed file list. That means a real npm consumer cannot import `@gitlawb/openclaude/harness`, even though the package-consumer test suite explicitly models and compiles that import path as intended behavior.",
+  "reproduction": null,
+  "recommendation": "Add a real `./harness` export in `package.json` and include the corresponding built artifact and type source in `files`, or remove the harness consumer test if the entrypoint is not meant to ship.",
+  "whyTestsDoNotAlreadyCoverThis": "The current package-export test only checks `./sdk` and `./dist/cli.mjs` on the real `package.json`. The harness test builds a synthetic package.json inside a temp directory, so it does not verify the actual published manifest or tarball contents.",
+  "suggestedRegressionTest": "Assert the real `package.json` contains `exports['./harness']` and `files` includes `dist/harness.mjs` and `src/entrypoints/harness.ts`, then run the consumer compilation against `npm pack` output instead of a handcrafted temp package.",
+  "minimumFixScope": "package.json and the package-consumer-types test if the harness entrypoint is intentionally part of the release surface.",
+  "status": "open",
+  "history": [],
+  "signature": "sig_feat-release-51170e0f9c_6d8f38a86a",
+  "linkedPatchAttemptIds": [],
+  "createdByRunId": "20260516T003107-a156e8",
+  "createdAt": "2026-05-16T00:31:43.066Z",
+  "updatedAt": "2026-05-16T00:31:43.066Z"
+}

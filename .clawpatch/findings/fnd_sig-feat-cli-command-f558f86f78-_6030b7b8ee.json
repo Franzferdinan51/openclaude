@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "findingId": "fnd_sig-feat-cli-command-f558f86f78-_6030b7b8ee",
+  "featureId": "feat_cli-command_f558f86f78",
+  "title": "Published CLI contract points at a missing `openclaude` entrypoint",
+  "category": "build-release",
+  "severity": "high",
+  "confidence": "high",
+  "triage": "risk",
+  "evidence": [
+    {
+      "path": "package.json",
+      "startLine": 6,
+      "endLine": 8,
+      "symbol": null,
+      "quote": "\"bin\": { \"openclaude\": \"./bin/openclaude\" }"
+    },
+    {
+      "path": "scripts/build.ts",
+      "startLine": 428,
+      "endLine": 429,
+      "symbol": null,
+      "quote": "✓ Built duckhive v${version} → dist/cli.mjs"
+    },
+    {
+      "path": "scripts/install.sh",
+      "startLine": 20,
+      "endLine": 21,
+      "symbol": null,
+      "quote": "LAUNCHER=\"$BIN_DIR/duckhive\""
+    },
+    {
+      "path": "scripts/install.sh",
+      "startLine": 65,
+      "endLine": 70,
+      "symbol": null,
+      "quote": "exec \"$ROOT_DIR/bin/duckhive\" \"$@\""
+    },
+    {
+      "path": "src/utils/localInstaller.ts",
+      "startLine": 39,
+      "endLine": 56,
+      "symbol": "getCandidateLocalBinaryPaths / getLocalClaudePath",
+      "quote": "join(localInstallDir, 'node_modules', '.bin', 'duckhive') ... return join(getLocalInstallDir(), 'duckhive')"
+    },
+    {
+      "path": "src/utils/openclaudePaths.test.ts",
+      "startLine": 277,
+      "endLine": 285,
+      "symbol": null,
+      "quote": "expect(getLocalClaudePath()).toBe(join(homedir(), '.openclaude', 'local', 'openclaude'))"
+    }
+  ],
+  "reasoning": "The package manifest still advertises an `openclaude` bin at `./bin/openclaude`, but the rest of the repo has already been switched to `duckhive`: the build only produces `dist/cli.mjs`, the native installer launches `bin/duckhive`, and the local-installer helper writes and probes `duckhive` rather than `openclaude`. There is no build step here that creates `bin/openclaude`, so the published package and the installer surfaces do not agree on the executable name. That is a release blocker for the CLI contract: users installing the npm package will not reliably get the command the package metadata promises.",
+  "reproduction": null,
+  "recommendation": "Pick one public command name and make every surface match it. If `openclaude` is still the supported CLI, ship a real bin wrapper or point the bin field at the built CLI entrypoint and update the local installer helpers accordingly; if the rename to `duckhive` is intentional, remove the stale `openclaude` bin contract and update the affected tests/docs together.",
+  "whyTestsDoNotAlreadyCoverThis": "The nearby tests only check helper-returned path strings and local-detection heuristics; they do not verify that the packed npm artifact contains a runnable executable at the advertised bin target or that the build emits that target.",
+  "suggestedRegressionTest": "Add a packaging-level test that inspects the built/package-packed manifest and asserts the advertised bin path exists in the tarball, plus a unit test that `getLocalClaudePath()` and `getCandidateLocalBinaryPaths()` resolve the same command name as the package bin.",
+  "minimumFixScope": "package.json, scripts/build.ts, scripts/install.sh, src/utils/localInstaller.ts, and the path/install surface tests that encode the chosen command name.",
+  "status": "open",
+  "history": [],
+  "signature": "sig_feat-cli-command-f558f86f78_b6088a8a2c",
+  "linkedPatchAttemptIds": [],
+  "createdByRunId": "20260516T003107-a156e8",
+  "createdAt": "2026-05-16T00:33:02.033Z",
+  "updatedAt": "2026-05-16T00:33:02.033Z"
+}

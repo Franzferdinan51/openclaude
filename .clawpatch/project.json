@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "projectId": "prj_https-github-com-franzferdinan51_c995b94dd2",
+  "name": "@gitlawb/openclaude",
+  "rootPath": "/Users/duckets/Desktop/DuckHive-git",
+  "git": {
+    "remoteUrl": "https://github.com/Franzferdinan51/DuckHive.git",
+    "defaultBranch": "main",
+    "currentBranch": "main",
+    "headSha": "7b839c39b2416f9682cfa645912038096ae2a6fb"
+  },
+  "detected": {
+    "languages": [
+      "typescript",
+      "javascript"
+    ],
+    "frameworks": [],
+    "packageManagers": [
+      "node"
+    ],
+    "commands": {
+      "typecheck": "npm run typecheck",
+      "lint": null,
+      "format": null,
+      "test": "npm run test"
+    }
+  },
+  "createdAt": "2026-05-16T00:30:55.526Z",
+  "updatedAt": "2026-05-16T00:30:55.526Z"
+}

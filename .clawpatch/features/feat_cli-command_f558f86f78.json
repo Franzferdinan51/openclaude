@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "featureId": "feat_cli-command_f558f86f78",
+  "title": "CLI command openclaude",
+  "summary": "Package bin 'openclaude' at ./bin/openclaude.",
+  "kind": "cli-command",
+  "source": "package-json-bin",
+  "confidence": "high",
+  "entrypoints": [
+    {
+      "path": "bin/openclaude",
+      "symbol": null,
+      "route": null,
+      "command": "openclaude"
+    }
+  ],
+  "ownedFiles": [
+    {
+      "path": "bin/openclaude",
+      "reason": "entrypoint"
+    }
+  ],
+  "contextFiles": [
+    {
+      "path": "src/utils/openclaudeInstallSurfaces.test.ts",
+      "reason": "nearby test"
+    },
+    {
+      "path": "src/utils/openclaudePaths.test.ts",
+      "reason": "nearby test"
+    },
+    {
+      "path": "src/utils/openclaudeUiSurfaces.test.ts",
+      "reason": "nearby test"
+    }
+  ],
+  "tests": [
+    {
+      "path": "src/utils/openclaudeInstallSurfaces.test.ts",
+      "command": "npm run test"
+    },
+    {
+      "path": "src/utils/openclaudePaths.test.ts",
+      "command": "npm run test"
+    },
+    {
+      "path": "src/utils/openclaudeUiSurfaces.test.ts",
+      "command": "npm run test"
+    }
+  ],
+  "tags": [
+    "node",
+    "cli"
+  ],
+  "trustBoundaries": [
+    "user-input",
+    "filesystem",
+    "process-exec"
+  ],
+  "status": "needs-fix",
+  "lock": null,
+  "findingIds": [
+    "fnd_sig-feat-cli-command-f558f86f78-_6030b7b8ee"
+  ],
+  "patchAttemptIds": [],
+  "analysisHistory": [
+    {
+      "runId": "20260516T003107-a156e8",
+      "kind": "review",
+      "summary": "1 finding(s)",
+      "provider": "codex",
+      "model": null,
+      "createdAt": "2026-05-16T00:33:02.034Z"
+    }
+  ],
+  "createdAt": "2026-05-16T00:31:01.189Z",
+  "updatedAt": "2026-05-16T00:33:02.034Z"
+}

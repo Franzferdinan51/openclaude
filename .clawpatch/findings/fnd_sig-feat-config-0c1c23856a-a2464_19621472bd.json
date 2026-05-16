@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "findingId": "fnd_sig-feat-config-0c1c23856a-a2464_19621472bd",
+  "featureId": "feat_config_0c1c23856a",
+  "title": "`strict` mode is undercut by disabling `noImplicitAny`",
+  "category": "bug",
+  "severity": "medium",
+  "confidence": "high",
+  "triage": "confirmed-bug",
+  "evidence": [
+    {
+      "path": "tsconfig.json",
+      "startLine": 9,
+      "endLine": 10,
+      "symbol": "compilerOptions",
+      "quote": "\"strict\": true,\n    \"noImplicitAny\": false,"
+    }
+  ],
+  "reasoning": "This config advertises strict TypeScript checking, but `noImplicitAny: false` explicitly turns off one of the most important strictness checks. That allows new implicit-`any` paths to compile, which can hide type regressions and runtime errors in code that otherwise appears to be under strict checking.",
+  "reproduction": null,
+  "recommendation": "Remove the override and rely on `strict: true`, or set `noImplicitAny: true` explicitly if the intent is full strictness.",
+  "whyTestsDoNotAlreadyCoverThis": "No tests are provided for compiler-option behavior, and a passing typecheck here would still miss implicit-`any` because the option is disabled in the config itself.",
+  "suggestedRegressionTest": "Run `npm run typecheck` against a file that intentionally introduces an implicit `any` and assert the compiler reports an error once the config is fixed.",
+  "minimumFixScope": "Update `tsconfig.json` only; no source changes are required.",
+  "status": "open",
+  "history": [],
+  "signature": "sig_feat-config-0c1c23856a_a246453563",
+  "linkedPatchAttemptIds": [],
+  "createdByRunId": "20260516T003107-a156e8",
+  "createdAt": "2026-05-16T00:31:25.198Z",
+  "updatedAt": "2026-05-16T00:31:25.198Z"
+}

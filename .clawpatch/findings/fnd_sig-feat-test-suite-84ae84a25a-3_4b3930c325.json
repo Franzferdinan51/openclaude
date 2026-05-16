@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "findingId": "fnd_sig-feat-test-suite-84ae84a25a-3_4b3930c325",
+  "featureId": "feat_test-suite_84ae84a25a",
+  "title": "Harness API is treated as public in tests but is not exported by the package manifest",
+  "category": "api-contract",
+  "severity": "medium",
+  "confidence": "high",
+  "triage": "contract-mismatch",
+  "evidence": [
+    {
+      "path": "package.json",
+      "startLine": 9,
+      "endLine": 23,
+      "symbol": "exports/files",
+      "quote": null
+    },
+    {
+      "path": "tests/sdk/package-consumer-types.test.ts",
+      "startLine": 217,
+      "endLine": 255,
+      "symbol": "setupConsumerProject",
+      "quote": null
+    }
+  ],
+  "reasoning": "The real package manifest exports only `./package.json`, `./dist/cli.mjs`, and `./sdk`; it does not expose `./harness`. The consumer test, however, fabricates a temporary package.json that adds a `./harness` export and then asserts `@gitlawb/openclaude/harness` compiles. That means the test suite can stay green while the published package still lacks a harness entrypoint, so external consumers would get a resolution failure despite the apparent coverage.",
+  "reproduction": null,
+  "recommendation": "Either add a real `./harness` export plus the required published files to `package.json`, or remove/adjust the harness consumer test so it matches the actual public API surface.",
+  "whyTestsDoNotAlreadyCoverThis": "The test does not read the repo's `package.json` for the harness path. It writes its own synthetic package.json inside the temp consumer project, so it never exercises the real published manifest.",
+  "suggestedRegressionTest": "Install the actual packed tarball into a temp TypeScript consumer and assert `import '@gitlawb/openclaude/harness'` succeeds only if the manifest truly exports it.",
+  "minimumFixScope": "package.json and tests/sdk/package-consumer-types.test.ts",
+  "status": "open",
+  "history": [],
+  "signature": "sig_feat-test-suite-84ae84a25a_33e5119053",
+  "linkedPatchAttemptIds": [],
+  "createdByRunId": "20260516T003107-a156e8",
+  "createdAt": "2026-05-16T00:31:58.153Z",
+  "updatedAt": "2026-05-16T00:31:58.153Z"
+}

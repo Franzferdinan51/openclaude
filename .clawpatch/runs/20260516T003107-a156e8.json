@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260516T003107-a156e8",
+  "command": "review",
+  "args": [
+    "review",
+    "--limit",
+    "10"
+  ],
+  "rootPath": "/Users/duckets/Desktop/DuckHive-git",
+  "headSha": "7b839c39b2416f9682cfa645912038096ae2a6fb",
+  "startedAt": "2026-05-16T00:31:07.639Z",
+  "finishedAt": "2026-05-16T00:33:02.035Z",
+  "status": "completed",
+  "claimedFeatureIds": [
+    "feat_cli-command_f558f86f78",
+    "feat_config_0c1c23856a",
+    "feat_config_7528cb5b98",
+    "feat_release_51170e0f9c",
+    "feat_release_775032a0f4",
+    "feat_release_a235aa99b1",
+    "feat_test-suite_84ae84a25a"
+  ],
+  "findingIds": [
+    "fnd_sig-feat-config-0c1c23856a-a2464_19621472bd",
+    "fnd_sig-feat-release-51170e0f9c-6d8f_b47c48cc37",
+    "fnd_sig-feat-config-7528cb5b98-0741b_3cd951f10a",
+    "fnd_sig-feat-test-suite-84ae84a25a-3_4b3930c325",
+    "fnd_sig-feat-test-suite-84ae84a25a-b_56745bf879",
+    "fnd_sig-feat-release-a235aa99b1-f9e2_b4a7ee92c4",
+    "fnd_sig-feat-cli-command-f558f86f78-_6030b7b8ee"
+  ],
+  "patchAttemptIds": [],
+  "errors": []
+}

@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "findingId": "fnd_sig-feat-test-suite-84ae84a25a-b_56745bf879",
+  "featureId": "feat_test-suite_84ae84a25a",
+  "title": "Consumer-package test bypasses npm pack, so publish-time packaging regressions can still pass",
+  "category": "test-gap",
+  "severity": "medium",
+  "confidence": "high",
+  "triage": "test-gap",
+  "evidence": [
+    {
+      "path": "tests/sdk/package-consumer-types.test.ts",
+      "startLine": 4,
+      "endLine": 5,
+      "symbol": "file header",
+      "quote": null
+    },
+    {
+      "path": "tests/sdk/package-consumer-types.test.ts",
+      "startLine": 27,
+      "endLine": 29,
+      "symbol": "setupConsumerProject",
+      "quote": null
+    },
+    {
+      "path": "tests/sdk/package-consumer-types.test.ts",
+      "startLine": 56,
+      "endLine": 97,
+      "symbol": "setupConsumerProject",
+      "quote": null
+    }
+  ],
+  "reasoning": "The test comments claim it reproduces `npm pack → install into temp project → tsc`, but the implementation never runs `npm pack`. Instead it manually creates a fake `node_modules/@gitlawb/openclaude`, copies source files directly from the checkout, and writes dummy `dist/*.mjs` placeholders. That means a broken `prepack`, a missing file in the tarball, or a bad `files` whitelist can all slip through while this test still passes.",
+  "reproduction": null,
+  "recommendation": "Make the test consume a real packed tarball from `npm pack --json`, install that tarball into the temp project, and run `tsc` against the installed package contents.",
+  "whyTestsDoNotAlreadyCoverThis": "The current setup uses checkout files as a stand-in for the published package, so it never validates the actual package archive layout or publish-time file list.",
+  "suggestedRegressionTest": "Add an assertion that `npm pack --json` includes the intended export files, then install the generated tarball into the temp consumer and compile against that installation.",
+  "minimumFixScope": "tests/sdk/package-consumer-types.test.ts",
+  "status": "open",
+  "history": [],
+  "signature": "sig_feat-test-suite-84ae84a25a_b5f149a1f4",
+  "linkedPatchAttemptIds": [],
+  "createdByRunId": "20260516T003107-a156e8",
+  "createdAt": "2026-05-16T00:31:58.153Z",
+  "updatedAt": "2026-05-16T00:31:58.153Z"
+}

@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "featureId": "feat_release_775032a0f4",
+  "title": "Package script start",
+  "summary": "Package script 'start': node dist/cli.mjs",
+  "kind": "release",
+  "source": "package-json-script",
+  "confidence": "medium",
+  "entrypoints": [
+    {
+      "path": "package.json",
+      "symbol": "start",
+      "route": null,
+      "command": "start"
+    }
+  ],
+  "ownedFiles": [
+    {
+      "path": "package.json",
+      "reason": "entrypoint"
+    }
+  ],
+  "contextFiles": [
+    {
+      "path": "tests/sdk/package-consumer-types.test.ts",
+      "reason": "nearby test"
+    }
+  ],
+  "tests": [
+    {
+      "path": "tests/sdk/package-consumer-types.test.ts",
+      "command": "npm run test"
+    }
+  ],
+  "tags": [
+    "node",
+    "package-script"
+  ],
+  "trustBoundaries": [
+    "process-exec",
+    "filesystem"
+  ],
+  "status": "reviewed",
+  "lock": null,
+  "findingIds": [],
+  "patchAttemptIds": [],
+  "analysisHistory": [
+    {
+      "runId": "20260516T003107-a156e8",
+      "kind": "review",
+      "summary": "0 finding(s)",
+      "provider": "codex",
+      "model": null,
+      "createdAt": "2026-05-16T00:32:17.165Z"
+    }
+  ],
+  "createdAt": "2026-05-16T00:31:01.189Z",
+  "updatedAt": "2026-05-16T00:32:17.165Z"
+}
