@@ -59,8 +59,30 @@ describe('builtInCommandNames', () => {
     expect(builtInCommandNames()).toContain('web-search-provider')
   })
 
+  test('includes the LM Studio setup command', () => {
+    expect(builtInCommandNames()).toContain('lmstudio-init')
+    expect(builtInCommandNames()).toContain('lmstudio')
+    expect(builtInCommandNames()).toContain('lm-studio')
+  })
+
   test('includes the repomap command', () => {
     expect(builtInCommandNames()).toContain('repomap')
+  })
+
+  test('includes the trusted command', () => {
+    expect(builtInCommandNames()).toContain('trusted')
+    expect(builtInCommandNames()).toContain('trust')
+    expect(builtInCommandNames()).toContain('trustedfolders')
+  })
+
+  test('includes the channel command', () => {
+    expect(builtInCommandNames()).toContain('channel')
+  })
+
+  test('includes the mcp-manage command', () => {
+    expect(builtInCommandNames()).toContain('mcp-manage')
+    expect(builtInCommandNames()).toContain('mcpm')
+    expect(builtInCommandNames()).toContain('mcpg')
   })
 })
 

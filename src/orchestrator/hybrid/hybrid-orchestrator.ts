@@ -16,6 +16,11 @@ export interface HybridOrchestratorConfig {
   defaultModel?: string
 }
 
+export interface HybridOrchestratorDeps {
+  getHiveBridge?: typeof getHiveBridge
+  spawnTeammate?: typeof spawnTeammate
+}
+
 const DEFAULT_CONFIG: HybridOrchestratorConfig = {
   enableCouncil: true,
   enableCheckpoint: true,
@@ -28,9 +33,14 @@ const DEFAULT_CONFIG: HybridOrchestratorConfig = {
 
 export class HybridOrchestrator {
   private config: HybridOrchestratorConfig
+  private deps: Required<HybridOrchestratorDeps>
 
-  constructor(config: Partial<HybridOrchestratorConfig> = {}) {
+  constructor(config: Partial<HybridOrchestratorConfig> = {}, deps: HybridOrchestratorDeps = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config }
+    this.deps = {
+      getHiveBridge: deps.getHiveBridge ?? getHiveBridge,
+      spawnTeammate: deps.spawnTeammate ?? spawnTeammate,
+    }
   }
 
   /**
@@ -88,7 +98,7 @@ export class HybridOrchestrator {
 
     // Step 1: Fire council for complex/critical tasks
     if (this.config.enableCouncil && (analysis.category === 'critical' || analysis.category === 'complex' || analysis.needsCouncil)) {
-      const bridge = getHiveBridge()
+      const bridge = this.deps.getHiveBridge()
       if (bridge.isEnabled() && bridge.shouldConsultCouncil(analysis.complexity)) {
         const councilResult = await bridge.startDeliberation(message, 'balanced')
         result.councilTriggered = councilResult.success
@@ -112,7 +122,7 @@ export class HybridOrchestrator {
       const spawnPromises = subtasks.map(async (subtask, i) => {
         try {
           const agentName = `worker-${i + 1}`
-          const spawnResult = await spawnTeammate(
+          const spawnResult = await this.deps.spawnTeammate(
             {
               name: agentName,
               prompt: subtask,
@@ -174,7 +184,7 @@ export class HybridOrchestrator {
       }
     } else if (this.config.enableTeamSpawn && analysis.category === 'critical') {
       // Fallback to Hive bridge team spawn if no context
-      const bridge = getHiveBridge()
+      const bridge = this.deps.getHiveBridge()
       if (bridge.isEnabled()) {
         const teamName = `swarm_${Date.now()}`
         const teamResult = await bridge.spawnTeam(teamName, 'swarm')

@@ -1,77 +1,36 @@
 /**
  * /channel command implementation
- * Manages channel adapters (Telegram, etc.)
  *
- * Usage:
- *   /channel connect telegram --token <token>
- *   /channel disconnect telegram
- *   /channel status
- *   /channel list
+ * This is a channel-oriented wrapper around the concrete connection flows.
+ * Telegram is currently delegated to /connect so there is only one actual
+ * code path for token validation, storage, and service restart behavior.
  */
+import type { LocalCommandCall, LocalCommandResult } from '../../types/command.js'
+import { call as connectCall } from '../connect/connect-impl.js'
 
-import type { LocalCommandCall, LocalJSXCommandContext } from '../../types/command.js'
-import { getSecureStorage } from '../../utils/secureStorage/index.js'
-import type { SecureStorageData } from '../../utils/secureStorage/index.js'
-
-interface ChannelConnectionConfig {
-  telegram?: {
-    botToken?: string
-    connectedAt?: number
-    chatId?: string
-    enabled?: boolean
-  }
+type ChannelDeps = {
+  connectCall: typeof connectCall
 }
 
-function getChannelConfig(storage: SecureStorageData): ChannelConnectionConfig {
-  const secrets = storage.pluginSecrets ?? {}
+let channelTestDeps: Partial<ChannelDeps> | null = null
+
+function getChannelDeps(): ChannelDeps {
   return {
-    telegram: secrets.telegram as ChannelConnectionConfig['telegram'],
+    connectCall,
+    ...channelTestDeps,
   }
 }
 
-function saveChannelConfig(data: SecureStorageData, config: ChannelConnectionConfig): void {
-  data.pluginSecrets = {
-    ...data.pluginSecrets,
-    telegram: {
-      botToken: config.telegram?.botToken,
-      connectedAt: config.telegram?.connectedAt,
-      enabled: config.telegram?.enabled,
-    } as unknown as Record<string, string>,
-  }
-}
-
-function formatChannelStatus(config: ChannelConnectionConfig): string {
-  const lines: string[] = []
-  lines.push('')
-  lines.push('📡 Channel Adapter Status')
-  lines.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-
-  const tg = config.telegram
-  if (tg?.botToken) {
-    const partialToken = tg.botToken.substring(0, 8) + '...' + tg.botToken.slice(-4)
-    lines.push(`Telegram:  ✅ Connected`)
-    lines.push(`           Token: ${partialToken}`)
-    if (tg.connectedAt) {
-      const date = new Date(tg.connectedAt)
-      lines.push(`           Since: ${date.toLocaleDateString()} ${date.toLocaleTimeString()}`)
-    }
-    lines.push(`           Enabled: ${tg.enabled !== false ? 'yes' : 'no'}`)
-  } else {
-    lines.push('Telegram:  ⚪ Not connected')
-  }
-
-  lines.push('')
-  lines.push('Available channels: telegram')
-  lines.push('')
-  return lines.join('\n')
+export function setChannelTestDeps(overrides: Partial<ChannelDeps> | null): void {
+  channelTestDeps = overrides
 }
 
 function listChannels(): string {
-  return `📡 Available Channel Adapters
+  return `Channel Adapters
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${'-'.repeat(40)}
 
-telegram  — Telegram Bot integration
+telegram - Telegram bot integration
   Commands:
     /channel connect telegram --token <TOKEN>
     /channel disconnect telegram
@@ -84,129 +43,65 @@ To connect Telegram:
 `
 }
 
-export const call: LocalCommandCall = async (
-  _args: string,
-  _context: LocalJSXCommandContext,
-) => {
-  const storage = getSecureStorage()
-  const data = storage.read() ?? {}
-  const args = _args
+function isTextResult(result: LocalCommandResult): result is Extract<LocalCommandResult, { type: 'text' }> {
+  return result.type === 'text'
+}
+
+function getFlagValue(args: string[], flag: string): string | undefined {
+  const prefixed = `${flag}=`
+  const inline = args.find(arg => arg.startsWith(prefixed))
+  if (inline) return inline.slice(prefixed.length).trim()
+
+  const index = args.indexOf(flag)
+  if (index !== -1) return args[index + 1]?.trim()
+
+  return undefined
+}
+
+export const call: LocalCommandCall = async (args: string) => {
+  const { connectCall } = getChannelDeps()
   const parsedArgs = args.trim().split(/\s+/).filter(Boolean)
-  const flags: Record<string, string | boolean> = {}
-  const positional: string[] = []
+  const [action = '', channelType = ''] = parsedArgs
 
-  for (const arg of parsedArgs) {
-    if (arg.startsWith('--')) {
-      const [k, v] = arg.slice(2).split('=')
-      flags[k] = v ?? true
-    } else {
-      positional.push(arg)
-    }
-  }
-
-  const [action, channelType] = positional
-
-  // /channel list — show available channels
-  if (action === 'list' || (!action && Object.keys(flags).length === 0)) {
+  if (!action) {
     return { type: 'text', value: listChannels() }
   }
 
-  // /channel status — show connection status for all channels
+  if (action === 'list') {
+    return { type: 'text', value: listChannels() }
+  }
+
   if (action === 'status') {
-    return { type: 'text', value: formatChannelStatus(getChannelConfig(data)) }
-  }
-
-  // /channel connect telegram --token <token>
-  if (action === 'connect' && channelType === 'telegram') {
-    const token = typeof flags.token === 'string' ? flags.token : positional.slice(2).join(' ').trim()
-
-    if (!token) {
-      return {
-        type: 'text',
-        value: `❌ No bot token provided.
-
-To connect Telegram:
-  /channel connect telegram --token <your-bot-token>
-
-Get a token from @BotFather in Telegram.`,
-      }
+    const result = await connectCall('status', {} as never)
+    if (!isTextResult(result)) {
+      throw new Error('channel status expected text result from connect command')
     }
-
-    // Validate token format
-    const tokenPattern = /^\d{8,10}:[\w-]{20,}$/
-    if (!tokenPattern.test(token)) {
-      return {
-        type: 'text',
-        value: `❌ Invalid bot token format.
-
-Telegram bot tokens look like: 123456789:ABCdefGhIJKlmNoPQRstuVWxyZ`,
-      }
-    }
-
-    const config = getChannelConfig(data)
-    saveChannelConfig(data, {
-      ...config,
-      telegram: {
-        ...config.telegram,
-        botToken: token,
-        connectedAt: Date.now(),
-        enabled: true,
-      },
-    })
-    storage.update(data)
-
-    // Set env var for the service
-    process.env.DUCKHIVE_TELEGRAM_BOT_TOKEN = token
-
-    // Restart Telegram service
-    import('../../services/telegram/index.js').then(({ stopTelegramService, startTelegramService }) => {
-      void stopTelegramService()
-      setTimeout(() => { void startTelegramService() }, 500)
-    }).catch(() => {})
-
     return {
       type: 'text',
-      value: `✅ Telegram channel connected!
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Send /start to your bot in Telegram to register your chat.
-
-Run /channel status to see connection details
-Run /channel disconnect telegram to remove`,
+      value: result.value.replace('Telegram Connection Status', 'Channel Adapter Status'),
     }
   }
 
-  // /channel disconnect telegram
-  if (action === 'disconnect' && channelType === 'telegram') {
-    const config = getChannelConfig(data)
-    if (config.telegram) {
-      delete config.telegram
-      saveChannelConfig(data, config)
-      storage.update(data)
+  if (action === 'connect') {
+    if (channelType !== 'telegram') {
+      return {
+        type: 'text',
+        value: `Usage: /channel connect <channel-type>\n\nAvailable: telegram`,
+      }
     }
-
-    // Stop the service
-    import('../../services/telegram/index.js').then(({ stopTelegramService }) => {
-      void stopTelegramService()
-    }).catch(() => {})
-
-    return {
-      type: 'text',
-      value: '🔌 Telegram channel disconnected.',
-    }
+    const token = getFlagValue(parsedArgs, '--token') ?? parsedArgs.slice(2).join(' ').trim()
+    return connectCall(token, {} as never)
   }
 
-  // /channel disconnect (general)
   if (action === 'disconnect') {
-    return {
-      type: 'text',
-      value: `Usage: /channel disconnect <channel-type>
-
-Available: telegram`,
+    if (channelType && channelType !== 'telegram') {
+      return {
+        type: 'text',
+        value: `Usage: /channel disconnect <channel-type>\n\nAvailable: telegram`,
+      }
     }
+    return connectCall('disconnect', {} as never)
   }
 
-  // Default: show help
   return { type: 'text', value: listChannels() }
 }

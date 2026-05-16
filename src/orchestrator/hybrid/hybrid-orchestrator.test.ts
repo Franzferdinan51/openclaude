@@ -1,15 +1,12 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test'
 import { resetAgentRunStoreForTesting } from '../../agent-runs/AgentRunStore.js'
+import { HybridOrchestrator } from './hybrid-orchestrator.js'
 
 type BridgeMock = {
   isEnabled: () => boolean
   shouldConsultCouncil: (complexity: number) => boolean
   startDeliberation: (message: string, mode: string) => Promise<{ success: boolean; sessionId?: string; error?: string }>
   spawnTeam: (teamName: string, mode: string) => Promise<{ success: boolean; teamId?: string; error?: string }>
-}
-
-async function importFreshHybridOrchestrator() {
-  return import(`./hybrid-orchestrator.ts?hybrid-test=${Date.now()}-${Math.random()}`)
 }
 
 describe('HybridOrchestrator AgentRun integration', () => {
@@ -22,7 +19,6 @@ describe('HybridOrchestrator AgentRun integration', () => {
   })
 
   test('creates a coordinator AgentRun for orchestrated work', async () => {
-    const { HybridOrchestrator } = await importFreshHybridOrchestrator()
     const store = resetAgentRunStoreForTesting({ persist: false })
     const orchestrator = new HybridOrchestrator({
       enableCouncil: false,
@@ -53,23 +49,22 @@ describe('HybridOrchestrator AgentRun integration', () => {
       spawnTeam: async () => ({ success: true, teamId: 'team-123' }),
     }
 
-    mock.module('../../services/hive-bridge/index.js', () => ({
-      getHiveBridge: () => bridgeMock,
-    }))
-    mock.module('../../tools/shared/spawnMultiAgent.js', () => ({
-      spawnTeammate: mock(async () => {
-        throw new Error('spawnTeammate should not be used without a tool context')
-      }),
-    }))
-
-    const { HybridOrchestrator } = await importFreshHybridOrchestrator()
-    const store = resetAgentRunStoreForTesting({ persist: false })
-    const orchestrator = new HybridOrchestrator({
-      enableCouncil: true,
-      enableParallelAgents: false,
-      enableTeamSpawn: true,
-      enableCheckpoint: true,
+    const spawnTeammate = mock(async () => {
+      throw new Error('spawnTeammate should not be used without a tool context')
     })
+    const store = resetAgentRunStoreForTesting({ persist: false })
+    const orchestrator = new HybridOrchestrator(
+      {
+        enableCouncil: true,
+        enableParallelAgents: false,
+        enableTeamSpawn: true,
+        enableCheckpoint: true,
+      },
+      {
+        getHiveBridge: (() => bridgeMock) as never,
+        spawnTeammate: spawnTeammate as never,
+      },
+    )
 
     const result = await orchestrator.execute(
       'deploy production security migration with auth and database migration',
@@ -100,26 +95,25 @@ describe('HybridOrchestrator AgentRun integration', () => {
       },
     }))
 
-    mock.module('../../services/hive-bridge/index.js', () => ({
-      getHiveBridge: () => ({
-        isEnabled: () => false,
-        shouldConsultCouncil: () => false,
-        startDeliberation: async () => ({ success: false, error: 'disabled' }),
-        spawnTeam: async () => ({ success: false, error: 'disabled' }),
-      }),
-    }))
-    mock.module('../../tools/shared/spawnMultiAgent.js', () => ({
-      spawnTeammate,
-    }))
-
-    const { HybridOrchestrator } = await importFreshHybridOrchestrator()
+    const bridgeMock: BridgeMock = {
+      isEnabled: () => false,
+      shouldConsultCouncil: () => false,
+      startDeliberation: async () => ({ success: false, error: 'disabled' }),
+      spawnTeam: async () => ({ success: false, error: 'disabled' }),
+    }
     const store = resetAgentRunStoreForTesting({ persist: false })
-    const orchestrator = new HybridOrchestrator({
-      enableCouncil: false,
-      enableParallelAgents: true,
-      enableTeamSpawn: false,
-      enableCheckpoint: true,
-    })
+    const orchestrator = new HybridOrchestrator(
+      {
+        enableCouncil: false,
+        enableParallelAgents: true,
+        enableTeamSpawn: false,
+        enableCheckpoint: true,
+      },
+      {
+        getHiveBridge: (() => bridgeMock) as never,
+        spawnTeammate: spawnTeammate as never,
+      },
+    )
 
     const result = await orchestrator.execute(
       'design pattern async database migration build api and refactor auth',

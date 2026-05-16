@@ -34,15 +34,18 @@ import ide from './commands/ide/index.js'
 import init from './commands/init.js'
 import initVerifiers from './commands/init-verifiers.js'
 import keybindings from './commands/keybindings/index.js'
+import lmstudioInit from './commands/lmstudio-init/index.js'
 import lsp from './commands/lsp/index.js'
 import login from './commands/login/index.js'
 import logout from './commands/logout/index.js'
 import loop from './commands/loop/index.js'
+import mcpManage from './commands/mcp-manage/index.js'
 import installGitHubApp from './commands/install-github-app/index.js'
 import installSlackApp from './commands/install-slack-app/index.js'
 import breakCache from './commands/break-cache/index.js'
 import cacheProbe from './commands/cache-probe/index.js'
 import cacheStats from './commands/cacheStats/index.js'
+import channel from './commands/channel/index.js'
 import checkpoint from './commands/checkpoint/index.js'
 import mcp from './commands/mcp/index.js'
 import mobile from './commands/mobile/index.js'
@@ -60,6 +63,7 @@ import status from './commands/status/index.js'
 import tasks from './commands/tasks/index.js'
 import teleport from './commands/teleport/index.js'
 import spawn from './commands/spawn/index.js'
+import trusted from './commands/trusted-folders/index.js'
 /* eslint-disable @typescript-eslint/no-require-imports */
 const agentsPlatform =
   process.env.USER_TYPE === 'ant'
@@ -287,6 +291,7 @@ const COMMANDS = memoize((): Command[] => [
   btw,
   cacheProbe,
   cacheStats,
+  channel,
   checkpoint,
   chrome,
   clear,
@@ -316,12 +321,14 @@ const COMMANDS = memoize((): Command[] => [
   init,
   keybindings,
   knowledge,
+  lmstudioInit,
   lsp,
   loop,
   orchestrate,
   installGitHubApp,
   installSlackApp,
   mcp,
+  mcpManage,
   memory,
   mobile,
   model,
@@ -345,6 +352,7 @@ const COMMANDS = memoize((): Command[] => [
   stickers,
   tag,
   theme,
+  trusted,
   logo,
   feedback,
   review,
