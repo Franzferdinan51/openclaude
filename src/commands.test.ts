@@ -46,6 +46,22 @@ describe('builtInCommandNames', () => {
     expect(builtInCommandNames()).toContain('connect')
     expect(builtInCommandNames()).toContain('telegram')
   })
+
+  test('includes the computer-use command without shadowing desktop', () => {
+    expect(builtInCommandNames()).toContain('computer-use')
+    expect(builtInCommandNames()).toContain('cu')
+    expect(builtInCommandNames()).toContain('comput-use')
+  })
+
+  test('includes the search-provider command', () => {
+    expect(builtInCommandNames()).toContain('search-provider')
+    expect(builtInCommandNames()).toContain('search')
+    expect(builtInCommandNames()).toContain('web-search-provider')
+  })
+
+  test('includes the repomap command', () => {
+    expect(builtInCommandNames()).toContain('repomap')
+  })
 })
 
 describe('isCommand', () => {

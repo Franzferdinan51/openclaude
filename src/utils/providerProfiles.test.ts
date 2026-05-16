@@ -1256,11 +1256,11 @@ describe('setActiveProviderProfile', () => {
         configDir,
       })
       const persisted = JSON.parse(
-        readFileSync(join(configDir, '.openclaude-profile.json'), 'utf8'),
+        readFileSync(join(configDir, '.duckhive-profile.json'), 'utf8'),
       )
 
       expect(result?.id).toBe('ollama_prof')
-      expect(existsSync(join(tempDir, '.openclaude-profile.json'))).toBe(false)
+      expect(existsSync(join(tempDir, '.duckhive-profile.json'))).toBe(false)
       expect(persisted.profile).toBe('openai')
       expect(persisted.env).toEqual({
         OPENAI_BASE_URL: 'http://localhost:11434/v1',
@@ -1301,11 +1301,11 @@ describe('setActiveProviderProfile', () => {
         configDir,
       })
       const persisted = JSON.parse(
-        readFileSync(join(configDir, '.openclaude-profile.json'), 'utf8'),
+        readFileSync(join(configDir, '.duckhive-profile.json'), 'utf8'),
       )
 
       expect(result?.id).toBe('deepseek_prof')
-      expect(existsSync(join(tempDir, '.openclaude-profile.json'))).toBe(false)
+      expect(existsSync(join(tempDir, '.duckhive-profile.json'))).toBe(false)
       expect(persisted.profile).toBe('openai')
       expect(persisted.env).toEqual({
         OPENAI_BASE_URL: 'https://api.deepseek.com/v1',
@@ -1346,11 +1346,11 @@ describe('setActiveProviderProfile', () => {
         configDir,
       })
       const persisted = JSON.parse(
-        readFileSync(join(configDir, '.openclaude-profile.json'), 'utf8'),
+        readFileSync(join(configDir, '.duckhive-profile.json'), 'utf8'),
       )
 
       expect(result?.id).toBe('deepseek_vendor_prof')
-      expect(existsSync(join(tempDir, '.openclaude-profile.json'))).toBe(false)
+      expect(existsSync(join(tempDir, '.duckhive-profile.json'))).toBe(false)
       expect(persisted.profile).toBe('openai')
       expect(persisted.env).toEqual({
         OPENAI_BASE_URL: 'https://api.deepseek.com/v1',
@@ -1387,11 +1387,11 @@ describe('setActiveProviderProfile', () => {
         configDir,
       })
       const persisted = JSON.parse(
-        readFileSync(join(configDir, '.openclaude-profile.json'), 'utf8'),
+        readFileSync(join(configDir, '.duckhive-profile.json'), 'utf8'),
       )
 
       expect(result?.id).toBe('venice_prof')
-      expect(existsSync(join(tempDir, '.openclaude-profile.json'))).toBe(false)
+      expect(existsSync(join(tempDir, '.duckhive-profile.json'))).toBe(false)
       expect(persisted.profile).toBe('openai')
       expect(persisted.env).toEqual({
         OPENAI_BASE_URL: 'https://api.venice.ai/api/v1',
@@ -1430,11 +1430,11 @@ describe('setActiveProviderProfile', () => {
         configDir,
       })
       const persisted = JSON.parse(
-        readFileSync(join(configDir, '.openclaude-profile.json'), 'utf8'),
+        readFileSync(join(configDir, '.duckhive-profile.json'), 'utf8'),
       )
 
       expect(result?.id).toBe('mimo_prof')
-      expect(existsSync(join(tempDir, '.openclaude-profile.json'))).toBe(false)
+      expect(existsSync(join(tempDir, '.duckhive-profile.json'))).toBe(false)
       expect(persisted.profile).toBe('openai')
       expect(persisted.env).toEqual({
         OPENAI_BASE_URL: 'https://api.xiaomimimo.com/v1',
@@ -1475,11 +1475,11 @@ describe('setActiveProviderProfile', () => {
         configDir,
       })
       const persisted = JSON.parse(
-        readFileSync(join(configDir, '.openclaude-profile.json'), 'utf8'),
+        readFileSync(join(configDir, '.duckhive-profile.json'), 'utf8'),
       )
 
       expect(result?.id).toBe('bedrock_prof')
-      expect(existsSync(join(tempDir, '.openclaude-profile.json'))).toBe(false)
+      expect(existsSync(join(tempDir, '.duckhive-profile.json'))).toBe(false)
       expect(persisted.profile).toBe('bedrock')
       expect(persisted.env).toEqual({
         ANTHROPIC_MODEL: 'claude-sonnet-4-6',
@@ -1519,11 +1519,11 @@ describe('setActiveProviderProfile', () => {
         configDir,
       })
       const persisted = JSON.parse(
-        readFileSync(join(configDir, '.openclaude-profile.json'), 'utf8'),
+        readFileSync(join(configDir, '.duckhive-profile.json'), 'utf8'),
       )
 
       expect(result?.id).toBe('anthro_persisted_prof')
-      expect(existsSync(join(tempDir, '.openclaude-profile.json'))).toBe(false)
+      expect(existsSync(join(tempDir, '.duckhive-profile.json'))).toBe(false)
       expect(persisted.profile).toBe('anthropic')
       expect(persisted.env).toEqual({
         ANTHROPIC_BASE_URL: 'https://api.anthropic.com',

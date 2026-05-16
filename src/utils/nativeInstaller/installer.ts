@@ -1653,7 +1653,10 @@ async function attemptNpmUninstall(
   return { success: false } // Package not found, not an error
 }
 
-export async function cleanupNpmInstallations(): Promise<{
+export async function cleanupNpmInstallations(options?: {
+  configHomeDir?: string
+  homeDir?: string
+}): Promise<{
   removed: number
   errors: string[]
   warnings: string[]
@@ -1689,8 +1692,10 @@ export async function cleanupNpmInstallations(): Promise<{
   }
 
   // Preserve compatibility with pre-migration installs under ~/.claude/local.
+  const homeDir = options?.homeDir ?? homedir()
+  const configHomeDir = options?.configHomeDir ?? getClaudeConfigHomeDir()
   const localInstallDirs = Array.from(
-    new Set([join(getClaudeConfigHomeDir(), 'local'), join(homedir(), '.claude', 'local')]),
+    new Set([join(configHomeDir, 'local'), join(homeDir, '.claude', 'local')]),
   )
 
   for (const localInstallDir of localInstallDirs) {

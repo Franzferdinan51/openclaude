@@ -24,8 +24,8 @@ let tempDir: string
 
 beforeEach(async () => {
   await acquireSharedMutationLock('loadAgentsDir.test.ts')
-  tempDir = await mkdtemp(join(tmpdir(), 'openclaude-agents-test-'))
-  process.env.CLAUDE_CONFIG_DIR = join(tempDir, '.openclaude')
+  tempDir = await mkdtemp(join(tmpdir(), 'DuckHive-agents-test-'))
+  process.env.CLAUDE_CONFIG_DIR = join(tempDir, '.duckhive')
   process.env.CLAUDE_CODE_USE_NATIVE_FILE_SEARCH = '1'
   delete process.env.CLAUDE_CODE_SIMPLE
   clearAgentDefinitionsCache()
@@ -73,7 +73,7 @@ ${prompt}
 }
 
 describe('agent definition loading', () => {
-  test('loads user agents from the OpenClaude config dir in simple mode', async () => {
+  test('loads user agents from the DuckHive config dir in simple mode', async () => {
     await writeAgent(
       join(process.env.CLAUDE_CONFIG_DIR!, 'agents', 'user-agent.md'),
       'user-agent',
@@ -90,10 +90,10 @@ describe('agent definition loading', () => {
     )
   })
 
-  test('loads project agents from .openclaude/agents', async () => {
+  test('loads project agents from .duckhive/agents', async () => {
     const projectDir = join(tempDir, 'project')
     await writeAgent(
-      join(projectDir, '.openclaude', 'agents', 'project-agent.md'),
+      join(projectDir, '.duckhive', 'agents', 'project-agent.md'),
       'project-agent',
     )
 
@@ -104,7 +104,7 @@ describe('agent definition loading', () => {
     ).toBe(true)
   })
 
-  test('prefers .openclaude project agents over legacy .claude agents', async () => {
+  test('prefers .duckhive project agents over legacy .claude agents', async () => {
     const projectDir = join(tempDir, 'project')
     await writeAgent(
       join(projectDir, '.claude', 'agents', 'shared-agent.md'),
@@ -112,14 +112,14 @@ describe('agent definition loading', () => {
       'legacy prompt',
     )
     await writeAgent(
-      join(projectDir, '.openclaude', 'agents', 'shared-agent.md'),
+      join(projectDir, '.duckhive', 'agents', 'shared-agent.md'),
       'shared-agent',
-      'openclaude prompt',
+      'DuckHive prompt',
     )
 
     const { activeAgents } = await getAgentDefinitionsWithOverrides(projectDir)
     const agent = activeAgents.find(agent => agent.agentType === 'shared-agent')
 
-    expect(agent?.getSystemPrompt()).toBe('openclaude prompt')
+    expect(agent?.getSystemPrompt()).toBe('DuckHive prompt')
   })
 })

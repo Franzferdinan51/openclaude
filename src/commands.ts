@@ -17,6 +17,7 @@ import copy from './commands/copy/index.js'
 import desktop from './commands/desktop/index.js'
 import commitPushPr from './commands/commit-push-pr.js'
 import compact from './commands/compact/index.js'
+import computerUse from './commands/computer-use/index.js'
 import config from './commands/config/index.js'
 import { context, contextNonInteractive } from './commands/context/index.js'
 import cost from './commands/cost/index.js'
@@ -51,6 +52,7 @@ import releaseNotes from './commands/release-notes/index.js'
 import rename from './commands/rename/index.js'
 import resume from './commands/resume/index.js'
 import review, { ultrareview } from './commands/review.js'
+import searchProvider from './commands/search-provider/index.js'
 import session from './commands/session/index.js'
 import share from './commands/share/index.js'
 import skills from './commands/skills/index.js'
@@ -145,6 +147,7 @@ import fast from './commands/fast/index.js'
 import passes from './commands/passes/index.js'
 import privacySettings from './commands/privacy-settings/index.js'
 import provider from './commands/provider/index.js'
+import repomap from './commands/repomap/index.js'
 import hooks from './commands/hooks/index.js'
 import files from './commands/files/index.js'
 import branch from './commands/branch/index.js'
@@ -291,6 +294,7 @@ const COMMANDS = memoize((): Command[] => [
   compact,
   commitMessage,
   connect,
+  computerUse,
   config,
   copy,
   desktop,
@@ -327,6 +331,7 @@ const COMMANDS = memoize((): Command[] => [
   plugin,
   provider,
   pr_comments,
+  repomap,
   releaseNotes,
   reloadPlugins,
   rename,
@@ -345,6 +350,7 @@ const COMMANDS = memoize((): Command[] => [
   review,
   ultrareview,
   rewind,
+  searchProvider,
   securityReview,
   terminalSetup,
   upgrade,

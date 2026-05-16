@@ -190,6 +190,12 @@ export async function initOrama(cwd: string): Promise<void> {
     // 1. Initialize SQLite (Runtime-safe)
     await providers.sqlite.init()
 
+    // If mutations already populated in-memory state before SQLite came up,
+    // immediately backfill the database so persistence is not silently skipped.
+    if (projectGraph && providers.sqlite.isReady) {
+      providers.sqlite.saveGraph(projectGraph)
+    }
+
     // 2. Load the base graph state if not already loaded
     if (!projectGraph) {
       loadProjectGraph(cwd)
@@ -708,8 +714,15 @@ export function resetGlobalGraph(): void {
   
   oramaDb = null
   projectGraph = null
-  // Clear cache for this specific project
-  providerCache.delete(projectDir)
+  oramaInitPromise = null
+  mutationQueue = Promise.resolve()
+
+  // Reset every cached provider so parallel or earlier tests in a different
+  // cwd cannot leak SQLite handles or stale project state into this one.
+  for (const [cachedProjectDir, providers] of providerCache.entries()) {
+    providers.sqlite.close()
+    providerCache.delete(cachedProjectDir)
+  }
 }
 
 export function clearMemoryOnly(): void {

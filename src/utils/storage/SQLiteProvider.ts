@@ -1,5 +1,6 @@
 import { join } from 'path'
 import { existsSync, mkdirSync, unlinkSync, statSync } from 'fs'
+import { platform } from 'os'
 import type { Entity, Relation, SemanticSummary, KnowledgeGraph } from '../knowledgeGraph.js'
 import { registerCleanup } from '../cleanupRegistry.js'
 
@@ -47,7 +48,7 @@ export class SQLiteProvider {
       }
 
       this.db = new Database(this.dbPath)
-      this.db.exec('PRAGMA journal_mode = WAL;')
+      this.db.exec(`PRAGMA journal_mode = ${getPreferredJournalMode()};`)
       this.db.exec('PRAGMA foreign_keys = ON;')
       this.createTables()
       this.isInitialized = true
@@ -73,7 +74,7 @@ export class SQLiteProvider {
       if (typeof Bun !== 'undefined') {
         const { Database } = await import('bun:sqlite')
         this.db = new Database(this.dbPath)
-        this.db.exec('PRAGMA journal_mode = WAL;')
+        this.db.exec(`PRAGMA journal_mode = ${getPreferredJournalMode()};`)
         this.db.exec('PRAGMA foreign_keys = ON;')
         this.createTables()
       }
@@ -292,5 +293,15 @@ export class SQLiteProvider {
       this.db = null
     }
     this.isInitialized = false
+
+    if (typeof Bun !== 'undefined' && typeof Bun.gc === 'function') {
+      try {
+        Bun.gc(true)
+      } catch {}
+    }
   }
+}
+
+function getPreferredJournalMode(): 'DELETE' | 'WAL' {
+  return platform() === 'win32' ? 'DELETE' : 'WAL'
 }

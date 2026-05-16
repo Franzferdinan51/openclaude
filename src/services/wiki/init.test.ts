@@ -14,7 +14,7 @@ afterEach(async () => {
 })
 
 async function makeProjectDir(): Promise<string> {
-  const dir = await mkdtemp(join(tmpdir(), 'openclaude-wiki-init-'))
+  const dir = await mkdtemp(join(tmpdir(), 'DuckHive-wiki-init-'))
   tempDirs.push(dir)
   return dir
 }
@@ -26,10 +26,10 @@ test('initializeWiki creates the expected wiki scaffold', async () => {
 
   expect(result.alreadyExisted).toBe(false)
   expect(result.createdFiles).toEqual([
-    join('.openclaude', 'wiki', 'schema.md'),
-    join('.openclaude', 'wiki', 'index.md'),
-    join('.openclaude', 'wiki', 'log.md'),
-    join('.openclaude', 'wiki', 'pages', 'architecture.md'),
+    join('.duckhive', 'wiki', 'schema.md'),
+    join('.duckhive', 'wiki', 'index.md'),
+    join('.duckhive', 'wiki', 'log.md'),
+    join('.duckhive', 'wiki', 'pages', 'architecture.md'),
   ])
   expect(await readFile(paths.schemaFile, 'utf8')).toContain(
     '# DuckHive Wiki Schema',

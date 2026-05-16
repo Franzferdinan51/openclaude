@@ -1,7 +1,9 @@
 import { afterEach, expect, mock, test } from 'bun:test'
-import * as fsPromises from 'fs/promises'
+import { mkdir, rm } from 'fs/promises'
 import { homedir } from 'os'
 import { join } from 'path'
+import { mkdtempSync } from 'fs'
+import { tmpdir } from 'os'
 
 const originalEnv = { ...process.env }
 const originalMacro = (globalThis as Record<string, unknown>).MACRO
@@ -24,39 +26,24 @@ async function importFreshInstaller() {
 }
 
 test('install command displays ~/.local/bin/duckhive on non-Windows', async () => {
-  mock.module('../utils/env.js', () => ({
-    env: { platform: 'darwin' },
-  }))
-
   const { getInstallationPath } = await importFreshInstallCommand()
 
-  expect(getInstallationPath()).toBe('~/.local/bin/duckhive')
+  expect(getInstallationPath('darwin')).toBe('~/.local/bin/duckhive')
 })
 
 test('install command displays duckhive.exe path on Windows', async () => {
-  mock.module('../utils/env.js', () => ({
-    env: { platform: 'win32' },
-  }))
-
   const { getInstallationPath } = await importFreshInstallCommand()
 
-  expect(getInstallationPath()).toBe(
+  expect(getInstallationPath('win32')).toBe(
     join(homedir(), '.local', 'bin', 'duckhive.exe').replace(/\//g, '\\'),
   )
 })
 
-test('cleanupNpmInstallations removes both openclaude and legacy claude local install dirs', async () => {
-  const removedPaths: string[] = []
+test('cleanupNpmInstallations removes both duckhive and legacy claude local install dirs', async () => {
+  const tempHome = mkdtempSync(join(tmpdir(), 'duckhive-cleanup-'))
   ;(globalThis as Record<string, unknown>).MACRO = {
     PACKAGE_URL: 'duckhive',
   }
-
-  mock.module('fs/promises', () => ({
-    ...fsPromises,
-    rm: async (path: string) => {
-      removedPaths.push(path)
-    },
-  }))
 
   mock.module('./execFileNoThrow.js', () => ({
     execFileNoThrowWithCwd: async () => ({
@@ -65,14 +52,21 @@ test('cleanupNpmInstallations removes both openclaude and legacy claude local in
     }),
   }))
 
-  mock.module('./envUtils.js', () => ({
-    getClaudeConfigHomeDir: () => join(homedir(), '.openclaude'),
-    isEnvTruthy: (value: string | undefined) => value === '1',
-  }))
-
   const { cleanupNpmInstallations } = await importFreshInstaller()
-  await cleanupNpmInstallations()
+  const duckhiveLocal = join(tempHome, '.duckhive', 'local')
+  const legacyLocal = join(tempHome, '.claude', 'local')
+  await mkdir(duckhiveLocal, { recursive: true })
+  await mkdir(legacyLocal, { recursive: true })
 
-  expect(removedPaths).toContain(join(homedir(), '.openclaude', 'local'))
-  expect(removedPaths).toContain(join(homedir(), '.claude', 'local'))
+  try {
+    await cleanupNpmInstallations({
+      configHomeDir: join(tempHome, '.duckhive'),
+      homeDir: tempHome,
+    })
+
+    await expect(rm(duckhiveLocal, { recursive: true })).rejects.toThrow()
+    await expect(rm(legacyLocal, { recursive: true })).rejects.toThrow()
+  } finally {
+    await rm(tempHome, { recursive: true, force: true })
+  }
 })

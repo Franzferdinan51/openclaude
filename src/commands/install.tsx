@@ -40,9 +40,11 @@ type InstallState = {
   message: string;
   warnings?: string[];
 };
-export function getInstallationPath(): string {
-  const isWindows = env.platform === 'win32';
-  const homeDir = homedir();
+export function getInstallationPath(
+  platform: typeof env.platform = env.platform,
+  homeDir = homedir(),
+): string {
+  const isWindows = platform === 'win32';
   if (isWindows) {
     // Convert to Windows-style path
     const windowsPath = join(homeDir, '.local', 'bin', 'duckhive.exe');
