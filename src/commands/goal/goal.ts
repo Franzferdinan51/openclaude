@@ -14,6 +14,7 @@
  */
 
 import { bold, italic } from '../../components/styles.js'
+import { getSessionId } from '../../bootstrap/state.js'
 import { getGlobalConfig, saveGlobalConfig } from '../../utils/config.js'
 
 // Goal states
@@ -59,6 +60,14 @@ function getGoals(): Goal[] {
   }
 }
 
+function getCurrentSessionId(): string | undefined {
+  try {
+    return getSessionId()
+  } catch {
+    return undefined
+  }
+}
+
 function findGoalByReference(
   goals: Goal[],
   goalRef: string,
@@ -93,6 +102,39 @@ function getSingleActiveGoal(goals: Goal[]): { goal?: Goal; error?: string } {
   })
 }
 
+function getCurrentSessionGoal(
+  goals: Goal[],
+  statuses?: GoalStatus[],
+): { goal?: Goal; error?: string } {
+  const sessionId = getCurrentSessionId()
+  if (!sessionId) {
+    return {}
+  }
+
+  const matches = goals.filter((goal) => {
+    if (goal.sessionId !== sessionId) {
+      return false
+    }
+    if (!statuses || statuses.length === 0) {
+      return true
+    }
+    return statuses.includes(goal.status)
+  })
+
+  if (matches.length === 0) {
+    return {}
+  }
+
+  if (matches.length > 1) {
+    return {
+      error:
+        'Multiple goals are attached to this session. Specify a goal ID explicitly.',
+    }
+  }
+
+  return { goal: matches[0] }
+}
+
 function getSingleGoalByStatus(
   goals: Goal[],
   status: GoalStatus,
@@ -114,14 +156,65 @@ function getSingleGoalByStatus(
   return { goal: matchingGoals[0] }
 }
 
+function getSingleGoalByStatuses(
+  goals: Goal[],
+  statuses: GoalStatus[],
+  messages: { missing: string; ambiguous: string },
+): { goal?: Goal; error?: string } {
+  const matchingGoals = goals.filter((goal) => statuses.includes(goal.status))
+  if (matchingGoals.length === 0) {
+    return { error: messages.missing }
+  }
+
+  if (matchingGoals.length > 1) {
+    return { error: messages.ambiguous }
+  }
+
+  return { goal: matchingGoals[0] }
+}
+
 function resolveGoalTarget(
   goals: Goal[],
   goalRef?: string,
+  statuses: GoalStatus[] = ['active'],
 ): { goal?: Goal; error?: string } {
   if (goalRef?.trim()) {
     return findGoalByReference(goals, goalRef)
   }
-  return getSingleActiveGoal(goals)
+
+  const currentSessionGoal = getCurrentSessionGoal(goals, statuses)
+  if (currentSessionGoal.goal || currentSessionGoal.error) {
+    return currentSessionGoal
+  }
+
+  if (statuses.length === 1 && statuses[0] === 'active') {
+    return getSingleActiveGoal(goals)
+  }
+
+  return getSingleGoalByStatuses(goals, statuses, {
+    missing:
+      'No matching goal found. Create a goal first or specify a goal ID explicitly.',
+    ambiguous: 'Multiple matching goals found. Specify a goal ID explicitly.',
+  })
+}
+
+function attachCurrentSessionToGoal(goals: Goal[], targetGoal: Goal): void {
+  const sessionId = getCurrentSessionId()
+  if (!sessionId) {
+    return
+  }
+
+  for (const goal of goals) {
+    if (
+      goal !== targetGoal &&
+      goal.sessionId === sessionId &&
+      (goal.status === 'active' || goal.status === 'paused')
+    ) {
+      goal.sessionId = undefined
+    }
+  }
+
+  targetGoal.sessionId = sessionId
 }
 
 async function saveGoals(goals: Goal[]): Promise<void> {
@@ -145,6 +238,10 @@ function formatGoal(goal: Goal, detailed = false): string {
 
   if (goal.status === 'paused' && goal.currentStepId) {
     output += `   Current Step: ${goal.currentStepId}\n`
+  }
+
+  if (goal.sessionId) {
+    output += `   Session: ${goal.sessionId}\n`
   }
 
   if (detailed) {
@@ -188,6 +285,7 @@ async function createGoal(args: string[]): Promise<string> {
 
   const goals = getGoals()
   goals.unshift(goal)
+  attachCurrentSessionToGoal(goals, goal)
   await saveGoals(goals)
 
   return `Goal created successfully!\n\n${formatGoal(goal, true)}`
@@ -228,6 +326,14 @@ async function goalStatus(args: string[]): Promise<string> {
   const goals = getGoals()
 
   if (args.length === 0) {
+    const currentSessionGoal = getCurrentSessionGoal(goals)
+    if (currentSessionGoal.goal) {
+      return formatGoal(currentSessionGoal.goal, true)
+    }
+    if (currentSessionGoal.error) {
+      return currentSessionGoal.error
+    }
+
     const activeGoal = getSingleActiveGoal(goals)
     if (activeGoal.goal) {
       return formatGoal(activeGoal.goal, true)
@@ -261,7 +367,7 @@ async function goalStatus(args: string[]): Promise<string> {
 
 async function pauseGoal(args: string[]): Promise<string> {
   const goals = getGoals()
-  const { goal, error } = resolveGoalTarget(goals, args[0])
+  const { goal, error } = resolveGoalTarget(goals, args[0], ['active'])
 
   if (!goal) {
     return error ?? `Usage: /goal pause [goal-id]\nTip: Use /goal list to find goal IDs`
@@ -292,6 +398,7 @@ async function resumeGoal(args: string[]): Promise<string> {
   if (goal.status !== 'paused') return `Goal is not paused (current status: ${goal.status})`
 
   goal.status = 'active'
+  attachCurrentSessionToGoal(goals, goal)
   goal.updatedAt = new Date().toISOString()
   await saveGoals(goals)
 
@@ -300,7 +407,10 @@ async function resumeGoal(args: string[]): Promise<string> {
 
 async function completeGoal(args: string[]): Promise<string> {
   const goals = getGoals()
-  const { goal, error } = resolveGoalTarget(goals, args[0])
+  const { goal, error } = resolveGoalTarget(goals, args[0], [
+    'active',
+    'paused',
+  ])
 
   if (!goal) return error ?? 'Usage: /goal complete [goal-id]'
 
@@ -335,12 +445,20 @@ async function addStep(args: string[], goalId?: string): Promise<string> {
       goal = resolvedById.goal
       stepDesc = args.slice(1).join(' ')
     } else {
-      const activeGoal = getSingleActiveGoal(goals)
-      if (!activeGoal.goal) {
-        return activeGoal.error ?? 'No active goal found.'
+      const currentSessionGoal = getCurrentSessionGoal(goals, ['active'])
+      if (currentSessionGoal.goal) {
+        goal = currentSessionGoal.goal
+        stepDesc = args.join(' ')
+      } else if (currentSessionGoal.error) {
+        return currentSessionGoal.error
+      } else {
+        const activeGoal = getSingleActiveGoal(goals)
+        if (!activeGoal.goal) {
+          return activeGoal.error ?? 'No active goal found.'
+        }
+        goal = activeGoal.goal
+        stepDesc = args.join(' ')
       }
-      goal = activeGoal.goal
-      stepDesc = args.join(' ')
     }
   }
 
@@ -365,7 +483,12 @@ async function addStep(args: string[], goalId?: string): Promise<string> {
 
 async function clearGoal(args: string[]): Promise<string> {
   const goals = getGoals()
-  const { goal, error } = resolveGoalTarget(goals, args[0])
+  const { goal, error } = resolveGoalTarget(goals, args[0], [
+    'active',
+    'paused',
+    'completed',
+    'failed',
+  ])
   if (!goal) {
     return error ?? `Usage: /goal clear [goal-id]\nWarning: This cannot be undone!`
   }
@@ -379,11 +502,16 @@ async function clearGoal(args: string[]): Promise<string> {
 
 async function attachToGoal(args: string[]): Promise<string> {
   const goals = getGoals()
-  const { goal, error } = resolveGoalTarget(goals, args[0])
+  const { goal, error } = resolveGoalTarget(goals, args[0], [
+    'active',
+    'paused',
+    'completed',
+    'failed',
+  ])
 
   if (!goal) return error ?? 'Usage: /goal attach [goal-id]'
 
-  goal.sessionId = `session_${Date.now()}`
+  attachCurrentSessionToGoal(goals, goal)
   goal.updatedAt = new Date().toISOString()
   await saveGoals(goals)
 
