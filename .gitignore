@@ -12,6 +12,7 @@ fix_*.ts
 .env
 .env.*
 !.env.example
+auth.json
 .openclaude-profile.json
 reports/
 GEMINI.md

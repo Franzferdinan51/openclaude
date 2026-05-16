@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { c as _c } from "react-compiler-runtime";
 import React, { type ReactNode, useCallback, useMemo, useState } from 'react';
+import { PRODUCT_DISPLAY_NAME } from '../../constants/product.js';
 import { Box, Text } from '../../ink.js';
 import type { KeybindingAction } from '../../keybindings/types.js';
 import { useKeybindings } from '../../keybindings/useKeybinding.js';
@@ -29,8 +30,8 @@ export type PermissionPromptProps<T extends string> = {
   toolAnalyticsContext?: ToolAnalyticsContext;
 };
 const DEFAULT_PLACEHOLDERS: Record<FeedbackType, string> = {
-  accept: 'tell OpenClaude what to do next',
-  reject: 'tell OpenClaude what to do differently'
+  accept: `tell ${PRODUCT_DISPLAY_NAME} what to do next`,
+  reject: `tell ${PRODUCT_DISPLAY_NAME} what to do differently`
 };
 
 /**

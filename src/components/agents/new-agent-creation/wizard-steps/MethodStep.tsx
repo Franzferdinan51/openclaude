@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { c as _c } from "react-compiler-runtime";
 import React, { type ReactNode } from 'react';
+import { PRODUCT_DISPLAY_NAME } from '../../../../constants/product.js';
 import { Box } from '../../../../ink.js';
 import { ConfigurableShortcutHint } from '../../../ConfigurableShortcutHint.js';
 import { Select } from '../../../CustomSelect/select.js';
@@ -20,7 +21,7 @@ export function MethodStep() {
   let t0;
   if ($[0] === Symbol.for("react.memo_cache_sentinel")) {
     t0 = [{
-      label: "Generate with Claude (recommended)",
+      label: `Generate with ${PRODUCT_DISPLAY_NAME} (recommended)`,
       value: "generate"
     }, {
       label: "Manual configuration",

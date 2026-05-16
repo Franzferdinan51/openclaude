@@ -1,4 +1,4 @@
-# DuckHive Advanced Setup
+# OpenClaude Advanced Setup
 
 This guide is for users who want source builds, Bun workflows, provider profiles, diagnostics, or more control over runtime behavior.
 
@@ -7,16 +7,16 @@ This guide is for users who want source builds, Bun workflows, provider profiles
 ### Option A: npm
 
 ```bash
-npm install -g github:Franzferdinan51/DuckHive
+npm install -g @gitlawb/openclaude
 ```
 
 ### Option B: From source with Bun
 
-Use Bun `1.3.11` or newer for source builds on Windows. Older Bun versions can fail during `bun run build`.
+Use Bun `1.3.13` or newer for source builds on Windows. Older Bun versions can fail during `bun run build`.
 
 ```bash
-git clone https://github.com/Franzferdinan51/DuckHive.git
-cd DuckHive
+git clone https://github.com/Gitlawb/openclaude.git
+cd openclaude
 
 bun install
 bun run build
@@ -26,8 +26,8 @@ npm link
 ### Option C: Run directly with Bun
 
 ```bash
-git clone https://github.com/Franzferdinan51/DuckHive.git
-cd DuckHive
+git clone https://github.com/Gitlawb/openclaude.git
+cd openclaude
 
 bun install
 bun run dev
@@ -48,9 +48,9 @@ export OPENAI_MODEL=gpt-4o
 `codexplan` maps to GPT-5.5 on the Codex backend with high reasoning.
 `codexspark` maps to GPT-5.3 Codex Spark for faster loops.
 
-If you use the in-app provider wizard, choose `Codex OAuth` to open ChatGPT sign-in in your browser and let DuckHive store Codex credentials securely.
+If you use the in-app provider wizard, choose `Codex OAuth` to open ChatGPT sign-in in your browser and let OpenClaude store Codex credentials securely.
 
-If you already use the Codex CLI, DuckHive reads `~/.codex/auth.json` automatically. You can also point it elsewhere with `CODEX_AUTH_JSON_PATH` or override the token directly with `CODEX_API_KEY`.
+If you already use the Codex CLI, OpenClaude reads `~/.codex/auth.json` automatically. You can also point it elsewhere with `CODEX_AUTH_JSON_PATH` or override the token directly with `CODEX_API_KEY`.
 
 If you set `CODEX_API_KEY` manually and are not relying on `auth.json` or stored
 Codex OAuth credentials, also set `CHATGPT_ACCOUNT_ID` (or
@@ -64,7 +64,7 @@ export OPENAI_MODEL=codexplan
 export CODEX_API_KEY=...
 export CHATGPT_ACCOUNT_ID=...
 
-duckhive
+openclaude
 ```
 
 ### DeepSeek
@@ -86,9 +86,6 @@ export GEMINI_API_KEY=...
 export GEMINI_MODEL=gemini-3-flash-preview
 ```
 
-If you prefer access-token or ADC-based Gemini auth instead of an API key, use
-the guided `/provider` flow.
-
 ### Gemini via OpenRouter
 
 ```bash
@@ -101,16 +98,6 @@ export OPENAI_MODEL=google/gemini-2.5-pro
 OpenRouter model availability changes over time. If a model stops working, try another current OpenRouter model before assuming the integration is broken.
 
 ### Ollama
-
-Using `ollama launch` (recommended if you have Ollama installed):
-
-```bash
-ollama launch duckhive --model llama3.3:70b
-```
-
-This handles all environment setup automatically — no env vars needed. Works with any local or cloud model available in your Ollama instance.
-
-Using environment variables manually:
 
 ```bash
 ollama pull llama3.3:70b
@@ -166,6 +153,17 @@ export OPENAI_MODEL=llama-3.3-70b-versatile
 
 `GROQ_API_KEY` matches the built-in Groq gateway preset. `OPENAI_API_KEY` also works as a fallback on the generic OpenAI-compatible path, but `GROQ_API_KEY` is the preferred variable for Groq-specific setup.
 
+### Xiaomi MiMo
+
+```bash
+export CLAUDE_CODE_USE_OPENAI=1
+export MIMO_API_KEY=...
+export OPENAI_BASE_URL=https://api.xiaomimimo.com/v1
+export OPENAI_MODEL=mimo-v2.5-pro
+```
+
+The `/provider` Xiaomi MiMo preset uses the same endpoint and stores the key as `MIMO_API_KEY`. `OPENAI_API_KEY` also works as a compatibility fallback, but `MIMO_API_KEY` keeps the profile tied to the MiMo route.
+
 ### Mistral
 
 ```bash
@@ -192,6 +190,7 @@ export OPENAI_MODEL=gpt-4o
 | `OPENAI_MODEL` | OpenAI-compatible only | Model name such as `gpt-4o`, `deepseek-v4-flash`, or `llama3.3:70b` |
 | `OPENAI_BASE_URL` | No | API endpoint, defaulting to `https://api.openai.com/v1` |
 | `OPENAI_API_BASE` | No | Compatibility alias for `OPENAI_BASE_URL` |
+| `MIMO_API_KEY` | Xiaomi MiMo route | Xiaomi MiMo API key for `https://api.xiaomimimo.com/v1`; mirrored into the OpenAI-compatible auth env when the MiMo route is active |
 | `CLAUDE_CODE_USE_GEMINI` | Gemini only | Set to `1` to enable the direct Gemini provider path |
 | `GEMINI_API_KEY` / `GOOGLE_API_KEY` | Gemini API-key auth | Gemini API key for direct Gemini setup |
 | `GEMINI_MODEL` | Gemini only | Model name such as `gemini-3-flash-preview` or `gemini-2.5-pro` |
@@ -231,7 +230,7 @@ bun run doctor:report
 # full local hardening check (smoke + runtime doctor)
 bun run hardening:check
 
-# strict hardening (includes project-wide typecheck, which is still a known repo-wide hardening task)
+# strict hardening (includes project-wide typecheck)
 bun run hardening:strict
 ```
 
@@ -264,12 +263,6 @@ bun run profile:init -- --provider openai --api-key sk-...
 
 # gemini bootstrap with explicit key
 bun run profile:init -- --provider gemini --api-key ...
-
-# openrouter bootstrap with explicit key
-bun run profile:init -- --provider openrouter --api-key sk-or-...
-
-# NVIDIA NIM bootstrap with explicit key
-bun run profile:init -- --provider nvidia-nim --api-key nvapi-...
 
 # ollama bootstrap with custom model
 bun run profile:init -- --provider ollama --model llama3.1:8b

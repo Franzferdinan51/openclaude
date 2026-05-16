@@ -15,25 +15,19 @@ import desktop from './commands/desktop/index.js'
 import commitPushPr from './commands/commit-push-pr.js'
 import compact from './commands/compact/index.js'
 import config from './commands/config/index.js'
-import connect from './commands/connect/index.js'
-import curate from './commands/curate/index.js'
 import { context, contextNonInteractive } from './commands/context/index.js'
 import cost from './commands/cost/index.js'
 import diff from './commands/diff/index.js'
 import dream from './commands/dream/index.js'
 import ctx_viz from './commands/ctx_viz/index.js'
 import doctor from './commands/doctor/index.js'
-import duckcustodian from './commands/duckcustodian/index.js'
 import onboardGithub from './commands/onboard-github/index.js'
 import knowledge from './commands/knowledge/index.js'
 import memory from './commands/memory/index.js'
-import repomap from './commands/repomap/index.js'
 import help from './commands/help/index.js'
 import ide from './commands/ide/index.js'
 import init from './commands/init.js'
 import initVerifiers from './commands/init-verifiers.js'
-import inspect from './commands/introspect/index.js'
-import instruct from './commands/instruct/index.js'
 import keybindings from './commands/keybindings/index.js'
 import lsp from './commands/lsp/index.js'
 import login from './commands/login/index.js'
@@ -41,13 +35,11 @@ import logout from './commands/logout/index.js'
 import installGitHubApp from './commands/install-github-app/index.js'
 import installSlackApp from './commands/install-slack-app/index.js'
 import breakCache from './commands/break-cache/index.js'
-import changelog from './commands/changelog/index.js'
 import cacheProbe from './commands/cache-probe/index.js'
 import cacheStats from './commands/cacheStats/index.js'
 import mcp from './commands/mcp/index.js'
 import mobile from './commands/mobile/index.js'
 import onboarding from './commands/onboarding/index.js'
-import prSize from './commands/pr-size/index.js'
 import pr_comments from './commands/pr_comments/index.js'
 import releaseNotes from './commands/release-notes/index.js'
 import rename from './commands/rename/index.js'
@@ -56,9 +48,6 @@ import review, { ultrareview } from './commands/review.js'
 import session from './commands/session/index.js'
 import share from './commands/share/index.js'
 import skills from './commands/skills/index.js'
-import spawn from './commands/spawn/index.js'
-import acp from './commands/acp/index.js'
-import promptSuggest from './commands/prompt-suggest/index.js'
 import status from './commands/status/index.js'
 import tasks from './commands/tasks/index.js'
 import teleport from './commands/teleport/index.js'
@@ -73,6 +62,7 @@ import bughunter from './commands/bughunter/index.js'
 import terminalSetup from './commands/terminalSetup/index.js'
 import usage from './commands/usage/index.js'
 import theme from './commands/theme/index.js'
+import logo from './commands/logo/index.js'
 import vim from './commands/vim/index.js'
 import { feature } from 'bun:bundle'
 import { isBuddyEnabled } from './buddy/feature.js'
@@ -145,8 +135,6 @@ import thinkbackPlay from './commands/thinkback-play/index.js'
 import permissions from './commands/permissions/index.js'
 import plan from './commands/plan/index.js'
 import fast from './commands/fast/index.js'
-import yolo from './commands/yolo/index.js'
-import onboard from './commands/onboard/index.js'
 import passes from './commands/passes/index.js'
 import privacySettings from './commands/privacy-settings/index.js'
 import provider from './commands/provider/index.js'
@@ -154,20 +142,6 @@ import hooks from './commands/hooks/index.js'
 import files from './commands/files/index.js'
 import branch from './commands/branch/index.js'
 import agents from './commands/agents/index.js'
-
-// Hive Nation Integration (Phase 1: AI Council + Senate + Teams)
-import hiveCouncil from './commands/hive-council/index.js'
-import hiveSenate from './commands/hive-senate/index.js'
-import hiveTeam from './commands/hive-team/index.js'
-import lmstudioInit from './commands/lmstudio-init/index.js'
-import hiveDecree from './commands/hive-decree/index.js'
-import hiveOrchestrate from './commands/hive-orchestrate/index.js'
-import hiveSwarm from './commands/hive-swarm/index.js'
-import shellMode from './commands/shell-mode/index.js'
-import checkpoint from './commands/checkpoint/index.js'
-import trustedFolders from './commands/trusted-folders/index.js'
-import mcpManage from './commands/mcp-manage/index.js'
-import mmx from './commands/mmx/index.js'
 import autoFix from './commands/auto-fix.js'
 import plugin from './commands/plugin/index.js'
 import reloadPlugins from './commands/reload-plugins/index.js'
@@ -175,7 +149,6 @@ import rewind from './commands/rewind/index.js'
 import heapDump from './commands/heapdump/index.js'
 import mockLimits from './commands/mock-limits/index.js'
 import bridgeKick from './commands/bridge-kick.js'
-import channel from './commands/channel/index.js'
 import version from './commands/version.js'
 import wiki from './commands/wiki/index.js'
 import summary from './commands/summary/index.js'
@@ -215,15 +188,13 @@ import model from './commands/model/index.js'
 import tag from './commands/tag/index.js'
 import outputStyle from './commands/output-style/index.js'
 import remoteEnv from './commands/remote-env/index.js'
-import searchProvider from './commands/search-provider/index.js'
-import tuiCommand from './commands/tui/index.js'
 import upgrade from './commands/upgrade/index.js'
 import {
   extraUsage,
   extraUsageNonInteractive,
 } from './commands/extra-usage/index.js'
 import rateLimitOptions from './commands/rate-limit-options/index.js'
-import statusline from './commands/statusline.tsx'
+import statusline from './commands/statusline.js'
 import effort from './commands/effort/index.js'
 import stats from './commands/stats/index.js'
 // insights.ts is 113KB (3200 lines, includes diffLines/html rendering). Lazy
@@ -247,6 +218,7 @@ import { getSettingSourceName } from './utils/settings/constants.js'
 import {
   type Command,
   getCommandName,
+  isCommand,
   isCommandEnabled,
 } from './types/command.js'
 
@@ -266,7 +238,6 @@ export { getCommandName, isCommandEnabled } from './types/command.js'
 export const INTERNAL_ONLY_COMMANDS = [
   backfillSessions,
   breakCache,
-  changelog,
   bughunter,
   commit,
   commitPushPr,
@@ -277,7 +248,6 @@ export const INTERNAL_ONLY_COMMANDS = [
   ...(forceSnip ? [forceSnip] : []),
   mockLimits,
   bridgeKick,
-  channel,
   version,
   ...(ultraplan ? [ultraplan] : []),
   ...(subscribePr ? [subscribePr] : []),
@@ -313,9 +283,7 @@ const COMMANDS = memoize((): Command[] => [
   compact,
   commitMessage,
   config,
-  connect,
   copy,
-  curate,
   desktop,
   context,
   contextNonInteractive,
@@ -323,35 +291,14 @@ const COMMANDS = memoize((): Command[] => [
   diff,
   dream,
   doctor,
-  duckcustodian,
   effort,
   exit,
   fast,
-  yolo,
-  onboard,
   files,
   heapDump,
   help,
-
-  // Hive Nation Integration — AI Council, Senate, Teams
-  hiveCouncil,
-  hiveDecree,
-  hiveOrchestrate,
-  hiveSwarm,
-  hiveSenate,
-  hiveTeam,
-  checkpoint,
-  mcpManage,
-  mmx,
-  shellMode,
-  desktop,
-  trustedFolders,
-
   ide,
   init,
-  inspect,
-  instruct,
-  lmstudioInit,
   keybindings,
   knowledge,
   lsp,
@@ -366,26 +313,20 @@ const COMMANDS = memoize((): Command[] => [
   remoteEnv,
   plugin,
   provider,
-  prSize,
-  promptSuggest,
   pr_comments,
-  acp,
   releaseNotes,
   reloadPlugins,
   rename,
-  repomap,
   resume,
   session,
-  searchProvider,
   skills,
   stats,
-  spawn,
   status,
   statusline,
   stickers,
   tag,
   theme,
-  tuiCommand,
+  logo,
   feedback,
   review,
   ultrareview,
@@ -426,7 +367,7 @@ const COMMANDS = memoize((): Command[] => [
   ...(process.env.USER_TYPE === 'ant' && !process.env.IS_DEMO
     ? INTERNAL_ONLY_COMMANDS
     : []),
-])
+].filter(isCommand))
 
 export const builtInCommandNames = memoize(
   (): Set<string> =>
@@ -705,6 +646,7 @@ export const REMOTE_SAFE_COMMANDS: Set<Command> = new Set([
   clear, // Clear screen
   help, // Show help
   theme, // Change terminal theme
+  logo, // Change startup logo color scheme
   color, // Change agent color
   vim, // Toggle vim mode
   cost, // Show session cost (local cost tracking)

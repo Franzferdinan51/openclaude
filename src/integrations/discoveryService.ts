@@ -24,6 +24,7 @@ import type {
   OllamaGenerationReadiness,
 } from '../utils/providerDiscovery.js'
 import {
+  fetchOpenAICompatibleModelsRaw,
   listOpenAICompatibleModels,
   probeOllamaModelCatalog,
   probeAtomicChatReadiness,
@@ -237,6 +238,25 @@ async function runDiscovery(
     }
 
     case 'openai-compatible': {
+      if (discovery.mapModel) {
+        const rawModels = await fetchOpenAICompatibleModelsRaw({
+          baseUrl: getRouteBaseUrl(routeId, options),
+          apiKey: getRouteDiscoveryApiKey(routeId, options),
+          headers: getRouteDiscoveryHeaders(routeId, options),
+        })
+        if (rawModels === null) {
+          return null
+        }
+        const entries: ModelCatalogEntry[] = []
+        for (const raw of rawModels) {
+          const entry = discovery.mapModel(raw)
+          if (entry !== null) {
+            entries.push(entry)
+          }
+        }
+        return entries
+      }
+
       const models = await listOpenAICompatibleModels({
         baseUrl: getRouteBaseUrl(routeId, options),
         apiKey: getRouteDiscoveryApiKey(routeId, options),

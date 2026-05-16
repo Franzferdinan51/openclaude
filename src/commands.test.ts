@@ -1,6 +1,9 @@
 import { describe, expect, test } from 'bun:test'
-import onboard from './commands/onboard/index.js'
-import { builtInCommandNames, formatDescriptionWithSource } from './commands.js'
+import {
+  builtInCommandNames,
+  formatDescriptionWithSource,
+} from './commands.js'
+import { isCommand } from './types/command.js'
 
 describe('builtInCommandNames', () => {
   test('includes the LSP command', () => {
@@ -8,11 +11,28 @@ describe('builtInCommandNames', () => {
   })
 })
 
-describe('/onboard command contract', () => {
-  test('loads as a local JSX command instead of a prompt expansion', async () => {
-    expect(onboard.type).toBe('local-jsx')
-    const module = await onboard.load()
-    expect(typeof module.call).toBe('function')
+describe('isCommand', () => {
+  test('rejects generated missing-module noop stubs', () => {
+    function noop19() {
+      return null
+    }
+
+    expect(isCommand(noop19)).toBe(false)
+    expect(isCommand({ isHidden: true, name: 'stub' })).toBe(false)
+  })
+
+  test('accepts real command objects', () => {
+    expect(
+      isCommand({
+        type: 'local',
+        name: 'example',
+        description: 'example command',
+        supportsNonInteractive: false,
+        load: async () => ({
+          call: async () => ({ type: 'skip' }),
+        }),
+      }),
+    ).toBe(true)
   })
 })
 

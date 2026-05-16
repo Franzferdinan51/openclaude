@@ -4,6 +4,8 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import * as realOs from 'node:os'
+import * as realCodexCredentials from '../../utils/codexCredentials.js'
+import { acquireEnvMutex, releaseEnvMutex } from '../../entrypoints/sdk/shared.js'
 
 function makeJwt(payload: Record<string, unknown>): string {
   const header = Buffer.from(JSON.stringify({ alg: 'none', typ: 'JWT' }))
@@ -14,11 +16,18 @@ function makeJwt(payload: Record<string, unknown>): string {
 
 describe('resolveCodexApiCredentials with secure storage', () => {
   afterEach(() => {
-    mock.restore()
+    try {
+      mock.restore()
+      mock.module('../../utils/codexCredentials.js', () => realCodexCredentials)
+    } finally {
+      releaseEnvMutex()
+    }
   })
 
   test('loads Codex credentials from OpenClaude secure storage', async () => {
+    await acquireEnvMutex()
     mock.module('../../utils/codexCredentials.js', () => ({
+      ...realCodexCredentials,
       isCodexRefreshFailureCoolingDown: () => false,
       readCodexCredentials: () => ({
         apiKey: 'codex-api-key-token',
@@ -39,7 +48,9 @@ describe('resolveCodexApiCredentials with secure storage', () => {
   })
 
   test('prefers explicit env credentials over secure storage', async () => {
+    await acquireEnvMutex()
     mock.module('../../utils/codexCredentials.js', () => ({
+      ...realCodexCredentials,
       isCodexRefreshFailureCoolingDown: () => false,
       readCodexCredentials: () => ({
         accessToken: 'stored-token',
@@ -63,7 +74,9 @@ describe('resolveCodexApiCredentials with secure storage', () => {
   })
 
   test('parses nested chatgpt_account_id from a CODEX_API_KEY JWT', async () => {
+    await acquireEnvMutex()
     mock.module('../../utils/codexCredentials.js', () => ({
+      ...realCodexCredentials,
       isCodexRefreshFailureCoolingDown: () => false,
       readCodexCredentials: () => undefined,
     }))
@@ -86,7 +99,9 @@ describe('resolveCodexApiCredentials with secure storage', () => {
   })
 
   test('parses nested chatgpt_account_id from auth.json tokens', async () => {
+    await acquireEnvMutex()
     mock.module('../../utils/codexCredentials.js', () => ({
+      ...realCodexCredentials,
       isCodexRefreshFailureCoolingDown: () => false,
       readCodexCredentials: () => undefined,
     }))
@@ -124,7 +139,9 @@ describe('resolveCodexApiCredentials with secure storage', () => {
   })
 
   test('does not read default auth.json when secure storage already has Codex credentials', async () => {
+    await acquireEnvMutex()
     mock.module('../../utils/codexCredentials.js', () => ({
+      ...realCodexCredentials,
       isCodexRefreshFailureCoolingDown: () => false,
       readCodexCredentials: () => ({
         apiKey: 'codex-api-key-token',
@@ -145,6 +162,7 @@ describe('resolveCodexApiCredentials with secure storage', () => {
   })
 
   test('falls back to the default auth.json when stored Codex refresh is cooling down', async () => {
+    await acquireEnvMutex()
     const tempHomeDir = mkdtempSync(join(tmpdir(), 'openclaude-codex-home-'))
     const authJson = JSON.stringify({
       openai_api_key: makeJwt({
@@ -162,6 +180,7 @@ describe('resolveCodexApiCredentials with secure storage', () => {
     }))
 
     mock.module('../../utils/codexCredentials.js', () => ({
+      ...realCodexCredentials,
       isCodexRefreshFailureCoolingDown: () => true,
       readCodexCredentials: () => ({
         accessToken: 'stored-token',
@@ -187,6 +206,7 @@ describe('resolveCodexApiCredentials with secure storage', () => {
   })
 
   test('preserves the stored account id when auth.json fallback lacks one', async () => {
+    await acquireEnvMutex()
     const tempHomeDir = mkdtempSync(join(tmpdir(), 'openclaude-codex-home-'))
     const authJson = JSON.stringify({
       openai_api_key: 'auth-json-access-token',
@@ -200,6 +220,7 @@ describe('resolveCodexApiCredentials with secure storage', () => {
     }))
 
     mock.module('../../utils/codexCredentials.js', () => ({
+      ...realCodexCredentials,
       isCodexRefreshFailureCoolingDown: () => true,
       readCodexCredentials: () => ({
         accessToken: 'stored-token',

@@ -28,6 +28,7 @@ const PREFERRED_PROVIDER_ORDER = [
   'bankr',
   'zai',
   'xai',
+  'xiaomi-mimo',
   'openai',
   'gemini',
   'mistral',
@@ -36,15 +37,14 @@ const PREFERRED_PROVIDER_ORDER = [
   'vertex',
   'ollama',
   'nvidia-nim',
-  'openrouter',
   'minimax',
+  'venice',
 ] as const
 
 function buildValidProviders(): string[] {
   ensureIntegrationsLoaded()
 
   const discovered = new Set<string>([
-    'kimi',
     ...PRESET_VENDOR_MAP.map(mapping => mapping.preset),
     ...getAllVendors().map(vendor => vendor.id),
     ...getAllGateways().map(gateway => gateway.id),
@@ -177,8 +177,6 @@ export function applyProviderFlag(
   provider: string,
   args: string[],
 ): { error?: string } {
-  const routeProvider = provider === 'kimi' ? 'moonshotai' : provider
-
   if (!VALID_PROVIDERS.includes(provider)) {
     return {
       error: `Unknown provider "${provider}". Valid providers: ${VALID_PROVIDERS.join(', ')}`,
@@ -197,12 +195,15 @@ export function applyProviderFlag(
             process.env.OPENAI_API_KEY === process.env.XAI_API_KEY
           ? 'xai'
           : process.env.OPENAI_API_KEY !== undefined &&
-            process.env.OPENAI_API_KEY === process.env.MINIMAX_API_KEY
-            ? 'minimax'
+              process.env.OPENAI_API_KEY === process.env.MIMO_API_KEY
+            ? 'xiaomi-mimo'
             : process.env.OPENAI_API_KEY !== undefined &&
-                process.env.OPENAI_API_KEY === process.env.OPENROUTER_API_KEY
-              ? 'openrouter'
-              : null
+                process.env.OPENAI_API_KEY === process.env.VENICE_API_KEY
+              ? 'venice'
+              : process.env.OPENAI_API_KEY !== undefined &&
+                  process.env.OPENAI_API_KEY === process.env.MINIMAX_API_KEY
+                ? 'minimax'
+                : null
 
   delete process.env.CLAUDE_CODE_USE_OPENAI
   delete process.env.CLAUDE_CODE_USE_GEMINI
@@ -216,7 +217,7 @@ export function applyProviderFlag(
   }
 
   const model = parseModelFlag(args)
-  const { defaultBaseUrl, defaultModel } = getRouteDefaults(routeProvider)
+  const { defaultBaseUrl, defaultModel } = getRouteDefaults(provider)
 
   switch (provider) {
     case 'anthropic':
@@ -271,16 +272,6 @@ export function applyProviderFlag(
       if (model) process.env.OPENAI_MODEL = model
       break
 
-    case 'openrouter':
-      process.env.CLAUDE_CODE_USE_OPENAI = '1'
-      process.env.OPENAI_BASE_URL ??= defaultBaseUrl ?? 'https://openrouter.ai/api/v1'
-      process.env.OPENAI_MODEL ??= defaultModel ?? 'openai/gpt-5-mini'
-      if (process.env.OPENROUTER_API_KEY && !process.env.OPENAI_API_KEY) {
-        process.env.OPENAI_API_KEY = process.env.OPENROUTER_API_KEY
-      }
-      if (model) process.env.OPENAI_MODEL = model
-      break
-
     case 'bankr':
       process.env.CLAUDE_CODE_USE_OPENAI = '1'
       process.env.OPENAI_BASE_URL ??= defaultBaseUrl ?? 'https://llm.bankr.bot/v1'
@@ -296,13 +287,8 @@ export function applyProviderFlag(
       if (defaultBaseUrl) {
         process.env.OPENAI_BASE_URL ??= defaultBaseUrl
       }
-      if (provider === 'kimi') {
-        process.env.OPENAI_MODEL ??= 'kimi-k2.6'
-      } else if (defaultModel) {
+      if (defaultModel) {
         process.env.OPENAI_MODEL ??= defaultModel
-      }
-      if (provider === 'kimi' && process.env.KIMI_API_KEY && !process.env.OPENAI_API_KEY) {
-        process.env.OPENAI_API_KEY = process.env.KIMI_API_KEY
       }
       if (model) process.env.OPENAI_MODEL = model
       break
@@ -314,6 +300,26 @@ export function applyProviderFlag(
       if (model) process.env.OPENAI_MODEL = model
       if (process.env.XAI_API_KEY && !process.env.OPENAI_API_KEY) {
         process.env.OPENAI_API_KEY = process.env.XAI_API_KEY
+      }
+      break
+
+    case 'xiaomi-mimo':
+      process.env.CLAUDE_CODE_USE_OPENAI = '1'
+      process.env.OPENAI_BASE_URL ??= defaultBaseUrl ?? 'https://api.xiaomimimo.com/v1'
+      process.env.OPENAI_MODEL ??= defaultModel ?? 'mimo-v2.5-pro'
+      if (model) process.env.OPENAI_MODEL = model
+      if (process.env.MIMO_API_KEY && !process.env.OPENAI_API_KEY) {
+        process.env.OPENAI_API_KEY = process.env.MIMO_API_KEY
+      }
+      break
+
+    case 'venice':
+      process.env.CLAUDE_CODE_USE_OPENAI = '1'
+      process.env.OPENAI_BASE_URL ??= defaultBaseUrl ?? 'https://api.venice.ai/api/v1'
+      process.env.OPENAI_MODEL ??= defaultModel ?? 'venice-uncensored'
+      if (model) process.env.OPENAI_MODEL = model
+      if (process.env.VENICE_API_KEY && !process.env.OPENAI_API_KEY) {
+        process.env.OPENAI_API_KEY = process.env.VENICE_API_KEY
       }
       break
   }
