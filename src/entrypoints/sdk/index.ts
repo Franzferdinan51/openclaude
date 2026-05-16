@@ -24,15 +24,25 @@ import { init } from '../init.js'
  * If any resolved to a stub, it means a TUI dependency leaked through.
  */
 function detectStubLeaks(): void {
-  const criticalImports: Array<{ name: string; mod: Record<string, unknown> }> = [
+  const criticalImports: Array<{ name: string; getMod: () => Record<string, unknown> }> = [
     // QueryEngine is the core SDK engine — must never be a stub
-    { name: 'QueryEngine', mod: QueryEngine as unknown as Record<string, unknown> },
+    { name: 'QueryEngine', getMod: () => QueryEngine as unknown as Record<string, unknown> },
     // These are imported by this file and must be real modules, not stubs
-    { name: 'getTools', mod: getTools as unknown as Record<string, unknown> },
-    { name: 'init', mod: init as unknown as Record<string, unknown> },
+    { name: 'getTools', getMod: () => getTools as unknown as Record<string, unknown> },
+    { name: 'init', getMod: () => init as unknown as Record<string, unknown> },
   ]
 
-  for (const { name, mod } of criticalImports) {
+  for (const { name, getMod } of criticalImports) {
+    let mod: Record<string, unknown>
+    try {
+      mod = getMod()
+    } catch (error) {
+      if (error instanceof ReferenceError) {
+        continue
+      }
+      throw error
+    }
+
     if ('__stub' in mod && mod.__stub === true) {
       throw new Error(
         `SDK init error: "${name}" resolved to a build stub at runtime. ` +

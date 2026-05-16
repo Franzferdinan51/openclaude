@@ -2,10 +2,34 @@
 import { z } from 'zod/v4'
 import { buildTool, type ToolDef } from '../../Tool.js'
 import { lazySchema } from '../../utils/lazySchema.js'
-import { readFileSync, existsSync, readdirSync } from 'fs'
+import { readFileSync, existsSync, mkdirSync, writeFileSync } from 'fs'
+import { homedir } from 'os'
 import { resolve, dirname, join } from 'path'
+import { getClaudeConfigHomeDir } from '../../utils/envUtils.js'
 
-const CONTEXT_DIR = resolve(process.env.HOME ?? '~', '.config/openclaude/context')
+const contextToolDeps: {
+  getClaudeConfigHomeDir: () => string
+  homedir: () => string
+} = {
+  getClaudeConfigHomeDir,
+  homedir,
+}
+
+export function setContextToolTestDeps(
+  overrides: Partial<typeof contextToolDeps> | null,
+): void {
+  Object.assign(contextToolDeps, {
+    getClaudeConfigHomeDir,
+    homedir,
+    ...(overrides ?? {}),
+  })
+}
+
+export function getContextToolDir(
+  configHomeDir = contextToolDeps.getClaudeConfigHomeDir(),
+): string {
+  return join(configHomeDir, 'context')
+}
 
 // Hierarchical context loading: global → workspace → JIT
 function loadContextFile(path: string): string | null {
@@ -17,11 +41,14 @@ function loadContextFile(path: string): string | null {
   return null
 }
 
-function scanContextFiles(projectPath: string): { path: string; content: string; level: string }[] {
+export function scanContextFiles(
+  projectPath: string,
+  options?: { contextDir?: string; homeDir?: string },
+): { path: string; content: string; level: string }[] {
   const results: { path: string; content: string; level: string }[] = []
   
   // Global context
-  const globalFile = resolve(CONTEXT_DIR, 'global.md')
+  const globalFile = resolve(options?.contextDir ?? getContextToolDir(), 'global.md')
   const globalContent = loadContextFile(globalFile)
   if (globalContent) results.push({ path: globalFile, content: globalContent, level: 'global' })
 
@@ -42,7 +69,7 @@ function scanContextFiles(projectPath: string): { path: string; content: string;
 
   // JIT context (parent directories up to $HOME)
   let current = dirname(projectPath)
-  const home = process.env.HOME ?? '~'
+  const home = options?.homeDir ?? contextToolDeps.homedir()
   while (current && current !== home && current !== '/') {
     for (const name of commonNames) {
       const p = resolve(current, name)
@@ -55,6 +82,20 @@ function scanContextFiles(projectPath: string): { path: string; content: string;
   }
 
   return results
+}
+
+export function writeContextToolFile(
+  filePath: string,
+  content: string,
+  mode: 'append' | 'create',
+): void {
+  mkdirSync(dirname(filePath), { recursive: true })
+  if (mode === 'append') {
+    const existing = existsSync(filePath) ? readFileSync(filePath, 'utf8') : ''
+    writeFileSync(filePath, existing + '\n' + content, 'utf8')
+    return
+  }
+  writeFileSync(filePath, content, 'utf8')
 }
 
 const inputSchema = lazySchema(() =>
@@ -127,12 +168,10 @@ export const ContextTool = buildTool({
       case 'append': {
         if (!content) return { data: { success: false, action: 'append', error: 'content required' } }
         const filePath = level === 'global'
-          ? resolve(CONTEXT_DIR, 'global.md')
+          ? resolve(getContextToolDir(), 'global.md')
           : resolve(projectPath, '.duckhive.md')
         try {
-          const existing = existsSync(filePath) ? readFileSync(filePath, 'utf8') : ''
-          const newContent = existing + '\n' + content
-          require('fs').writeFileSync(filePath, newContent, 'utf8')
+          writeContextToolFile(filePath, content, 'append')
           return { data: { success: true, action: 'append', appended: true } }
         } catch (err) {
           return { data: { success: false, action: 'append', error: String(err) } }
@@ -141,11 +180,10 @@ export const ContextTool = buildTool({
       case 'create': {
         if (!content) return { data: { success: false, action: 'create', error: 'content required' } }
         const filePath = level === 'global'
-          ? resolve(CONTEXT_DIR, 'global.md')
+          ? resolve(getContextToolDir(), 'global.md')
           : resolve(projectPath, '.duckhive.md')
         try {
-          require('fs').mkdirSync(dirname(filePath), { recursive: true })
-          require('fs').writeFileSync(filePath, content, 'utf8')
+          writeContextToolFile(filePath, content, 'create')
           return { data: { success: true, action: 'create', appended: true } }
         } catch (err) {
           return { data: { success: false, action: 'create', error: String(err) } }

@@ -6,6 +6,7 @@
 
 import { writeFileSync, readFileSync, existsSync, mkdirSync } from 'fs'
 import { resolve, dirname } from 'path'
+import { getClaudeConfigHomeDir } from '../../utils/envUtils.js'
 
 export interface Checkpoint {
   id: string
@@ -30,7 +31,7 @@ export interface CheckpointManagerConfig {
 }
 
 const DEFAULT_CONFIG = {
-  checkpointDir: resolve(process.env.HOME ?? '~', '.config/openclaude/checkpoints'),
+  checkpointDir: resolve(getClaudeConfigHomeDir(), 'checkpoints'),
   maxCheckpoints: 50,
   autoSave: true,
   autoSaveInterval: 60000, // 1 minute

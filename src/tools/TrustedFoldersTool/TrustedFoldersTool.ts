@@ -2,10 +2,40 @@
 import { z } from 'zod/v4'
 import { buildTool, type ToolDef } from '../../Tool.js'
 import { lazySchema } from '../../utils/lazySchema.js'
+import { homedir } from 'os'
 import { writeFileSync, readFileSync, mkdirSync } from 'fs'
-import { resolve } from 'path'
+import { join, dirname } from 'path'
+import { getClaudeConfigHomeDir } from '../../utils/envUtils.js'
 
-const CONFIG_FILE = resolve(process.env.HOME ?? '~', '.config/openclaude/trusted-folders.json')
+const trustedFoldersDeps: {
+  getClaudeConfigHomeDir: () => string
+  homedir: () => string
+} = {
+  getClaudeConfigHomeDir,
+  homedir,
+}
+
+export function setTrustedFoldersToolTestDeps(
+  overrides: Partial<typeof trustedFoldersDeps> | null,
+): void {
+  Object.assign(trustedFoldersDeps, {
+    getClaudeConfigHomeDir,
+    homedir,
+    ...(overrides ?? {}),
+  })
+}
+
+export function getTrustedFoldersConfigPath(
+  configHomeDir = trustedFoldersDeps.getClaudeConfigHomeDir(),
+): string {
+  return join(configHomeDir, 'trusted-folders.json')
+}
+
+export function getLegacyTrustedFoldersConfigPath(
+  homeDir = trustedFoldersDeps.homedir(),
+): string {
+  return join(homeDir, '.claude', 'trusted-folders.json')
+}
 
 const inputSchema = lazySchema(() =>
   z.strictObject({
@@ -28,13 +58,26 @@ const outputSchema = lazySchema(() =>
 type OutputSchema = ReturnType<typeof outputSchema>
 type Output = z.infer<OutputSchema>
 
-function loadConfig(): { paths: string[]; enabled: boolean } {
-  try { return JSON.parse(readFileSync(CONFIG_FILE, 'utf8')) } catch { return { paths: [], enabled: false } }
+export function loadTrustedFoldersConfig(
+  configPaths = [
+    getTrustedFoldersConfigPath(),
+    getLegacyTrustedFoldersConfigPath(),
+  ],
+): { paths: string[]; enabled: boolean } {
+  for (const configPath of configPaths) {
+    try {
+      return JSON.parse(readFileSync(configPath, 'utf8'))
+    } catch {}
+  }
+  return { paths: [], enabled: false }
 }
 
-function saveConfig(cfg: { paths: string[]; enabled: boolean }) {
-  mkdirSync(resolve(CONFIG_FILE, '..'), { recursive: true })
-  writeFileSync(CONFIG_FILE, JSON.stringify(cfg, null, 2), 'utf8')
+export function saveTrustedFoldersConfig(
+  cfg: { paths: string[]; enabled: boolean },
+  configPath = getTrustedFoldersConfigPath(),
+) {
+  mkdirSync(dirname(configPath), { recursive: true })
+  writeFileSync(configPath, JSON.stringify(cfg, null, 2), 'utf8')
 }
 
 export const TrustedFoldersTool = buildTool({
@@ -47,7 +90,7 @@ export const TrustedFoldersTool = buildTool({
   isReadOnly(input) { return input.action === 'list' || input.action === 'check' },
   async call(input, context, canUseTool, parentMessage) {
     const { action, path } = input
-    const cfg = loadConfig()
+    const cfg = loadTrustedFoldersConfig()
 
     switch (action) {
       case 'list':
@@ -55,13 +98,13 @@ export const TrustedFoldersTool = buildTool({
       case 'add': {
         if (!path) return { data: { success: false, action: 'add', error: 'path required' } }
         if (!cfg.paths.includes(path)) cfg.paths.push(path)
-        saveConfig(cfg)
+        saveTrustedFoldersConfig(cfg)
         return { data: { success: true, action: 'add', paths: cfg.paths } }
       }
       case 'remove': {
         if (!path) return { data: { success: false, action: 'remove', error: 'path required' } }
         cfg.paths = cfg.paths.filter(p => p !== path)
-        saveConfig(cfg)
+        saveTrustedFoldersConfig(cfg)
         return { data: { success: true, action: 'remove', paths: cfg.paths } }
       }
       case 'check': {
@@ -71,11 +114,11 @@ export const TrustedFoldersTool = buildTool({
       }
       case 'enable':
         cfg.enabled = true
-        saveConfig(cfg)
+        saveTrustedFoldersConfig(cfg)
         return { data: { success: true, action: 'enable', enabled: true } }
       case 'disable':
         cfg.enabled = false
-        saveConfig(cfg)
+        saveTrustedFoldersConfig(cfg)
         return { data: { success: true, action: 'disable', enabled: false } }
       default:
         return { data: { success: false, action, error: `Unknown action: ${action}` } }

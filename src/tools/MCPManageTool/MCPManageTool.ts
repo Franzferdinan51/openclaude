@@ -3,9 +3,29 @@ import { z } from 'zod/v4'
 import { buildTool, type ToolDef } from '../../Tool.js'
 import { lazySchema } from '../../utils/lazySchema.js'
 import { writeFileSync, readFileSync, mkdirSync } from 'fs'
-import { resolve } from 'path'
+import { dirname, join } from 'path'
+import { getClaudeConfigHomeDir } from '../../utils/envUtils.js'
 
-const MCP_CONFIG = resolve(process.env.HOME ?? '~', '.config/openclaude/mcp-servers.json')
+const mcpManageDeps: {
+  getClaudeConfigHomeDir: () => string
+} = {
+  getClaudeConfigHomeDir,
+}
+
+export function setMcpManageToolTestDeps(
+  overrides: Partial<typeof mcpManageDeps> | null,
+): void {
+  Object.assign(mcpManageDeps, {
+    getClaudeConfigHomeDir,
+    ...(overrides ?? {}),
+  })
+}
+
+export function getMcpManageConfigPath(
+  configHomeDir = mcpManageDeps.getClaudeConfigHomeDir(),
+): string {
+  return join(configHomeDir, 'mcp-servers.json')
+}
 
 const inputSchema = lazySchema(() =>
   z.strictObject({
@@ -30,13 +50,22 @@ const outputSchema = lazySchema(() =>
 type OutputSchema = ReturnType<typeof outputSchema>
 type Output = z.infer<OutputSchema>
 
-function loadServers(): Record<string, unknown> {
-  try { return JSON.parse(readFileSync(MCP_CONFIG, 'utf8')) } catch { return {} }
+export function loadMcpManageServers(
+  configPath = getMcpManageConfigPath(),
+): Record<string, unknown> {
+  try {
+    return JSON.parse(readFileSync(configPath, 'utf8'))
+  } catch {
+    return {}
+  }
 }
 
-function saveServers(servers: Record<string, unknown>) {
-  mkdirSync(resolve(MCP_CONFIG, '..'), { recursive: true })
-  writeFileSync(MCP_CONFIG, JSON.stringify(servers, null, 2), 'utf8')
+export function saveMcpManageServers(
+  servers: Record<string, unknown>,
+  configPath = getMcpManageConfigPath(),
+) {
+  mkdirSync(dirname(configPath), { recursive: true })
+  writeFileSync(configPath, JSON.stringify(servers, null, 2), 'utf8')
 }
 
 export const MCPManageTool = buildTool({
@@ -49,7 +78,7 @@ export const MCPManageTool = buildTool({
   isReadOnly(input) { return input.action === 'list' || input.action === 'health' },
   async call(input, context, canUseTool, parentMessage) {
     const { action, name, transport, url } = input
-    const servers = loadServers() as Record<string, { type?: string; command?: string; url?: string }>
+    const servers = loadMcpManageServers() as Record<string, { type?: string; command?: string; url?: string }>
 
     switch (action) {
       case 'list':
@@ -57,13 +86,13 @@ export const MCPManageTool = buildTool({
       case 'add': {
         if (!name || !transport) return { data: { success: false, action: 'add', error: 'name and transport required' } }
         servers[name] = transport === 'stdio' ? { type: 'stdio', command: url } : { type: transport, url }
-        saveServers(servers)
+        saveMcpManageServers(servers)
         return { data: { success: true, action: 'add' } }
       }
       case 'remove': {
         if (!name) return { data: { success: false, action: 'remove', error: 'name required' } }
         delete servers[name]
-        saveServers(servers)
+        saveMcpManageServers(servers)
         return { data: { success: true, action: 'remove' } }
       }
       case 'health':

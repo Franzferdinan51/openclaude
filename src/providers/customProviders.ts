@@ -15,6 +15,7 @@
 import { existsSync } from 'fs'
 import { readFileSync, writeFileSync, mkdirSync } from 'fs'
 import { join } from 'path'
+import { getClaudeConfigHomeDir } from '../utils/envUtils.js'
 import { safeParseJSON } from '../utils/json.js'
 
 // ---------------------------------------------------------------------------
@@ -45,16 +46,19 @@ export interface CustomProvidersState {
 // Constants
 // ---------------------------------------------------------------------------
 
-const CUSTOM_PROVIDERS_FILE = join(process.env.HOME ?? '~', '.duckhive', 'custom-providers.json')
 const GENERIC_LABEL = 'openai-compatible'
 const HEALTH_CHECK_TIMEOUT_MS = 8000
+
+export function getCustomProvidersFilePath(): string {
+  return join(getClaudeConfigHomeDir(), 'custom-providers.json')
+}
 
 // ---------------------------------------------------------------------------
 // Core I/O
 // ---------------------------------------------------------------------------
 
 function ensureDir(): void {
-  const dir = join(process.env.HOME ?? '~', '.duckhive')
+  const dir = getClaudeConfigHomeDir()
   if (!existsSync(dir)) {
     mkdirSync(dir, { recursive: true })
   }
@@ -62,10 +66,11 @@ function ensureDir(): void {
 
 function loadState(): CustomProvidersState {
   try {
-    if (!existsSync(CUSTOM_PROVIDERS_FILE)) {
+    const customProvidersFile = getCustomProvidersFilePath()
+    if (!existsSync(customProvidersFile)) {
       return { providers: [], version: 1 }
     }
-    const raw = readFileSync(CUSTOM_PROVIDERS_FILE, 'utf-8')
+    const raw = readFileSync(customProvidersFile, 'utf-8')
     const parsed = safeParseJSON(raw) as CustomProvidersState | null
     if (!parsed || !Array.isArray(parsed.providers)) {
       return { providers: [], version: 1 }
@@ -78,7 +83,7 @@ function loadState(): CustomProvidersState {
 
 function saveState(state: CustomProvidersState): void {
   ensureDir()
-  writeFileSync(CUSTOM_PROVIDERS_FILE, JSON.stringify(state, null, 2), 'utf-8')
+  writeFileSync(getCustomProvidersFilePath(), JSON.stringify(state, null, 2), 'utf-8')
 }
 
 // ---------------------------------------------------------------------------
@@ -225,6 +230,10 @@ export function getCustomProviderModels() {
 // ---------------------------------------------------------------------------
 
 let loaded = false
+
+export function resetCustomProvidersForTesting(): void {
+  loaded = false
+}
 
 /**
  * Load custom providers at startup and log health status.
