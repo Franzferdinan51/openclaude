@@ -81,11 +81,12 @@ async function main(): Promise<void> {
     const { applyDefaultCliEnvironment } = await import('../utils/defaultCliEnvironment.js')
     applyDefaultCliEnvironment()
   }
-  const { shouldSkipProviderStartup } = await import('./providerStartupGate.js')
+  const { isVersionRequest, shouldSkipProviderStartup } = await import('./providerStartupGate.js')
   const skipProviderStartup = shouldSkipProviderStartup(args)
 
-  // Fast-path for --version/-v: zero module loading needed
-  if (args.length === 1 && (args[0] === '--version' || args[0] === '-v' || args[0] === '-V')) {
+  // Fast-path for --version/-v: avoid provider startup even when combined
+  // with startup-only flags like --yolo.
+  if (isVersionRequest(args)) {
     // MACRO.VERSION is inlined at build time
     // biome-ignore lint/suspicious/noConsole:: intentional console output
     console.log(`${MACRO.DISPLAY_VERSION ?? MACRO.VERSION} (DuckHive)`);

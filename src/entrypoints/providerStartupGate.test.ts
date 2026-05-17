@@ -1,10 +1,26 @@
 import { expect, test } from 'bun:test'
-import { shouldSkipProviderStartup } from './providerStartupGate.js'
+import {
+  isVersionRequest,
+  shouldSkipProviderStartup,
+} from './providerStartupGate.js'
+
+test('detects version requests even when combined with startup-only flags', () => {
+  expect(isVersionRequest(['--version'])).toBe(true)
+  expect(isVersionRequest(['--yolo', '--version'])).toBe(true)
+  expect(isVersionRequest(['--dangerously-skip-permissions', '-v'])).toBe(true)
+  expect(isVersionRequest(['--help'])).toBe(false)
+})
 
 test('skips provider startup for help output', () => {
   expect(shouldSkipProviderStartup(['--help'])).toBe(true)
   expect(shouldSkipProviderStartup(['tui', '--help'])).toBe(true)
   expect(shouldSkipProviderStartup(['-h'])).toBe(true)
+})
+
+test('skips provider startup for version output', () => {
+  expect(shouldSkipProviderStartup(['--version'])).toBe(true)
+  expect(shouldSkipProviderStartup(['--yolo', '--version'])).toBe(true)
+  expect(shouldSkipProviderStartup(['--dangerously-skip-permissions', '-v'])).toBe(true)
 })
 
 test('skips provider startup for utility commands', () => {

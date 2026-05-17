@@ -13,8 +13,12 @@ const PROVIDER_FREE_COMMANDS = new Set([
   'upgrade',
 ])
 
+export function isVersionRequest(args: readonly string[]): boolean {
+  return args.some(arg => arg === '--version' || arg === '-v' || arg === '-V')
+}
+
 export function shouldSkipProviderStartup(args: string[]): boolean {
-  if (args.includes('--help') || args.includes('-h')) {
+  if (args.includes('--help') || args.includes('-h') || isVersionRequest(args)) {
     return true
   }
 
