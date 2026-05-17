@@ -68,7 +68,7 @@ let ITermBackendClass: (new () => PaneBackend) | null = null
 /**
  * Ensures backend classes are dynamically imported so getBackendByType() can
  * construct them. Unlike detectAndGetBackend(), this never spawns subprocesses
- * and never throws — it's the lightweight option when you only need class
+ * and never throws - it's the lightweight option when you only need class
  * registration (e.g., killing a pane by its stored backendType).
  */
 export async function ensureBackendsRegistered(): Promise<void> {
@@ -263,24 +263,24 @@ function getTmuxInstallInstructions(): string {
     case 'macos':
       return `To use agent swarms, install tmux:
   brew install tmux
-Then start a tmux session with: tmux new-session -s claude`
+Then start a tmux session with: tmux new-session -s duckhive`
 
     case 'linux':
     case 'wsl':
       return `To use agent swarms, install tmux:
   sudo apt install tmux    # Ubuntu/Debian
   sudo dnf install tmux    # Fedora/RHEL
-Then start a tmux session with: tmux new-session -s claude`
+Then start a tmux session with: tmux new-session -s duckhive`
 
     case 'windows':
       return `To use agent swarms, you need tmux which requires WSL (Windows Subsystem for Linux).
 Install WSL first, then inside WSL run:
   sudo apt install tmux
-Then start a tmux session with: tmux new-session -s claude`
+Then start a tmux session with: tmux new-session -s duckhive`
 
     default:
       return `To use agent swarms, install tmux using your system's package manager.
-Then start a tmux session with: tmux new-session -s claude`
+Then start a tmux session with: tmux new-session -s duckhive`
   }
 }
 

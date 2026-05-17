@@ -10,6 +10,7 @@ const terminalUiFiles = [
   'src/utils/statusNoticeDefinitions.tsx',
   'src/commands/plugin/BrowseMarketplace.tsx',
   'src/channels/TelegramAdapter.ts',
+  'src/utils/swarm/backends/registry.ts',
   'tui/model.go',
   'tui/model/state.go',
   'tui/view.go',
@@ -28,6 +29,7 @@ describe('terminal UI text hygiene', () => {
       }
       expect(source, relativePath).not.toContain('claude /logout')
       expect(source, relativePath).not.toContain('openclaude /logout')
+      expect(source, relativePath).not.toContain('tmux new-session -s claude')
       expect(source, relativePath).not.toContain('claude-opus-4.6')
       expect(source, relativePath).not.toContain('v0.9.1')
     }
