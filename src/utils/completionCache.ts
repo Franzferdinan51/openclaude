@@ -83,7 +83,7 @@ export async function setupShellCompletion(theme: ThemeName): Promise<string> {
     await mkdir(dirname(shell.cacheFile), { recursive: true })
   } catch (e: unknown) {
     logError(e)
-    return `${EOL}${color('warning', theme)(`Could not write ${shell.name} completion cache`)}${EOL}${chalk.dim(`Run manually: claude completion ${shell.shellFlag} > ${shell.cacheFile}`)}${EOL}`
+    return `${EOL}${color('warning', theme)(`Could not write ${shell.name} completion cache`)}${EOL}${chalk.dim(`Run manually: duckhive completion ${shell.shellFlag} > ${shell.cacheFile}`)}${EOL}`
   }
 
   // Generate the completion script by writing directly to the cache file.
@@ -97,7 +97,7 @@ export async function setupShellCompletion(theme: ThemeName): Promise<string> {
     shell.cacheFile,
   ])
   if (result.code !== 0) {
-    return `${EOL}${color('warning', theme)(`Could not generate ${shell.name} shell completions`)}${EOL}${chalk.dim(`Run manually: claude completion ${shell.shellFlag} > ${shell.cacheFile}`)}${EOL}`
+    return `${EOL}${color('warning', theme)(`Could not generate ${shell.name} shell completions`)}${EOL}${chalk.dim(`Run manually: duckhive completion ${shell.shellFlag} > ${shell.cacheFile}`)}${EOL}`
   }
 
   // Check if rc file already sources completions
@@ -123,7 +123,7 @@ export async function setupShellCompletion(theme: ThemeName): Promise<string> {
     await mkdir(configDir, { recursive: true })
 
     const separator = existing && !existing.endsWith('\n') ? '\n' : ''
-    const content = `${existing}${separator}\n# Claude Code shell completions\n${shell.completionLine}\n`
+    const content = `${existing}${separator}\n# DuckHive shell completions\n${shell.completionLine}\n`
     await writeFile(shell.rcFile, content, { encoding: 'utf-8' })
 
     return `${EOL}${color('success', theme)(`Installed ${shell.name} shell completions`)}${EOL}${chalk.dim(`Added to ${formatPathLink(shell.rcFile)}`)}${EOL}${chalk.dim(`Run: source ${shell.rcFile}`)}${EOL}`
@@ -135,7 +135,7 @@ export async function setupShellCompletion(theme: ThemeName): Promise<string> {
 
 /**
  * Regenerate cached shell completion scripts in ~/.claude/.
- * Called after `claude update` so completions stay in sync with the new binary.
+ * Called after `duckhive update` so completions stay in sync with the new binary.
  */
 export async function regenerateCompletionCache(): Promise<void> {
   const shell = detectShell()

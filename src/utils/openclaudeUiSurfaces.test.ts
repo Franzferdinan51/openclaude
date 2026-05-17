@@ -218,3 +218,14 @@ describe('DuckHive remote auth surfaces', () => {
     expect(combined).not.toContain('Anthropic Console key')
   })
 })
+
+describe('DuckHive completion guidance surfaces', () => {
+  test('shell completion recovery text uses the DuckHive command', () => {
+    const source = readFileSync(join(repoRoot, 'src', 'utils', 'completionCache.ts'), 'utf8')
+
+    expect(source).toContain('duckhive completion')
+    expect(source).toContain('DuckHive shell completions')
+    expect(source).not.toContain('Run manually: claude completion')
+    expect(source).not.toContain('Claude Code shell completions')
+  })
+})
