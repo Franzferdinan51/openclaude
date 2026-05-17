@@ -75,6 +75,45 @@ describe('/android command', () => {
     expect(shell.value).toContain('Android shell')
   })
 
+  test('preserves escaped quotes in text input', async () => {
+    const commands: string[] = []
+    setAndroidTestDeps({
+      exec: (command: string) => {
+        commands.push(command)
+        if (command === 'adb devices -l') {
+          return 'List of devices attached\n192.168.1.251:40835 device\n'
+        }
+        return 'ok'
+      },
+    })
+
+    const result = await call('text "hello \\"duck\\" hive"', {} as never)
+
+    expect(result.type).toBe('text')
+    if (result.type !== 'text') throw new Error('unexpected result type')
+    expect(result.value).toContain('hello "duck" hive')
+    expect(commands).toContain(
+      'adb -s 192.168.1.251:40835 shell input text "hello%s"duck"%shive"',
+    )
+  })
+
+  test('rejects unterminated quotes before running adb commands', async () => {
+    const commands: string[] = []
+    setAndroidTestDeps({
+      exec: (command: string) => {
+        commands.push(command)
+        return 'unexpected'
+      },
+    })
+
+    const result = await call('text "unfinished message', {} as never)
+
+    expect(result.type).toBe('text')
+    if (result.type !== 'text') throw new Error('unexpected result type')
+    expect(result.value).toContain('Unterminated quoted string in /android arguments')
+    expect(commands).toEqual([])
+  })
+
   test('returns usage for invalid input', async () => {
     const result = await call('tap nope 10', {} as never)
     expect(result.type).toBe('text')

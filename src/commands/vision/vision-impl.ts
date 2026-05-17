@@ -18,12 +18,65 @@ export function setVisionTestDeps(overrides: Partial<VisionDeps> | null): void {
   visionTestDeps = overrides
 }
 
-function splitCommandArgs(args: string): string[] {
-  return (
-    args.match(/"[^"]*"|'[^']*'|\S+/g)?.map(arg =>
-      arg.replace(/^["']|["']$/g, ''),
-    ) ?? []
-  )
+function splitCommandArgs(args: string): { args: string[]; error?: string } {
+  const tokens: string[] = []
+  let current = ''
+  let quote: '"' | "'" | null = null
+  let escaping = false
+
+  for (const char of args) {
+    if (escaping) {
+      current += char
+      escaping = false
+      continue
+    }
+
+    if (char === '\\') {
+      escaping = true
+      continue
+    }
+
+    if (quote) {
+      if (char === quote) {
+        quote = null
+      } else {
+        current += char
+      }
+      continue
+    }
+
+    if (char === '"' || char === "'") {
+      quote = char
+      continue
+    }
+
+    if (/\s/.test(char)) {
+      if (current) {
+        tokens.push(current)
+        current = ''
+      }
+      continue
+    }
+
+    current += char
+  }
+
+  if (escaping) {
+    current += '\\'
+  }
+
+  if (quote) {
+    return {
+      args: [],
+      error: `Unterminated quoted string in /vision arguments. Close the ${quote} quote and try again.`,
+    }
+  }
+
+  if (current) {
+    tokens.push(current)
+  }
+
+  return { args: tokens }
 }
 
 function usage(error?: string): string {
@@ -45,7 +98,11 @@ function usage(error?: string): string {
 
 export const call: LocalCommandCall = async (args: string) => {
   const exec = getVisionDeps().exec
-  const tokens = splitCommandArgs(args)
+  const parsed = splitCommandArgs(args)
+  if (parsed.error) {
+    return { type: 'text', value: usage(parsed.error) }
+  }
+  const tokens = parsed.args
   const subcommand = tokens[0]?.toLowerCase() ?? ''
   const device = '192.168.1.251:40835'
 

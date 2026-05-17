@@ -59,6 +59,53 @@ describe('/shadow command', () => {
     expect(result.value).toContain('before provider changes')
   })
 
+  test('preserves escaped quotes in checkpoint messages', async () => {
+    let checkpointMessage = ''
+    setShadowTestDeps({
+      createShadowGit: () =>
+        ({
+          checkpoint: (message: string) => {
+            checkpointMessage = message
+            return {
+              id: 'ckpt_quotes',
+              timestamp: Date.UTC(2026, 0, 2),
+              message,
+              files: [],
+              commitHash: 'def456',
+              projectPath: '/repo',
+            }
+          },
+        }) as never,
+    })
+
+    const result = await call('checkpoint "before \\"provider\\" changes"', {} as never)
+
+    expect(result.type).toBe('text')
+    if (result.type !== 'text') throw new Error('unexpected result type')
+    expect(result.value).toContain('before "provider" changes')
+    expect(checkpointMessage).toBe('before "provider" changes')
+  })
+
+  test('rejects unterminated quotes before creating a checkpoint', async () => {
+    let checkpointCalled = false
+    setShadowTestDeps({
+      createShadowGit: () =>
+        ({
+          checkpoint: () => {
+            checkpointCalled = true
+            return null
+          },
+        }) as never,
+    })
+
+    const result = await call('checkpoint "unfinished message', {} as never)
+
+    expect(result.type).toBe('text')
+    if (result.type !== 'text') throw new Error('unexpected result type')
+    expect(result.value).toContain('Unterminated quoted string in /shadow arguments')
+    expect(checkpointCalled).toBe(false)
+  })
+
   test('restores a checkpoint with optional file targeting', async () => {
     let restoredFile: string | undefined
     setShadowTestDeps({

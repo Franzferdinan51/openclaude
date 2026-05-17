@@ -35,6 +35,34 @@ describe('/vision command', () => {
     expect(result.value).toContain('Describe the screenshot')
   })
 
+  test('preserves escaped quotes in analysis prompts', async () => {
+    const result = await call(
+      'analyze "Describe the \\"duck\\" screenshot"',
+      {} as never,
+    )
+
+    expect(result.type).toBe('text')
+    if (result.type !== 'text') throw new Error('unexpected result type')
+    expect(result.value).toContain('Describe the "duck" screenshot')
+  })
+
+  test('rejects unterminated quotes before running vision commands', async () => {
+    const commands: string[] = []
+    setVisionTestDeps({
+      exec: (command: string) => {
+        commands.push(command)
+        return ''
+      },
+    })
+
+    const result = await call('phone_tap "10 20', {} as never)
+
+    expect(result.type).toBe('text')
+    if (result.type !== 'text') throw new Error('unexpected result type')
+    expect(result.value).toContain('Unterminated quoted string in /vision arguments')
+    expect(commands).toEqual([])
+  })
+
   test('sends a phone tap', async () => {
     const commands: string[] = []
     setVisionTestDeps({
