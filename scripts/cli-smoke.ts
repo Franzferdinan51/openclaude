@@ -183,6 +183,27 @@ const cases: SmokeCase[] = [
         : 'Native OpenAI Codex computer-use requires macOS',
     ],
   },
+  {
+    name: 'top-level run help',
+    args: ['run', '--help'],
+    includes: [
+      'Agent Runs',
+      '/run list [status]',
+      '/run recover <id> [summary]',
+    ],
+  },
+  {
+    name: 'top-level run list',
+    args: ['runs', 'list'],
+    env: () => ({
+      CLAUDE_CONFIG_DIR: bgControlConfigDir,
+      CLAUDE_CODE_SYNC_PLUGIN_INSTALL_TIMEOUT_MS: '1',
+    }),
+    includes: [
+      'Agent Runs',
+      'test prompt',
+    ],
+  },
 ]
 
 const failures: string[] = []

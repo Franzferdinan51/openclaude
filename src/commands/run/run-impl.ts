@@ -144,6 +144,10 @@ export const call: LocalCommandCall = async (args: string) => {
   const subcommand = tokens[0]?.toLowerCase()
   const store = resolveStore()
 
+  if (subcommand === 'help' || subcommand === '--help' || subcommand === '-h') {
+    return { type: 'text', value: usage() }
+  }
+
   if (!subcommand || subcommand === 'list') {
     if (tokens.length > 2) {
       return { type: 'text', value: usage('list accepts at most one optional status filter.') }

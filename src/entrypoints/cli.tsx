@@ -336,6 +336,20 @@ async function main(): Promise<void> {
     return;
   }
 
+  // Fast-path for shared AgentRun inspection/control outside the REPL.
+  if (args[0] === 'run' || args[0] === 'runs' || args[0] === 'agent-run') {
+    profileCheckpoint('cli_run_path');
+    const {
+      enableConfigs
+    } = await import('../utils/config.js');
+    enableConfigs();
+    const {
+      runHandler
+    } = await import('../cli/run.js');
+    await runHandler(args.slice(1));
+    return;
+  }
+
   // Fast-path for DuckHive AgentRun inspection/control.
   // These commands share the /run, Telegram, WebUI, and harness control plane.
   if (args[0] === 'ps' || args[0] === 'logs' || args[0] === 'attach' || args[0] === 'pause' || args[0] === 'resume' || args[0] === 'approve' || args[0] === 'recover' || args[0] === 'kill' || args.includes('--bg') || args.includes('--background')) {

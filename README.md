@@ -285,6 +285,11 @@ DuckHive's CLI surface for that same lifecycle is the consolidated `/run` comman
 /run recover <id> [summary]
 ```
 
+The same consolidated surface is available outside the REPL as
+`duckhive run ...`, `duckhive runs ...`, or `duckhive agent-run ...`; these
+commands share the same durable AgentRun store as `/run`, Telegram, WebUI,
+`duckhive ps/logs/attach/...`, and `--bg`.
+
 The terminal `/run` surface validates status filters against the real AgentRun lifecycle and clamps event tails to 200 rows, so mistyped statuses and unbounded tails do not silently hide runs or flood the CLI. Top-level terminal run controls are also wired into the same store for non-REPL use:
 
 ```bash
