@@ -240,6 +240,19 @@ describe('package consumer types', () => {
 })
 
 describe('package exports resolution', () => {
+  test('package identity and publish files match DuckHive runtime exports', () => {
+    const pkgJson = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf-8'))
+
+    expect(pkgJson.name).toBe('duckhive')
+    expect(pkgJson.bin?.duckhive).toBe('./bin/duckhive')
+    expect(pkgJson.files).toContain('bin/duckhive')
+    expect(pkgJson.files).toContain('dist/sdk.mjs')
+    expect(pkgJson.files).toContain('dist/harness.mjs')
+    expect(pkgJson.files).toContain('skills/newest-desktop-control/src/')
+    expect(pkgJson.files).not.toContain('bin/')
+    expect(pkgJson.files).not.toContain('skills/newest-desktop-control/')
+  })
+
   test('package.json export is defined in exports map', () => {
     // Read the package.json and verify exports structure
     const pkgJson = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf-8'))
