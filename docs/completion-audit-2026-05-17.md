@@ -8,7 +8,7 @@ covers the named requirement.
 
 | Requirement | Current evidence | Status |
 | --- | --- | --- |
-| Default Windows CLI must start without freezing and accept typing | `npm run smoke` passes `TextInput` buffered typing, Windows data-event stdin selection, Ink stdin delivery tests, and 65 CLI smoke cases plus Windows wrapper checks. | Verified |
+| Default Windows CLI must start without freezing and accept typing | `npm run smoke` passes `TextInput` buffered typing, Windows data-event stdin selection, Ink stdin delivery tests, and 66 CLI smoke cases plus Windows wrapper checks. | Verified |
 | Prompt submission must not crash with `Cannot read properties of undefined (reading '_zod')` | Built-in tool-schema conversion regression was added in `src/utils/api.test.ts`; the prompt-schema fix was committed as `9ed65d9`. | Verified by focused regression in prior pass |
 | `duckhive` command must resolve and report the DuckHive version | `node dist\cli.mjs runtime-doctor` reports `duckhive` on PATH targeting this checkout and version `0.13.0 (DuckHive)`. | Verified |
 | Version metadata and README must match the release | `package.json` and README now report `0.13.0`; `npm pack --dry-run --json` publishes `duckhive@0.13.0`. | Verified |
@@ -37,7 +37,7 @@ covers the named requirement.
 | SDK mutex tests must not mutate the process-global env mutex | The SDK shared mutex now exposes an isolated test-only mutex factory, and `tests\sdk\shared-utils.test.ts` exercises timeout behavior without resetting the global mutex used by other tests. | Verified |
 | OpenGateway partner model catalog must be current | The `gitlawb-opengateway` preset now routes through `https://opengateway.gitlawb.com/v1`, maps to the OpenAI-compatible vendor, and exposes Gemini 3.1 Flash Lite Preview plus GLM 5.1 FP8 catalog entries. | Verified |
 | Other harnesses must be tracked for feature pulls | Live `git ls-remote` confirms Codex `main` at `e7bffc5a20e92cbc64d6c16a1b257d0b2e4cd5df`, OpenClaw `main` at `c93d6d8daa37fadbbd98611f08c7489b3dc14097`, and Hermes Agent `main` at `4c46c35ed0d3864f1cec55d87ab6d0f838ec7a2e`. | Tracked |
-| Windows TUI must be runnable | A local verified Go 1.26.3 toolchain built `tui\duckhive-tui.exe`; `node dist\cli.mjs runtime-doctor` now reports `Terminal TUI - Ready`; CLI smoke covers `duckhive tui --help` through both Node and Windows wrapper launch paths. | Verified binary readiness |
+| Windows TUI must be runnable | A local verified Go 1.26.3 toolchain built `tui\duckhive-tui.exe`; `node dist\cli.mjs runtime-doctor` now reports `Terminal TUI - Ready`; CLI smoke covers `duckhive tui --help` and provider-free `duckhive tui --snapshot` through both Node and Windows wrapper launch paths. | Verified binary readiness |
 | TUI tests must be verified | Local Go 1.26.3 ran `cd tui && go test ./...` successfully after fixing the stale header version, header wrap, and ASCII-safe empty-state/footer markers. | Verified |
 | Full repository test suite must be rerun after the latest packaging/TUI audit changes | `bun test` now reports `3226 pass`, `0 fail`, `8002 expect()` calls across 368 files. | Verified |
 
@@ -46,7 +46,7 @@ covers the named requirement.
 - `npm run typecheck`
 - `bun test`
 - `npm run build`
-- `npm run smoke` (`CLI smoke passed (65 commands plus Windows wrapper checks)`)
+- `npm run smoke` (`CLI smoke passed (66 commands plus Windows wrapper checks)`)
 - `npm run verify:privacy`
 - `node dist\cli.mjs runtime-doctor`
 - `npm pack --dry-run --json`
@@ -74,6 +74,6 @@ covers the named requirement.
 
 ## Open Work
 
-- Test `duckhive tui` manually from a real interactive PowerShell terminal. Non-interactive `--help` style launches enter the TUI and time out by design, while `runtime-doctor` verifies binary readiness.
+- Test full `duckhive tui` keyboard interaction manually from a real interactive PowerShell terminal. Non-interactive `duckhive tui --snapshot` now renders one TUI frame and exits for CI/log verification, while `runtime-doctor` verifies binary readiness.
 - Continue feature-by-feature upstream imports rather than merging upstream harnesses wholesale. DuckHive and OpenClaude histories are divergent, so release commits, branding changes, and unrelated upstream removals must be reviewed selectively.
 - Keep importing upstream features as independent, verified slices. The current tested state is green, but the product goal remains open-ended until each new upstream slice has its own impact analysis, implementation, and verification.

@@ -175,9 +175,21 @@ const cases: SmokeCase[] = [
     includes: [
       'Usage: duckhive tui',
       'Launch the DuckHive Bubble Tea TUI',
+      '--snapshot',
       'Windows-safe input path',
       'duckhive runtime-doctor',
     ],
+  },
+  {
+    name: 'tui snapshot',
+    args: ['tui', '--snapshot'],
+    timeoutMs: 30000,
+    includes: [
+      'DuckHive Super Agent',
+      'A quiet operator shell',
+      'ready | /help deck | /goal status',
+    ],
+    excludes: ['warning: no DUCKHIVE_BRIDGE_SOCKET'],
   },
   {
     name: 'background run list',
@@ -775,9 +787,21 @@ if (process.platform === 'win32') {
       includes: [
         'Usage: duckhive tui',
         'Launch the DuckHive Bubble Tea TUI',
+        '--snapshot',
         'Windows-safe input path',
         'duckhive runtime-doctor',
       ],
+    },
+    {
+      name: 'windows wrapper tui snapshot',
+      args: ['tui', '--snapshot'],
+      timeoutMs: 30000,
+      includes: [
+        'DuckHive Super Agent',
+        'A quiet operator shell',
+        'ready | /help deck | /goal status',
+      ],
+      excludes: ['warning: no DUCKHIVE_BRIDGE_SOCKET'],
     },
     {
       name: 'windows wrapper runtime doctor sees packaged tui',

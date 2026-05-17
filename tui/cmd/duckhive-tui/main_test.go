@@ -72,6 +72,18 @@ func TestParseUISwitchCommandUsesExplicitTargets(t *testing.T) {
 	}
 }
 
+func TestSnapshotRequestParser(t *testing.T) {
+	if !isSnapshotRequest([]string{"--snapshot"}) {
+		t.Fatal("--snapshot should enable snapshot mode")
+	}
+	if !isSnapshotRequest([]string{"snapshot"}) {
+		t.Fatal("snapshot should enable snapshot mode")
+	}
+	if isSnapshotRequest([]string{"--help"}) {
+		t.Fatal("--help should not enable snapshot mode")
+	}
+}
+
 func TestBuildLauncherEnvStripsTUIOnlyStateForLegacyHandoff(t *testing.T) {
 	t.Setenv("DUCKHIVE_AUTO_TUI", "1")
 	t.Setenv("DUCKHIVE_DEFAULT_UI_SURFACE", "tui")

@@ -118,6 +118,11 @@ const (
 )
 
 func main() {
+	if isSnapshotRequest(os.Args[1:]) {
+		runSnapshot()
+		return
+	}
+
 	var adapter *bridge.Adapter
 	if socketPath := os.Getenv("DUCKHIVE_BRIDGE_SOCKET"); socketPath != "" {
 		adapter = bridge.NewAdapter(socketPath)
@@ -159,6 +164,33 @@ func main() {
 		}
 		os.Exit(exitCode)
 	}
+}
+
+func isSnapshotRequest(args []string) bool {
+	for _, arg := range args {
+		switch arg {
+		case "--snapshot", "snapshot":
+			return true
+		}
+	}
+	return false
+}
+
+func runSnapshot() {
+	m := &MainModel{
+		state:         model.NewAppState(),
+		msgList:       components.NewMessageList(100, 28),
+		input:         components.NewInputArea(100, 3),
+		keys:          tui.DefaultKeyMap(),
+		welcome:       screens.NewWelcomeModel(),
+		transcript:    screens.NewTranscriptPanel(),
+		showInspector: false,
+		width:         100,
+		height:        32,
+	}
+	m.settings = screens.NewSettingsScreen(&m.state)
+	_ = m.Init()
+	fmt.Print(m.View())
 }
 
 // Init implements tea.Model.

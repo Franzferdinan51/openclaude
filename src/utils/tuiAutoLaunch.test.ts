@@ -5,6 +5,7 @@ import {
   getDefaultStandaloneTuiBridgeArgs,
   getStandaloneTuiBuildCommand,
   getStandaloneTuiExecutablePath,
+  launchStandaloneTui,
   resolveDuckHiveBaseDir,
   shouldUseStandaloneTuiHelper,
   shouldAutoLaunchStandaloneTui,
@@ -176,4 +177,16 @@ test('skips the PTY helper when the escape hatch is set', () => {
       () => true,
     ),
   ).toBe(false)
+})
+
+test('snapshot launch bypasses the PTY helper and exits from the TUI binary', async () => {
+  const ok = await launchStandaloneTui(process.cwd(), {
+    args: ['--snapshot'],
+    env: {
+      DUCKHIVE_TUI_DIRECT: '0',
+      DUCKHIVE_TUI_SKIP_PTY_HELPER: '0',
+    },
+  })
+
+  expect(ok).toBe(true)
 })

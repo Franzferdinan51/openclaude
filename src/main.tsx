@@ -3883,11 +3883,14 @@ async function run(): Promise<CommanderCommand> {
 
   program.command('tui')
     .description('Launch the DuckHive Bubble Tea TUI')
+    .option('--snapshot', 'Render one non-interactive TUI frame and exit for smoke tests')
     .addHelpText('after', `
 Details:
   duckhive tui launches the standalone Go/Bubble Tea terminal UI when the
   checked-in binary exists. If the binary is missing and Go is installed,
   DuckHive attempts to build it from ./tui on demand.
+  Use duckhive tui --snapshot to render one provider-free frame for CI and
+  terminal diagnostics without entering the full-screen app.
 
 Windows:
   Plain duckhive startup stays on the classic REPL by default because that is
@@ -3895,16 +3898,26 @@ Windows:
   set DUCKHIVE_TUI_WINDOWS_EXPERIMENT=1 to opt into Windows auto-launch.
 
 Diagnostics:
+  duckhive tui --snapshot
   duckhive runtime-doctor
   duckhive input-test
 `)
-    .action(async () => {
+    .action(async (
+      options: { snapshot?: boolean },
+      command?: { opts: () => { snapshot?: boolean } },
+    ) => {
     const {
       launchStandaloneTui,
       resolveDuckHiveBaseDir,
     } = await import('./utils/tuiAutoLaunch.js');
+    const snapshotRequested =
+      options.snapshot === true ||
+      command?.opts().snapshot === true ||
+      process.argv.includes('--snapshot')
+    const tuiArgs = snapshotRequested ? ['--snapshot'] : [];
     let unavailableMessage: string | undefined;
     const launched = await launchStandaloneTui(resolveDuckHiveBaseDir(), {
+      args: tuiArgs,
       onUnavailable: result => {
         unavailableMessage = result.message;
       },
@@ -3916,6 +3929,9 @@ Diagnostics:
         : 'DuckHive TUI binary not found. Run `scripts/install.sh` or build `tui/duckhive-tui` first.'));
       process.exitCode = 1;
       process.exit(1);
+    }
+    if (snapshotRequested) {
+      process.exit(0);
     }
   });
 

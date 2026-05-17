@@ -332,7 +332,8 @@ export async function launchStandaloneTui(
   const tuiPath = availability.executablePath
 
   const helperPath = join(baseDir, 'bin', 'tui-pty-helper.py')
-  if (shouldUseStandaloneTuiHelper(baseDir, env)) {
+  const isSnapshot = args.includes('--snapshot') || args.includes('snapshot')
+  if (!isSnapshot && shouldUseStandaloneTuiHelper(baseDir, env)) {
     const helperStarted = await spawnAndWaitForStart(
       'python3',
       [helperPath, ...args],
