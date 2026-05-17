@@ -140,9 +140,10 @@ type TokenUsage struct {
 // AppState holds all session state.
 type AppState struct {
 	// Identity
-	SessionID   string
-	WorkingDir  string
-	ProjectRoot string
+	SessionID        string
+	WorkingDir       string
+	ProjectRoot      string
+	SessionStartedAt time.Time
 
 	// Messages
 	Messages      []Message
@@ -192,22 +193,23 @@ type AppState struct {
 // NewAppState creates the default app state.
 func NewAppState() AppState {
 	return AppState{
-		ActiveScreen:    ScreenREPL,
-		PermissionMode:  PermModeReviewTools,
-		Model:           detectInitialModel(),
-		Messages:        []Message{},
-		InputHistory:    []string{},
-		FooterItems:     []FooterItem{},
-		BridgeConnected: false,
-		InputMode:       InputModeAgent,
-		IsLoading:       false,
-		IsThinking:      false,
-		IsSuspended:     false,
-		IsFastMode:      false,
-		IsVimMode:       false,
-		DialogOpen:      false,
-		IsCancelled:     false,
-		ActiveTaskIDs:   map[string]struct{}{},
+		ActiveScreen:     ScreenREPL,
+		PermissionMode:   PermModeReviewTools,
+		Model:            detectInitialModel(),
+		Messages:         []Message{},
+		InputHistory:     []string{},
+		FooterItems:      []FooterItem{},
+		BridgeConnected:  false,
+		InputMode:        InputModeAgent,
+		IsLoading:        false,
+		IsThinking:       false,
+		IsSuspended:      false,
+		IsFastMode:       false,
+		IsVimMode:        false,
+		DialogOpen:       false,
+		IsCancelled:      false,
+		ActiveTaskIDs:    map[string]struct{}{},
+		SessionStartedAt: time.Now(),
 	}
 }
 

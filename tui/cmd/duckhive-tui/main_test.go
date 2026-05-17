@@ -3,6 +3,7 @@ package main
 import (
 	"strings"
 	"testing"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/gitlawb/duckhive/tui/model"
@@ -246,6 +247,39 @@ func TestInterruptExitsWhenIdleEvenWithBridge(t *testing.T) {
 	_, cmd := m.handleOutbound(model.MsgInterrupt{})
 	if !commandReturnsQuit(cmd) {
 		t.Fatal("idle interrupt did not return tea.Quit")
+	}
+}
+
+func TestRenderHeaderShowsElapsedSessionClock(t *testing.T) {
+	m := &MainModel{
+		state: model.NewAppState(),
+	}
+	m.width = 120
+	m.state.WorkingDir = `C:\repo\duckhive`
+	m.state.SessionStartedAt = time.Now().Add(-(65 * time.Second))
+
+	header := m.renderHeader()
+	if !strings.Contains(header, "01:05") {
+		t.Fatalf("header missing elapsed clock:\n%s", header)
+	}
+}
+
+func TestRenderSessionCardShowsElapsedAndAPITime(t *testing.T) {
+	m := &MainModel{
+		state: model.NewAppState(),
+	}
+	m.state.WorkingDir = `C:\repo\duckhive`
+	m.state.SessionStartedAt = time.Now().Add(-(2*time.Minute + 3*time.Second))
+	m.state.TotalAPIDuration = 1500 * time.Millisecond
+
+	card := m.renderSessionCard(36)
+	for _, want := range []string{
+		"elapsed    02:03",
+		"api time   1.5s",
+	} {
+		if !strings.Contains(card, want) {
+			t.Fatalf("session card missing %q:\n%s", want, card)
+		}
 	}
 }
 

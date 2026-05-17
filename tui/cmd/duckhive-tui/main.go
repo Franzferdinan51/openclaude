@@ -59,6 +59,8 @@ type shellCommandResultMsg struct {
 	duration time.Duration
 }
 
+type timerTickMsg struct{}
+
 // MainModel is the root tea.Model coordinating the DuckHive shell.
 type MainModel struct {
 	state         model.AppState
@@ -162,6 +164,7 @@ func (m *MainModel) Init() tea.Cmd {
 	m.input = components.NewInputArea(m.width, 3)
 
 	cmds := []tea.Cmd{
+		startTimerCmd(),
 		m.msgList.Init(),
 		m.input.Init(),
 		m.welcome.Init(),
@@ -233,6 +236,9 @@ func (m *MainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case shellCommandResultMsg:
 		m.handleShellResult(msg)
 		return m, nil
+
+	case timerTickMsg:
+		return m, startTimerCmd()
 
 	default:
 		return m, nil
@@ -1219,8 +1225,12 @@ func (m *MainModel) renderHeader() string {
 	left := strings.Join(leftParts, " ")
 
 	rightParts := []string{}
+	rightParts = append(rightParts, tui.CardMuted.Render(formatElapsed(time.Since(m.state.SessionStartedAt))))
 	if m.state.TotalCostUSD > 0 {
 		rightParts = append(rightParts, tui.CardMuted.Render(fmt.Sprintf("$%.4f", m.state.TotalCostUSD)))
+	}
+	if m.state.TotalAPIDuration > 0 {
+		rightParts = append(rightParts, tui.CardMuted.Render("api "+formatDurationCompact(m.state.TotalAPIDuration)))
 	}
 	if m.state.ActiveTaskCount > 0 {
 		rightParts = append(rightParts, tui.CardMuted.Render(fmt.Sprintf("%d tasks", m.state.ActiveTaskCount)))
@@ -1269,12 +1279,14 @@ func (m *MainModel) renderSessionCard(width int) string {
 
 	lines := []string{
 		fmt.Sprintf("workspace  %s", filepath.Base(m.state.WorkingDir)),
+		fmt.Sprintf("elapsed    %s", formatElapsed(time.Since(m.state.SessionStartedAt))),
 		fmt.Sprintf("provider   %s", m.displayProvider()),
 		fmt.Sprintf("model      %s", truncate(m.displayModel(), width-12)),
 		fmt.Sprintf("search     %s", m.displaySearchProvider()),
 		fmt.Sprintf("mode       %s", m.state.InputMode.String()),
 		fmt.Sprintf("fast       %s", boolLabel(m.state.IsFastMode, "on", "off")),
 		fmt.Sprintf("bridge     %s", boolLabel(m.state.BridgeConnected, "up", "local")),
+		fmt.Sprintf("api time   %s", formatDurationCompact(m.state.TotalAPIDuration)),
 		fmt.Sprintf("tasks      %d", m.state.ActiveTaskCount),
 		fmt.Sprintf("checkpts   %d", m.cap.checkpointCount),
 		fmt.Sprintf("docs       %s", strings.Join(instructions, ", ")),
@@ -1811,6 +1823,33 @@ func truncate(s string, max int) string {
 
 func messageID(prefix string) string {
 	return fmt.Sprintf("%s-%d", prefix, time.Now().UnixNano())
+}
+
+func startTimerCmd() tea.Cmd {
+	return tea.Tick(time.Second, func(time.Time) tea.Msg {
+		return timerTickMsg{}
+	})
+}
+
+func formatElapsed(duration time.Duration) string {
+	if duration < 0 {
+		duration = 0
+	}
+	totalSeconds := int(duration.Round(time.Second) / time.Second)
+	hours := totalSeconds / 3600
+	minutes := (totalSeconds % 3600) / 60
+	seconds := totalSeconds % 60
+	if hours > 0 {
+		return fmt.Sprintf("%02d:%02d:%02d", hours, minutes, seconds)
+	}
+	return fmt.Sprintf("%02d:%02d", minutes, seconds)
+}
+
+func formatDurationCompact(duration time.Duration) string {
+	if duration <= 0 {
+		return "0s"
+	}
+	return duration.Round(time.Millisecond).String()
 }
 
 func maxInt(a, b int) int {
