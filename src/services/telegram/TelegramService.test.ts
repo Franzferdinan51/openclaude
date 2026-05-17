@@ -364,6 +364,146 @@ describe('TelegramService polling', () => {
     expect(sentMessages.join('\n')).toContain('resumed')
     expect(sentMessages.join('\n')).toContain('cancelled')
   })
+
+  test('shows run detail and tails run events over Telegram', async () => {
+    const sentMessages: string[] = []
+    const { resetAgentRunStoreForTesting } = await import(
+      '../../agent-runs/AgentRunStore.js'
+    )
+    const store = resetAgentRunStoreForTesting({ persist: false })
+    store.createRun({
+      id: 'run-detail',
+      title: 'Detailed Telegram run',
+      status: 'running',
+      selectedAgent: 'reviewer',
+      runtimeHarness: 'duckhive-built-in',
+    })
+    store.emitEvent('message_delta', {
+      runId: 'run-detail',
+      role: 'assistant',
+      delta: 'hello',
+    })
+
+    const commands = ['/run run-detail', '/tail run-detail']
+    const fetchMock = mock(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      if (url.endsWith('/getMe')) {
+        return telegramResponse({
+          ok: true,
+          result: { id: 1, is_bot: true, username: 'duckhive_test_bot' },
+        })
+      }
+      if (url.endsWith('/setMyCommands')) {
+        return telegramResponse({ ok: true, result: true })
+      }
+      if (url.endsWith('/sendMessage')) {
+        const body = JSON.parse(String(init?.body ?? '{}')) as { text?: string }
+        sentMessages.push(body.text ?? '')
+        return telegramResponse({ ok: true, result: true })
+      }
+      if (url.endsWith('/getUpdates')) {
+        const text = commands.shift()
+        return telegramResponse({
+          ok: true,
+          result: text
+            ? [
+                {
+                  update_id: 60 + commands.length,
+                  message: {
+                    from: { id: 42, is_bot: false, first_name: 'Owner' },
+                    chat: { id: 42, type: 'private' },
+                    text,
+                    date: 1,
+                  },
+                },
+              ]
+            : [],
+        })
+      }
+      return telegramResponse({ ok: true, result: true })
+    }) as unknown as typeof fetch
+    globalThis.fetch = fetchMock
+
+    const service = await importFreshService()
+    await service.startTelegramService()
+    await waitFor(() => sentMessages.some(text => text.includes('message_delta')))
+    service.stopTelegramService()
+
+    const allText = sentMessages.join('\n')
+    expect(allText).toContain('Detailed Telegram run')
+    expect(allText).toContain('Agent: reviewer')
+    expect(allText).toContain('message_delta')
+  })
+
+  test('approves a specific pending run approval over Telegram', async () => {
+    const sentMessages: string[] = []
+    const { resetAgentRunStoreForTesting } = await import(
+      '../../agent-runs/AgentRunStore.js'
+    )
+    const store = resetAgentRunStoreForTesting({ persist: false })
+    store.createRun({
+      id: 'run-approval',
+      title: 'Approval run',
+      status: 'paused',
+      permissionState: {
+        pendingApprovalIds: ['approval-a', 'approval-b'],
+      },
+    })
+
+    let deliveredCommand = false
+    const fetchMock = mock(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      if (url.endsWith('/getMe')) {
+        return telegramResponse({
+          ok: true,
+          result: { id: 1, is_bot: true, username: 'duckhive_test_bot' },
+        })
+      }
+      if (url.endsWith('/setMyCommands')) {
+        return telegramResponse({ ok: true, result: true })
+      }
+      if (url.endsWith('/sendMessage')) {
+        const body = JSON.parse(String(init?.body ?? '{}')) as { text?: string }
+        sentMessages.push(body.text ?? '')
+        return telegramResponse({ ok: true, result: true })
+      }
+      if (url.endsWith('/getUpdates')) {
+        if (deliveredCommand) {
+          return telegramResponse({ ok: true, result: [] })
+        }
+        deliveredCommand = true
+        return telegramResponse({
+          ok: true,
+          result: [
+            {
+              update_id: 70,
+              message: {
+                from: { id: 42, is_bot: false, first_name: 'Owner' },
+                chat: { id: 42, type: 'private' },
+                text: '/approve run-approval approval-a',
+                date: 1,
+              },
+            },
+          ],
+        })
+      }
+      return telegramResponse({ ok: true, result: true })
+    }) as unknown as typeof fetch
+    globalThis.fetch = fetchMock
+
+    const service = await importFreshService()
+    await service.startTelegramService()
+    await waitFor(() => store.getRun('run-approval')?.status === 'running')
+    service.stopTelegramService()
+
+    expect(store.getRun('run-approval')?.permissionState).toEqual({
+      pendingApprovalIds: ['approval-b'],
+      lastDecision: 'allow',
+    })
+    expect(sentMessages.join('\n')).toContain(
+      'Run run-approval approval acknowledged (approval-a).',
+    )
+  })
 })
 
 async function waitFor(predicate: () => boolean, timeoutMs = 1000): Promise<void> {

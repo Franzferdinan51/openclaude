@@ -511,20 +511,15 @@ registerCommand('stop', (chatId, args) => {
 })
 
 registerCommand('approve', (chatId, args) => {
-  const runId = args.trim()
+  const [runId = '', approvalId] = args.trim().split(/\s+/).filter(Boolean)
   const store = getAgentRunStore()
-  const run = store.getRun(runId)
+  const run = runId ? store.approveRun(runId, approvalId) : undefined
   if (!run) {
     api?.sendMarkdown(chatId, `Run not found: ${runId || '(missing id)'}`).catch(() => {})
     return
   }
-  store.updateRun(run.id, {
-    permissionState: {
-      pendingApprovalIds: [],
-      lastDecision: 'allow',
-    },
-  })
-  api?.sendMarkdown(chatId, `Run ${run.id} approval acknowledged.`).catch(() => {})
+  const suffix = approvalId ? ` (${approvalId})` : ''
+  api?.sendMarkdown(chatId, `Run ${run.id} approval acknowledged${suffix}.`).catch(() => {})
 })
 
 function updateRunStatusCommand(

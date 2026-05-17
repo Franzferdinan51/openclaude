@@ -239,7 +239,7 @@ Telegram bot run-control commands:
 /pause <id>
 /resume <id>
 /stop <id>
-/approve <id>
+/approve <id> [approval-id]
 /status
 ```
 
@@ -256,7 +256,7 @@ DuckHive's CLI surface for that same lifecycle is the consolidated `/run` comman
 /run recover <id> [summary]
 ```
 
-Long Telegram responses are chunked, Markdown delivery falls back to plain text, and `bun run doctor:runtime` reports the Agent Harness and Telegram configuration state.
+Long Telegram responses are chunked, Markdown delivery falls back to plain text, `/approve` uses the same AgentRun approval path as the CLI/WebUI and can acknowledge one pending approval ID without clearing the rest, and `bun run doctor:runtime` reports the Agent Harness and Telegram configuration state.
 
 ### /init — Project Setup
 
