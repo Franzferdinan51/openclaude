@@ -87,9 +87,8 @@ function renderRunList(store: AgentRunStore, status?: AgentRunStatus): string {
 
   const lines = ['Agent Runs', '-'.repeat(40)]
   for (const run of runs) {
-    lines.push(
-      `- ${run.id} [${run.status}] ${run.title}${run.selectedAgent ? ` · ${run.selectedAgent}` : ''}`,
-    )
+    const agent = run.selectedAgent ? ` - ${run.selectedAgent}` : ''
+    lines.push(`- ${run.id} [${run.status}] ${run.title}${agent}`)
   }
   return lines.join('\n')
 }

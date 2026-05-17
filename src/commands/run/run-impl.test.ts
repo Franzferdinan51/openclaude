@@ -27,7 +27,8 @@ describe('/run command', () => {
     expect(result.type).toBe('text')
     if (result.type !== 'text') throw new Error('unexpected result type')
     expect(result.value).toContain('Agent Runs')
-    expect(result.value).toContain('run_1 [running] Review auth flow')
+    expect(result.value).toContain('run_1 [running] Review auth flow - reviewer')
+    expect([...result.value].every(char => char.charCodeAt(0) < 128)).toBe(true)
   })
 
   test('shows run detail from bare run id input', async () => {
