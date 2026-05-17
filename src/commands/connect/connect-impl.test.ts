@@ -134,6 +134,41 @@ describe('/connect command', () => {
     expect(updateSpy).not.toHaveBeenCalled()
   })
 
+  test('points webhook and email connector setup to /channel instead of token validation', async () => {
+    const { call } = await importFreshConnectModule()
+
+    const webhook = await call('webhook', {} as never)
+    const email = await call('email', {} as never)
+
+    expect(webhook.value).toContain('/channel connect webhook')
+    expect(webhook.value).not.toContain('Invalid bot token format')
+    expect(email.value).toContain('/channel connect email')
+    expect(email.value).not.toContain('Invalid bot token format')
+    expect(updateSpy).not.toHaveBeenCalled()
+  })
+
+  test('explains that console is already built in', async () => {
+    const { call } = await importFreshConnectModule()
+    const result = await call('console', {} as never)
+
+    expect(result.value).toContain('console channel is built into the local REPL')
+    expect(result.value).toContain('/channel status console')
+    expect(updateSpy).not.toHaveBeenCalled()
+  })
+
+  test('rejects trailing arguments for status and disconnect', async () => {
+    const { call } = await importFreshConnectModule()
+
+    const status = await call('status telegram', {} as never)
+    const disconnect = await call('disconnect telegram', {} as never)
+
+    expect(status.value).toContain('Usage: /connect status')
+    expect(status.value).toContain('/channel status')
+    expect(disconnect.value).toContain('Usage: /connect disconnect')
+    expect(disconnect.value).toContain('/channel disconnect <webhook|email>')
+    expect(stopTelegramService).not.toHaveBeenCalled()
+  })
+
   test('stores a valid token and updates runtime env', async () => {
     const token = '123456789:ABCDEFGHIJKLMNOPQRSTUVWX'
     const { call } = await importFreshConnectModule()

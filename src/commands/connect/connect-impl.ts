@@ -77,6 +77,26 @@ function formatStatus(config: TelegramConnectionConfig): string {
   return lines.join('\n')
 }
 
+function getChannelConnectorHint(name: string): string | undefined {
+  const channel = name.toLowerCase()
+  if (channel === 'webhook' || channel === 'email') {
+    return `The /connect command manages Telegram bot setup.
+
+For ${channel}, use:
+  /channel connect ${channel}
+  /channel status ${channel}
+  /channel disconnect ${channel}`
+  }
+  if (channel === 'console') {
+    return `The console channel is built into the local REPL and does not need /connect setup.
+
+Use:
+  /channel status console
+  /channel send console <message>`
+  }
+  return undefined
+}
+
 export const call: LocalCommandCall = async (args: string) => {
   const storage = getSecureStorage()
   const parsedArgs = args.trim().split(/\s+/).filter(Boolean)
@@ -94,6 +114,12 @@ export const call: LocalCommandCall = async (args: string) => {
 
   // --status flag OR positional "status": show connection status
   if (flags.status !== undefined || positional[0] === 'status') {
+    if (positional.length > (positional[0] === 'status' ? 1 : 0)) {
+      return {
+        type: 'text',
+        value: 'Usage: /connect status\n\nFor all adapters, use /channel status.',
+      }
+    }
     const data = storage.read()
     const config = getEffectiveTelegramConfig(data ? getTelegramConfig(data) : {})
     return { type: 'text', value: formatStatus(config) }
@@ -101,6 +127,13 @@ export const call: LocalCommandCall = async (args: string) => {
 
   // --disconnect flag OR positional "disconnect": remove Telegram configuration
   if (flags.disconnect !== undefined || positional[0] === 'disconnect') {
+    if (positional.length > (positional[0] === 'disconnect' ? 1 : 0)) {
+      return {
+        type: 'text',
+        value:
+          'Usage: /connect disconnect\n\nFor other adapters, use /channel disconnect <webhook|email>.',
+      }
+    }
     const data = storage.read()
     if (data?.pluginSecrets?.telegram) {
       delete data.pluginSecrets.telegram
@@ -150,6 +183,10 @@ Your bot token is stored securely in your system's keychain/credentials store.`,
 
   // Token provided
   const token = positional.join(' ').trim()
+  const connectorHint = getChannelConnectorHint(token)
+  if (connectorHint) {
+    return { type: 'text', value: connectorHint }
+  }
 
   if (!token) {
     return {
