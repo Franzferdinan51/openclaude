@@ -144,6 +144,10 @@ source checkout, `bun run doctor:runtime:strict` runs that same strict terminal
 readiness check, and `bun run doctor:runtime:strict:json` emits the failing
 strict report as JSON for logs or issue reports. On Windows, `duckhive runtime-doctor`
 should report `OpenClaude-compatible readable stdin is active by default`.
+The startup context loader also uses a Windows-safe filesystem-root stop
+condition now, so `DUCK.md` / `AGENTS.md` parent-directory discovery cannot loop
+forever on `C:\` before `/goal`, headless print mode, or the interactive prompt
+can accept input.
 DuckHive clears fragile stdin overrides at startup unless
 `DUCKHIVE_ALLOW_FRAGILE_STDIN=1` is set, because alternate stdin paths are most
 likely to produce a painted-but-dead prompt under PowerShell. Readable stdin

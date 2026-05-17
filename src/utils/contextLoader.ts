@@ -12,7 +12,8 @@
  */
 
 import { existsSync, readFileSync } from 'fs'
-import { dirname, join, resolve } from 'path'
+import { homedir } from 'os'
+import { basename, dirname, join, resolve, sep } from 'path'
 
 export interface ContextFileInfo {
   path: string
@@ -49,8 +50,9 @@ function loadContextFile(path: string): string | null {
  * Check if a path is excluded by a .duckignore file in any parent directory.
  */
 function isExcludedByDuckignore(filePath: string, cwd: string): boolean {
-  let dir = dirname(filePath)
-  const home = process.env.HOME ?? '~'
+  const normalizedFilePath = resolve(filePath)
+  let dir = dirname(normalizedFilePath)
+  const home = resolve(process.env.HOME ?? homedir())
   
   while (dir && dir !== home) {
     const duckignorePath = join(dir, '.duckignore')
@@ -62,13 +64,16 @@ function isExcludedByDuckignore(filePath: string, cwd: string): boolean {
           // Simple glob matching - check if file matches
           if (pattern.includes('/')) {
             // Path pattern relative to .duckignore location
-            const fullPattern = join(dir, pattern)
-            if (filePath === fullPattern || filePath.startsWith(fullPattern + '/')) {
+            const fullPattern = resolve(dir, pattern)
+            if (
+              normalizedFilePath === fullPattern ||
+              normalizedFilePath.startsWith(fullPattern + sep)
+            ) {
               return true
             }
           } else {
             // Just filename pattern
-            const fileName = filePath.split('/').pop()
+            const fileName = basename(normalizedFilePath)
             if (fileName === pattern || fileName.startsWith(pattern.replace('*', ''))) {
               return true
             }
@@ -90,8 +95,8 @@ function isExcludedByDuckignore(filePath: string, cwd: string): boolean {
  * Returns files in order of precedence (global first, then workspace, then per-directory).
  */
 export function scanDuckContextFiles(projectPath?: string): ContextFileInfo[] {
-  const cwd = projectPath ?? process.cwd()
-  const home = process.env.HOME ?? '~'
+  const cwd = resolve(projectPath ?? process.cwd())
+  const home = resolve(process.env.HOME ?? homedir())
   const results: ContextFileInfo[] = []
   const seen = new Set<string>()
 

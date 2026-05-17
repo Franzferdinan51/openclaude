@@ -152,6 +152,11 @@ This checks the Windows stdin mode, TUI fallback, provider routing, ClawHub
 skill hub, computer-use fallback, Telegram connector config, and harness command
 registry without starting the chat UI.
 
+DuckHive also scans parent folders for `DUCK.md`, `AGENTS.md`, and related
+context files. That scan is now bounded by the real Windows filesystem root, so
+context discovery cannot loop forever on `C:\` before the REPL or `/goal` prompt
+becomes usable.
+
 By default, Windows startup stays on the classic REPL and DuckHive applies the
 safe stdin settings before the UI loads. The renderer uses DuckHive's
 OpenClaude-compatible readable stdin path by default instead of the alternate
