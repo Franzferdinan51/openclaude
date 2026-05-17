@@ -29,6 +29,20 @@ function formatHiveOfflineError(error?: string): string {
   return `Failed: ${error ?? 'Hive Nation offline'}\nStart the local runtime with \`bun run council:serve\` or point DuckHive at a running service with \`DUCKHIVE_COUNCIL_URL\`.`
 }
 
+function renderDecreeHelp(): string {
+  return `Decree command
+${'-'.repeat(50)}
+Terminal:
+duckhive decree list                         - List active decrees
+duckhive decree <title> | <content>          - Issue a binding decree
+Example: duckhive decree Secure Mode | Agents SHALL ask before destructive commands
+
+REPL:
+/decree list
+/decree <title> | <content>
+Example: /decree Secure Mode | Agents SHALL ask before destructive commands`
+}
+
 export const call: LocalCommandCall = async (args: string) => {
   const hive = getDecreeDeps().getHiveBridge()
   const rest = args.trim()
@@ -36,7 +50,7 @@ export const call: LocalCommandCall = async (args: string) => {
   if (rest === 'help') {
     return {
       type: 'text',
-      value: 'Decree command\n--------------------------------------------------\n/decree list                         - List active decrees\n/decree <title> | <content>          - Issue a binding decree\nExample: /decree Secure Mode | Agents SHALL ask before destructive commands',
+      value: renderDecreeHelp(),
     }
   }
 
@@ -66,7 +80,8 @@ export const call: LocalCommandCall = async (args: string) => {
   if (!title) {
     return {
       type: 'text',
-      value: 'Decree usage:\n/decree <title> | <content>\nExample: /decree Secure Mode | Agents SHALL ask before destructive commands',
+      value:
+        'Decree usage:\nduckhive decree <title> | <content>\nREPL: /decree <title> | <content>\nExample: duckhive decree Secure Mode | Agents SHALL ask before destructive commands',
     }
   }
 

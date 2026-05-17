@@ -49,6 +49,20 @@ function formatHiveOfflineError(error?: string): string {
   return `Failed: ${error ?? 'Hive Nation offline'}\nStart the local runtime with \`bun run council:serve\` or point DuckHive at a running service with \`DUCKHIVE_COUNCIL_URL\`.`
 }
 
+function renderSenateHelp(): string {
+  return `Senate command
+${'-'.repeat(50)}
+Terminal:
+duckhive senate list                    - List active decrees
+duckhive senate issue <title>|<content> - Issue a new decree
+duckhive senate show <id>               - View decree details
+
+REPL:
+/senate list
+/senate issue <title>|<content>
+/senate show <id>`
+}
+
 export const call: LocalCommandCall = async (args: string) => {
   const hive = getSenateDeps().getHiveBridge()
   const parts = splitCommandArgs(args)
@@ -58,11 +72,7 @@ export const call: LocalCommandCall = async (args: string) => {
   if (subcommand === 'help') {
     return {
       type: 'text',
-      value: `Senate command
-${'-'.repeat(50)}
-/senate list                    - List active decrees
-/senate issue <title>|<content> - Issue a new decree
-/senate show <id>               - View decree details`,
+      value: renderSenateHelp(),
     }
   }
 
@@ -71,9 +81,11 @@ ${'-'.repeat(50)}
       type: 'text' as const,
       value: `Senate decree
 
-Usage: /senate issue <title> | <content>
+Terminal usage: duckhive senate issue <title> | <content>
+REPL usage:     /senate issue <title> | <content>
 
 Examples:
+  duckhive senate issue Privacy Protection | All agents MUST encrypt sensitive data
   /senate issue Privacy Protection | All agents MUST encrypt sensitive data
   /senate issue No Destructive Commands | Agents SHALL NOT execute rm -rf`,
     }
@@ -122,7 +134,8 @@ ${renderDecree({
 
       return {
         type: 'text',
-        value: 'Senate\n\nNo active decrees. Issue one with:\n/senate issue <title> | <content>',
+        value:
+          'Senate\n\nNo active decrees. Issue one with:\nduckhive senate issue <title> | <content>\nREPL: /senate issue <title> | <content>',
       }
     }
 
@@ -141,7 +154,12 @@ ${renderDecree({
 
   if (subcommand === 'show' || subcommand === 'view') {
     const id = rest.trim()
-    if (!id) return { type: 'text', value: 'Show decree: /senate show <decree-id>' }
+    if (!id) {
+      return {
+        type: 'text',
+        value: 'Show decree: duckhive senate show <decree-id>\nREPL: /senate show <decree-id>',
+      }
+    }
 
     const decree = await hive.getDecree(id)
     if (!decree) return { type: 'text', value: `Decree not found: ${id}` }
@@ -155,10 +173,6 @@ ${renderDecree({
 
   return {
     type: 'text',
-    value: `Senate command
-${'-'.repeat(50)}
-/senate list                    - List active decrees
-/senate issue <title>|<content> - Issue a new decree
-/senate show <id>               - View decree details`,
+    value: renderSenateHelp(),
   }
 }

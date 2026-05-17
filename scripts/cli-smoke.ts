@@ -371,6 +371,8 @@ const cases: SmokeCase[] = [
     args: ['senate', '--help'],
     includes: [
       'Senate command',
+      'duckhive senate list',
+      'duckhive senate issue <title>|<content>',
       '/senate list',
       '/senate issue',
       '/senate show',
@@ -381,6 +383,8 @@ const cases: SmokeCase[] = [
     args: ['decree', '--help'],
     includes: [
       'Decree command',
+      'duckhive decree list',
+      'duckhive decree <title> | <content>',
       '/decree list',
       '/decree <title> | <content>',
     ],

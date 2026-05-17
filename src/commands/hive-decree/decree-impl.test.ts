@@ -49,6 +49,17 @@ describe('/decree command', () => {
     expect(result.value).toContain('Agents must verify destructive actions.')
   })
 
+  test('shows terminal and REPL usage in help output', async () => {
+    setHive({})
+
+    const result = expectTextResult(await call('help', {} as never))
+
+    expect(result.value).toContain('Decree command')
+    expect(result.value).toContain('duckhive decree list')
+    expect(result.value).toContain('duckhive decree <title> | <content>')
+    expect(result.value).toContain('/decree list')
+  })
+
   test('issues README-style title and content decree', async () => {
     const issueDecree = mock(async () => ({ success: true, decreeId: 'DECREE-2' }))
     setHive({ issueDecree })

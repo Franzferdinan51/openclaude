@@ -48,6 +48,17 @@ describe('/senate command', () => {
     expect(result.value).toContain('[DECREE-1] Safe Automation')
   })
 
+  test('shows terminal and REPL usage in help output', async () => {
+    setHive({})
+
+    const result = expectTextResult(await call('help', {} as never))
+
+    expect(result.value).toContain('Senate command')
+    expect(result.value).toContain('duckhive senate list')
+    expect(result.value).toContain('duckhive senate issue <title>|<content>')
+    expect(result.value).toContain('/senate list')
+  })
+
   test('supports bare README-style decree issue shorthand', async () => {
     const issueDecree = mock(async () => ({ success: true, decreeId: 'DECREE-2' }))
     setHive({ issueDecree })
