@@ -456,6 +456,33 @@ describe('Hive Nation commands', () => {
     expect(invalidDomain.value).toContain('Unknown swarm domain: quantum')
   })
 
+  test('/swarm rejects invalid agent counts before spawning teammates', async () => {
+    const spawnTeammate = mock(async () => ({
+      data: {
+        teammate_id: 'unexpected-teammate',
+        agent_id: 'unexpected-agent',
+      },
+    }))
+    setSwarmTestDeps({
+      spawnTeammate: spawnTeammate as never,
+      sleep: async () => {},
+    })
+
+    for (const args of [
+      'build an auth api --count=-1',
+      'build an auth api --count=0',
+      'build an auth api --count=1.5',
+      'build an auth api --count=9',
+      'build an auth api --count',
+    ]) {
+      const result = expectText(await swarmCall(args, {} as never))
+      expect(result.value).toContain('Invalid swarm count')
+      expect(result.value).toContain('Allowed range: 1-8')
+    }
+
+    expect(spawnTeammate).not.toHaveBeenCalled()
+  })
+
   test('/swarm leaves final approval pending when spawned agents have not responded', async () => {
     const spawnTeammate = mock(async ({ name }: { name: string }) => ({
       data: {

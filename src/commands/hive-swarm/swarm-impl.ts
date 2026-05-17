@@ -321,6 +321,26 @@ function resolveSwarmDomain(value: string | undefined): SwarmDomain | null {
   return DOMAIN_ALIASES[normalized] ?? null
 }
 
+function parseSwarmCount(value: string | boolean | undefined): { count: number; error?: string } {
+  if (value === undefined) return { count: 4 }
+  if (typeof value !== 'string' || value.trim() === '') {
+    return {
+      count: 4,
+      error: 'Invalid swarm count. Use --count=<N> with an integer from 1 to 8.',
+    }
+  }
+
+  const count = Number(value)
+  if (!Number.isInteger(count) || count < 1 || count > 8) {
+    return {
+      count: 4,
+      error: `Invalid swarm count: ${value}. Use an integer from 1 to 8.`,
+    }
+  }
+
+  return { count }
+}
+
 function parseVotingResponses(raw: string): CollectedResponses {
   const sections = raw
     .split('|')
@@ -444,7 +464,8 @@ export const call: LocalCommandCall = async (args: string, context: ToolUseConte
   const task = positional.join(' ').trim()
   const requestedDomain = typeof flags.domain === 'string' ? flags.domain : undefined
   const domainFlag = resolveSwarmDomain(requestedDomain)
-  const count = Math.min(Number(flags.count) || 4, 8)
+  const countResult = parseSwarmCount(flags.count)
+  const count = countResult.count
   const dryRun = flags['dry-run'] === true || flags.dry === true
 
   if (flags.list) {
@@ -499,6 +520,16 @@ Voting modes:
 
 Supported domains: build, audit, research, data, mobile, game
 Accepted aliases: coding, security, code-review, debugging, architecture, testing, devops, analysis, docs, optimization, refactor, backend, frontend, infrastructure`,
+    }
+  }
+
+  if (countResult.error) {
+    return {
+      type: 'text',
+      value: `${countResult.error}
+
+Usage: /swarm <task description> --count=<N>
+Allowed range: 1-8`,
     }
   }
 
