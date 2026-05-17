@@ -1332,15 +1332,24 @@ openclaude --version    # upstream OpenClaude, if installed separately
 Current shipping/runtime gates:
 
 ```bash
+npm run typecheck
 bun test
-bun run build
-bun run verify:privacy
-bun run smoke
-bun run doctor:runtime
-bun run doctor:runtime:strict
-bun run doctor:runtime:strict:json
+npm run build
+npm run verify:privacy
+npm run smoke
+npm run doctor:runtime
+npm run doctor:runtime:strict
+npm run doctor:runtime:strict:json
+npm pack --dry-run --json
 cd tui && go test ./...
 ```
+
+The current strict completion audit is tracked in
+[`docs/completion-audit-2026-05-17.md`](docs/completion-audit-2026-05-17.md).
+It separates verified CLI/runtime surfaces from the remaining Windows TUI gap:
+this checkout still needs Go installed or a Windows `tui\duckhive-tui.exe`
+artifact before `duckhive tui` and `cd tui && go test ./...` can be counted as
+complete on Windows.
 
 `bun run doctor:runtime` reports the CLI input mode, terminal stdio attachment, provider-free `duckhive input-test` reachability, terminal TUI launch path, computer-use fallback readiness, ClawHub skill-hub registry, and the terminal-first harness command manifest. Use `bun run doctor:runtime:strict` in the terminal where you plan to type into DuckHive when you need a failing exit code for redirected or non-interactive stdin/stdout, or `bun run doctor:runtime:strict:json` when you need that failure in machine-readable form. The harness surface check declares the required core `/goal`, `/run`, `/computer-use`, `/channel`, `/connect`, `/skill`, `/spawn`, `/orchestrate`, `/team`, `/council`, `/senate`, `/decree`, `/swarm`, `/tui`, and `/doctor` surfaces, plus high-value aliases like `/g`, `/subagent`, and `/cu`; the CLI smoke gate verifies the corresponding top-level help and provider-free terminal entrypoints. The skill-hub check reports the active ClawHub registry from `DUCKHIVE_CLAWHUB_REGISTRY`, `CLAWHUB_REGISTRY`, or the default `https://clawhub.ai`, and confirms that `/skill search`, `/skill inspect`, and `/skill install` are available. On Windows the launcher uses data-event stdin by default, disables early input capture, forces no-args startup to the classic REPL, clears inherited TUI handoff flags, and clears fragile stdin overrides unless `DUCKHIVE_ALLOW_FRAGILE_STDIN=1` is set; `duckhive --stdin-mode readable` is the compatibility comparison path when you intentionally want to compare the OpenClaude-readable reader. The `npm run smoke` gate now runs the Ink stdin delivery and `TextInput` prompt-rendering tests before launching the CLI smoke cases, so default REPL typing coverage is part of the normal release check instead of a separate manual test. On Windows without Go or `tui\duckhive-tui.exe`, the doctor and `duckhive tui` both point at the missing Go prerequisite while leaving the classic REPL as the safe default. On non-macOS hosts, the computer-use check confirms that the bundled `newest-desktop-control` gateway is available for desktop, Android, and `computer_use_*` compatibility aliases instead of requiring Codex.app.
 
@@ -1355,14 +1364,15 @@ The Go TUI prompt and streaming markers use ASCII-safe `> ` and `|` indicators a
 
 Recent verification snapshot:
 
-- `bun test`: `2415 pass`, `0 fail`
-- `bun run build`, `bun run smoke`, `bun run verify:privacy`, and `bun run doctor:runtime`: passing
+- `npm run typecheck`, `npm run build`, `npm run smoke`, `npm run verify:privacy`, and `node dist\cli.mjs runtime-doctor`: passing on Windows for `duckhive@0.13.0`
+- `npm run smoke`: `12 pass`, `0 fail`, plus `CLI smoke passed (51 commands plus Windows wrapper checks)`
+- focused upstream-sync regression tests for Bash sandbox fanout and WebSearch adapter diagnostics: `17 pass`, `0 fail`
 - `cd tui && go test ./...`: not run in this Windows checkout because Go is not installed; `duckhive tui` and `bun run doctor:runtime` both report the missing Go prerequisite and keep the classic REPL as the safe default
 - `duckhive --version`: `0.13.0 (DuckHive)`
 - `openclaude --version`: upstream OpenClaude remains separately owned when installed
 - package dry-run publishes as `duckhive@0.13.0`, includes the `duckhive` launcher, `duckhive/sdk`, `duckhive/harness`, `config/`, and the runtime `skills/newest-desktop-control/` skill files without test fixtures
 
-Known debt: `bun run typecheck` is still a repo-wide hardening task. The current pass has already added missing transport/OAuth/optional-integration type surfaces, but remaining errors are broad pre-existing TypeScript debt in dormant optional modules, legacy command surfaces, ACP/bridge paths, telemetry, and older UI/test typing. Runtime build, tests, SDK bundle checks, privacy verification, smoke, and doctor are the current green gates; TUI Go tests require Go to be installed.
+Known local limitation: TUI Go tests require Go to be installed. Runtime build, typecheck, smoke, privacy verification, runtime doctor, and npm package dry-run are the current green Node/TypeScript gates.
 
 ---
 
