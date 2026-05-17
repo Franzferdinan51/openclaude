@@ -101,15 +101,17 @@ Example: /decree Secure Mode | Agents SHALL ask before destructive commands`
 }
 
 export const call: LocalCommandCall = async (args: string) => {
-  const hive = getDecreeDeps().getHiveBridge()
   const rest = args.trim()
+  const helpArg = rest.toLowerCase()
 
-  if (rest === 'help') {
+  if (helpArg === 'help' || helpArg === '--help' || helpArg === '-h') {
     return {
       type: 'text',
       value: renderDecreeHelp(),
     }
   }
+
+  const hive = getDecreeDeps().getHiveBridge()
 
   if (!rest || rest === 'list') {
     const decrees = await hive.getActiveDecrees()

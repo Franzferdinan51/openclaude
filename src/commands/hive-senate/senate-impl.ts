@@ -119,7 +119,6 @@ REPL:
 }
 
 export const call: LocalCommandCall = async (args: string) => {
-  const hive = getSenateDeps().getHiveBridge()
   const parsed = splitCommandArgs(args)
   if (parsed.error) {
     return { type: 'text', value: parsed.error }
@@ -128,12 +127,14 @@ export const call: LocalCommandCall = async (args: string) => {
   const subcommand = parts[0]?.toLowerCase() ?? ''
   const rest = parts.slice(1).join(' ').trim()
 
-  if (subcommand === 'help') {
+  if (subcommand === 'help' || subcommand === '--help' || subcommand === '-h') {
     return {
       type: 'text',
       value: renderSenateHelp(),
     }
   }
+
+  const hive = getSenateDeps().getHiveBridge()
 
   function issueUsage() {
     return {

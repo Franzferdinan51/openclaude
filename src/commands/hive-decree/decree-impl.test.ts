@@ -50,14 +50,18 @@ describe('/decree command', () => {
   })
 
   test('shows terminal and REPL usage in help output', async () => {
-    setHive({})
+    const getHiveBridge = mock(() => {
+      throw new Error('help should not touch Hive bridge')
+    })
+    setDecreeTestDeps({ getHiveBridge: getHiveBridge as never })
 
-    const result = expectTextResult(await call('help', {} as never))
+    const result = expectTextResult(await call('--help', {} as never))
 
     expect(result.value).toContain('Decree command')
     expect(result.value).toContain('duckhive decree list')
     expect(result.value).toContain('duckhive decree <title> | <content>')
     expect(result.value).toContain('/decree list')
+    expect(getHiveBridge).not.toHaveBeenCalled()
   })
 
   test('issues README-style title and content decree', async () => {

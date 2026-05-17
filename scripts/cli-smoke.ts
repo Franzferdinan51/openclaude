@@ -420,6 +420,28 @@ const cases: SmokeCase[] = [
     excludes: ['Warning: ignoring saved provider profile', 'Unknown skill: swarm'],
   },
   {
+    name: 'headless senate help',
+    args: ['--bare', '-p', '/senate --help'],
+    timeoutMs: 30000,
+    includes: [
+      'Senate command',
+      'duckhive senate list',
+      '/senate issue <title>|<content>',
+    ],
+    excludes: ['Warning: ignoring saved provider profile', 'Hive Nation offline'],
+  },
+  {
+    name: 'headless decree help',
+    args: ['--bare', '-p', '/decree --help'],
+    timeoutMs: 30000,
+    includes: [
+      'Decree command',
+      'duckhive decree list',
+      '/decree <title> | <content>',
+    ],
+    excludes: ['Warning: ignoring saved provider profile', 'Hive Nation offline'],
+  },
+  {
     name: 'top-level mmx help',
     args: ['mmx', '--help'],
     includes: [

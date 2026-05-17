@@ -49,14 +49,18 @@ describe('/senate command', () => {
   })
 
   test('shows terminal and REPL usage in help output', async () => {
-    setHive({})
+    const getHiveBridge = mock(() => {
+      throw new Error('help should not touch Hive bridge')
+    })
+    setSenateTestDeps({ getHiveBridge: getHiveBridge as never })
 
-    const result = expectTextResult(await call('help', {} as never))
+    const result = expectTextResult(await call('--help', {} as never))
 
     expect(result.value).toContain('Senate command')
     expect(result.value).toContain('duckhive senate list')
     expect(result.value).toContain('duckhive senate issue <title>|<content>')
     expect(result.value).toContain('/senate list')
+    expect(getHiveBridge).not.toHaveBeenCalled()
   })
 
   test('supports bare README-style decree issue shorthand', async () => {
