@@ -7,7 +7,6 @@ import (
 
 func TestInputViewUsesAsciiPrompt(t *testing.T) {
 	m := NewModel()
-	m.width = 80
 
 	view := m.inputView()
 
@@ -16,6 +15,25 @@ func TestInputViewUsesAsciiPrompt(t *testing.T) {
 	}
 	if strings.Contains(view, "\u203a") || strings.Contains(view, "\u00e2\u20ac\u00ba") {
 		t.Fatalf("input view still contains non-ascii prompt marker: %q", view)
+	}
+}
+
+func TestHeaderUsesDuckHiveDefaults(t *testing.T) {
+	m := NewModel()
+
+	view := m.headerView()
+
+	if !strings.Contains(view, "DuckHive") {
+		t.Fatalf("header missing DuckHive branding: %q", view)
+	}
+	if !strings.Contains(view, "v0.11.0") {
+		t.Fatalf("header missing current version: %q", view)
+	}
+	if !strings.Contains(view, "MiniMax-M2.7") {
+		t.Fatalf("header missing MiniMax default model: %q", view)
+	}
+	if strings.Contains(view, "claude-opus") {
+		t.Fatalf("header still contains stale Claude default: %q", view)
 	}
 }
 

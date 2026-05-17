@@ -41,7 +41,7 @@ type Message struct {
 	Type        MessageType
 	Content     string
 	Timestamp   time.Time
-	Model       string // e.g. "claude-opus-4.6"
+	Model       string // e.g. "MiniMax-M2.7"
 	ToolCalls   []ToolCall
 	IsStreaming bool
 	IsError     bool
@@ -226,5 +226,5 @@ func detectInitialModel() string {
 			return value
 		}
 	}
-	return "auto"
+	return "MiniMax-M2.7"
 }

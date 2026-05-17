@@ -28,7 +28,7 @@ type Message struct {
 	Type      MessageType
 	Content   string
 	Timestamp time.Time
-	Model     string // e.g. "claude-opus-4.6"
+	Model     string // e.g. "MiniMax-M2.7"
 	ToolName  string // for tool_use messages
 	IsStreaming bool
 	IsError   bool
@@ -80,7 +80,16 @@ type Model struct {
 }
 
 // NewModel creates a fresh DuckHive TUI model.
-func NewModel(width, height int) *Model {
+func NewModel(size ...int) *Model {
+	width := 80
+	height := 24
+	if len(size) > 0 {
+		width = size[0]
+	}
+	if len(size) > 1 {
+		height = size[1]
+	}
+
 	sp := spinner.New(spinner.WithSpinner(spinner.Dot))
 	sp.Style = Styles.Spinner
 
@@ -94,15 +103,15 @@ func NewModel(width, height int) *Model {
 	vp.Style = Styles.MessageArea
 
 	return &Model{
-		messages:   []Message{},
-		viewport:   vp,
-		input:      ti,
-		ctx:        CtxChat,
-		spinner:    sp,
-		isLoading:  false,
-		width:      width,
-		height:     height,
-		modelName:  "claude-opus-4.6",
+		messages:        []Message{},
+		viewport:        vp,
+		input:           ti,
+		ctx:             CtxChat,
+		spinner:         sp,
+		isLoading:       false,
+		width:           width,
+		height:          height,
+		modelName:       "MiniMax-M2.7",
 		sessionId:        "",
 		sessionStartTime: time.Time{},
 		isTimerActive:    false,
