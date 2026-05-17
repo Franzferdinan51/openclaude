@@ -436,7 +436,7 @@ export const call: LocalCommandCall = async (
       value:
         'DuckHive Computer Use\n' +
         'Native OpenAI Codex computer-use requires macOS because it depends on SkyComputerUseClient.\n' +
-        'On this platform, use `/desktop` for the legacy automation surface or the bundled `newest-desktop-control` MCP gateway for cross-platform desktop/Android tools.',
+        'On this platform, use `/desktop` for the legacy automation surface or the bundled `newest-desktop-control` MCP gateway for cross-platform desktop, Android, and computer_use_* compatibility tools.',
     }
   }
 

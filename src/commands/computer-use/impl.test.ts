@@ -356,6 +356,7 @@ describe('call', () => {
     expect(result.value).toContain('requires macOS')
     expect(result.value).toContain('/desktop')
     expect(result.value).toContain('newest-desktop-control')
+    expect(result.value).toContain('computer_use_* compatibility tools')
     expect(addMcpConfig).not.toHaveBeenCalled()
   })
 
