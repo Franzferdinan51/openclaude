@@ -1,9 +1,9 @@
 /**
  * Hive Nation Bridge Service
- * Bridges OpenClaude with the Hive Nation AI Council + Senate + Teams system
+ * Bridges DuckHive with the Hive Nation AI Council + Senate + Teams system
  *
  * Provides: Council deliberation, Senate decrees, Team spawning, and governance
- * API: http://localhost:3131/api/*
+ * Default API: http://localhost:3007/api/*
  */
 
 import type {

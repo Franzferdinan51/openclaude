@@ -1,10 +1,10 @@
 /**
  * Hive Nation Bridge - TypeScript types for the AI Council integration
- * Part of the OpenClaude + Hive Nation integration
+ * Part of the DuckHive + Hive Nation integration
  */
 
 export interface HiveConfig {
-  apiBase: string  // e.g., 'http://localhost:3131'
+  apiBase: string  // e.g., 'http://localhost:3007'
   wsBase?: string  // WebSocket for live updates
   apiKey?: string
   enabled: boolean
