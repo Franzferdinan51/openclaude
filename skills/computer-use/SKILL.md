@@ -1,84 +1,90 @@
-# computer-use — DuckHive Built-in MCP Server
+# computer-use - DuckHive Computer-Use Status Surface
 
 ## Overview
 
-DuckHive ships with the **OpenAI Codex computer-use MCP server** fully built-in. No setup needed on macOS — it's installed automatically by `node install.js` from the Codex app bundle.
+DuckHive can inspect and wire the supported OpenAI Codex computer-use MCP server when the native macOS bundle is available. On non-macOS platforms, or when the proprietary Codex bundle is missing, use DuckHive's bundled `newest-desktop-control` MCP gateway for desktop, Android, and `computer_use_*` compatibility aliases.
+
+DuckHive does not patch, decompile, re-sign, or bypass proprietary Codex binaries.
 
 ## What It Is
 
-32 macOS desktop automation tools via the Codex `SkyComputerUseClient` native binary:
-- 📸 `screenshot` — capture screen
-- 🖱️ `click`, `left_click`, `right_click`, `double_click`, `mouse_move`, `drag`
-- ✌️ `left_click_drag`, `scroll`
-- ⌨️ `type_text`, `press_key`, `hold_key`
-- 🔍 `zoom`
-- 📱 `open_application`, `list_apps`, `get_app_state`
-- 📋 `write_clipboard`, `read_clipboard`
-- 🔐 `request_access`, `list_granted_applications`
-- ⏱️ `wait`, `cursor_position`, `computer_batch`
+Codex Computer Use exposes macOS desktop automation tools through the native `SkyComputerUseClient` binary:
 
-## Automatic Installation
+- `screenshot` - capture screen
+- `click`, `left_click`, `right_click`, `double_click`, `mouse_move`, `drag`
+- `left_click_drag`, `scroll`
+- `type_text`, `press_key`, `hold_key`
+- `zoom`
+- `open_application`, `list_apps`, `get_app_state`
+- `write_clipboard`, `read_clipboard`
+- `request_access`, `list_granted_applications`
+- `wait`, `cursor_position`, `computer_batch`
 
-`node install.js` copies the plugin from:
-1. `/Applications/Codex.app/Contents/Resources/plugins/openai-bundled/plugins/computer-use/` (Codex app)
-2. `~/.codex/.tmp/bundled-marketplaces/openai-bundled/plugins/computer-use/` (Codex cache)
+## Plugin Discovery
 
-Copied to: `packages/computer-use-bundle/computer-use/`
+DuckHive checks supported Codex integration points:
 
-## Auto-Wired
+1. `packages/computer-use-bundle/computer-use/`
+2. `/Applications/Codex.app/Contents/Resources/plugins/openai-bundled/plugins/computer-use/`
+3. `~/Applications/Codex.app/Contents/Resources/plugins/openai-bundled/plugins/computer-use/`
+4. `~/.codex/.tmp/bundled-marketplaces/openai-bundled/plugins/computer-use/`
+5. `~/.codex/plugins/computer-use/`
 
-The plugin is automatically added to DuckHive's MCP config on first use of `/computer-use status`. No manual `/computer-use enable` required — just run any computer-use command.
+## Wiring Behavior
 
-## Manual Commands
+`/computer-use status` inspects plugin/config state without mutating MCP configuration. Use `/computer-use enable` only when the Codex plugin is present and this DuckHive build does not reserve the built-in `computer-use` runtime slot.
 
-```
-/computer-use status   — Check plugin + MCP config status
-/computer-use enable  — Force-add to DuckHive MCP config
-/computer-use disable — Remove from DuckHive MCP config
+```text
+/computer-use status  - Check plugin and MCP config status
+/computer-use enable  - Add supported Codex plugin to DuckHive MCP config
+/computer-use disable - Remove Codex plugin from DuckHive MCP config
 ```
 
 After enable/disable, restart DuckHive or run `/mcp reload`.
 
+## Bundled Fallback Gateway
+
+If `/computer-use status` reports that the Codex plugin is missing, use the bundled `newest-desktop-control` gateway instead:
+
+```text
+mcp__newest-desktop-control__desktop_screenshot
+mcp__newest-desktop-control__desktop_mouse_click
+mcp__newest-desktop-control__desktop_keyboard_type
+mcp__newest-desktop-control__android_screenshot
+mcp__newest-desktop-control__computer_use_screenshot
+```
+
+The gateway also exposes `desktop_*`, `android_*`, and compatibility aliases such as `screenshot`, `mouse_click`, `keyboard`, `terminal`, `file_read`, `run_script`, `computer_use_mouse_click`, and `computer_use_keyboard`.
+
 ## Requirements
 
-- **macOS only** (SkyComputerUseClient is a native macOS binary)
-- **Codex CLI installed** (provides the plugin source: `@openai/codex`)
-- **Accessibility permissions** granted (System Preferences → Privacy → Accessibility)
+- macOS only for the native Codex `SkyComputerUseClient`
+- Codex.app or a local computer-use bundle for `/computer-use enable`
+- Accessibility and Screen Recording permissions for native desktop automation
+- `newest-desktop-control` for cross-platform desktop/Android fallback behavior
 
-## How It Works
+## MCP Config
 
+After enable:
+
+```json
+{
+  "mcpServers": {
+    "computer-use": {
+      "type": "stdio",
+      "command": "/path/to/SkyComputerUseClient",
+      "args": ["mcp"],
+      "env": {}
+    }
+  }
+}
 ```
-DuckHive MCP Client
-  │
-  │ StdioClientTransport
-  │   command: packages/computer-use-bundle/computer-use/.../SkyComputerUseClient
-  │   args: ["mcp"]
-  │
-  ▼
-packages/computer-use-bundle/computer-use/Codex Computer Use.app/
-  SkyComputerUseService    ← LaunchAgent (TCC/Accessibility manager)
-  SkyComputerUseClient     ← stdio MCP server (spawned as subprocess)
-```
-
-## Architecture
-
-| Layer | Implementation |
-|-------|----------------|
-| MCP server | Codex `SkyComputerUseClient` (native macOS binary) |
-| MCP transport | stdio (subprocess spawned by DuckHive MCP client) |
-| Tool rendering | `getCodexComputerUseToolOverrides()` in impl.ts |
-| Auto-discovery | `findComputerUsePluginDir()` — 5 known paths |
-| Auto-wiring | `autoWireComputerUse()` on every command invocation |
 
 ## Key Files
 
 | File | Purpose |
 |------|---------|
-| `src/commands/computer-use/impl.ts` | Command + auto-discovery + MCP wiring |
-| `packages/computer-use-bundle/` | Plugin copy destination |
-| `install.js` → `setupComputerUseBundle()` | Copies plugin from Codex app |
-| `SKILL.md` | This file |
-
-## Tool Names (mcp__computer-use__*)
-
-`screenshot`, `cursor_position`, `click`, `left_click`, `right_click`, `double_click`, `triple_click`, `type_text`, `press_key`, `hold_key`, `scroll`, `drag`, `left_click_drag`, `mouse_move`, `open_application`, `list_apps`, `get_app_state`, `request_access`, `write_clipboard`, `read_clipboard`, `left_mouse_down`, `left_mouse_up`, `zoom`, `wait`, `computer_batch`
+| `src/commands/computer-use/impl.ts` | Command, discovery, status, and MCP wiring |
+| `skills/newest-desktop-control/` | Bundled desktop/Android fallback gateway |
+| `packages/computer-use-bundle/` | Optional local Codex plugin copy destination |
+| `install.js` -> `setupComputerUseBundle()` | Copies plugin from supported Codex locations when available |
