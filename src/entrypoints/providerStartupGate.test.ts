@@ -26,6 +26,8 @@ test('skips provider startup for version output', () => {
 test('skips provider startup for utility commands', () => {
   expect(shouldSkipProviderStartup(['tui'])).toBe(true)
   expect(shouldSkipProviderStartup(['doctor'])).toBe(true)
+  expect(shouldSkipProviderStartup(['runtime-doctor'])).toBe(true)
+  expect(shouldSkipProviderStartup(['doctor-runtime'])).toBe(true)
   expect(shouldSkipProviderStartup(['mcp', 'list'])).toBe(true)
   expect(shouldSkipProviderStartup(['plugin', 'list'])).toBe(true)
 })
