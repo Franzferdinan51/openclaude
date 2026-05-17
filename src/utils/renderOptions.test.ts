@@ -26,7 +26,7 @@ describe('terminal stdin override', () => {
     ).toBeUndefined()
   })
 
-  test('skips CONIN$ on Windows by default to preserve OpenClaude stdin behavior', () => {
+  test('skips CONIN$ on Windows by default to preserve PowerShell-safe stdin behavior', () => {
     expect(
       createStdinOverride({
         stdinIsTTY: false,
