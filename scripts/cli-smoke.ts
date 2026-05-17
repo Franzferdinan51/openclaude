@@ -99,12 +99,13 @@ const cases: SmokeCase[] = [
     includes: ['DuckHive background runs'],
   },
   {
-    name: 'background spawn guidance',
+    name: 'background spawn queues AgentRun',
     args: ['--bg', 'test prompt'],
-    expectedStatus: 1,
+    env: createIsolatedConfigEnv,
     includes: [
-      'Background spawning with --bg/--background is not available yet',
-      'ps/logs/attach/kill',
+      'Background AgentRun queued:',
+      'Title: test prompt',
+      'duckhive attach',
     ],
   },
   {

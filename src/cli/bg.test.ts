@@ -121,7 +121,24 @@ describe('background AgentRun CLI handlers', () => {
     expect(stdout.text()).toBe('')
   })
 
-  test('--bg reports explicit unsupported spawning guidance', async () => {
+  test('--bg registers a queued AgentRun for shared control surfaces', async () => {
+    const store = makeStore()
+    const stdout = makeWriter()
+    const stderr = makeWriter()
+    setBgTestDeps({ getAgentRunStore: () => store, stdout: stdout.stream, stderr: stderr.stream })
+
+    await handleBgFlag(['--bg', 'review', 'terminal', 'startup'])
+
+    expect(stdout.text()).toContain('Background AgentRun queued: run_bg')
+    expect(stdout.text()).toContain('duckhive attach run_bg')
+    expect(store.getRun('run_bg')?.status).toBe('queued')
+    expect(store.getRun('run_bg')?.title).toBe('review terminal startup')
+    expect(store.getRun('run_bg')?.channelSource?.type).toBe('headless')
+    expect(stderr.text()).toBe('')
+    expect(process.exitCode).toBe(0)
+  })
+
+  test('--bg rejects missing prompt without creating a run', async () => {
     const store = makeStore()
     const stdout = makeWriter()
     const stderr = makeWriter()
@@ -129,8 +146,8 @@ describe('background AgentRun CLI handlers', () => {
 
     await handleBgFlag(['--bg'])
 
-    expect(stderr.text()).toContain('Background spawning with --bg/--background is not available yet')
-    expect(stderr.text()).toContain('ps/logs/attach/kill')
+    expect(stderr.text()).toContain('--bg/--background requires a prompt')
+    expect(store.listRuns()).toEqual([])
     expect(process.exitCode).toBe(1)
     expect(stdout.text()).toBe('')
   })

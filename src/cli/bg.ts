@@ -36,15 +36,32 @@ function usage(error?: string): string {
     'DuckHive background run controls',
     '',
     'Usage:',
+    '  duckhive --bg <prompt>',
+    '  duckhive --background <prompt>',
     '  duckhive ps [status]',
     '  duckhive logs <run-id> [limit]',
     '  duckhive attach <run-id>',
     '  duckhive kill <run-id>',
     '',
     'These commands use the shared AgentRun store also used by /run, Telegram, WebUI, and the harness API.',
-    'Background spawning with --bg is not available in this open build yet.',
+    'The --bg/--background path registers a queued AgentRun so it is visible to ps/logs/attach/kill and remote control surfaces.',
   ]
   return error ? `${error}\n\n${lines.join('\n')}` : lines.join('\n')
+}
+
+function parseBgPrompt(args: string[]): { prompt?: string; error?: string } {
+  const promptParts = args.filter(arg => arg !== '--bg' && arg !== '--background')
+  const prompt = promptParts.join(' ').trim()
+  if (!prompt) {
+    return { error: '--bg/--background requires a prompt to register.' }
+  }
+  return { prompt }
+}
+
+function titleFromPrompt(prompt: string): string {
+  const compact = prompt.replace(/\s+/g, ' ').trim()
+  if (compact.length <= 80) return compact
+  return `${compact.slice(0, 77)}...`
 }
 
 function parseStatus(status?: string): { status?: AgentRunStatus; error?: string } {
@@ -230,11 +247,35 @@ export async function killHandler(args: string[] = []): Promise<void> {
   writeLine(stdout, `Run stopped: ${runId}`)
 }
 
-export async function handleBgFlag(_args: string[] = []): Promise<void> {
-  const { stderr } = deps()
+export async function handleBgFlag(args: string[] = []): Promise<void> {
+  const { stdout, stderr } = deps()
+  const parsed = parseBgPrompt(args)
+  if (parsed.error || !parsed.prompt) {
+    writeLine(stderr, usage(parsed.error))
+    process.exitCode = 1
+    return
+  }
+
+  const run = resolveStore().createRun({
+    title: titleFromPrompt(parsed.prompt),
+    description: parsed.prompt,
+    status: 'queued',
+    runtimeHarness: 'builtin',
+    channelSource: { type: 'headless' },
+    progress: {
+      summary: 'Registered from --bg; waiting for a background executor.',
+    },
+  })
+
   writeLine(
-    stderr,
-    usage('Background spawning with --bg/--background is not available yet in this open DuckHive build. Existing AgentRuns can still be inspected and stopped with ps/logs/attach/kill.'),
+    stdout,
+    [
+      `Background AgentRun queued: ${run.id}`,
+      `Title: ${run.title}`,
+      '',
+      `Inspect: duckhive attach ${run.id}`,
+      `Logs: duckhive logs ${run.id}`,
+      `Cancel: duckhive kill ${run.id}`,
+    ].join('\n'),
   )
-  process.exitCode = 1
 }
