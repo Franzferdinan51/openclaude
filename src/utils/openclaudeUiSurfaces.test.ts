@@ -229,3 +229,20 @@ describe('DuckHive completion guidance surfaces', () => {
     expect(source).not.toContain('Claude Code shell completions')
   })
 })
+
+describe('DuckHive provider and GitHub setup surfaces', () => {
+  test('provider recommendation and GitHub API key setup avoid upstream account wording', () => {
+    const providerRecommend = readFileSync(join(repoRoot, 'scripts', 'provider-recommend.ts'), 'utf8')
+    const apiKeyStep = readFileSync(
+      join(repoRoot, 'src', 'commands', 'install-github-app', 'ApiKeyStep.tsx'),
+      'utf8',
+    )
+
+    expect(providerRecommend).toContain('.duckhive-profile.json')
+    expect(providerRecommend).not.toContain('Saved .openclaude-profile.json')
+    expect(apiKeyStep).toContain('Use your existing DuckHive-compatible API key')
+    expect(apiKeyStep).toContain('Create a long-lived token with your hosted account')
+    expect(apiKeyStep).not.toContain('Use your existing Claude Code API key')
+    expect(apiKeyStep).not.toContain('Create a long-lived token with your Claude subscription')
+  })
+})
