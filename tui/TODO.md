@@ -1,6 +1,6 @@
 # DuckHive Harness Todo
 
-Last updated: 2026-04-23
+Last updated: 2026-05-16
 
 This file started with the Go TUI work, but it now tracks harness-wide integration requirements as well.
 
@@ -16,7 +16,7 @@ This file started with the Go TUI work, but it now tracks harness-wide integrati
 - Move checkpoint, council, media, MCP, ACP, permission, and budget state into shared harness services that every client can consume.
 - Add backend orchestration work from OpenClaw, hermes-agent, NemoClaw, duck-cli, and the AI Bot Council stack into reusable services and tools.
 - Add a session/status layer for checkpoints, permissions, budgets, model routing, MCP, ACP, bridge health, and council health that works in TUI, REPL, and automation.
-- Add a Kimi-style shell mode with real command execution and output capture, shared between the TUI and other shell-facing flows.
+- Extend the current Kimi-style shell mode beyond local execution so session/task/approval state is shared with the rest of the harness.
 - Rework the TUI into a more Crush-like shell layout without forcing transcript/session rails on by default.
 
 ## Later
@@ -39,3 +39,10 @@ This file started with the Go TUI work, but it now tracks harness-wide integrati
 - Enabled agent team surfaces in DuckHive by default instead of leaving them behind the old external gating.
 - Cleaned the top-level CLI help/install/provider surfaces to reflect DuckHive and the current provider set.
 - Reduced default Go TUI chrome by making the inspector rail opt-in and simplifying the idle status line.
+- Added a live session elapsed clock plus bridge-fed API duration display to the Bubble Tea header/status rail.
+- Fixed Windows shell-mode fallback and `SHELL` override handling for the Bubble Tea local shell path.
+- Treated shell interrupts as clean cancellations instead of generic failures in the Bubble Tea shell path.
+- Wired native Bubble Tea suspend/resume instead of leaving Ctrl+Z as placeholder status text.
+- Added real external-editor round-trip support for `ctrl+x ctrl+e`, including temp-file cleanup and Windows quoted editor paths.
+- Added composer undo for typed input, canceled input, history replacement, and external-editor apply.
+- Wired `ctrl+p` to the real backend `/model` command when a bridge is live, with an honest local settings fallback when offline.

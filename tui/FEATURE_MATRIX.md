@@ -1,6 +1,6 @@
 # DuckHive Harness Feature Matrix
 
-Last updated: 2026-04-23
+Last updated: 2026-05-16
 
 This matrix tracks the harness capabilities we want to absorb from the upstream CLI products the project is drawing from. It is intentionally additive: DuckHive remains based on OpenClaude, and imported features should land in the shared core first, then fan out across the Go TUI, the legacy REPL, print/headless mode, and backend services.
 
@@ -9,10 +9,10 @@ This matrix tracks the harness capabilities we want to absorb from the upstream 
 | Source | Key traits to absorb | Shared harness status | Surface status |
 | --- | --- | --- | --- |
 | OpenClaude | base harness, session flow, tool runtime, REPL/print foundations | active base platform | keep core compatibility while replacing user-facing shell and provider ergonomics |
-| Crush | dense terminal shell, layout confidence, keyboard-first navigation, polished rails | Go TUI foundation exists | default shell still needs a stronger Crush-like command deck and panel model |
+| Crush | dense terminal shell, layout confidence, keyboard-first navigation, polished rails | Go TUI foundation exists; local shell/editor/suspend flows are now real instead of placeholders | default shell still needs a stronger Crush-like command deck and panel model |
 | Codex | local coding loop, repo instructions, desktop/editor surface | AGENTS-based onboarding already exists; codex provider support exists in repo | needs shared session/task UX across TUI, REPL, print, and editor-adjacent flows |
 | Gemini CLI | checkpointing, context files, scripting/headless posture, trusted workspace feel | checkpoint manager exists; session recovery exists | needs checkpoint/session features across TUI, slash commands, and automation paths |
-| Kimi CLI | shell mode, ACP bridge, MCP management, IDE adjacency | ACP bridge exists; MCP stack exists | shell mode and ACP need shared harness semantics, not just TUI bindings |
+| Kimi CLI | shell mode, ACP bridge, MCP management, IDE adjacency | ACP bridge exists; MCP stack exists; Bubble Tea shell/editor loop is now real | shell mode and ACP still need deeper shared harness semantics, not just TUI bindings |
 | OpenClaw | multi-agent routing, voice, channel surfaces, live workspace concepts | voice + ACP/MCP + remote/channel foundations exist | orchestrator and voice/channel features should land in shared core, then fan out to all clients |
 | hermes-agent | agent loop discipline, autonomous planning/execution handoff, research-oriented agent posture | orchestration heuristics exist; council/team paths exist | needs stronger autonomous worker orchestration and better long-task execution flow |
 | NemoClaw | NVIDIA-backed agent/runtime patterns, GPU/provider-aware flows, multimodal system posture | NVIDIA NIM routing exists; multimodal surfaces partially exist | needs deeper NVIDIA-aware model/runtime UX and better multimodal execution flows |
@@ -27,3 +27,10 @@ This matrix tracks the harness capabilities we want to absorb from the upstream 
 3. Expose those workstreams through the default `duckhive` command, Go TUI, REPL, and print/headless paths instead of building TUI-only features.
 4. Keep the TUI as a strong primary shell, but not the only place where imported capabilities exist.
 5. Layer in deeper workflows: checkpoints, model routing, orchestration, media jobs, voice, channels, approvals, budgets, and desktop surfaces.
+
+## Recent TUI Progress
+
+- Bubble Tea now has a live elapsed session clock and bridge-fed API-duration rail data.
+- Bubble Tea shell mode now works cross-platform on Windows as well as Unix-like shells.
+- Bubble Tea shell interrupts, suspend/resume, external-editor handoff, composer undo, and `ctrl+p` model dispatch are now real behaviors instead of placeholder status text.
+- The remaining model-picker work is now about building a richer dedicated picker surface, not making the shortcut do anything at all.

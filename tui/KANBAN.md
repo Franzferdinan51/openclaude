@@ -1,6 +1,6 @@
 # DuckHive Harness Kanban
 
-Last updated: 2026-04-23
+Last updated: 2026-05-16
 
 This board tracks harness-wide capability merging, with the Go TUI as one delivery surface.
 
@@ -20,7 +20,7 @@ This board tracks harness-wide capability merging, with the Go TUI as one delive
 
 ## Ready
 
-- Model picker screen
+- Dedicated local model picker screen on top of the now-working bridge shortcut
 - Shared harness session state extraction
 - Shared bridge fallback rules for non-bridge launches
 - CLI/help branding cleanup for remaining high-traffic commands
@@ -37,6 +37,7 @@ This board tracks harness-wide capability merging, with the Go TUI as one delive
 
 - Go TUI test/build verification
 - Runtime verification for provider flags, council health, and slash orchestration commands
+- Root README alignment once the unrelated README worktree diff is safely disentangled
 
 ## Done
 
@@ -50,3 +51,10 @@ This board tracks harness-wide capability merging, with the Go TUI as one delive
 - DuckHive agent teams enabled by default
 - Top-level provider/install/help surface cleanup
 - Default TUI rail toned down
+- Bubble Tea session clock and bridge-fed API duration rail
+- Bubble Tea Windows shell fallback and `SHELL` override correctness
+- Bubble Tea shell interrupt handling
+- Bubble Tea suspend/resume wiring
+- Bubble Tea external editor support
+- Bubble Tea composer undo support
+- Bubble Tea `ctrl+p` bridge dispatch to the real `/model` backend command
