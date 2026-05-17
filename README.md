@@ -980,7 +980,7 @@ Tracks spend per provider daily and auto-falls back when budgets are exhausted:
 /budget reset          # Reset all spend counters
 ```
 
-State: `~/.duckhive/budget-state.json` · Log: `~/.duckhive/budget-log.jsonl` · Fail-open (never blocks API calls).
+State: `~/.duckhive/budget-state.json` · Log: `~/.duckhive/budget-log.jsonl` · Fail-open (never blocks API calls). `/budget` rejects unterminated quoted input before changing provider or global limits, so malformed terminal input cannot partially mutate spend settings.
 
 ### Provider Cache — 30s Response Cache
 

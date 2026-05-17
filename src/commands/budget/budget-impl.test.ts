@@ -63,6 +63,44 @@ describe('/budget command', () => {
     expect(result.value).toContain('minimax daily budget set to $7.50')
   })
 
+  test('accepts quoted provider and amount arguments', async () => {
+    const setProviderBudgetMock = mock(() => {})
+    setBudgetTestDeps({
+      getBudgetState: () => baseState() as any,
+      getGlobalRemainingBudget: () => 18.75,
+      getProvidersByCost: () => [{ provider: 'minimax', costPerM: 1.5 }] as any,
+      setProviderBudget: setProviderBudgetMock as never,
+    })
+
+    const result = await call('set "minimax" "7.5"', {} as never)
+
+    expect(setProviderBudgetMock).toHaveBeenCalledWith('minimax', { dailyBudgetUsd: 7.5 })
+    expect(result.type).toBe('text')
+    if (result.type !== 'text') throw new Error('unexpected result type')
+    expect(result.value).toContain('minimax daily budget set to $7.50')
+  })
+
+  test('rejects unterminated quoted input before mutating budgets', async () => {
+    const setProviderBudgetMock = mock(() => {})
+    const setGlobalBudgetMock = mock(() => {})
+    setBudgetTestDeps({
+      getBudgetState: () => baseState() as any,
+      getGlobalRemainingBudget: () => 18.75,
+      getProvidersByCost: () => [{ provider: 'minimax', costPerM: 1.5 }] as any,
+      setProviderBudget: setProviderBudgetMock as never,
+      setGlobalBudget: setGlobalBudgetMock as never,
+    })
+
+    const result = await call('set "minimax 7.5', {} as never)
+
+    expect(result.type).toBe('text')
+    if (result.type !== 'text') throw new Error('unexpected result type')
+    expect(result.value).toContain('Unterminated quoted string in /budget arguments.')
+    expect(result.value).toContain('/budget set <provider> <usd>')
+    expect(setProviderBudgetMock).not.toHaveBeenCalled()
+    expect(setGlobalBudgetMock).not.toHaveBeenCalled()
+  })
+
   test('resets spend counters', async () => {
     const resetAllSpendMock = mock(() => {})
     setBudgetTestDeps({
