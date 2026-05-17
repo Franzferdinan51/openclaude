@@ -1201,7 +1201,7 @@ bun run doctor:runtime
 cd tui && go test ./...
 ```
 
-`bun run doctor:runtime` reports the terminal TUI launch path and computer-use fallback readiness too. On Windows without Go or `tui\duckhive-tui.exe`, the doctor and `duckhive tui` both point at the missing Go prerequisite while leaving the classic REPL as the safe default. On non-macOS hosts, the computer-use check confirms that the bundled `newest-desktop-control` gateway is available for desktop, Android, and `computer_use_*` compatibility aliases instead of requiring Codex.app.
+`bun run doctor:runtime` reports the CLI input mode, terminal TUI launch path, and computer-use fallback readiness too. On Windows it warns if `DUCKHIVE_USE_DATA_STDIN`, `OPENCLAUDE_USE_DATA_STDIN`, or `DUCKHIVE_USE_READABLE_STDIN=0` is forcing the fragile stdin path that can make the UI render without accepting typing. On Windows without Go or `tui\duckhive-tui.exe`, the doctor and `duckhive tui` both point at the missing Go prerequisite while leaving the classic REPL as the safe default. On non-macOS hosts, the computer-use check confirms that the bundled `newest-desktop-control` gateway is available for desktop, Android, and `computer_use_*` compatibility aliases instead of requiring Codex.app.
 
 The Go TUI prompt and streaming markers use ASCII-safe `> ` and `|` indicators across the legacy and component input paths, avoiding mojibake in Windows terminals and plain log captures.
 

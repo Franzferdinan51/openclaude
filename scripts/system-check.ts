@@ -158,6 +158,34 @@ function checkTuiLaunchPath(): CheckResult {
   )
 }
 
+export function checkCliInputMode(
+  env: NodeJS.ProcessEnv = process.env,
+  runtime = { platform: process.platform },
+): CheckResult {
+  if (runtime.platform !== 'win32') {
+    return pass('CLI input mode', 'Readable stdin default active.')
+  }
+
+  if (isTruthy(env.DUCKHIVE_USE_DATA_STDIN) || isTruthy(env.OPENCLAUDE_USE_DATA_STDIN)) {
+    return fail(
+      'CLI input mode',
+      'Windows data-stdin override is enabled. Remove DUCKHIVE_USE_DATA_STDIN/OPENCLAUDE_USE_DATA_STDIN if the UI starts but typing does not appear.',
+    )
+  }
+
+  if (env.DUCKHIVE_USE_READABLE_STDIN === '0' || env.OPENCLAUDE_USE_READABLE_STDIN === '0') {
+    return fail(
+      'CLI input mode',
+      'Readable stdin is explicitly disabled. Remove DUCKHIVE_USE_READABLE_STDIN=0/OPENCLAUDE_USE_READABLE_STDIN=0 to restore interactive typing.',
+    )
+  }
+
+  return pass(
+    'CLI input mode',
+    'Windows-safe readable stdin is active; early input capture remains disabled by default.',
+  )
+}
+
 function readPackageVersion(packageJsonPath: string): string | undefined {
   try {
     const parsed = JSON.parse(readFileSync(packageJsonPath, 'utf8')) as { version?: unknown }
@@ -809,6 +837,7 @@ async function main(): Promise<void> {
   results.push(checkNodeVersion())
   results.push(checkBunRuntime())
   results.push(checkBuildArtifacts())
+  results.push(checkCliInputMode())
   results.push(checkTuiLaunchPath())
   results.push(checkComputerUseReadiness())
   results.push(...checkOpenAIEnv())

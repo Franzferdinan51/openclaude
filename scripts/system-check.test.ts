@@ -1,6 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
-import { formatReachabilityFailureDetail } from './system-check.ts'
+import {
+  checkCliInputMode,
+  formatReachabilityFailureDetail,
+} from './system-check.ts'
 
 describe('formatReachabilityFailureDetail', () => {
   test('returns generic failure detail for non-codex transport', () => {
@@ -55,5 +58,44 @@ describe('formatReachabilityFailureDetail', () => {
     expect(detail).toContain(
       'Try "codexplan" or another entitled Codex model.',
     )
+  })
+})
+
+describe('checkCliInputMode', () => {
+  test('passes on Windows when readable stdin remains the default', () => {
+    const result = checkCliInputMode({}, { platform: 'win32' })
+
+    expect(result.ok).toBe(true)
+    expect(result.detail).toContain('Windows-safe readable stdin')
+  })
+
+  test('fails on Windows when data stdin is forced', () => {
+    const result = checkCliInputMode(
+      { DUCKHIVE_USE_DATA_STDIN: '1' },
+      { platform: 'win32' },
+    )
+
+    expect(result.ok).toBe(false)
+    expect(result.detail).toContain('typing does not appear')
+  })
+
+  test('fails on Windows when readable stdin is disabled', () => {
+    const result = checkCliInputMode(
+      { DUCKHIVE_USE_READABLE_STDIN: '0' },
+      { platform: 'win32' },
+    )
+
+    expect(result.ok).toBe(false)
+    expect(result.detail).toContain('restore interactive typing')
+  })
+
+  test('passes on non-Windows without Windows-specific warnings', () => {
+    const result = checkCliInputMode(
+      { DUCKHIVE_USE_DATA_STDIN: '1' },
+      { platform: 'linux' },
+    )
+
+    expect(result.ok).toBe(true)
+    expect(result.detail).toBe('Readable stdin default active.')
   })
 })
