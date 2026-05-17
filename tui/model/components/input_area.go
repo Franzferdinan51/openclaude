@@ -7,6 +7,8 @@ import (
 	"github.com/gitlawb/duckhive/tui/tui"
 )
 
+const inputPrompt = "> "
+
 // InputAreaModel wraps a bubbles textarea for multi-line user input.
 type InputAreaModel struct {
 	ta      textarea.Model
@@ -18,7 +20,7 @@ type InputAreaModel struct {
 func NewInputArea(width, height int) InputAreaModel {
 	ta := textarea.New()
 	ta.Placeholder = "Ask DuckHive..."
-	ta.Prompt = tui.ModeIndicator.Render("› ")
+	ta.Prompt = tui.ModeIndicator.Render(inputPrompt)
 	ta.CharLimit = 10000
 	ta.SetWidth(width)
 	ta.SetHeight(height)
