@@ -181,3 +181,40 @@ describe('DuckHive slash auth surfaces', () => {
     expect(logoutCommand.description).toBe('Sign out from your hosted auth account')
   })
 })
+
+describe('DuckHive remote auth surfaces', () => {
+  test('remote and teleport prompts point users to DuckHive account wording', () => {
+    const bridgeMain = readFileSync(join(repoRoot, 'src', 'bridge', 'bridgeMain.ts'), 'utf8')
+    const bridgeApi = readFileSync(join(repoRoot, 'src', 'bridge', 'bridgeApi.ts'), 'utf8')
+    const statusNotices = readFileSync(
+      join(repoRoot, 'src', 'utils', 'statusNoticeDefinitions.tsx'),
+      'utf8',
+    )
+    const resumeTask = readFileSync(join(repoRoot, 'src', 'components', 'ResumeTask.tsx'), 'utf8')
+    const teleportError = readFileSync(join(repoRoot, 'src', 'components', 'TeleportError.tsx'), 'utf8')
+    const githubOAuth = readFileSync(
+      join(repoRoot, 'src', 'commands', 'install-github-app', 'OAuthFlowStep.tsx'),
+      'utf8',
+    )
+
+    const combined = [
+      bridgeMain,
+      bridgeApi,
+      statusNotices,
+      resumeTask,
+      teleportError,
+      githubOAuth,
+    ].join('\n')
+
+    expect(combined).toContain('duckhive remote-control')
+    expect(combined).toContain('hosted account auth')
+    expect(combined).toContain('configured API billing key')
+    expect(combined).toContain('Login with hosted account')
+    expect(combined).toContain('Opening browser to sign in with your hosted account...')
+    expect(combined).not.toContain('Run `claude remote-control')
+    expect(combined).not.toContain("Run 'claude remote-control")
+    expect(combined).not.toContain('Claude account with')
+    expect(combined).not.toContain('Login with Claude account')
+    expect(combined).not.toContain('Anthropic Console key')
+  })
+})

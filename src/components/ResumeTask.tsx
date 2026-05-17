@@ -249,9 +249,9 @@ function renderErrorSpecificGuidance(errorType: LoadErrorType): React.ReactNode 
         </Box>;
     case 'auth':
       return <Box marginY={1} flexDirection="column">
-          <Text dimColor>Teleport requires a Claude account</Text>
+          <Text dimColor>Teleport requires a compatible hosted account</Text>
           <Text dimColor>
-            Run <Text bold>/login</Text> and select &quot;Claude account with
+            Run <Text bold>/login</Text> and select &quot;Hosted account with
             subscription&quot;
           </Text>
         </Box>;
