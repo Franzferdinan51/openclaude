@@ -4,7 +4,7 @@ This guide uses Windows PowerShell.
 
 ## 1. Install Node.js
 
-Install Node.js 20 or newer from:
+Install Node.js 22 or newer from:
 
 - `https://nodejs.org/`
 
@@ -26,10 +26,9 @@ For a source checkout:
 ```powershell
 git clone https://github.com/Franzferdinan51/DuckHive.git
 cd DuckHive
-bun install
-bun run build
-.\bin\duckhive.cmd --version
-.\bin\duckhive.cmd --yolo
+.\install.ps1
+duckhive --version
+duckhive --yolo
 ```
 
 ## 3. Pick One Provider
@@ -119,6 +118,15 @@ launcher from the repository root:
 
 ```powershell
 .\bin\duckhive.cmd --dangerously-skip-permissions
+```
+
+Or rerun the source installer, which creates a stable launcher at
+`$env:LOCALAPPDATA\DuckHive\bin\duckhive.cmd` and adds it to both your user PATH
+and the current PowerShell session:
+
+```powershell
+.\install.ps1
+duckhive --version
 ```
 
 Or link the checkout onto your PATH:

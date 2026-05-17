@@ -22,12 +22,12 @@ $Launcher = Join-Path $BinDir "duckhive.cmd"
 Write-Step "Installing from $Root"
 
 if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
-  Fail "Node.js 20+ is required. Install Node.js from https://nodejs.org and rerun this script."
+  Fail "Node.js 22+ is required. Install Node.js from https://nodejs.org and rerun this script."
 }
 
 $nodeMajor = [int]((node -p "process.versions.node.split('.')[0]") | Select-Object -First 1)
-if ($nodeMajor -lt 20) {
-  Fail "Node.js 20+ is required. Found $(node --version)."
+if ($nodeMajor -lt 22) {
+  Fail "Node.js 22+ is required. Found $(node --version)."
 }
 
 if (-not (Get-Command bun -ErrorAction SilentlyContinue)) {
@@ -74,6 +74,11 @@ $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
 if (($userPath -split ';') -notcontains $BinDir) {
   [Environment]::SetEnvironmentVariable("Path", "$userPath;$BinDir", "User")
   Write-Step "Added $BinDir to your user PATH. Open a new terminal before running duckhive."
+}
+
+if (($env:Path -split ';') -notcontains $BinDir) {
+  $env:Path = "$env:Path;$BinDir"
+  Write-Step "Added $BinDir to PATH for this PowerShell session."
 }
 
 Write-Step "Installed launcher: $Launcher"

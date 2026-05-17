@@ -102,10 +102,9 @@ duckhive "Implement a REST API"
 
 **Windows source checkout:**
 ```powershell
-bun install
-bun run build
-.\bin\duckhive.cmd --dangerously-skip-permissions
-.\bin\duckhive.cmd --yolo
+.\install.ps1
+duckhive --dangerously-skip-permissions
+duckhive --yolo
 ```
 
 `--yolo` and `--dangerously-skip-permissions` are the same startup mode. Both
@@ -126,7 +125,7 @@ hardcoding `ChatGPT/OpenAI` defaults ahead of the CLI. That means first-run
 startup falls back to MiniMax, while saved `/provider` profiles and startup
 settings stay authoritative.
 
-If `duckhive` is not recognized in PowerShell, the package is not installed on your `PATH` yet. Use the local launcher above from a source checkout, or install/link the package globally with `npm i -g github:Franzferdinan51/DuckHive`, `npm link`, or the published `duckhive` package when available.
+If `duckhive` is not recognized in PowerShell, the package is not installed on your `PATH` yet. From a source checkout, run `.\install.ps1`; it creates `$env:LOCALAPPDATA\DuckHive\bin\duckhive.cmd` and updates both your user PATH and the current PowerShell session. You can also use `.\bin\duckhive.cmd` directly, install globally with `npm i -g github:Franzferdinan51/DuckHive`, run `npm link`, or use the published `duckhive` package when available.
 
 ---
 
