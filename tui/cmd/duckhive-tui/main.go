@@ -391,7 +391,7 @@ func (m *MainModel) renderEmptyState(width int) string {
 func (m *MainModel) renderMiniDeck(width int, title string, lines []string) string {
 	rendered := []string{tui.SectionTitle.Render(title)}
 	for _, line := range lines {
-		rendered = append(rendered, tui.EmptyItem.Width(width).Render("• "+line))
+		rendered = append(rendered, tui.EmptyItem.Width(width).Render("- "+line))
 	}
 	return lipgloss.JoinVertical(lipgloss.Left, rendered...)
 }
@@ -1821,7 +1821,7 @@ func (m *MainModel) renderCommandRail() string {
 func (m *MainModel) renderFooter() string {
 	status := m.state.StatusMsg
 	if status == "" {
-		status = "ready · /help deck · /goal status · /runs agent runs · /agents super agent · /repl classic"
+		status = "ready | /help deck | /goal status | /runs agent runs | /agents super agent | /repl classic"
 	}
 
 	help := formatHelp(tui.ActiveBindings(m.keys, m.currentContext()))

@@ -814,6 +814,42 @@ func TestRenderHeaderShowsElapsedSessionClock(t *testing.T) {
 	}
 }
 
+func TestRenderEmptyStateUsesAsciiMarkers(t *testing.T) {
+	m := &MainModel{
+		state: model.NewAppState(),
+	}
+
+	rendered := m.renderEmptyState(100)
+	if strings.Contains(rendered, "•") || strings.Contains(rendered, "·") {
+		t.Fatalf("empty state contains non-ASCII markers:\n%s", rendered)
+	}
+	for _, want := range []string{
+		"- Ask for a code change",
+		"- Agent platform:",
+		"- Provider:",
+	} {
+		if !strings.Contains(rendered, want) {
+			t.Fatalf("empty state missing %q:\n%s", want, rendered)
+		}
+	}
+}
+
+func TestRenderFooterUsesAsciiStatusSeparators(t *testing.T) {
+	m := &MainModel{
+		state: model.NewAppState(),
+		keys:  tui.DefaultKeyMap(),
+		width: 120,
+	}
+
+	rendered := m.renderFooter()
+	if strings.Contains(rendered, "•") || strings.Contains(rendered, "·") {
+		t.Fatalf("footer contains non-ASCII markers:\n%s", rendered)
+	}
+	if !strings.Contains(rendered, "ready | /help deck | /goal status") {
+		t.Fatalf("footer missing ASCII status rail:\n%s", rendered)
+	}
+}
+
 func TestRenderSessionCardShowsElapsedAndAPITime(t *testing.T) {
 	m := &MainModel{
 		state: model.NewAppState(),
