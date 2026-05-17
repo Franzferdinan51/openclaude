@@ -2,11 +2,11 @@ import { describe, expect, test } from 'bun:test'
 import { determineStdinMode } from './App.js'
 
 describe('determineStdinMode', () => {
-  test('uses data events on Windows by default to preserve interactive typing', () => {
-    expect(determineStdinMode({ env: {}, platform: 'win32' })).toBe('data')
+  test('uses readable events on Windows by default to match the OpenClaude input path', () => {
+    expect(determineStdinMode({ env: {}, platform: 'win32' })).toBe('readable')
   })
 
-  test('allows readable events on Windows with explicit opt-in', () => {
+  test('keeps readable events on Windows with explicit opt-in', () => {
     expect(
       determineStdinMode({
         env: { DUCKHIVE_USE_READABLE_STDIN: '1' },
@@ -15,7 +15,7 @@ describe('determineStdinMode', () => {
     ).toBe('readable')
   })
 
-  test('keeps legacy readable events on non-Windows by default', () => {
+  test('keeps readable events on non-Windows by default', () => {
     expect(determineStdinMode({ env: {}, platform: 'linux' })).toBe('readable')
   })
 
