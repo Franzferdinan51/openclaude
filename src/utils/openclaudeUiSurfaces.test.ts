@@ -163,7 +163,11 @@ describe('DuckHive CLI help surfaces', () => {
     )
     expect(source).toContain('Sign in to a DuckHive-compatible hosted account')
     expect(source).toContain('Log out from your hosted auth account')
+    expect(source).toContain(
+      'use provider environment variables or apiKeyHelper via --settings',
+    )
     expect(source).not.toContain('requires Claude subscription')
+    expect(source).not.toContain('Anthropic auth is strictly')
     expect(source).not.toContain('Sign in to your Anthropic account')
     expect(source).not.toContain('Log out from your Anthropic account')
   })
