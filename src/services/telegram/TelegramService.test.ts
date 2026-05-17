@@ -227,11 +227,13 @@ describe('TelegramService polling', () => {
 
     const allText = sentMessages.join('\n')
     expect(allText).toContain('[ok] *DuckHive connected!*')
-    expect(allText).toContain('/start')
+    expect(allText).toContain('- /start - Register with DuckHive')
     expect(allText).toContain('Session: [connected]')
     expect(allText).not.toContain('✅')
     expect(allText).not.toContain('🟢')
     expect(allText).not.toContain('🔴')
+    expect(allText).not.toContain('•')
+    expect(allText).not.toContain('·')
   })
 
   test('responds to /runs with AgentRun control-plane state', async () => {
@@ -294,7 +296,11 @@ describe('TelegramService polling', () => {
     await waitFor(() => sentMessages.some(text => text.includes('run-telegram')))
     service.stopTelegramService()
 
-    expect(sentMessages.join('\n')).toContain('Telegram visible run')
+    const allText = sentMessages.join('\n')
+    expect(allText).toContain('Telegram visible run')
+    expect(allText).toContain('- run-telegram [running] Telegram visible run - coder')
+    expect(allText).not.toContain('•')
+    expect(allText).not.toContain('·')
   })
 
   test('accepts Telegram group command suffixes like /runs@botname', async () => {
@@ -489,7 +495,8 @@ describe('TelegramService polling', () => {
     const allText = sentMessages.join('\n')
     expect(allText).toContain('Detailed Telegram run')
     expect(allText).toContain('Agent: reviewer')
-    expect(allText).toContain('message_delta')
+    expect(allText).toContain('- message_delta at')
+    expect(allText).not.toContain('•')
   })
 
   test('approves a specific pending run approval over Telegram', async () => {

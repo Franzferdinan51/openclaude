@@ -439,17 +439,17 @@ registerCommand('start', (chatId) => {
 registerCommand('help', (chatId) => {
   api?.sendMarkdown(chatId, `*DuckHive Telegram Commands*
 
-• /start — Register with DuckHive
-• /status — Current session status
-• /agents — Show available agent-control commands
-• /runs — List recent agent runs
-• /run <id> — Show one run
-• /tail <id> — Show recent run events
-• /pause <id> — Pause a run
-• /resume <id> — Resume a run
-• /stop <id> — Cancel a run
-• /approve <id> — Mark an approval as acknowledged
-• /help — Show this help
+- /start - Register with DuckHive
+- /status - Current session status
+- /agents - Show available agent-control commands
+- /runs - List recent agent runs
+- /run <id> - Show one run
+- /tail <id> - Show recent run events
+- /pause <id> - Pause a run
+- /resume <id> - Resume a run
+- /stop <id> - Cancel a run
+- /approve <id> - Mark an approval as acknowledged
+- /help - Show this help
 
 You can also just send any message to have it processed by DuckHive.`).catch(() => {})
 })
@@ -494,7 +494,7 @@ registerCommand('tail', (chatId, args) => {
   const events = runId ? getAgentRunStore().listEvents(runId).slice(-8) : []
   const text = events.length === 0
     ? `No events found for run: ${runId || '(missing id)'}`
-    : `*Run Events ${runId}*\n\n${events.map(event => `• ${event.type} at ${new Date(event.timestamp).toISOString()}`).join('\n')}`
+    : `*Run Events ${runId}*\n\n${events.map(event => `- ${event.type} at ${new Date(event.timestamp).toISOString()}`).join('\n')}`
   api?.sendMarkdown(chatId, text).catch(() => {})
 })
 
@@ -538,8 +538,8 @@ function updateRunStatusCommand(
 }
 
 function formatRunLine(run: AgentRun): string {
-  const agent = run.selectedAgent ? ` · ${run.selectedAgent}` : ''
-  return `• ${run.id} [${run.status}] ${run.title}${agent}`
+  const agent = run.selectedAgent ? ` - ${run.selectedAgent}` : ''
+  return `- ${run.id} [${run.status}] ${run.title}${agent}`
 }
 
 function formatRunDetail(run: AgentRun): string {
