@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import test from 'node:test'
 
 import { validateOAuthCallbackParams } from './auth.js'
@@ -58,4 +60,11 @@ test('OAuth callback accepts authorization codes only when state matches', () =>
     ),
     { type: 'state_mismatch' },
   )
+})
+
+test('XAA setup guidance uses the DuckHive command', () => {
+  const source = readFileSync(join(import.meta.dirname, 'auth.ts'), 'utf8')
+
+  assert.match(source, /duckhive mcp xaa setup --issuer <url>/)
+  assert.doesNotMatch(source, /Run 'claude mcp xaa setup/)
 })
