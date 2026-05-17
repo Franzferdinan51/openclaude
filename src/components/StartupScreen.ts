@@ -204,7 +204,7 @@ export function detectProvider(modelOverride?: string): { name: string; model: s
 
 function boxRow(content: string, width: number, rawLen: number, border: RGB): string {
   const pad = Math.max(0, width - 2 - rawLen)
-  return `${ansiRgb(...border)}\u2502${RESET}${content}${' '.repeat(pad)}${ansiRgb(...border)}\u2502${RESET}`
+  return `${ansiRgb(...border)}|${RESET}${content}${' '.repeat(pad)}${ansiRgb(...border)}|${RESET}`
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
@@ -241,11 +241,11 @@ export function printStartupScreen(modelOverride?: string): void {
   out.push('')
 
   // Tagline
-  out.push(`  ${ansiRgb(...ACCENT)}\u2726${RESET} ${ansiRgb(...CREAM)}Any model. Every tool. Zero limits.${RESET} ${ansiRgb(...ACCENT)}\u2726${RESET}`)
+  out.push(`  ${ansiRgb(...ACCENT)}*${RESET} ${ansiRgb(...CREAM)}Any model. Every tool. Zero limits.${RESET} ${ansiRgb(...ACCENT)}*${RESET}`)
   out.push('')
 
   // Provider info box
-  out.push(`${ansiRgb(...BORDER)}\u2554${'\u2550'.repeat(W - 2)}\u2557${RESET}`)
+  out.push(`${ansiRgb(...BORDER)}+${'-'.repeat(W - 2)}+${RESET}`)
 
   const lbl = (k: string, v: string, c: RGB = CREAM): [string, number] => {
     const padK = k.padEnd(9)
@@ -261,15 +261,15 @@ export function printStartupScreen(modelOverride?: string): void {
   ;[r, l] = lbl('Endpoint', ep)
   out.push(boxRow(r, W, l, BORDER))
 
-  out.push(`${ansiRgb(...BORDER)}\u2560${'\u2550'.repeat(W - 2)}\u2563${RESET}`)
+  out.push(`${ansiRgb(...BORDER)}+${'-'.repeat(W - 2)}+${RESET}`)
 
   const sC: RGB = p.isLocal ? [130, 175, 130] : ACCENT
   const sL = p.isLocal ? 'local' : 'cloud'
-  const sRow = ` ${ansiRgb(...sC)}\u25cf${RESET} ${DIM}${ansiRgb(...DIMCOL)}${sL}${RESET}    ${DIM}${ansiRgb(...DIMCOL)}Ready \u2014 type ${RESET}${ansiRgb(...ACCENT)}/help${RESET}${DIM}${ansiRgb(...DIMCOL)} to begin${RESET}`
-  const sLen = ` \u25cf ${sL}    Ready \u2014 type /help to begin`.length
+  const sRow = ` ${ansiRgb(...sC)}*${RESET} ${DIM}${ansiRgb(...DIMCOL)}${sL}${RESET}    ${DIM}${ansiRgb(...DIMCOL)}Ready - type ${RESET}${ansiRgb(...ACCENT)}/help${RESET}${DIM}${ansiRgb(...DIMCOL)} to begin${RESET}`
+  const sLen = ` * ${sL}    Ready - type /help to begin`.length
   out.push(boxRow(sRow, W, sLen, BORDER))
 
-  out.push(`${ansiRgb(...BORDER)}\u255a${'\u2550'.repeat(W - 2)}\u255d${RESET}`)
+  out.push(`${ansiRgb(...BORDER)}+${'-'.repeat(W - 2)}+${RESET}`)
   out.push(`  ${DIM}${ansiRgb(...DIMCOL)}duckhive ${RESET}${ansiRgb(...ACCENT)}v${MACRO.DISPLAY_VERSION ?? MACRO.VERSION}${RESET}`)
   out.push('')
 
