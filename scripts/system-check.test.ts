@@ -6,6 +6,7 @@ import {
   checkOpenAIEnv,
   checkSkillHubRegistry,
   checkTelegramChannelConfig,
+  checkTerminalStdio,
   formatReachabilityFailureDetail,
 } from './system-check.ts'
 
@@ -153,6 +154,32 @@ describe('checkCliInputMode', () => {
 
     expect(result.ok).toBe(true)
     expect(result.detail).toBe('Readable stdin default active.')
+  })
+})
+
+describe('checkTerminalStdio', () => {
+  test('reports when stdin/stdout are attached to a terminal', () => {
+    const result = checkTerminalStdio({
+      stdinIsTTY: true,
+      stdoutIsTTY: true,
+      stderrIsTTY: true,
+    })
+
+    expect(result.ok).toBe(true)
+    expect(result.detail).toContain('stdin=TTY')
+    expect(result.detail).toContain('Interactive REPL input/output can attach')
+  })
+
+  test('reports redirected stdio without failing the runtime doctor', () => {
+    const result = checkTerminalStdio({
+      stdinIsTTY: false,
+      stdoutIsTTY: false,
+      stderrIsTTY: true,
+    })
+
+    expect(result.ok).toBe(true)
+    expect(result.detail).toContain('stdin=not TTY')
+    expect(result.detail).toContain('interactive REPL needs stdin and stdout')
   })
 })
 

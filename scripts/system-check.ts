@@ -131,6 +131,26 @@ function checkBuildArtifacts(): CheckResult {
   return pass('Build artifacts', distCli)
 }
 
+export function checkTerminalStdio(io = {
+  stdinIsTTY: process.stdin.isTTY === true,
+  stdoutIsTTY: process.stdout.isTTY === true,
+  stderrIsTTY: process.stderr.isTTY === true,
+}): CheckResult {
+  const detail = `stdin=${io.stdinIsTTY ? 'TTY' : 'not TTY'}, stdout=${io.stdoutIsTTY ? 'TTY' : 'not TTY'}, stderr=${io.stderrIsTTY ? 'TTY' : 'not TTY'}.`
+
+  if (io.stdinIsTTY && io.stdoutIsTTY) {
+    return pass(
+      'Terminal stdio',
+      `${detail} Interactive REPL input/output can attach to this terminal.`,
+    )
+  }
+
+  return pass(
+    'Terminal stdio',
+    `${detail} This diagnostic can run redirected, but the interactive REPL needs stdin and stdout attached to a real terminal.`,
+  )
+}
+
 function checkTuiLaunchPath(): CheckResult {
   const isWindows = process.platform === 'win32'
   const binary = resolve(
@@ -962,6 +982,7 @@ export async function runRuntimeDoctor(argv: string[] = process.argv.slice(2)): 
   results.push(checkBunRuntime())
   results.push(checkBuildArtifacts())
   results.push(checkCliInputMode())
+  results.push(checkTerminalStdio())
   results.push(checkTuiLaunchPath())
   results.push(checkComputerUseReadiness())
   results.push(checkHarnessCommandSurfaces())
