@@ -4368,7 +4368,7 @@ async function run(): Promise<CommanderCommand> {
     process.exit(process.exitCode ?? 0);
   });
 
-  program.command('doctor').description(`Check the health of your ${PRODUCT_DISPLAY_NAME} auto-updater. Note: The workspace trust dialog is skipped and stdio servers from .mcp.json are spawned for health checks. Only use this command in directories you trust.`).action(async () => {
+  program.command('doctor').description(`Open the interactive ${PRODUCT_DISPLAY_NAME} diagnostics UI for updater, MCP, plugin, and sandbox health. If the REPL or terminal input is not usable, run \`duckhive runtime-doctor\` instead; it runs terminal-safe checks without starting the chat UI. Note: The workspace trust dialog is skipped and stdio servers from .mcp.json are spawned for health checks. Only use this command in directories you trust.`).action(async () => {
     const [{
       doctorHandler
     }, {

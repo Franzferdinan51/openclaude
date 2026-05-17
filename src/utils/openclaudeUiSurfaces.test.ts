@@ -164,6 +164,9 @@ describe('DuckHive CLI help surfaces', () => {
     expect(source).toContain('runtime-doctor')
     expect(source).toContain('doctor-runtime')
     expect(source).toContain('runtime checks without starting the REPL')
+    expect(source).toContain('terminal input is not usable')
+    expect(source).toContain('terminal-safe checks without starting the chat UI')
+    expect(source).not.toContain('Check the health of your ${PRODUCT_DISPLAY_NAME} auto-updater')
     expect(source).toContain('Sign in to a DuckHive-compatible hosted account')
     expect(source).toContain('Log out from your hosted auth account')
     expect(source).toContain(
