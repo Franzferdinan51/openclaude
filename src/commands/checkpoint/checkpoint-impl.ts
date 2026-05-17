@@ -47,13 +47,13 @@ export const call: LocalCommandCall = async (args: string) => {
   if (!subcommand || subcommand === 'list' || subcommand === 'ls') {
     const checkpoints = listCheckpoints()
     if (checkpoints.length === 0) {
-      return { type: 'text', value: '💾 No saved checkpoints.\nSave one: /checkpoint save [name]' }
+      return { type: 'text', value: 'No saved checkpoints.\nSave one: /checkpoint save [name]' }
     }
-    const lines: string[] = [`💾 Saved Checkpoints (${checkpoints.length})\n${'─'.repeat(50)}`]
+    const lines: string[] = [`Saved Checkpoints (${checkpoints.length})\n${'-'.repeat(50)}`]
     for (const cp of checkpoints) {
       const date = new Date(cp.created).toLocaleString()
       const size = (cp.size / 1024).toFixed(1)
-      lines.push(`  ${cp.name} — ${date} (${size}KB)`)
+      lines.push(`  ${cp.name} - ${date} (${size}KB)`)
     }
     return { type: 'text', value: lines.join('\n') }
   }
@@ -64,29 +64,39 @@ export const call: LocalCommandCall = async (args: string) => {
     const path = join(CHECKPOINT_DIR, `${name}.json`)
     try {
       writeFileSync(path, JSON.stringify(checkpoint, null, 2))
-      return { type: 'text', value: `✅ Checkpoint saved: "${name}"\n📁 ${path}` }
+      return { type: 'text', value: `Checkpoint saved: "${name}"\nPath: ${path}` }
     } catch (e) {
-      return { type: 'text', value: `❌ Failed: ${e}` }
+      return { type: 'text', value: `Failed: ${e}` }
     }
   }
 
   if (subcommand === 'load' || subcommand === 'restore') {
     const path = join(CHECKPOINT_DIR, `${name}.json`)
-    if (!existsSync(path)) return { type: 'text', value: `❌ Checkpoint not found: "${name}"` }
+    if (!existsSync(path)) return { type: 'text', value: `Checkpoint not found: "${name}"` }
     try {
       const data = JSON.parse(require('fs').readFileSync(path, 'utf-8'))
-      return { type: 'text', value: `✅ Loaded: "${data.name}"\nCreated: ${new Date(data.created).toLocaleString()}` }
+      return { type: 'text', value: `Loaded: "${data.name}"\nCreated: ${new Date(data.created).toLocaleString()}` }
     } catch (e) {
-      return { type: 'text', value: `❌ Failed: ${e}` }
+      return { type: 'text', value: `Failed: ${e}` }
     }
   }
 
   if (subcommand === 'delete' || subcommand === 'remove') {
     const path = join(CHECKPOINT_DIR, `${name}.json`)
-    if (!existsSync(path)) return { type: 'text', value: `❌ Not found: "${name}"` }
+    if (!existsSync(path)) return { type: 'text', value: `Not found: "${name}"` }
     try { rmSync(path) } catch {}
-    return { type: 'text', value: `✅ Deleted: "${name}"` }
+    return { type: 'text', value: `Deleted: "${name}"` }
   }
 
-  return { type: 'text', value: `💾 Checkpoint Command\n${'─'.repeat(50)}\n/checkpoint save [name]    — Save session\n/checkpoint list            — List checkpoints\n/checkpoint load <name>    — Load checkpoint\n/checkpoint delete <name>   — Delete checkpoint` }
+  return {
+    type: 'text',
+    value: [
+      'Checkpoint Command',
+      '-'.repeat(50),
+      '/checkpoint save [name]   - Save session',
+      '/checkpoint list          - List checkpoints',
+      '/checkpoint load <name>   - Load checkpoint',
+      '/checkpoint delete <name> - Delete checkpoint',
+    ].join('\n'),
+  }
 }

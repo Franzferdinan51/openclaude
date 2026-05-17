@@ -932,7 +932,7 @@ DuckHive adds 40+ custom tools on top of the OpenClaude base:
 | **MeshTool** | — | Internal agent mesh/networking surface |
 | **SkillTool** | — | Internal runtime skill-generation primitive |
 
-`/shadow` is now a real slash command wrapper around DuckHive's shadow Git safety net. It supports `/shadow checkpoint <message>`, `/shadow list`, and `/shadow restore <checkpoint-id> [--file <path>]` so the documented Gemini-style snapshot workflow is reachable from the CLI instead of only through the lower-level tool surface.
+`/shadow` is now a real slash command wrapper around DuckHive's shadow Git safety net. It supports `/shadow checkpoint <message>`, `/shadow list`, and `/shadow restore <checkpoint-id> [--file <path>]` so the documented Gemini-style snapshot workflow is reachable from the CLI instead of only through the lower-level tool surface. `/checkpoint` save/list/load/delete output uses ASCII-safe status and separator text so checkpoint workflows stay readable in Windows shells and plain log captures.
 
 `/android` and `/vision` are now real slash commands too. `/android` exposes the documented ADB control flow (`devices`, `screenshot`, `battery`, `tap`, `swipe`, `text`, `shell`), and `/vision` exposes `phone_screenshot`, `analyze`, and `phone_tap` directly from the CLI instead of relying on unrelated mobile-app aliases or tool-only entrypoints.
 
