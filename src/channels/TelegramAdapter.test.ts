@@ -124,6 +124,26 @@ describe('TelegramAdapter', () => {
     expect(message?.content).toBe('allowed from env')
   })
 
+  test('uses DuckHive allowlist env as the outbound chat target', async () => {
+    process.env.DUCKHIVE_TELEGRAM_ALLOWED_CHAT_ID = '42, 77'
+    const fetchMock = mock(async (_url: string | URL | Request, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body ?? '{}')) as Record<string, unknown>
+      expect(body.chat_id).toBe(42)
+      expect(body.text).toBe('hello from env')
+      return telegramResponse({ ok: true, result: { message_id: 1 } })
+    }) as unknown as typeof fetch
+    globalThis.fetch = fetchMock
+
+    const adapter = new TelegramAdapter({
+      botToken: '123:test-token',
+      longPollTimeout: 1000,
+    })
+
+    await adapter.sendMessage('hello from env')
+
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
   test('filters inbound messages with configured allowed chat id array', async () => {
     globalThis.fetch = mock(async () =>
       telegramResponse({
@@ -162,5 +182,25 @@ describe('TelegramAdapter', () => {
     const message = await adapter.receiveMessage()
 
     expect(message?.content).toBe('allowed from config')
+  })
+
+  test('uses configured allowed chat id array as the outbound chat target', async () => {
+    const fetchMock = mock(async (_url: string | URL | Request, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body ?? '{}')) as Record<string, unknown>
+      expect(body.chat_id).toBe(42)
+      expect(body.text).toBe('hello from config')
+      return telegramResponse({ ok: true, result: { message_id: 1 } })
+    }) as unknown as typeof fetch
+    globalThis.fetch = fetchMock
+
+    const adapter = new TelegramAdapter({
+      botToken: '123:test-token',
+      allowedChatIds: [42, '43'],
+      longPollTimeout: 1000,
+    })
+
+    await adapter.sendMessage('hello from config')
+
+    expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 })

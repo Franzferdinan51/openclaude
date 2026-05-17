@@ -125,11 +125,14 @@ export class TelegramAdapter implements ChannelAdapter {
       )
     }
     this.botToken = token
-    this.allowedChatId = config.allowedChatId
-    this.allowedChatIds = parseAllowedChatIds(
+    const allowedChatConfig =
       config.allowedChatIds ??
-        config.allowedChatId ??
-        process.env.DUCKHIVE_TELEGRAM_ALLOWED_CHAT_ID,
+      config.allowedChatId ??
+      process.env.DUCKHIVE_TELEGRAM_ALLOWED_CHAT_ID
+    this.allowedChatId =
+      config.allowedChatId ?? resolvePrimaryAllowedChatId(allowedChatConfig)
+    this.allowedChatIds = parseAllowedChatIds(
+      allowedChatConfig,
     )
     this.longPollTimeout = config.longPollTimeout ?? DEFAULT_LONG_POLL_TIMEOUT_MS
     this.apiBase = config.apiBase ?? DEFAULT_API_BASE
@@ -308,4 +311,10 @@ function parseAllowedChatIds(
     .filter(item => Number.isFinite(item))
 
   return ids.length > 0 ? new Set(ids) : null
+}
+
+function resolvePrimaryAllowedChatId(
+  value: TelegramAdapterConfig['allowedChatIds'] | number | string | undefined,
+): number | undefined {
+  return parseAllowedChatIds(value)?.values().next().value
 }
