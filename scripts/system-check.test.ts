@@ -10,6 +10,7 @@ import {
   checkConnectorCliControls,
   checkHarnessCommandSurfaces,
   checkHarnessStateReadiness,
+  checkTuiInputSmoke,
   checkTopLevelCliHelpSurface,
   checkOpenAIEnv,
   checkSkillHubRegistry,
@@ -219,6 +220,36 @@ describe('checkTerminalStdio', () => {
     expect(result.ok).toBe(false)
     expect(result.detail).toContain('Strict interactive check failed')
     expect(result.detail).toContain('stdin and stdout attached')
+  })
+})
+
+describe('checkTuiInputSmoke', () => {
+  test('verifies packaged TUI input smoke through the CLI launcher', () => {
+    const result = checkTuiInputSmoke({
+      cliPath: 'dist/cli.mjs',
+      smokeText: 'typed by test',
+      runCommand: (_command, args) => ({
+        status: 0,
+        stdout: `DuckHive TUI input smoke passed: "${args.at(-1)}"`,
+      }),
+    })
+
+    expect(result.ok).toBe(true)
+    expect(result.detail).toContain('Bubble Tea input loop')
+  })
+
+  test('fails when packaged TUI input smoke does not echo typed text', () => {
+    const result = checkTuiInputSmoke({
+      cliPath: 'dist/cli.mjs',
+      smokeText: 'typed by test',
+      runCommand: () => ({
+        status: 0,
+        stdout: 'DuckHive TUI input smoke passed: "other text"',
+      }),
+    })
+
+    expect(result.ok).toBe(false)
+    expect(result.detail).toContain('Packaged TUI input smoke failed')
   })
 })
 

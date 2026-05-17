@@ -298,6 +298,58 @@ function checkTuiLaunchPath(): CheckResult {
   )
 }
 
+export function checkTuiInputSmoke(options: {
+  cliPath?: string
+  smokeText?: string
+  runCommand?: (command: string, args: string[]) => {
+    status: number | null
+    stdout?: string | Buffer
+    stderr?: string | Buffer
+  }
+} = {}): CheckResult {
+  const cliPath = options.cliPath ?? resolve(process.cwd(), 'dist', 'cli.mjs')
+  if (!existsSync(cliPath)) {
+    return fail('Terminal TUI input', `Missing ${cliPath}. Run: bun run build`)
+  }
+
+  const smokeText = options.smokeText ?? 'typed through runtime doctor'
+  const runCommand =
+    options.runCommand ??
+    ((command: string, args: string[]) =>
+      spawnSync(command, args, {
+        cwd: process.cwd(),
+        encoding: 'utf8',
+        timeout: 30_000,
+        env: {
+          ...process.env,
+          DUCKHIVE_DISABLE_STARTUP_SCREEN: '1',
+        },
+      }))
+
+  const result = runCommand(process.execPath, [
+    cliPath,
+    'tui',
+    '--input-smoke',
+    smokeText,
+  ])
+  const output = `${result.stdout ?? ''}${result.stderr ?? ''}`
+  if (
+    result.status !== 0 ||
+    !output.includes('DuckHive TUI input smoke passed') ||
+    !output.includes(smokeText)
+  ) {
+    return fail(
+      'Terminal TUI input',
+      `Packaged TUI input smoke failed. Output: ${output.trim() || 'none'}`,
+    )
+  }
+
+  return pass(
+    'Terminal TUI input',
+    '`duckhive tui --input-smoke` verified the packaged Bubble Tea input loop through the CLI launcher.',
+  )
+}
+
 export function checkCliInputMode(
   env: NodeJS.ProcessEnv = process.env,
   runtime = { platform: process.platform },
@@ -1447,6 +1499,7 @@ export async function runRuntimeDoctor(argv: string[] = process.argv.slice(2)): 
     strictInteractive: options.strictInteractive,
   }))
   results.push(checkTuiLaunchPath())
+  results.push(checkTuiInputSmoke())
   results.push(checkComputerUseReadiness())
   results.push(checkHarnessCommandSurfaces())
   results.push(checkHarnessStateReadiness())
