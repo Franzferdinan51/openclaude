@@ -257,6 +257,8 @@ DuckHive's CLI surface for that same lifecycle is the consolidated `/run` comman
 /run recover <id> [summary]
 ```
 
+The terminal `/run` surface validates status filters against the real AgentRun lifecycle and clamps event tails to 200 rows, so mistyped statuses and unbounded tails do not silently hide runs or flood the CLI.
+
 Long Telegram responses are chunked, Markdown delivery falls back to plain text, `/approve` uses the same AgentRun approval path as the CLI/WebUI and can acknowledge one pending approval ID without clearing the rest, and `bun run doctor:runtime` reports the Agent Harness and Telegram configuration state.
 
 ### /init — Project Setup

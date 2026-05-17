@@ -1,5 +1,10 @@
 import type { LocalCommandCall } from '../../types/command.js'
-import { getAgentRunStore, type AgentRunStore } from '../../agent-runs/index.js'
+import {
+  AGENT_RUN_STATUSES,
+  getAgentRunStore,
+  type AgentRunStatus,
+  type AgentRunStore,
+} from '../../agent-runs/index.js'
 
 type RunDeps = {
   getAgentRunStore: typeof getAgentRunStore
@@ -53,8 +58,27 @@ function formatDate(timestamp?: number): string {
   return timestamp ? new Date(timestamp).toLocaleString() : 'n/a'
 }
 
-function renderRunList(store: AgentRunStore, status?: string): string {
-  const runs = store.listRuns(status ? { status: status as any } : {})
+function parseRunStatus(status?: string): { status?: AgentRunStatus; error?: string } {
+  if (!status) return {}
+  if ((AGENT_RUN_STATUSES as readonly string[]).includes(status)) {
+    return { status: status as AgentRunStatus }
+  }
+  return {
+    error: `Invalid run status: ${status}. Expected one of: ${AGENT_RUN_STATUSES.join(', ')}`,
+  }
+}
+
+function parseTailLimit(raw?: string): { limit?: number; error?: string } {
+  if (!raw) return { limit: 20 }
+  const limit = Number(raw)
+  if (!Number.isFinite(limit) || limit < 1) {
+    return { error: `Invalid tail limit: ${raw}` }
+  }
+  return { limit: Math.min(200, Math.floor(limit)) }
+}
+
+function renderRunList(store: AgentRunStore, status?: AgentRunStatus): string {
+  const runs = store.listRuns(status ? { status } : {})
   if (runs.length === 0) {
     return status
       ? `Agent Runs\n\nNo runs with status: ${status}`
@@ -125,18 +149,18 @@ export const call: LocalCommandCall = async (args: string) => {
     if (tokens.length > 2) {
       return { type: 'text', value: usage('list accepts at most one optional status filter.') }
     }
-    return { type: 'text', value: renderRunList(store, tokens[1]) }
+    const parsedStatus = parseRunStatus(tokens[1])
+    if (parsedStatus.error) return { type: 'text', value: usage(parsedStatus.error) }
+    return { type: 'text', value: renderRunList(store, parsedStatus.status) }
   }
 
   if (subcommand === 'tail') {
     const runId = tokens[1]
-    const limit = tokens[2] ? Number(tokens[2]) : 20
     if (!runId) return { type: 'text', value: usage('tail requires a run id.') }
     if (tokens.length > 3) return { type: 'text', value: usage('tail accepts at most a run id and optional limit.') }
-    if (!Number.isFinite(limit) || limit < 1) {
-      return { type: 'text', value: usage(`Invalid tail limit: ${tokens[2]}`) }
-    }
-    return { type: 'text', value: renderTail(store, runId, limit) }
+    const parsedLimit = parseTailLimit(tokens[2])
+    if (parsedLimit.error) return { type: 'text', value: usage(parsedLimit.error) }
+    return { type: 'text', value: renderTail(store, runId, parsedLimit.limit ?? 20) }
   }
 
   if (subcommand === 'pause') {

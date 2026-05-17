@@ -67,6 +67,41 @@ describe('/run command', () => {
     expect(result.value).toContain('run_progress')
   })
 
+  test('rejects unknown list status filters', async () => {
+    const store = makeStore()
+    store.createRun({ title: 'Review auth flow', status: 'running' })
+    setRunTestDeps({ getAgentRunStore: () => store })
+
+    const result = await call('list stuck', {} as never)
+
+    expect(result.type).toBe('text')
+    if (result.type !== 'text') throw new Error('unexpected result type')
+    expect(result.value).toContain('Invalid run status: stuck')
+    expect(result.value).toContain('awaiting_approval')
+    expect(result.value).toContain('Usage:')
+  })
+
+  test('clamps tail limits to the CLI event tail maximum', async () => {
+    let eventCounter = 0
+    const store = createAgentRunStore({
+      persist: false,
+      now: () => Date.UTC(2026, 4, 16, 12, 0, eventCounter++),
+      idFactory: () => 'run_1',
+      eventIdFactory: () => `event_${eventCounter}`,
+    })
+    store.createRun({ title: 'Review auth flow', status: 'running' })
+    for (let i = 0; i < 250; i++) {
+      store.updateRun('run_1', { progress: { summary: `event ${i}` } })
+    }
+    setRunTestDeps({ getAgentRunStore: () => store })
+
+    const result = await call('tail run_1 9999', {} as never)
+
+    expect(result.type).toBe('text')
+    if (result.type !== 'text') throw new Error('unexpected result type')
+    expect(result.value.split('\n')).toHaveLength(202)
+  })
+
   test('pauses and resumes runs', async () => {
     const store = makeStore()
     store.createRun({ title: 'Review auth flow', status: 'running' })
