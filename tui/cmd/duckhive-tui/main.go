@@ -1943,6 +1943,7 @@ func (m *MainModel) renderCommandRail() string {
 		tui.CardMuted.Render("/search-provider search"),
 		tui.CardMuted.Render("/computer-use tools"),
 		tui.CardMuted.Render("/connect status"),
+		tui.CardMuted.Render("/checkpoint harness state"),
 		tui.CardMuted.Render("/agents super agent"),
 		tui.CardMuted.Render("/council deliberation"),
 		tui.CardMuted.Render("/repl classic UI"),

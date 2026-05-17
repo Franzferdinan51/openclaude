@@ -368,6 +368,23 @@ func TestHarnessStateSnapshotSurfacesSharedState(t *testing.T) {
 	}
 }
 
+func TestCommandRailAdvertisesHarnessState(t *testing.T) {
+	m := &MainModel{
+		state: model.NewAppState(),
+	}
+
+	rail := m.renderCommandRail()
+	for _, want := range []string{
+		"/checkpoint harness state",
+		"/provider models",
+		"/computer-use tools",
+	} {
+		if !strings.Contains(rail, want) {
+			t.Fatalf("command rail missing %q:\n%s", want, rail)
+		}
+	}
+}
+
 func TestGoalSnapshotSurfacesCodexGoalWorkflow(t *testing.T) {
 	m := &MainModel{
 		state: model.NewAppState(),
