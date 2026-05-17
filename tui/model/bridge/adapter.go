@@ -424,12 +424,18 @@ func (a *Adapter) handleFrame(raw []byte) {
 		}
 	case "result":
 		var r struct {
-			Subtype string   `json:"subtype"`
-			IsError bool     `json:"is_error"`
-			Result  string   `json:"result"`
-			Errors  []string `json:"errors"`
+			Subtype       string   `json:"subtype"`
+			IsError       bool     `json:"is_error"`
+			Result        string   `json:"result"`
+			Errors        []string `json:"errors"`
+			DurationAPIMs float64  `json:"duration_api_ms"`
 		}
 		if err := json.Unmarshal(raw, &r); err == nil {
+			if r.DurationAPIMs >= 0 {
+				a.publish(model.MsgAPIDurationReceived{
+					Duration: time.Duration(r.DurationAPIMs * float64(time.Millisecond)),
+				})
+			}
 			a.publish(model.MsgThinkingEnded{})
 			a.publish(model.MsgTasksCleared{})
 			if r.IsError {

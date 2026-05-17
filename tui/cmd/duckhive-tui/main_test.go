@@ -283,6 +283,19 @@ func TestRenderSessionCardShowsElapsedAndAPITime(t *testing.T) {
 	}
 }
 
+func TestHandleBridgeMessageTracksAPIDurationFromBridge(t *testing.T) {
+	m := &MainModel{
+		state:      model.NewAppState(),
+		transcript: screens.NewTranscriptPanel(),
+	}
+
+	m.handleBridgeMessage(model.MsgAPIDurationReceived{Duration: 2250 * time.Millisecond})
+
+	if m.state.TotalAPIDuration != 2250*time.Millisecond {
+		t.Fatalf("TotalAPIDuration = %s, want %s", m.state.TotalAPIDuration, 2250*time.Millisecond)
+	}
+}
+
 func envSliceToMap(entries []string) map[string]string {
 	out := make(map[string]string, len(entries))
 	for _, entry := range entries {

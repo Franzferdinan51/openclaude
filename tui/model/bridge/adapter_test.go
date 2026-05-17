@@ -124,3 +124,26 @@ func TestHandleFrameClearsTasksWhenSessionGoesIdle(t *testing.T) {
 		t.Fatal("timed out waiting for session idle task clear")
 	}
 }
+
+func TestHandleFramePublishesAPIDurationFromResult(t *testing.T) {
+	adapter := NewSubprocessAdapter("duckhive")
+
+	adapter.handleFrame([]byte(`{
+		"type":"result",
+		"subtype":"success",
+		"duration_api_ms":1532
+	}`))
+
+	select {
+	case msg := <-adapter.Subscription():
+		durationMsg, ok := msg.(model.MsgAPIDurationReceived)
+		if !ok {
+			t.Fatalf("message type = %T, want model.MsgAPIDurationReceived", msg)
+		}
+		if durationMsg.Duration != 1532*time.Millisecond {
+			t.Fatalf("duration = %s, want %s", durationMsg.Duration, 1532*time.Millisecond)
+		}
+	case <-time.After(250 * time.Millisecond):
+		t.Fatal("timed out waiting for result duration")
+	}
+}

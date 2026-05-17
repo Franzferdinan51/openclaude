@@ -436,6 +436,11 @@ func (m *MainModel) handleBridgeMessage(msg model.InMsg) (tea.Model, tea.Cmd) {
 	case model.MsgTokensReceived:
 		m.state.TokenUsage = msg.Usage
 
+	case model.MsgAPIDurationReceived:
+		if msg.Duration >= 0 {
+			m.state.TotalAPIDuration = msg.Duration
+		}
+
 	case model.MsgTaskStarted:
 		m.startTask(msg.ID)
 

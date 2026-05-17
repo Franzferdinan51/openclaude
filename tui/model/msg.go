@@ -2,6 +2,7 @@ package model
 
 import (
 	"github.com/charmbracelet/bubbletea"
+	"time"
 )
 
 // ============================================================
@@ -201,6 +202,11 @@ type MsgCostReceived struct {
 	Cost float64
 }
 
+// MsgAPIDurationReceived updates the running aggregate API duration tally.
+type MsgAPIDurationReceived struct {
+	Duration time.Duration
+}
+
 // --- Stub implementations so types satisfy interfaces ---
 
 func (MsgNavigate) outMsg()           {}
@@ -232,22 +238,23 @@ func (MsgMessageAction) outMsg()      {}
 func (MsgPermissionResponse) outMsg() {}
 func (MsgWindowSize) outMsg()         {}
 
-func (MsgBridgeConnected) inMsg()    {}
-func (MsgBridgeDisconnected) inMsg() {}
-func (MsgMessageReceived) inMsg()    {}
-func (MsgStreamDelta) inMsg()        {}
-func (MsgStreamEnd) inMsg()          {}
-func (MsgThinkingStarted) inMsg()    {}
-func (MsgThinkingEnded) inMsg()      {}
-func (MsgPermissionRequest) inMsg()  {}
-func (MsgStatusUpdate) inMsg()       {}
-func (MsgModelChanged) inMsg()       {}
-func (MsgError) inMsg()              {}
-func (MsgTaskStarted) inMsg()        {}
-func (MsgTaskEnded) inMsg()          {}
-func (MsgTasksCleared) inMsg()       {}
-func (MsgTokensReceived) inMsg()     {}
-func (MsgCostReceived) inMsg()       {}
+func (MsgBridgeConnected) inMsg()     {}
+func (MsgBridgeDisconnected) inMsg()  {}
+func (MsgMessageReceived) inMsg()     {}
+func (MsgStreamDelta) inMsg()         {}
+func (MsgStreamEnd) inMsg()           {}
+func (MsgThinkingStarted) inMsg()     {}
+func (MsgThinkingEnded) inMsg()       {}
+func (MsgPermissionRequest) inMsg()   {}
+func (MsgStatusUpdate) inMsg()        {}
+func (MsgModelChanged) inMsg()        {}
+func (MsgError) inMsg()               {}
+func (MsgTaskStarted) inMsg()         {}
+func (MsgTaskEnded) inMsg()           {}
+func (MsgTasksCleared) inMsg()        {}
+func (MsgTokensReceived) inMsg()      {}
+func (MsgCostReceived) inMsg()        {}
+func (MsgAPIDurationReceived) inMsg() {}
 
 // compile-time interface compliance checks
 var (
