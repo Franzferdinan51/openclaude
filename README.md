@@ -344,14 +344,15 @@ init_tool action=detect   # Preview what would be created
 init_tool action=config   # Configure ~/.duckhive/config.json
 ```
 
-### /export — Session Packaging
+### /export — Conversation Export
 
-Zip up a DuckHive session for sharing or archival. Includes workspace context files plus DuckHive config-home metadata such as exported settings and recent history. Exports now follow the live `history.jsonl` prompt-history format, while imports restore that history back into DuckHive's config home instead of polluting the project workspace. Older archives with legacy `history.json` are still accepted and converted into the active `history.jsonl` store on import.
+Export the current DuckHive conversation to clipboard or disk. The export command supports OpenClaude-style plain text, Markdown, and JSON formats; filenames infer the format from `.txt`, `.md`/`.markdown`, or `.json`, and `--format`/`-f` can override the extension.
 
 ```bash
-/export                        # Export current session
-/export list                   # Show saved exports
-/export import session.zip    # Restore a session
+/export                         # Pick format and destination interactively
+/export chat.md                 # Export Markdown based on filename extension
+/export --format json chat      # Export chat.json
+/export -f text transcript.log  # Export transcript.txt
 ```
 
 ### /goal — Persisted Workflow Goals

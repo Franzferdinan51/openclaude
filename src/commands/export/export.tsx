@@ -1,11 +1,12 @@
-import { join } from 'path';
 import React from 'react';
 import { ExportDialog } from '../../components/ExportDialog.js';
 import type { ToolUseContext } from '../../Tool.js';
 import type { LocalJSXCommandOnDone } from '../../types/command.js';
 import type { Message } from '../../types/message.js';
 import { getCwd } from '../../utils/cwd.js';
-import { renderMessagesToPlainText } from '../../utils/exportRenderer.js';
+import type { ExportFormat } from '../../utils/exportFormats.js';
+import { ensureExportFilenameExtension, inferExportFormatFromFilename, parseExportArgs, resolveExportFilepath } from '../../utils/exportFormats.js';
+import { renderMessagesForExport } from '../../utils/exportRenderer.js';
 import { writeFileSync_DEPRECATED } from '../../utils/slowOperations.js';
 function formatTimestamp(date: Date): string {
   const year = date.getFullYear();
@@ -46,20 +47,26 @@ export function sanitizeFilename(text: string): string {
   .replace(/-+/g, '-') // Replace multiple hyphens with single
   .replace(/^-|-$/g, ''); // Remove leading/trailing hyphens
 }
-async function exportWithReactRenderer(context: ToolUseContext): Promise<string> {
-  const tools = context.options.tools || [];
-  return renderMessagesToPlainText(context.messages, tools);
-}
 export async function call(onDone: LocalJSXCommandOnDone, context: ToolUseContext, args: string): Promise<React.ReactNode> {
-  // Render the conversation content
-  const content = await exportWithReactRenderer(context);
+  const tools = context.options.tools || [];
+  const parsed = parseExportArgs(args);
+  if (parsed.error) {
+    onDone(parsed.error);
+    return null;
+  }
 
-  // If args are provided, write directly to file and skip dialog
-  const filename = args.trim();
-  if (filename) {
-    const finalFilename = filename.endsWith('.txt') ? filename : filename.replace(/\.[^.]+$/, '') + '.txt';
-    const filepath = join(getCwd(), finalFilename);
+  const format: ExportFormat = parsed.format ?? (parsed.filename ? inferExportFormatFromFilename(parsed.filename) : null) ?? 'text';
+
+  // If args are provided, write directly to file and skip dialog.
+  if (parsed.filename) {
     try {
+      const content = await renderMessagesForExport(context.messages, tools, {
+        format
+      });
+      const finalFilename = ensureExportFilenameExtension(parsed.filename, format, {
+        preserveMarkdownExtension: parsed.format === undefined
+      });
+      const filepath = resolveExportFilepath(getCwd(), finalFilename);
       writeFileSync_DEPRECATED(filepath, content, {
         encoding: 'utf-8',
         flush: true
@@ -84,7 +91,9 @@ export async function call(onDone: LocalJSXCommandOnDone, context: ToolUseContex
   }
 
   // Return the dialog component when no args provided
-  return <ExportDialog content={content} defaultFilename={defaultFilename} onDone={result => {
+  return <ExportDialog defaultFilename={defaultFilename} defaultFormat={format} getContent={selectedFormat => renderMessagesForExport(context.messages, tools, {
+    format: selectedFormat
+  })} onDone={result => {
     onDone(result.message);
   }} />;
 }

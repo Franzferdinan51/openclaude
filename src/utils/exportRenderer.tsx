@@ -7,6 +7,7 @@ import type { KeybindingContextName } from '../keybindings/types.js';
 import { AppStateProvider } from '../state/AppState.js';
 import type { Tools } from '../Tool.js';
 import type { Message } from '../types/message.js';
+import type { ExportFormat } from './exportFormats.js';
 import { renderToAnsiString } from './staticRender.js';
 
 /**
@@ -94,4 +95,84 @@ export async function renderMessagesToPlainText(messages: Message[], tools: Tool
     columns
   });
   return parts.join('');
+}
+
+function titleCaseRole(role: string): string {
+  return role.charAt(0).toUpperCase() + role.slice(1);
+}
+
+function extractTextContent(content: unknown): string {
+  if (typeof content === 'string') return content;
+  if (!Array.isArray(content)) return '';
+
+  return content.map(item => {
+    if (!item || typeof item !== 'object') return '';
+    const block = item as Record<string, unknown>;
+    if (typeof block.text === 'string') return block.text;
+    if (typeof block.content === 'string') return block.content;
+    if (block.type === 'tool_use') {
+      return `[tool_use: ${String(block.name ?? block.id ?? 'unknown')}]`;
+    }
+    if (block.type === 'tool_result') {
+      return `[tool_result: ${String(block.tool_use_id ?? block.id ?? 'unknown')}] ${extractTextContent(block.content)}`.trim();
+    }
+    return '';
+  }).filter(Boolean).join('\n');
+}
+
+function messageRole(message: Message): string {
+  if (typeof message?.type === 'string') return message.type;
+  if (typeof message?.message?.role === 'string') return message.message.role;
+  return 'message';
+}
+
+function messageContent(message: Message): string {
+  if ('message' in message && message.message) {
+    return extractTextContent(message.message.content);
+  }
+  return extractTextContent(message.content);
+}
+
+export function renderMessagesToMarkdown(messages: Message[]): string {
+  const sections: string[] = ['# DuckHive Conversation Export'];
+
+  for (const message of messages) {
+    const role = messageRole(message);
+    if (role === 'progress' || role === 'attachment') continue;
+    const content = messageContent(message).trim();
+    if (!content) continue;
+    sections.push(`## ${titleCaseRole(role)}\n\n${content}`);
+  }
+
+  return `${sections.join('\n\n')}\n`;
+}
+
+export function renderMessagesToJson(messages: Message[]): string {
+  const exported = {
+    exportedAt: new Date().toISOString(),
+    schema: 'duckhive.conversation-export.v1',
+    messages
+  };
+  return `${JSON.stringify(exported, null, 2)}\n`;
+}
+
+export async function renderMessagesForExport(
+  messages: Message[],
+  tools: Tools = [],
+  {
+    format = 'text',
+    columns
+  }: {
+    format?: ExportFormat
+    columns?: number
+  } = {},
+): Promise<string> {
+  switch (format) {
+    case 'markdown':
+      return renderMessagesToMarkdown(messages);
+    case 'json':
+      return renderMessagesToJson(messages);
+    case 'text':
+      return renderMessagesToPlainText(messages, tools, columns);
+  }
 }
