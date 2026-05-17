@@ -151,9 +151,13 @@ async function main(): Promise<void> {
   const { eagerParseCliFlag } = await import('../utils/cliArgs.js')
   const earlyModelFlag = eagerParseCliFlag('--model')
 
-  // Print the gradient startup screen before the Ink UI loads
-  const { printStartupScreen } = await import('../components/StartupScreen.js')
-  printStartupScreen(earlyModelFlag)
+  // Print the gradient startup screen before the Ink UI loads, but never
+  // ahead of non-interactive output or the standalone TUI handoff.
+  const { shouldPrintStartupScreen } = await import('./startupScreenGate.js')
+  if (shouldPrintStartupScreen(args)) {
+    const { printStartupScreen } = await import('../components/StartupScreen.js')
+    printStartupScreen(earlyModelFlag)
+  }
 
   // For all other paths, load the startup profiler
   const {
