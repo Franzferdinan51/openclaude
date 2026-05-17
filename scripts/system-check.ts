@@ -24,6 +24,7 @@ import {
   resolveActiveRouteIdFromEnv,
 } from '../src/integrations/routeMetadata.js'
 import { builtInCommandNames } from '../src/commands.js'
+import { getClawHubRegistryUrl } from '../src/services/clawhub/skillHub.js'
 
 type CheckResult = {
   ok: boolean
@@ -303,6 +304,25 @@ export function checkHarnessCommandSurfaces(): CheckResult {
   return pass(
     'Harness command surfaces',
     `${REQUIRED_HARNESS_COMMANDS.length} core commands registered: ${REQUIRED_HARNESS_COMMANDS.join(', ')}.`,
+  )
+}
+
+export function checkSkillHubRegistry(): CheckResult {
+  const registry = getClawHubRegistryUrl()
+  const commandNames = new Set(builtInCommandNames())
+  const skillCommandsAvailable =
+    commandNames.has('skill') && commandNames.has('skills')
+
+  if (!skillCommandsAvailable) {
+    return fail(
+      'Skill hub registry',
+      `Registry configured at ${registry}, but /skill or /skills is missing.`,
+    )
+  }
+
+  return pass(
+    'Skill hub registry',
+    `ClawHub registry configured at ${registry}; /skill search, inspect, and install are available.`,
   )
 }
 
@@ -945,6 +965,7 @@ async function main(): Promise<void> {
   results.push(checkTuiLaunchPath())
   results.push(checkComputerUseReadiness())
   results.push(checkHarnessCommandSurfaces())
+  results.push(checkSkillHubRegistry())
   results.push(...checkOpenAIEnv())
   results.push(await checkBaseUrlReachability())
   results.push(await checkProviderGenerationReadiness())

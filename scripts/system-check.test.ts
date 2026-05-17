@@ -4,6 +4,7 @@ import {
   checkCliInputMode,
   checkHarnessCommandSurfaces,
   checkOpenAIEnv,
+  checkSkillHubRegistry,
   formatReachabilityFailureDetail,
 } from './system-check.ts'
 
@@ -18,6 +19,8 @@ const originalEnv = {
   OPENAI_BASE_URL: process.env.OPENAI_BASE_URL,
   MINIMAX_API_KEY: process.env.MINIMAX_API_KEY,
   MMX_API_KEY: process.env.MMX_API_KEY,
+  DUCKHIVE_CLAWHUB_REGISTRY: process.env.DUCKHIVE_CLAWHUB_REGISTRY,
+  CLAWHUB_REGISTRY: process.env.CLAWHUB_REGISTRY,
 }
 
 function restoreEnv(name: keyof typeof originalEnv): void {
@@ -40,6 +43,8 @@ function clearProviderEnv(): void {
   delete process.env.OPENAI_BASE_URL
   delete process.env.MINIMAX_API_KEY
   delete process.env.MMX_API_KEY
+  delete process.env.DUCKHIVE_CLAWHUB_REGISTRY
+  delete process.env.CLAWHUB_REGISTRY
 }
 
 afterEach(() => {
@@ -180,5 +185,19 @@ describe('checkHarnessCommandSurfaces', () => {
     expect(result.detail).toContain('channel')
     expect(result.detail).toContain('council')
     expect(result.detail).toContain('tui')
+  })
+})
+
+describe('checkSkillHubRegistry', () => {
+  test('reports the configured ClawHub registry and skill command availability', () => {
+    clearProviderEnv()
+    process.env.DUCKHIVE_CLAWHUB_REGISTRY = 'https://example.test/clawhub/'
+
+    const result = checkSkillHubRegistry()
+
+    expect(result.ok).toBe(true)
+    expect(result.detail).toContain('https://example.test/clawhub')
+    expect(result.detail).toContain('/skill search')
+    expect(result.detail).toContain('install')
   })
 })
