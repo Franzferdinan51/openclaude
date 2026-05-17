@@ -262,24 +262,24 @@ function addToPathUnix(installDir) {
 
 function createWindowsLauncher() {
   log('info', 'Creating Windows launcher...');
-  const installDir = __dirname;
+  const installDir = join(__dirname, 'bin');
   const launcherPath = join(installDir, 'duckhive.cmd');
 
   const launcherContent = `@echo off
 REM DuckHive Windows Launcher
 setlocal
 
-REM Find bun installation
-set BUN_PATH=
-if exist "%LOCALAPPDATA%\\bun\\bun.exe" set BUN_PATH=%LOCALAPPDATA%\\bun\\bun.exe
-if exist "%USERPROFILE%\\.bun\\bin\\bun.exe" set BUN_PATH=%USERPROFILE%\\.bun\\bin\\bun.exe
+set "SCRIPT_DIR=%~dp0"
+set "DIST_PATH=%SCRIPT_DIR%..\\dist\\cli.mjs"
+set "JS_LAUNCHER=%SCRIPT_DIR%duckhive"
 
-REM Use bun if available, otherwise node
-if defined BUN_PATH (
-  "%BUN_PATH%" run "%~dp0bin\\duckhive" %*
-) else (
-  node "%~dp0dist\\cli.mjs" %*
+if exist "%DIST_PATH%" (
+  node "%JS_LAUNCHER%" %*
+  exit /b %ERRORLEVEL%
 )
+
+echo duckhive: dist\\cli.mjs not found. Run: bun run build
+exit /b 1
 `;
 
   try {
@@ -327,7 +327,7 @@ Write-Host "Building DuckHive..." -ForegroundColor Yellow
 bun run build
 
 # Set PATH
-$duckhivePath = $PWD.Path
+$duckhivePath = Join-Path $PSScriptRoot "bin"
 $currentPath = [Environment]::GetEnvironmentVariable("Path", "User")
 if ($currentPath -notlike "*$duckhivePath*") {
     [Environment]::SetEnvironmentVariable("Path", "$currentPath;$duckhivePath", "User")
@@ -335,7 +335,7 @@ if ($currentPath -notlike "*$duckhivePath*") {
 }
 
 Write-Host "[DuckHive] Installation complete!" -ForegroundColor Green
-Write-Host "Run: ./bin/duckhive" -ForegroundColor Cyan
+Write-Host "Run: duckhive --version" -ForegroundColor Cyan
 `;
 
   try {
@@ -439,8 +439,11 @@ function printReport() {
   if (errors.length === 0) {
     console.log('\n[SUCCESS] DuckHive is ready!');
     console.log('\nTo get started:');
-    console.log('  ./bin/duckhive');
-    if (!isWindows) {
+    if (isWindows) {
+      console.log('  duckhive');
+      console.log('  or current shell: .\\bin\\duckhive.cmd');
+    } else {
+      console.log('  ./bin/duckhive');
       console.log('  or add to PATH: export PATH="$(pwd)/bin:$PATH"');
     }
   } else {
@@ -496,7 +499,7 @@ async function main() {
   createBashInstaller();
   if (isWindows) {
     createWindowsLauncher();
-    addToPathWindows(__dirname);
+    addToPathWindows(join(__dirname, 'bin'));
   } else {
     addToPathUnix(join(__dirname, 'bin'));
   }

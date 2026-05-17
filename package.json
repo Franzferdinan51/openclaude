@@ -29,6 +29,8 @@
     "dist/cli.mjs",
     "dist/harness.mjs",
     "dist/sdk.mjs",
+    "install.ps1",
+    "install.sh",
     "scripts/install.ps1",
     "scripts/install.sh",
     "skills/newest-desktop-control/docs/",

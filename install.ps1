@@ -31,7 +31,7 @@ Write-Host "Building DuckHive..." -ForegroundColor Yellow
 bun run build
 
 # Set PATH
-$duckhivePath = $PSScriptRoot
+$duckhivePath = Join-Path $PSScriptRoot "bin"
 $currentPath = [Environment]::GetEnvironmentVariable("Path", "User")
 if ($currentPath -notlike "*$duckhivePath*") {
     [Environment]::SetEnvironmentVariable("Path", "$currentPath;$duckhivePath", "User")
@@ -39,4 +39,4 @@ if ($currentPath -notlike "*$duckhivePath*") {
 }
 
 Write-Host "[DuckHive] Installation complete!" -ForegroundColor Green
-Write-Host "Run: ./bin/duckhive" -ForegroundColor Cyan
+Write-Host "Run: duckhive --version" -ForegroundColor Cyan

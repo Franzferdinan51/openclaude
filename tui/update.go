@@ -218,6 +218,14 @@ func (m *Model) handleChatKeys(msg tea.KeyMsg) (cmds []tea.Cmd) {
 	case "tab":
 		// Autocomplete - pass through to input
 		m.input, _ = m.input.Update(msg)
+		return nil
+
+	default:
+		var cmd tea.Cmd
+		m.input, cmd = m.input.Update(msg)
+		if cmd != nil {
+			return []tea.Cmd{cmd}
+		}
 	}
 
 	return nil
