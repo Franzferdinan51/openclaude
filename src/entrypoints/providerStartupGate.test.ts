@@ -1,5 +1,6 @@
 import { expect, test } from 'bun:test'
 import {
+  getCliCommandPosition,
   isVersionRequest,
   shouldSkipProviderStartup,
 } from './providerStartupGate.js'
@@ -50,6 +51,24 @@ test('skips provider startup for utility commands', () => {
   expect(shouldSkipProviderStartup(['recover', 'run_123'])).toBe(true)
   expect(shouldSkipProviderStartup(['kill', 'run_123'])).toBe(true)
   expect(shouldSkipProviderStartup(['--bg', 'Long running task'])).toBe(true)
+})
+
+test('detects utility commands after global options with values', () => {
+  expect(
+    getCliCommandPosition(['--stdin-mode', 'data', 'runtime-doctor']),
+  ).toEqual({ command: 'runtime-doctor', index: 2 })
+  expect(
+    getCliCommandPosition(['--stdin-mode=data', 'goal', 'status']),
+  ).toEqual({ command: 'goal', index: 1 })
+  expect(
+    shouldSkipProviderStartup(['--stdin-mode', 'data', 'runtime-doctor']),
+  ).toBe(true)
+  expect(
+    shouldSkipProviderStartup(['--provider', 'minimax', 'goal', 'status']),
+  ).toBe(true)
+  expect(
+    shouldSkipProviderStartup(['--model=MiniMax-M2.7', 'channel', 'status']),
+  ).toBe(true)
 })
 
 test('keeps provider startup for interactive and print prompts', () => {

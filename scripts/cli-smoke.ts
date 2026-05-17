@@ -154,6 +154,14 @@ const cases: SmokeCase[] = [
     ],
   },
   {
+    name: 'top-level goal help after stdin-mode option',
+    args: ['--stdin-mode', 'data', 'goal', '--help'],
+    includes: [
+      'DuckHive /goal - Persisted Workflow Goals',
+      '/goal <description>',
+    ],
+  },
+  {
     name: 'top-level goal command',
     args: ['goal', 'Build', 'top-level', 'smoke', 'goal'],
     env: createIsolatedConfigEnv,
@@ -240,6 +248,14 @@ const cases: SmokeCase[] = [
     includes: [
       'Telegram Connection Status',
       'Status: Not connected',
+    ],
+  },
+  {
+    name: 'runtime doctor after stdin-mode option',
+    args: ['--stdin-mode', 'data', 'runtime-doctor'],
+    includes: [
+      '[PASS] CLI input mode',
+      'Alternate data stdin mode is explicitly active',
     ],
   },
 ]

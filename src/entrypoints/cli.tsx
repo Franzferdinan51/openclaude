@@ -81,8 +81,13 @@ async function main(): Promise<void> {
     const { applyDefaultCliEnvironment } = await import('../utils/defaultCliEnvironment.js')
     applyDefaultCliEnvironment(process.env, { platform: process.platform }, process.argv)
   }
-  const { isVersionRequest, shouldSkipProviderStartup } = await import('./providerStartupGate.js')
+  const { getCliCommandPosition, isVersionRequest, shouldSkipProviderStartup } = await import('./providerStartupGate.js')
   const skipProviderStartup = shouldSkipProviderStartup(args)
+  const cliCommandPosition = getCliCommandPosition(args)
+  const cliCommand = cliCommandPosition?.command
+  const cliCommandArgs = cliCommandPosition
+    ? args.slice(cliCommandPosition.index + 1)
+    : []
 
   // Fast-path for --version/-v: avoid provider startup even when combined
   // with startup-only flags like --yolo.
@@ -309,7 +314,7 @@ async function main(): Promise<void> {
   }
 
   // Fast-path for Codex-style persisted goal management outside the REPL.
-  if (args[0] === 'goal' || args[0] === 'g') {
+  if (cliCommand === 'goal' || cliCommand === 'g') {
     profileCheckpoint('cli_goal_path');
     const {
       enableConfigs
@@ -318,12 +323,12 @@ async function main(): Promise<void> {
     const {
       goalHandler
     } = await import('../cli/goal.js');
-    await goalHandler(args.slice(1));
+    await goalHandler(cliCommandArgs);
     return;
   }
 
   // Fast-path for Codex computer-use inspection/control outside the REPL.
-  if (args[0] === 'computer-use' || args[0] === 'cu' || args[0] === 'comput-use') {
+  if (cliCommand === 'computer-use' || cliCommand === 'cu' || cliCommand === 'comput-use') {
     profileCheckpoint('cli_computer_use_path');
     const {
       enableConfigs
@@ -332,12 +337,12 @@ async function main(): Promise<void> {
     const {
       computerUseHandler
     } = await import('../cli/computerUse.js');
-    await computerUseHandler(args.slice(1));
+    await computerUseHandler(cliCommandArgs);
     return;
   }
 
   // Fast-path for shared AgentRun inspection/control outside the REPL.
-  if (args[0] === 'run' || args[0] === 'runs' || args[0] === 'agent-run') {
+  if (cliCommand === 'run' || cliCommand === 'runs' || cliCommand === 'agent-run') {
     profileCheckpoint('cli_run_path');
     const {
       enableConfigs
@@ -346,12 +351,12 @@ async function main(): Promise<void> {
     const {
       runHandler
     } = await import('../cli/run.js');
-    await runHandler(args.slice(1));
+    await runHandler(cliCommandArgs);
     return;
   }
 
   // Fast-path for channel and Telegram connector setup/status outside the REPL.
-  if (args[0] === 'channel') {
+  if (cliCommand === 'channel') {
     profileCheckpoint('cli_channel_path');
     const {
       enableConfigs
@@ -360,11 +365,11 @@ async function main(): Promise<void> {
     const {
       channelHandler
     } = await import('../cli/channel.js');
-    await channelHandler(args.slice(1));
+    await channelHandler(cliCommandArgs);
     return;
   }
 
-  if (args[0] === 'connect' || args[0] === 'telegram') {
+  if (cliCommand === 'connect' || cliCommand === 'telegram') {
     profileCheckpoint('cli_connect_path');
     const {
       enableConfigs
@@ -373,43 +378,43 @@ async function main(): Promise<void> {
     const {
       connectHandler
     } = await import('../cli/connect.js');
-    await connectHandler(args.slice(1));
+    await connectHandler(cliCommandArgs);
     return;
   }
 
   // Fast-path for DuckHive AgentRun inspection/control.
   // These commands share the /run, Telegram, WebUI, and harness control plane.
-  if (args[0] === 'ps' || args[0] === 'logs' || args[0] === 'attach' || args[0] === 'pause' || args[0] === 'resume' || args[0] === 'approve' || args[0] === 'recover' || args[0] === 'kill' || args.includes('--bg') || args.includes('--background')) {
+  if (cliCommand === 'ps' || cliCommand === 'logs' || cliCommand === 'attach' || cliCommand === 'pause' || cliCommand === 'resume' || cliCommand === 'approve' || cliCommand === 'recover' || cliCommand === 'kill' || args.includes('--bg') || args.includes('--background')) {
     profileCheckpoint('cli_bg_path');
     const {
       enableConfigs
     } = await import('../utils/config.js');
     enableConfigs();
     const bg = await import('../cli/bg.js');
-    switch (args[0]) {
+    switch (cliCommand) {
       case 'ps':
-        await bg.psHandler(args.slice(1));
+        await bg.psHandler(cliCommandArgs);
         break;
       case 'logs':
-        await bg.logsHandler(args.slice(1));
+        await bg.logsHandler(cliCommandArgs);
         break;
       case 'attach':
-        await bg.attachHandler(args.slice(1));
+        await bg.attachHandler(cliCommandArgs);
         break;
       case 'pause':
-        await bg.pauseHandler(args.slice(1));
+        await bg.pauseHandler(cliCommandArgs);
         break;
       case 'resume':
-        await bg.resumeHandler(args.slice(1));
+        await bg.resumeHandler(cliCommandArgs);
         break;
       case 'approve':
-        await bg.approveHandler(args.slice(1));
+        await bg.approveHandler(cliCommandArgs);
         break;
       case 'recover':
-        await bg.recoverHandler(args.slice(1));
+        await bg.recoverHandler(cliCommandArgs);
         break;
       case 'kill':
-        await bg.killHandler(args.slice(1));
+        await bg.killHandler(cliCommandArgs);
         break;
       default:
         await bg.handleBgFlag(args);
