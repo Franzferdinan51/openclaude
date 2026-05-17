@@ -1,6 +1,7 @@
 package main
 
 import (
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -293,6 +294,26 @@ func TestHandleBridgeMessageTracksAPIDurationFromBridge(t *testing.T) {
 
 	if m.state.TotalAPIDuration != 2250*time.Millisecond {
 		t.Fatalf("TotalAPIDuration = %s, want %s", m.state.TotalAPIDuration, 2250*time.Millisecond)
+	}
+}
+
+func TestLocalShellCommandUsesPlatformAppropriateFallback(t *testing.T) {
+	shell, args := localShellCommand("echo hi")
+	if len(args) == 0 {
+		t.Fatalf("args should not be empty")
+	}
+	if runtime.GOOS == "windows" {
+		if shell == "/bin/zsh" {
+			t.Fatalf("windows shell fallback should not use unix zsh")
+		}
+		last := args[len(args)-1]
+		if last != "echo hi" {
+			t.Fatalf("last arg = %q, want command payload", last)
+		}
+		return
+	}
+	if args[0] != "-lc" {
+		t.Fatalf("args[0] = %q, want -lc", args[0])
 	}
 }
 

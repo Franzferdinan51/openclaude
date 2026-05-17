@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -1043,16 +1044,12 @@ func (m *MainModel) runShellCommand(command string) tea.Cmd {
 		}},
 	})
 
-	shell := os.Getenv("SHELL")
-	if shell == "" {
-		shell = "/bin/zsh"
-	}
-
 	workdir := m.state.WorkingDir
+	shell, shellArgs := localShellCommand(command)
 
 	return func() tea.Msg {
 		start := time.Now()
-		cmd := exec.CommandContext(ctx, shell, "-lc", command)
+		cmd := exec.CommandContext(ctx, shell, shellArgs...)
 		cmd.Dir = workdir
 		output, err := cmd.CombinedOutput()
 
@@ -1106,6 +1103,29 @@ func (m *MainModel) handleShellResult(msg shellCommandResultMsg) {
 		return
 	}
 	m.state.StatusMsg = fmt.Sprintf("shell finished in %s", msg.duration.Round(time.Millisecond))
+}
+
+func localShellCommand(command string) (string, []string) {
+	if runtime.GOOS == "windows" {
+		if shell := strings.TrimSpace(os.Getenv("SHELL")); shell != "" {
+			return shell, []string{"-lc", command}
+		}
+		for _, candidate := range []string{"pwsh.exe", "powershell.exe"} {
+			if resolved, err := exec.LookPath(candidate); err == nil {
+				return resolved, []string{"-NoLogo", "-NoProfile", "-Command", command}
+			}
+		}
+		if comspec := strings.TrimSpace(os.Getenv("COMSPEC")); comspec != "" {
+			return comspec, []string{"/d", "/s", "/c", command}
+		}
+		return "cmd.exe", []string{"/d", "/s", "/c", command}
+	}
+
+	shell := strings.TrimSpace(os.Getenv("SHELL"))
+	if shell == "" {
+		shell = "/bin/zsh"
+	}
+	return shell, []string{"-lc", command}
 }
 
 func (m *MainModel) waitForBridgeMsg() tea.Cmd {
