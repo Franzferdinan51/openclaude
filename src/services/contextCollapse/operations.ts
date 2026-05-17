@@ -1,5 +1,13 @@
+/**
+ * Context-collapse projection helpers.
+ *
+ * The current collapse implementation rewrites the API message list directly in
+ * `applyCollapsesIfNeeded`, so there is no separate commit log to replay yet.
+ * Keep this module as a real identity projection because `/context` and SDK
+ * context-usage paths call it whenever the compile-time CONTEXT_COLLAPSE gate is
+ * enabled.
+ */
 
-const _stub: any = new Proxy({}, { get: () => () => ({} as any) });
-export default _stub;
-export const __stub = true;
-export const projectView: any = undefined;
+export function projectView<T>(messages: T[]): T[] {
+  return messages
+}

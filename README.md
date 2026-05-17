@@ -670,6 +670,12 @@ Analyze how DUCK.md context files are influencing the current session (Gemini CL
 /context scan          # Scan for DUCK.md files in scope
 ```
 
+When `DUCKHIVE_CONTEXT_COLLAPSE=1` or the compiled `CONTEXT_COLLAPSE` gate is
+enabled, `/context` now remains safe to run: the context-collapse projection
+helper is a real identity projection for the current direct-collapse mode, and
+the collapse service notifies status subscribers when enablement or collapse
+stats change.
+
 ---
 
 ### /prompt-suggest — Prompt Engineering Analysis

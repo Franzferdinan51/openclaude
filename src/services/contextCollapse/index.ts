@@ -65,6 +65,43 @@ let stats: ContextCollapseStats = {
     emptySpawnWarningEmitted: false,
   },
 }
+const listeners = new Set<() => void>()
+
+function createEmptyStats(): ContextCollapseStats {
+  return {
+    collapsedSpans: 0,
+    collapsedMessages: 0,
+    stagedSpans: 0,
+    health: {
+      totalSpawns: 0,
+      totalErrors: 0,
+      lastError: null,
+      totalEmptySpawns: 0,
+      emptySpawnWarningEmitted: false,
+    },
+  }
+}
+
+function cloneStats(value: ContextCollapseStats): ContextCollapseStats {
+  return {
+    ...value,
+    health: { ...value.health },
+  }
+}
+
+function notifyListeners(): void {
+  for (const listener of listeners) {
+    try {
+      listener()
+    } catch (error) {
+      logForDebugging(
+        `[context-collapse] subscriber error: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      )
+    }
+  }
+}
 
 // ============================================================================
 // Core API
@@ -76,7 +113,11 @@ export function initContextCollapse(): void {
     featureEnabled = true
   }
 
+  const previousEnabled = enabled
   enabled = featureEnabled || process.env.DUCKHIVE_CONTEXT_COLLAPSE === '1'
+  if (enabled !== previousEnabled) {
+    notifyListeners()
+  }
   logForDebugging(`[context-collapse] init — enabled=${enabled}`)
 }
 
@@ -85,25 +126,23 @@ export function isContextCollapseEnabled(): boolean {
 }
 
 export function getContextCollapseState(): { enabled: boolean; stats: ContextCollapseStats } | null {
-  return enabled ? { enabled, stats } : null
+  return enabled ? { enabled, stats: cloneStats(stats) } : null
 }
 
 export function getStats(): ContextCollapseStats {
-  return { ...stats }
+  return cloneStats(stats)
 }
 
-export function subscribe(_listener: () => void): () => void {
-  // State listener for stats changes — stub for future pub/sub
-  return () => {}
+export function subscribe(listener: () => void): () => void {
+  listeners.add(listener)
+  return () => {
+    listeners.delete(listener)
+  }
 }
 
 export function resetContextCollapse(): void {
-  stats = {
-    collapsedSpans: 0,
-    collapsedMessages: 0,
-    stagedSpans: 0,
-    health: { ...stats.health, lastError: null },
-  }
+  stats = createEmptyStats()
+  notifyListeners()
 }
 
 // ============================================================================
@@ -191,7 +230,7 @@ function generateSummary(messages: unknown[]): string {
     const prefix = role === 'user' ? 'User' : role === 'assistant' ? 'Assistant' : role
     lines.push(`[${prefix}]: ${content.substring(0, 300)}`)
   }
-  return lines.join('\n')
+  return lines.join('\n').slice(0, MAX_SUMMARY_TOKENS * 4)
 }
 
 /**
@@ -234,6 +273,7 @@ export function applyCollapsesIfNeeded(
     const regions = findCollapsibleRegions(messages)
     if (regions.length === 0) {
       stats.health.totalEmptySpawns++
+      notifyListeners()
       return { messages }
     }
 
@@ -266,6 +306,7 @@ export function applyCollapsesIfNeeded(
 
     stats.collapsedSpans += collapsed.length
     stats.collapsedMessages += collapsed.reduce((sum, s) => sum + s.messageCount, 0)
+    notifyListeners()
 
     logForDebugging(
       `[context-collapse] collapsed ${collapsed.length} span(s), ` +
@@ -276,6 +317,7 @@ export function applyCollapsesIfNeeded(
   } catch (err) {
     stats.health.totalErrors++
     stats.health.lastError = err instanceof Error ? err.message : String(err)
+    notifyListeners()
     logForDebugging(`[context-collapse] error: ${stats.health.lastError}`)
     return { messages }
   }
@@ -286,8 +328,23 @@ function roughTokenEstimate(text: string): number {
   return Math.ceil(text.length / 4)
 }
 
+export function recoverFromOverflow(
+  messages: unknown[],
+  querySource: unknown,
+): { messages: unknown[]; committed: number } {
+  if (!enabled || messages.length === 0) {
+    return { messages, committed: 0 }
+  }
+
+  const result = applyCollapsesIfNeeded(messages, undefined, querySource)
+  return {
+    messages: result.messages,
+    committed: Math.max(0, messages.length - result.messages.length),
+  }
+}
+
 export function isWithheldPromptTooLong(): boolean {
-  // Stub — used by query.ts for token warning logic
+  // This projection path does not withhold API errors by itself.
   return false
 }
 
