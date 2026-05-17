@@ -84,6 +84,30 @@ const cases: SmokeCase[] = [
     ],
   },
   {
+    name: 'runtime doctor with yolo alias',
+    args: ['--yolo', 'runtime-doctor'],
+    includes: [
+      '[PASS] CLI input mode',
+      '[PASS] Terminal input test',
+    ],
+  },
+  {
+    name: 'runtime doctor with dangerously skip permissions',
+    args: ['--dangerously-skip-permissions', 'runtime-doctor'],
+    includes: [
+      '[PASS] CLI input mode',
+      '[PASS] Terminal input test',
+    ],
+  },
+  {
+    name: 'runtime doctor with allow dangerous option',
+    args: ['--allow-dangerously-skip-permissions', 'runtime-doctor'],
+    includes: [
+      '[PASS] CLI input mode',
+      '[PASS] Terminal input test',
+    ],
+  },
+  {
     name: 'runtime doctor colon alias',
     args: ['doctor:runtime'],
     includes: [
