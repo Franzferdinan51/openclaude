@@ -389,7 +389,7 @@ export const call: LocalCommandCall = async (
         ? 'This DuckHive build already reserves `computer-use` for the built-in runtime; do not wire the Codex plugin through `/computer-use enable`.'
       : pluginDir && binPath
         ? 'Run `/computer-use enable` to wire the plugin into DuckHive MCP.'
-        : 'Install Codex.app or the local computer-use bundle first.'
+        : 'Install Codex.app or use the bundled `newest-desktop-control` MCP gateway for cross-platform desktop/Android tools.'
 
     return {
       type: 'text',
@@ -397,6 +397,7 @@ export const call: LocalCommandCall = async (
         `DuckHive Computer Use\n${'-'.repeat(50)}\n` +
         `${status}\n${configStatus}\n\n` +
         '32 tools: screenshot, click, type, scroll, drag, open_app, and more.\n' +
+        'Fallback gateway: `newest-desktop-control` exposes desktop, Android, and computer_use_* compatibility aliases.\n' +
         nextStep,
     }
   }
@@ -443,7 +444,7 @@ export const call: LocalCommandCall = async (
         type: 'text',
         value:
           'computer-use plugin not found.\n' +
-          'Run `node install.js` while Codex CLI is installed, or copy the plugin from /Applications/Codex.app/.',
+          'Run `node install.js` while Codex CLI is installed, copy the plugin from /Applications/Codex.app/, or use `newest-desktop-control` for the bundled desktop/Android gateway.',
       }
     }
     const result = await addToDuckHiveMCP(binPath)
@@ -485,6 +486,7 @@ export const call: LocalCommandCall = async (
       '/computer-use status  - Check plugin and config status\n' +
       '/computer-use enable  - Wire into DuckHive MCP\n' +
       '/computer-use disable - Remove from DuckHive MCP\n\n' +
-      '32 tools: screenshot, click, type, scroll, drag, open_app, and more.',
+      '32 tools: screenshot, click, type, scroll, drag, open_app, and more.\n' +
+      'If the Codex plugin is unavailable, use `newest-desktop-control` for desktop, Android, and computer_use_* compatibility aliases.',
   }
 }

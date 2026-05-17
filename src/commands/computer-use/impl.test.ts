@@ -172,9 +172,10 @@ describe('call', () => {
     } else {
       expect(result.value).toContain('Not in DuckHive MCP config')
       expect(result.value).toContain(
-        'Install Codex.app or the local computer-use bundle first.',
+        'use the bundled `newest-desktop-control` MCP gateway',
       )
     }
+    expect(result.value).toContain('Fallback gateway: `newest-desktop-control`')
     expect(addMcpConfig).not.toHaveBeenCalled()
   })
 
@@ -352,6 +353,20 @@ describe('call', () => {
     const result = expectTextResult(await call('enable extra', {} as never))
 
     expect(result.value).toBe('Usage: /computer-use enable')
+    expect(addMcpConfig).not.toHaveBeenCalled()
+  })
+
+  test('enable missing plugin points to the bundled desktop gateway', async () => {
+    const result = expectTextResult(await call('enable', {} as never))
+
+    if (hasBuiltinComputerUseRuntime()) {
+      expect(result.value).toContain(
+        'already reserves `computer-use` for the built-in runtime',
+      )
+    } else {
+      expect(result.value).toContain('computer-use plugin not found.')
+      expect(result.value).toContain('newest-desktop-control')
+    }
     expect(addMcpConfig).not.toHaveBeenCalled()
   })
 
