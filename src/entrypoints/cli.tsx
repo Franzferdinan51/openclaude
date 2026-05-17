@@ -382,6 +382,20 @@ async function main(): Promise<void> {
     return;
   }
 
+  // Fast-path for Agent Teams / AI Council / Hive Nation surfaces outside the REPL.
+  if (cliCommand === 'team' || cliCommand === 'council' || cliCommand === 'senate' || cliCommand === 'decree' || cliCommand === 'swarm' || cliCommand === 'orchestrate') {
+    profileCheckpoint('cli_hive_path');
+    const {
+      enableConfigs
+    } = await import('../utils/config.js');
+    enableConfigs();
+    const {
+      hiveCommandHandler
+    } = await import('../cli/hive.js');
+    await hiveCommandHandler(cliCommand, cliCommandArgs);
+    return;
+  }
+
   // Fast-path for terminal keyboard diagnostics outside provider/REPL startup.
   if (cliCommand === 'input-test') {
     profileCheckpoint('cli_input_test_path');

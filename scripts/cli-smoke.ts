@@ -266,6 +266,43 @@ const cases: SmokeCase[] = [
     ],
   },
   {
+    name: 'top-level team help',
+    args: ['team', '--help'],
+    includes: [
+      'Team command',
+      '/team list',
+      '/team templates',
+    ],
+  },
+  {
+    name: 'top-level team templates',
+    args: ['team', 'templates'],
+    includes: [
+      'Team templates',
+      'research',
+      'code',
+      'security',
+    ],
+  },
+  {
+    name: 'top-level council help',
+    args: ['council', '--help'],
+    includes: [
+      'AI Council',
+      '/council --modes',
+      'Available modes:',
+    ],
+  },
+  {
+    name: 'top-level swarm help',
+    args: ['swarm', '--help'],
+    includes: [
+      'Swarm Command',
+      '/swarm <task description>',
+      '--dry-run',
+    ],
+  },
+  {
     name: 'top-level channel help',
     args: ['channel', '--help'],
     env: createIsolatedConfigEnv,
