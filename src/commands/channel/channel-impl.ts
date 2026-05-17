@@ -169,6 +169,12 @@ function getTelegramSnapshot(storageData: ReturnType<ReturnType<typeof getSecure
     env.DUCKHIVE_TELEGRAM_BOT_TOKEN ??
     env.TELEGRAM_BOT_TOKEN ??
     telegram?.botToken
+  const source =
+    env.DUCKHIVE_TELEGRAM_BOT_TOKEN || env.TELEGRAM_BOT_TOKEN
+      ? 'environment'
+      : telegram?.botToken
+        ? 'storage'
+        : 'none'
   const sameTokenAsStorage = Boolean(token && telegram?.botToken && token === telegram.botToken)
   const chatId =
     env.DUCKHIVE_TELEGRAM_ALLOWED_CHAT_ID ??
@@ -180,6 +186,7 @@ function getTelegramSnapshot(storageData: ReturnType<ReturnType<typeof getSecure
     `telegram - ${boolLabel(Boolean(token), 'configured', 'not connected')}`,
     `  token: ${token ? 'present' : 'missing'}`,
     `  chat:  ${chatId ? String(chatId) : 'not registered yet'}`,
+    `  source: ${source}`,
     `  commands: /channel connect telegram --token <TOKEN> | /channel status telegram | /channel send telegram <MESSAGE>`,
   ]
 }

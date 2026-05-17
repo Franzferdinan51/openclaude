@@ -86,6 +86,7 @@ describe('/channel command', () => {
     expect(result.value).toContain('Channel Adapters')
     expect(result.value).toContain('telegram - configured')
     expect(result.value).toContain('chat:  42')
+    expect(result.value).toContain('source: storage')
     expect(result.value).toContain('webhook - config present')
     expect(result.value).toContain('inbound: ready | outbound: ready')
     expect(result.value).toContain('runtime: not connected')
@@ -150,6 +151,7 @@ describe('/channel command', () => {
 
     expect(result.value).toContain('telegram - configured')
     expect(result.value).toContain('chat:  not registered yet')
+    expect(result.value).toContain('source: environment')
     expect(result.value).not.toContain('chat:  old-chat')
   })
 
