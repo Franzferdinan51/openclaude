@@ -128,6 +128,8 @@ describe('checkCliInputMode', () => {
 
     expect(result.ok).toBe(true)
     expect(result.detail).toContain('OpenClaude-compatible readable stdin')
+    expect(result.detail).toContain('classic REPL')
+    expect(result.detail).toContain('inherited TUI handoff flags')
   })
 
   test('fails on Windows when data stdin is forced', () => {
