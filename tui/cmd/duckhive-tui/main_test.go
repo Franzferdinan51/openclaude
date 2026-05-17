@@ -342,6 +342,55 @@ func TestProviderSnapshotUsesDuckHiveProviderSet(t *testing.T) {
 	}
 }
 
+func TestCheckpointCountPrefersDuckHiveConfigHome(t *testing.T) {
+	tempDir := t.TempDir()
+	t.Setenv("HOME", tempDir)
+	t.Setenv("USERPROFILE", tempDir)
+	t.Setenv("CLAUDE_CONFIG_DIR", "")
+
+	duckHiveCheckpoints := filepath.Join(tempDir, ".duckhive", "checkpoints")
+	if err := os.MkdirAll(duckHiveCheckpoints, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(duckHiveCheckpoints, "active.json"), []byte("{}"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	legacyCheckpoints := filepath.Join(tempDir, ".config", "openclaude", "checkpoints")
+	if err := os.MkdirAll(legacyCheckpoints, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(legacyCheckpoints, "legacy.json"), []byte("{}"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	if got := checkpointCount(); got != 1 {
+		t.Fatalf("checkpointCount() = %d, want DuckHive count 1", got)
+	}
+}
+
+func TestCheckpointCountFallsBackToLegacyOpenClaudePath(t *testing.T) {
+	tempDir := t.TempDir()
+	t.Setenv("HOME", tempDir)
+	t.Setenv("USERPROFILE", tempDir)
+	t.Setenv("CLAUDE_CONFIG_DIR", "")
+
+	legacyCheckpoints := filepath.Join(tempDir, ".config", "openclaude", "checkpoints")
+	if err := os.MkdirAll(legacyCheckpoints, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(legacyCheckpoints, "legacy.json"), []byte("{}"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(legacyCheckpoints, "notes.txt"), []byte("ignore"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	if got := checkpointCount(); got != 1 {
+		t.Fatalf("checkpointCount() = %d, want legacy fallback count 1", got)
+	}
+}
+
 func TestRunsSnapshotSurfacesAgentRunLifecycle(t *testing.T) {
 	m := &MainModel{
 		state: model.NewAppState(),

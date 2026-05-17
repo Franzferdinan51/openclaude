@@ -1999,7 +1999,21 @@ func checkpointCount() int {
 	if err != nil {
 		return 0
 	}
-	dir := filepath.Join(home, ".config", "openclaude", "checkpoints")
+
+	configDir := strings.TrimSpace(os.Getenv("CLAUDE_CONFIG_DIR"))
+	if configDir == "" {
+		configDir = filepath.Join(home, ".duckhive")
+	}
+
+	count := countCheckpointFiles(filepath.Join(configDir, "checkpoints"))
+	if count > 0 {
+		return count
+	}
+
+	return countCheckpointFiles(filepath.Join(home, ".config", "openclaude", "checkpoints"))
+}
+
+func countCheckpointFiles(dir string) int {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		return 0
