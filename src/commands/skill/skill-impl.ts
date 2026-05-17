@@ -13,9 +13,15 @@ import {
   searchClawHubSkills,
 } from '../../services/clawhub/skillHub.js'
 
-type SkillWorkshopResult = Awaited<
-  ReturnType<typeof SkillWorkshopTool.call>
->['data']
+type SkillWorkshopResult = {
+  success: boolean
+  action: string
+  skill?: string
+  skills?: string[]
+  path?: string
+  content?: string
+  error?: string
+}
 
 type SkillDeps = {
   runSkillWorkshop: typeof SkillWorkshopTool.call
@@ -117,7 +123,13 @@ Explain what this skill does and when to use it.
 async function runWorkshop(
   input: Parameters<typeof SkillWorkshopTool.call>[0],
 ): Promise<SkillWorkshopResult> {
-  return (await getSkillDeps().runSkillWorkshop(input, {} as never)).data
+  const result = await getSkillDeps().runSkillWorkshop(
+    input,
+    {} as never,
+    undefined as never,
+    undefined as never,
+  )
+  return result.data as unknown as SkillWorkshopResult
 }
 
 function toHookContext(

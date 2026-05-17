@@ -7,6 +7,9 @@ describe('/desktop command', () => {
     const result = await call('', {} as never)
 
     expect(result.type).toBe('text')
+    if (result.type !== 'text') {
+      throw new Error(`expected text result, received ${result.type}`)
+    }
     expect(/[^\x00-\x7F]/.test(result.value)).toBe(false)
     expect(result.value).toContain('DuckHive Desktop Control')
     expect(result.value).toContain('desktop_control screenshot')

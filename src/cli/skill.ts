@@ -1,4 +1,4 @@
-import { asSystemPrompt } from '../utils/systemPromptType.js'
+import { createCliLocalCommandContext } from './localCommandContext.js'
 
 function hasHelpFlag(args: readonly string[]): boolean {
   return args.includes('--help') || args.includes('-h')
@@ -14,15 +14,7 @@ function normalizeSkillArgs(args: readonly string[]): string {
 
 async function runSkillCommand(args: readonly string[]): Promise<void> {
   const { call } = await import('../commands/skill/skill-impl.js')
-  const result = await call(normalizeSkillArgs(args), {
-    messages: [],
-    renderedSystemPrompt: asSystemPrompt([]),
-    options: {
-      querySource: 'cli',
-    },
-    setMessages: () => {},
-    onChangeAPIKey: () => {},
-  } as never)
+  const result = await call(normalizeSkillArgs(args), createCliLocalCommandContext())
 
   if (result.type === 'text' && result.value.trim().length > 0) {
     process.stdout.write(`${result.value}\n`)

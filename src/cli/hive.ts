@@ -1,3 +1,6 @@
+import type { LocalCommandModule } from '../types/command.js'
+import { createCliLocalCommandContext } from './localCommandContext.js'
+
 type HiveCommand =
   | 'council'
   | 'decree'
@@ -6,7 +9,7 @@ type HiveCommand =
   | 'swarm'
   | 'team'
 
-const HIVE_COMMANDS: Record<HiveCommand, () => Promise<{ call: (args: string) => Promise<{ type: string; value?: string }> }>> = {
+const HIVE_COMMANDS: Record<HiveCommand, () => Promise<LocalCommandModule>> = {
   council: () => import('../commands/hive-council/council-impl.js'),
   decree: () => import('../commands/hive-decree/decree-impl.js'),
   orchestrate: () => import('../commands/hive-orchestrate/orchestrate-impl.js'),
@@ -30,7 +33,7 @@ export async function hiveCommandHandler(command: HiveCommand, args: string[]): 
       : args.join(' ')
 
   const { call } = await HIVE_COMMANDS[command]()
-  const result = await call(commandArgs)
+  const result = await call(commandArgs, createCliLocalCommandContext())
 
   if (result.type === 'text' && result.value?.trim()) {
     process.stdout.write(`${result.value}\n`)

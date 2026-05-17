@@ -23,6 +23,7 @@ function makePlugin(
     entry: {
       name: 'demo-plugin',
       source,
+      strict: false,
     },
     marketplaceInstallLocation,
     marketplaceName: 'demo-marketplace',

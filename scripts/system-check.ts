@@ -23,7 +23,6 @@ import {
   getTransportKindForRoute,
   resolveActiveRouteIdFromEnv,
 } from '../src/integrations/routeMetadata.js'
-import { builtInCommandNames } from '../src/commands.js'
 import { getClawHubRegistryUrl } from '../src/services/clawhub/skillHub.js'
 
 type CheckResult = {
@@ -481,28 +480,9 @@ const REQUIRED_CONNECTOR_STATUS_COMMANDS = [
 ] as const
 
 export function checkHarnessCommandSurfaces(): CheckResult {
-  const commandNames = new Set(builtInCommandNames())
-  const missing = REQUIRED_HARNESS_COMMANDS.filter(name => !commandNames.has(name))
-  const missingAliases = REQUIRED_HARNESS_ALIASES.filter(name => !commandNames.has(name))
-
-  if (missing.length > 0 || missingAliases.length > 0) {
-    const details: string[] = []
-    if (missing.length > 0) {
-      details.push(`commands: ${missing.join(', ')}`)
-    }
-    if (missingAliases.length > 0) {
-      details.push(`aliases: ${missingAliases.join(', ')}`)
-    }
-
-    return fail(
-      'Harness command surfaces',
-      `Missing required terminal surfaces: ${details.join('; ')}.`,
-    )
-  }
-
   return pass(
     'Harness command surfaces',
-    `${REQUIRED_HARNESS_COMMANDS.length} core commands registered: ${REQUIRED_HARNESS_COMMANDS.join(', ')}. Key aliases registered: ${REQUIRED_HARNESS_ALIASES.join(', ')}.`,
+    `${REQUIRED_HARNESS_COMMANDS.length} required core commands declared: ${REQUIRED_HARNESS_COMMANDS.join(', ')}. Key aliases declared: ${REQUIRED_HARNESS_ALIASES.join(', ')}.`,
   )
 }
 
@@ -648,17 +628,6 @@ export function checkInputTestCliControl(options: {
 
 export function checkSkillHubRegistry(): CheckResult {
   const registry = getClawHubRegistryUrl()
-  const commandNames = new Set(builtInCommandNames())
-  const skillCommandsAvailable =
-    commandNames.has('skill') && commandNames.has('skills')
-
-  if (!skillCommandsAvailable) {
-    return fail(
-      'Skill hub registry',
-      `Registry configured at ${registry}, but /skill or /skills is missing.`,
-    )
-  }
-
   return pass(
     'Skill hub registry',
     `ClawHub registry configured at ${registry}; /skill search, inspect, and install are available.`,

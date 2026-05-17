@@ -181,6 +181,9 @@ result = await Bun.build({
         // The previous onResolve/onLoad shim was ineffective in Bun
         // v1.3.9+ because the bun: namespace is resolved natively
         // before the JS plugin phase runs.
+        build.onResolve({ filter: /^duckhive-runtime-doctor$/ }, () => ({
+          path: join(import.meta.dir, 'system-check.ts'),
+        }))
 
         build.onResolve(
           { filter: /^\.\.\/(daemon\/workerRegistry|daemon\/main|cli\/handlers\/templateJobs|environment-runner\/main|self-hosted-runner\/main)\.js$/ },

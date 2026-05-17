@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test'
 import { call, setChannelTestDeps } from './channel-impl.js'
+import type { SecureStorage } from '../../utils/secureStorage/index.js'
 
 let connectCall: ReturnType<typeof mock>
 let sendTelegramMessage: ReturnType<typeof mock>
@@ -21,6 +22,26 @@ function expectTextResult(result: Awaited<ReturnType<typeof call>>) {
     throw new Error(`expected text result, received ${result.type}`)
   }
   return result
+}
+
+function createSecureStorageFixture(
+  telegram = {
+    botToken: '123456789:ABCDEFGHIJKLMNOPQRSTUVWX',
+    chatId: '42',
+  },
+): SecureStorage {
+  const data = {
+    pluginSecrets: {
+      telegram,
+    },
+  }
+  return {
+    name: 'test-secure-storage',
+    read: () => data,
+    readAsync: async () => data,
+    update: () => ({ success: true }),
+    delete: () => true,
+  }
 }
 
 describe('/channel command', () => {
@@ -54,16 +75,7 @@ describe('/channel command', () => {
       disconnectEmailRuntime,
       isEmailRuntimeConnected,
       startTelegramService,
-      getSecureStorage: () => ({
-        read: () => ({
-          pluginSecrets: {
-            telegram: {
-              botToken: '123456789:ABCDEFGHIJKLMNOPQRSTUVWX',
-              chatId: '42',
-            },
-          },
-        }),
-      }),
+      getSecureStorage: () => createSecureStorageFixture(),
       env: {
         ...envBaseline,
         EMAIL_IMAP_HOST: 'imap.example.com',
@@ -128,16 +140,11 @@ describe('/channel command', () => {
       sendEmailMessage,
       sendConsoleMessage,
       startTelegramService,
-      getSecureStorage: () => ({
-        read: () => ({
-          pluginSecrets: {
-            telegram: {
-              botToken: '999999999:ZZZZZZZZZZZZZZZZZZZZZZZZ',
-              chatId: 'old-chat',
-            },
-          },
+      getSecureStorage: () =>
+        createSecureStorageFixture({
+          botToken: '999999999:ZZZZZZZZZZZZZZZZZZZZZZZZ',
+          chatId: 'old-chat',
         }),
-      }),
       env: {
         ...envBaseline,
         DUCKHIVE_TELEGRAM_BOT_TOKEN: '123456789:ABCDEFGHIJKLMNOPQRSTUVWX',
@@ -464,16 +471,7 @@ describe('/channel command', () => {
       sendEmailMessage,
       sendConsoleMessage,
       startTelegramService,
-      getSecureStorage: () => ({
-        read: () => ({
-          pluginSecrets: {
-            telegram: {
-              botToken: '123456789:ABCDEFGHIJKLMNOPQRSTUVWX',
-              chatId: '42',
-            },
-          },
-        }),
-      }),
+      getSecureStorage: () => createSecureStorageFixture(),
       env: {
         ...envBaseline,
         EMAIL_SMTP_HOST: 'smtp-only.example.com',
@@ -509,16 +507,7 @@ describe('/channel command', () => {
       sendEmailMessage,
       sendConsoleMessage,
       startTelegramService,
-      getSecureStorage: () => ({
-        read: () => ({
-          pluginSecrets: {
-            telegram: {
-              botToken: '123456789:ABCDEFGHIJKLMNOPQRSTUVWX',
-              chatId: '42',
-            },
-          },
-        }),
-      }),
+      getSecureStorage: () => createSecureStorageFixture(),
       env: {
         ...envBaseline,
         EMAIL_SMTP_HOST: 'smtp-only.example.com',
@@ -548,16 +537,7 @@ describe('/channel command', () => {
       sendEmailMessage,
       sendConsoleMessage,
       startTelegramService,
-      getSecureStorage: () => ({
-        read: () => ({
-          pluginSecrets: {
-            telegram: {
-              botToken: '123456789:ABCDEFGHIJKLMNOPQRSTUVWX',
-              chatId: '42',
-            },
-          },
-        }),
-      }),
+      getSecureStorage: () => createSecureStorageFixture(),
       env: {
         ...envBaseline,
         WEBHOOK_PORT: '3848',

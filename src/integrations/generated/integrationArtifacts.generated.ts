@@ -235,7 +235,8 @@ export const PROVIDER_PRESET_MANIFEST = [
     "vendorId": "minimax",
     "description": "MiniMax API endpoint",
     "apiKeyEnvVars": [
-      "MINIMAX_API_KEY"
+      "MINIMAX_API_KEY",
+      "MMX_API_KEY"
     ]
   },
   {

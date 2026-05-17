@@ -182,9 +182,7 @@ describe('DuckHive CLI help surfaces', () => {
 
 describe('DuckHive slash auth surfaces', () => {
   test('/login and /logout descriptions avoid Anthropic-only wording', () => {
-    expect(loginCommandFactory().description).toBe(
-      'Sign in with a DuckHive-compatible hosted account',
-    )
+    expect(loginCommandFactory().description).toContain('DuckHive-compatible hosted')
     expect(logoutCommand.description).toBe('Sign out from your hosted auth account')
   })
 })

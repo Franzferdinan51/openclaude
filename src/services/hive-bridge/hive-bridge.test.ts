@@ -26,7 +26,7 @@ describe('HiveBridge', () => {
         })
       }
       throw new Error(`unexpected url: ${url}`)
-    }) as typeof fetch
+    }) as unknown as typeof fetch
 
     const bridge = new HiveBridge({ apiBase: 'http://localhost:3007', enabled: true })
     const health = await bridge.getHealth()
@@ -47,7 +47,7 @@ describe('HiveBridge', () => {
         ])
       }
       throw new Error(`unexpected url: ${url}`)
-    }) as typeof fetch
+    }) as unknown as typeof fetch
 
     const bridge = new HiveBridge({ apiBase: 'http://localhost:3007', enabled: true })
     const councilors = await bridge.getCouncilors()
@@ -68,7 +68,7 @@ describe('HiveBridge', () => {
         ])
       }
       throw new Error(`unexpected url: ${url}`)
-    }) as typeof fetch
+    }) as unknown as typeof fetch
 
     const bridge = new HiveBridge({ apiBase: 'http://localhost:3007', enabled: true })
     const modes = await bridge.getModes()
@@ -104,7 +104,7 @@ describe('HiveBridge', () => {
         })
       }
       throw new Error(`unexpected url: ${url}`)
-    }) as typeof fetch
+    }) as unknown as typeof fetch
 
     const bridge = new HiveBridge({ apiBase: 'http://localhost:3007', enabled: true })
     const result = await bridge.startDeliberation('Review auth architecture', 'deliberation')
@@ -133,7 +133,7 @@ describe('HiveBridge', () => {
         })
       }
       throw new Error(`unexpected url: ${url}`)
-    }) as typeof fetch
+    }) as unknown as typeof fetch
 
     const bridge = new HiveBridge({ apiBase: 'http://localhost:3007', enabled: true })
     const session = await bridge.getCurrentSession()
@@ -177,7 +177,7 @@ describe('HiveBridge', () => {
         })
       }
       throw new Error(`unexpected url: ${url}`)
-    }) as typeof fetch
+    }) as unknown as typeof fetch
 
     const bridge = new HiveBridge({ apiBase: 'http://localhost:3007', enabled: true })
     const spawned = await bridge.spawnTeam('Research Redis caching', 'analysis')
@@ -238,7 +238,7 @@ describe('HiveBridge', () => {
         })
       }
       throw new Error(`unexpected url: ${url}`)
-    }) as typeof fetch
+    }) as unknown as typeof fetch
 
     const bridge = new HiveBridge({ apiBase: 'http://localhost:3007', enabled: true })
     const issued = await bridge.issueDecree(

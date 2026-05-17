@@ -3,14 +3,24 @@ import { call, setSwarmTestDeps } from './swarm-impl.js'
 
 const ASCII_ONLY = /^[\x00-\x7F]*$/
 
+function expectTextResult(result: Awaited<ReturnType<typeof call>>) {
+  expect(result.type).toBe('text')
+  if (result.type !== 'text') {
+    throw new Error(`expected text result, received ${result.type}`)
+  }
+  return result
+}
+
 describe('/swarm command', () => {
   afterEach(() => {
     setSwarmTestDeps(null)
   })
 
   test('renders usage and dry-run plans with ASCII-safe terminal output', async () => {
-    const usage = await call('', {} as never)
-    const dryRun = await call('Build API --domain=coding --count=2 --dry-run', {} as never)
+    const usage = expectTextResult(await call('', {} as never))
+    const dryRun = expectTextResult(
+      await call('Build API --domain=coding --count=2 --dry-run', {} as never),
+    )
 
     expect(usage.value).toContain('Swarm Command - Parallel Agent Execution')
     expect(usage.value).toContain('duckhive swarm <task description>')
@@ -23,7 +33,14 @@ describe('/swarm command', () => {
   test('renders execution phases and vote summary with ASCII-safe terminal output', async () => {
     setSwarmTestDeps({
       spawnTeammate: async input => ({
-        data: { agent_id: String(input.name) },
+        data: {
+          agent_id: String(input.name),
+          teammate_id: String(input.name),
+          name: String(input.name),
+          tmux_session_name: 'test-session',
+          tmux_window_name: 'test-window',
+          tmux_pane_id: 'test-pane',
+        },
       }),
       sleep: async () => {},
       collectResponses: async agentIds => {
@@ -49,7 +66,9 @@ describe('/swarm command', () => {
       }),
     })
 
-    const result = await call('Build API --domain=coding --count=2', {} as never)
+    const result = expectTextResult(
+      await call('Build API --domain=coding --count=2', {} as never),
+    )
 
     expect(result.value).toContain('SWARM PHASE: PLANNING')
     expect(result.value).toContain('VOTE RESULTS:')

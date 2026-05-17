@@ -38,6 +38,8 @@ describe('/skill command', () => {
         skillName: 'release readiness',
       }),
       expect.anything(),
+      undefined,
+      undefined,
     )
     expect(result.value).toContain('Skill created')
     expect(result.value).toContain('release readiness')

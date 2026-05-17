@@ -126,7 +126,7 @@ function normalizeSession(session: unknown): DeliberationSession | null {
     raw.stats &&
     typeof raw.stats === 'object'
   ) {
-    return raw as DeliberationSession
+    return raw as unknown as DeliberationSession
   }
 
   const messages = Array.isArray(raw.messages)

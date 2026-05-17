@@ -4377,9 +4377,7 @@ Diagnostics:
     out?: string;
     strictInteractive?: boolean;
   }) => {
-    const {
-      runRuntimeDoctor
-    } = await import('../scripts/system-check.js');
+    const { runRuntimeDoctor } = await import('duckhive-runtime-doctor');
     const args: string[] = [];
     if (options.json) {
       args.push('--json');

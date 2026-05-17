@@ -38,6 +38,8 @@ test('creates and lists skills inside DuckHive config home', async () => {
       content: '# release-readiness\n\nChecklist skill',
     },
     {} as never,
+    undefined as never,
+    undefined as never,
   )
 
   expect(created.data.success).toBe(true)
@@ -55,6 +57,8 @@ test('creates and lists skills inside DuckHive config home', async () => {
       action: 'list',
     },
     {} as never,
+    undefined as never,
+    undefined as never,
   )
 
   expect(listed.data.success).toBe(true)

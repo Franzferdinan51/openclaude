@@ -93,11 +93,12 @@ function isPlainObject(value: unknown): value is JsonObject {
 }
 
 function deepMerge<T extends JsonObject>(target: T, source: JsonObject): T {
+  const targetObject: JsonObject = target
   for (const [key, value] of Object.entries(source)) {
-    if (isPlainObject(value) && isPlainObject(target[key])) {
-      deepMerge(target[key], value)
+    if (isPlainObject(value) && isPlainObject(targetObject[key])) {
+      deepMerge(targetObject[key], value)
     } else {
-      target[key] = value
+      targetObject[key] = value
     }
   }
   return target

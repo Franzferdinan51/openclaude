@@ -1,8 +1,9 @@
 import type { LocalCommandCall } from '../../types/command.js'
 import { execSync_DEPRECATED } from '../../utils/execSyncWrapper.js'
+import type { ExecSyncOptionsWithStringEncoding } from 'child_process'
 
 type AndroidDeps = {
-  exec: (command: string, options?: { encoding?: string; timeout?: number }) => string
+  exec: (command: string, options: ExecSyncOptionsWithStringEncoding) => string
 }
 
 let androidTestDeps: Partial<AndroidDeps> | null = null

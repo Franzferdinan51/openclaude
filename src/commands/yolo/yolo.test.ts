@@ -57,7 +57,7 @@ describe('/yolo command', () => {
   test('refuses to enable when bypass mode is unavailable', async () => {
     const doneMessages: string[] = []
     const result = await call(
-      (message: string) => doneMessages.push(message),
+      message => doneMessages.push(message ?? ''),
       {
         getAppState: () => createAppState('default', false),
       } as never,

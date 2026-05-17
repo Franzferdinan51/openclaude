@@ -20,7 +20,13 @@ describe('newest-desktop-control bundled gateway', () => {
     const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'))
 
     expect(pkg.files).toContain('config/')
-    expect(pkg.files).toContain('skills/newest-desktop-control/')
+    expect(pkg.files).toEqual(
+      expect.arrayContaining([
+        'skills/newest-desktop-control/SKILL.md',
+        'skills/newest-desktop-control/src/',
+        'skills/newest-desktop-control/scripts/',
+      ]),
+    )
   })
 
   test('gateway registry exposes desktop, Android, diagnostics, and compatibility aliases', async () => {

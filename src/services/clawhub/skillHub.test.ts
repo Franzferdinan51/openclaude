@@ -25,7 +25,7 @@ describe('ClawHub skill service', () => {
       fetchImpl: (async (input: string | URL) => {
         calls.push(String(input))
         return new Response('{}')
-      }) as typeof fetch,
+      }) as unknown as typeof fetch,
     })
 
     expect(() => assertValidClawHubSkillSlug('calendar-helper_1.2')).not.toThrow()
@@ -60,7 +60,7 @@ describe('ClawHub skill service', () => {
             ],
           }),
         )
-      }) as typeof fetch,
+      }) as unknown as typeof fetch,
     })
 
     const results = await searchClawHubSkills('calendar', 3)
@@ -109,7 +109,7 @@ describe('ClawHub skill service', () => {
               summary: 'No issues detected',
             },
           }),
-        )) as typeof fetch,
+        )) as unknown as typeof fetch,
     })
 
     const detail = await inspectClawHubSkill('calendar')
@@ -160,8 +160,8 @@ describe('ClawHub skill service', () => {
             }),
           )
         }
-        return new Response(archive)
-      }) as typeof fetch,
+        return new Response(archive as unknown as BodyInit)
+      }) as unknown as typeof fetch,
     })
 
     const result = await installClawHubSkill('calendar')
@@ -203,8 +203,8 @@ describe('ClawHub skill service', () => {
             }),
           )
         }
-        return new Response(archive)
-      }) as typeof fetch,
+        return new Response(archive as unknown as BodyInit)
+      }) as unknown as typeof fetch,
     })
 
     await expect(installClawHubSkill('calendar')).rejects.toThrow(
@@ -231,8 +231,8 @@ describe('ClawHub skill service', () => {
             }),
           )
         }
-        return new Response(archive)
-      }) as typeof fetch,
+        return new Response(archive as unknown as BodyInit)
+      }) as unknown as typeof fetch,
     })
 
     await expect(installClawHubSkill('calendar')).rejects.toThrow(
@@ -265,7 +265,7 @@ describe('ClawHub skill service', () => {
             },
           }),
         )
-      }) as typeof fetch,
+      }) as unknown as typeof fetch,
     })
 
     await expect(installClawHubSkill('malware')).rejects.toThrow(

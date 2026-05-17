@@ -117,11 +117,12 @@ export const call: LocalCommandCall = async (args: string) => {
       }
     }
 
-    const type = hasTemplateFirst
-      ? templateFirstType
-      : hasTemplateLast
-        ? templateLastType
-        : 'research'
+    let type: TeamTemplate = 'research'
+    if (hasTemplateFirst) {
+      type = templateFirstType as TeamTemplate
+    } else if (hasTemplateLast) {
+      type = templateLastType as TeamTemplate
+    }
     const name = hasTemplateFirst
       ? parts.slice(2).join(' ')
       : parts.slice(1, -1).join(' ') || parts.slice(1).join(' ')

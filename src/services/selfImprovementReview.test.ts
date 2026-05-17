@@ -28,7 +28,10 @@ function makeTempDir(): string {
 }
 
 function makeContext(userMessages = 3) {
-  const messages = []
+  const messages: Array<{
+    type: 'user' | 'assistant'
+    message: { content: string }
+  }> = []
   for (let i = 0; i < userMessages; i++) {
     messages.push({
       type: 'user',

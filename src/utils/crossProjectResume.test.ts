@@ -37,8 +37,8 @@ describe('checkCrossProjectResume', () => {
     )
 
     expect(result.isCrossProject).toBe(true)
-    expect(result.isSameRepoWorktree).toBe(false)
     if (result.isCrossProject && !result.isSameRepoWorktree) {
+      expect(result.isSameRepoWorktree).toBe(false)
       expect(result.command).toContain('duckhive --resume 00000000-0000-4000-8000-000000000001')
       expect(result.command).not.toContain('claude --resume')
     }

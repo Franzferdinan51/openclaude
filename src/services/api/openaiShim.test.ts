@@ -1712,7 +1712,7 @@ test('uses ~/.mmx oauth credentials for MiniMax routes when OPENAI_API_KEY is un
     stream: false,
   })
 
-  expect(capturedAuthorization).toBe('Bearer oauth-access-token-123456')
+  expect(capturedAuthorization ?? '').toBe('Bearer oauth-access-token-123456')
 })
 
 test('xiaomi mimo route uses api-key auth header and max_completion_tokens', async () => {
