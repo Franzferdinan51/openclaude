@@ -104,7 +104,8 @@ const DEFAULT_SEARCH = {
  * Returns the full config object.
  */
 export function loadDuckhiveConfig() {
-  const base = deepMerge({}, DEFAULT_META, {
+  const base = deepMerge({}, {
+    meta: DEFAULT_META,
     providers: DEFAULT_PROVIDERS,
     ui: DEFAULT_UI,
     search: DEFAULT_SEARCH,
@@ -308,9 +309,30 @@ const red = (s) => `${ESC}31m${s}${reset()}`
 
 const args = process.argv.slice(2)
 
-if (args[0] === 'config') {
+function printConfigUsage() {
+  console.log([
+    'DuckHive config',
+    '',
+    'Usage:',
+    '  duckhive config show   Show the effective DuckHive configuration',
+    '  duckhive config init   Create ~/.duckhive/config.json with defaults',
+    '  duckhive config path   Print the config file path',
+    '',
+    'Aliases:',
+    '  duckhive settings show',
+    '',
+    'The config controls provider defaults, UI surface, search provider, and meta-agent settings.',
+  ].join('\n'))
+}
+
+if (args[0] === 'config' || args[0] === 'settings') {
   const sub = args[1]
   const cfg = loadDuckhiveConfig()
+
+  if (sub === '--help' || sub === '-h' || sub === 'help') {
+    printConfigUsage()
+    process.exit(0)
+  }
 
   if (sub === 'show' || !sub) {
     console.log('\n' + getConfigSummary(cfg) + '\n')
@@ -342,6 +364,6 @@ if (args[0] === 'config') {
     process.exit(0)
   }
 
-  console.log('Usage: duckhive config [show|init|path]')
+  printConfigUsage()
   process.exit(1)
 }

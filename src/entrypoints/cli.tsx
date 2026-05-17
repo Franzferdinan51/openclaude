@@ -203,6 +203,17 @@ async function main(): Promise<void> {
     console.log(prompt.join('\n'));
     return;
   }
+
+  // Fast-path for DuckHive config inspection before the full REPL loads.
+  if (cliCommand === 'config' || cliCommand === 'settings') {
+    profileCheckpoint('cli_config_path');
+    const {
+      configHandler
+    } = await import('../cli/config.js');
+    await configHandler(cliCommandArgs);
+    return;
+  }
+
   if (process.argv[2] === '--claude-in-chrome-mcp') {
     profileCheckpoint('cli_claude_in_chrome_mcp_path');
     const {

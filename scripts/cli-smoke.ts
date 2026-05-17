@@ -127,6 +127,16 @@ const cases: SmokeCase[] = [
     ],
   },
   {
+    name: 'config help',
+    args: ['config', '--help'],
+    includes: [
+      'DuckHive config',
+      'duckhive config show',
+      'duckhive config init',
+      'duckhive config path',
+    ],
+  },
+  {
     name: 'input-test help',
     args: ['input-test', '--help'],
     includes: [
