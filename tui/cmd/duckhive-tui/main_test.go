@@ -114,7 +114,6 @@ func TestParseLocalTUICommand(t *testing.T) {
 		{name: "help opens command deck", input: "/help", wantCommand: localTUICommandDeck, wantHandled: true},
 		{name: "deck alias opens command deck", input: "/deck", wantCommand: localTUICommandDeck, wantHandled: true},
 		{name: "status opens status", input: "/status", wantCommand: localTUICommandStatus, wantHandled: true},
-		{name: "doctor opens status", input: "/doctor", wantCommand: localTUICommandStatus, wantHandled: true},
 		{name: "agent alias opens super agent", input: "/agent", wantCommand: localTUICommandSuperAgent, wantHandled: true},
 		{name: "teams opens super agent", input: "/teams", wantCommand: localTUICommandSuperAgent, wantHandled: true},
 		{name: "runs opens agent run surface", input: "/runs", wantCommand: localTUICommandRuns, wantHandled: true},
@@ -152,6 +151,7 @@ func TestHandleLocalTUICommandUsesBackendForProviderCommands(t *testing.T) {
 		{name: "run manager", input: "/run", wantStatus: "opening agent runs"},
 		{name: "council manager", input: "/council", wantStatus: "opening council"},
 		{name: "agents manager", input: "/agents", wantStatus: "opening agents"},
+		{name: "doctor manager", input: "/doctor", wantStatus: "opening doctor"},
 	}
 
 	for _, tt := range tests {
