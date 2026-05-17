@@ -1,0 +1,61 @@
+import { afterEach, describe, expect, test } from 'bun:test'
+import { call, setVisionTestDeps } from './vision-impl.js'
+
+afterEach(() => {
+  setVisionTestDeps(null)
+})
+
+describe('/vision command', () => {
+  test('captures a phone screenshot', async () => {
+    const commands: string[] = []
+    setVisionTestDeps({
+      exec: (command: string) => {
+        commands.push(command)
+        return ''
+      },
+    })
+
+    const result = await call('phone_screenshot', {} as never)
+    expect(result.type).toBe('text')
+    if (result.type !== 'text') throw new Error('unexpected result type')
+    expect(result.value).toContain('/tmp/vision_screenshot.png')
+    expect(commands).toContain(
+      'adb -s 192.168.1.251:40835 shell screencap /sdcard/scr.png',
+    )
+    expect(commands).toContain(
+      'adb -s 192.168.1.251:40835 pull /sdcard/scr.png /tmp/vision_screenshot.png',
+    )
+  })
+
+  test('accepts an analysis prompt', async () => {
+    const result = await call('analyze "Describe the screenshot"', {} as never)
+    expect(result.type).toBe('text')
+    if (result.type !== 'text') throw new Error('unexpected result type')
+    expect(result.value).toContain('Vision analysis queued')
+    expect(result.value).toContain('Describe the screenshot')
+  })
+
+  test('sends a phone tap', async () => {
+    const commands: string[] = []
+    setVisionTestDeps({
+      exec: (command: string) => {
+        commands.push(command)
+        return ''
+      },
+    })
+
+    const result = await call('phone_tap 10 20', {} as never)
+    expect(result.type).toBe('text')
+    if (result.type !== 'text') throw new Error('unexpected result type')
+    expect(result.value).toContain('Vision tap sent to 10, 20')
+    expect(commands).toContain('adb -s 192.168.1.251:40835 shell input tap 10 20')
+  })
+
+  test('returns usage for invalid input', async () => {
+    const result = await call('phone_tap nope 20', {} as never)
+    expect(result.type).toBe('text')
+    if (result.type !== 'text') throw new Error('unexpected result type')
+    expect(result.value).toContain('phone_tap requires numeric <x> and <y>')
+    expect(result.value).toContain('/vision phone_tap')
+  })
+})

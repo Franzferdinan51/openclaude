@@ -140,4 +140,9 @@ export const INTENTIONALLY_BUNDLED: string[] = [
   // Tree-sitter
   'tree-sitter-wasms',
   'web-tree-sitter',
+  // Email / networking (bundled, optional)
+  'cors',
+  'express',
+  'imap',
+  'nodemailer',
 ]
