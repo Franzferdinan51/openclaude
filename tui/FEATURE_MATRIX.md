@@ -34,4 +34,5 @@ This matrix tracks the harness capabilities we want to absorb from the upstream 
 - Bubble Tea shell mode now works cross-platform on Windows as well as Unix-like shells.
 - Bubble Tea shell interrupts, suspend/resume, external-editor handoff, composer undo, and `ctrl+p` model dispatch are now real behaviors instead of placeholder status text.
 - `ctrl+p` now opens the bridged backend `/model` selector when available and falls back to a local model-picker panel with fast/coding/reasoning/vision route presets plus provider guidance when offline.
+- Local TUI command cards now expose checkpoint, budget, MCP, ACP, and permission readiness as a read-only harness-state surface while keeping mutations in shared backend slash commands.
 - The remaining model-picker work is now about making the local panel interactive and backed by shared provider state, not making the shortcut do anything at all.

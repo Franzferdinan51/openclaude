@@ -146,6 +146,12 @@ func TestParseLocalTUICommand(t *testing.T) {
 		{name: "telegram opens connector card", input: "/telegram", wantCommand: localTUICommandConnect, wantHandled: true},
 		{name: "channel opens connector card", input: "/channel", wantCommand: localTUICommandConnect, wantHandled: true},
 		{name: "telegram with args passes through to backend", input: "/telegram status"},
+		{name: "checkpoint opens harness state", input: "/checkpoint", wantCommand: localTUICommandHarness, wantHandled: true},
+		{name: "budget opens harness state", input: "/budget", wantCommand: localTUICommandHarness, wantHandled: true},
+		{name: "mcp opens harness state", input: "/mcp", wantCommand: localTUICommandHarness, wantHandled: true},
+		{name: "acp opens harness state", input: "/acp", wantCommand: localTUICommandHarness, wantHandled: true},
+		{name: "permissions opens harness state", input: "/permissions", wantCommand: localTUICommandHarness, wantHandled: true},
+		{name: "budget with args passes through to backend", input: "/budget set minimax 5"},
 		{name: "normal input passes through", input: "fix the bug"},
 	}
 
@@ -318,9 +324,46 @@ func TestLocalCommandContentSurfacesCoreAgentFeatures(t *testing.T) {
 		"/computer-use tools",
 		"Connectors",
 		"/telegram status",
+		"Harness state",
+		"/checkpoint",
+		"/budget",
+		"/mcp",
+		"/acp",
 	} {
 		if !strings.Contains(content, want) {
 			t.Fatalf("local command content missing %q:\n%s", want, content)
+		}
+	}
+}
+
+func TestHarnessStateSnapshotSurfacesSharedState(t *testing.T) {
+	m := &MainModel{
+		state: model.NewAppState(),
+		cap: workspaceCapabilities{
+			hasCheckpointEngine: true,
+			checkpointCount:     3,
+			hasMCP:              true,
+			hasACP:              true,
+		},
+	}
+	m.state.PermissionMode = model.PermModeBypass
+	m.state.TotalCostUSD = 1.25
+
+	content := m.localCommandContent(localTUICommandHarness)
+	for _, want := range []string{
+		"Harness state",
+		"Checkpoints: 3 saved; engine detected",
+		"MCP services: detected",
+		"ACP bridge: detected",
+		"Permissions: bypass",
+		"Budget spend: $1.2500 this session",
+		"/checkpoint save|list|load|delete",
+		"/budget set <provider|global> <usd>",
+		"/acp status",
+		"read-only",
+	} {
+		if !strings.Contains(content, want) {
+			t.Fatalf("harness state snapshot missing %q:\n%s", want, content)
 		}
 	}
 }

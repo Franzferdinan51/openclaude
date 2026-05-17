@@ -115,6 +115,7 @@ const (
 	localTUICommandSearch     localTUICommand = "search"
 	localTUICommandComputer   localTUICommand = "computer-use"
 	localTUICommandConnect    localTUICommand = "connect"
+	localTUICommandHarness    localTUICommand = "harness"
 )
 
 func main() {
@@ -922,6 +923,11 @@ func parseLocalTUICommand(text string) (localTUICommand, bool) {
 			return "", false
 		}
 		return localTUICommandConnect, true
+	case "/checkpoint", "/checkpoints", "/budget", "/mcp", "/dmcp", "/acp", "/permission", "/permissions":
+		if hasArgs {
+			return "", false
+		}
+		return localTUICommandHarness, true
 	default:
 		return "", false
 	}
@@ -1091,6 +1097,8 @@ func localCommandStatus(command localTUICommand) string {
 		return "computer-use surface"
 	case localTUICommandConnect:
 		return "connector surface"
+	case localTUICommandHarness:
+		return "harness state surface"
 	default:
 		return "ready"
 	}
@@ -1116,6 +1124,8 @@ func (m *MainModel) localCommandContent(command localTUICommand) string {
 		return m.computerUseSnapshot()
 	case localTUICommandConnect:
 		return m.connectorSnapshot()
+	case localTUICommandHarness:
+		return m.harnessStateSnapshot()
 	default:
 		return m.commandDeckText()
 	}
@@ -1148,6 +1158,10 @@ func (m *MainModel) commandDeckText() string {
 		"Connectors",
 		"  /connect - open Telegram/channel connector status when the bridge is connected.",
 		"  /telegram status and /channel status telegram stay available in the backend while provider setup is broken.",
+		"",
+		"Harness state",
+		"  /checkpoint, /budget, /mcp, /acp, and /permissions keep local readiness visible in the TUI.",
+		"  Bridged sessions should still use the backend slash commands for mutation and full detail.",
 		"",
 		"Session controls",
 		"  /status - status snapshot. /goal - goal status. /doctor - backend diagnostic UI when the bridge is connected. /repl - return to the classic REPL.",
@@ -1269,6 +1283,38 @@ func (m *MainModel) connectorSnapshot() string {
 		"",
 		"Use /repl if you need the classic REPL connector setup flow while the bridge is offline.",
 	}, "\n")
+}
+
+func (m *MainModel) harnessStateSnapshot() string {
+	return strings.Join([]string{
+		"Harness state",
+		"",
+		fmt.Sprintf("Checkpoints: %d saved; engine %s", m.cap.checkpointCount, boolLabel(m.cap.hasCheckpointEngine, "detected", "not detected")),
+		fmt.Sprintf("MCP services: %s", boolLabel(m.cap.hasMCP, "detected", "not detected")),
+		fmt.Sprintf("ACP bridge: %s", boolLabel(m.cap.hasACP, "detected", "not detected")),
+		fmt.Sprintf("Permissions: %s", permissionModeLabel(m.state.PermissionMode)),
+		fmt.Sprintf("Budget spend: $%.4f this session", m.state.TotalCostUSD),
+		"",
+		"Backend commands:",
+		"  /checkpoint save|list|load|delete",
+		"  /budget, /budget set <provider|global> <usd>, /budget reset",
+		"  /mcp or duckhive dmcp list|add|remove|health",
+		"  /acp, /acp status, /acp stop",
+		"  /permissions or /doctor for full policy diagnostics",
+		"",
+		"Local TUI status is read-only. Mutations stay in backend slash commands so REPL, TUI, print, and automation share one state path.",
+	}, "\n")
+}
+
+func permissionModeLabel(mode model.PermissionMode) string {
+	switch mode {
+	case model.PermModeAcceptAll:
+		return "accept all"
+	case model.PermModeBypass:
+		return "bypass"
+	default:
+		return "review tools"
+	}
 }
 
 func (m *MainModel) councilSnapshot() string {
