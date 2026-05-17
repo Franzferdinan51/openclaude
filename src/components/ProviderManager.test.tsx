@@ -98,13 +98,15 @@ async function waitForCondition(
 }
 
 // Provider list is sorted from generated preset metadata by description, with
-// Gitlawb Opengateway pinned first, Codex OAuth injected after DeepSeek, and
-// Custom always pinned last. Keep the target-by-label indirection here so
-// these tests survive future list edits without hardcoding raw key counts.
+// MiniMax pinned first as DuckHive's default recommendation, Codex OAuth
+// injected after DeepSeek, and Custom always pinned last. Keep the
+// target-by-label indirection here so these tests survive future list edits
+// without hardcoding raw key counts.
 //
 // Order matches ProviderManager.renderPresetSelection() when
 // canUseCodexOAuth === true (default in mocked tests).
 const PRESET_ORDER = [
+  'MiniMax',
   'Gitlawb Opengateway',
   'Anthropic',
   'Alibaba Coding Plan (China)',
@@ -119,7 +121,6 @@ const PRESET_ORDER = [
   'LM Studio',
   'Atomic Chat',
   'Ollama',
-  'MiniMax',
   'Mistral AI',
   'Moonshot AI - API',
   'Moonshot AI - Kimi Code',
@@ -583,6 +584,25 @@ test('ProviderManager avoids first-frame false negative while stored-token looku
 
   expect(syncRead).not.toHaveBeenCalled()
   expect(asyncRead).toHaveBeenCalled()
+})
+
+test('ProviderManager first-run recommends MiniMax before ChatGPT Codex OAuth', async () => {
+  mockProviderManagerDependencies(() => undefined, async () => undefined)
+
+  const nonce = `${Date.now()}-${Math.random()}`
+  const { ProviderManager } = await import(`./ProviderManager.js?ts=${nonce}`)
+  const output = await renderProviderManagerFrame(ProviderManager, {
+    mode: 'first-run',
+    waitForOutput: frame =>
+      frame.includes('Set up provider') &&
+      frame.includes('MiniMax') &&
+      frame.includes('Codex OAuth'),
+  })
+
+  expect(output.indexOf('MiniMax')).toBeGreaterThanOrEqual(0)
+  expect(output.indexOf('MiniMax')).toBeLessThan(output.indexOf('Codex OAuth'))
+  expect(output).toContain('MiniMax')
+  expect(output).toContain('Recommended')
 })
 
 test('ProviderManager shows API mode picker for custom OpenAI-compatible providers', async () => {

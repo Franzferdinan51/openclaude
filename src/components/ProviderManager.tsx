@@ -1535,24 +1535,36 @@ export function ProviderManager({ mode, onDone }: Props): React.ReactNode {
 
   function renderPresetSelection(): React.ReactNode {
     const canUseCodexOAuth = !isBareMode()
-    const options: OptionWithDescription<string>[] = ORDERED_PROVIDER_PRESETS.map(preset => {
+    const orderedPresets = [
+      'minimax',
+      ...ORDERED_PROVIDER_PRESETS.filter(preset => preset !== 'minimax'),
+    ] as ProviderPreset[]
+    const options: OptionWithDescription<string>[] = orderedPresets.map(preset => {
       const metadata = getProviderPresetUiMetadata(preset)
       return {
         value: preset,
-        label: getPresetLabel(preset, metadata.label),
+        label:
+          preset === 'minimax' ? (
+            <Text>
+              <Text>MiniMax </Text>
+              <Text color="success" bold>★ Recommended</Text>
+            </Text>
+          ) : (
+            getPresetLabel(preset, metadata.label)
+          ),
         description: metadata.description,
       }
     })
 
     if (canUseCodexOAuth) {
-      // Insert after DeepSeek so Codex OAuth keeps its established position
-      // in the picker even with Gitlawb Opengateway pinned at the top.
-      options.splice(7, 0, {
+      const deepSeekIndex = options.findIndex(option => option.value === 'deepseek')
+      const codexInsertIndex = deepSeekIndex >= 0 ? deepSeekIndex + 1 : options.length
+      options.splice(codexInsertIndex, 0, {
         value: 'codex-oauth',
         label: (
           <Text>
             <Text>Codex OAuth </Text>
-            <Text color="success" bold>★ Recommended</Text>
+            <Text color="success" bold>Optional</Text>
           </Text>
         ),
         description:
