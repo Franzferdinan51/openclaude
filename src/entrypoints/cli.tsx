@@ -79,7 +79,7 @@ async function main(): Promise<void> {
 
   {
     const { applyDefaultCliEnvironment } = await import('../utils/defaultCliEnvironment.js')
-    applyDefaultCliEnvironment()
+    applyDefaultCliEnvironment(process.env, { platform: process.platform }, process.argv)
   }
   const { isVersionRequest, shouldSkipProviderStartup } = await import('./providerStartupGate.js')
   const skipProviderStartup = shouldSkipProviderStartup(args)
