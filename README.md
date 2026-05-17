@@ -738,6 +738,7 @@ Create and manage reusable skill scaffolds for future sessions through DuckHive'
 /skill search "calendar"     # Search ClawHub
 /skill inspect calendar      # Inspect a ClawHub skill
 /skill install calendar      # Install a ClawHub skill into DuckHive's skills dir
+/skill capture               # Scan repeated memory topics and author matching skills
 /skill read my-new-skill     # Inspect a saved skill
 /skill delete my-old-skill   # Delete a saved skill
 /skills                      # Open the skills manager UI
@@ -928,7 +929,7 @@ DuckHive adds 40+ custom tools on top of the OpenClaude base:
 | **CustomProvidersTool** | `/provider` | OpenAI-compatible endpoint config via the provider manager |
 | **ChannelAdapterTool** | `/channel` | Unified messaging — Telegram/Webhook/Email/Console |
 
-Hermes-style autonomous skill creation and `SkillManageTool` now use the same shared DuckHive roots as the rest of the harness: repeated-topic detection reads from the resolved memory base, and authored or managed `SKILL.md` files are written under DuckHive's resolved config-home `skills/` directory rather than separate hardcoded home paths.
+Hermes-style autonomous skill creation and `SkillManageTool` now use the same shared DuckHive roots as the rest of the harness: repeated-topic detection reads from the resolved memory base, `/skill capture` can trigger the scan on demand, and authored or managed `SKILL.md` files are written under DuckHive's resolved config-home `skills/` directory rather than separate hardcoded home paths.
 | **SecretScannerTool** | — | Detect secrets before writing to memory |
 | **SSRFValidationTool** | — | DNS-based URL validation for SSRF protection |
 | **TrustedFoldersTool** | `/trusted-folders` | Folder-level security boundaries |

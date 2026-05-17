@@ -147,12 +147,28 @@ describe('/skill command', () => {
     expect(result.value).toContain('Skill deleted: old-skill')
   })
 
-  test('returns honest guidance for the not-yet-wired capture toggle', async () => {
+  test('runs auto-capture for repeated memory topics', async () => {
+    const runAutoCapture = mock(async () => ({
+      topicsScanned: 4,
+      eligibleTopics: [
+        { topic: 'goal-command-workflow', slug: 'goal-command-workflow', count: 3 },
+      ],
+      skippedExisting: [],
+      created: [
+        { topic: 'goal-command-workflow', slug: 'goal-command-workflow', count: 3 },
+      ],
+      errors: [],
+      throttled: false,
+    }))
+    setSkillTestDeps({ runAutoCapture: runAutoCapture as never })
+
     const result = await call('--capture', {} as never)
 
     expect(result.type).toBe('text')
     if (result.type !== 'text') throw new Error('unexpected result type')
-    expect(result.value).toContain('Auto-capture is not exposed')
-    expect(result.value).toContain('/skill --capture')
+    expect(runAutoCapture).toHaveBeenCalled()
+    expect(result.value).toContain('Skill auto-capture scan complete')
+    expect(result.value).toContain('Created: 1')
+    expect(result.value).toContain('goal-command-workflow')
   })
 })

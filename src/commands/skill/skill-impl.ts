@@ -1,5 +1,12 @@
 import type { LocalCommandCall } from '../../types/command.js'
 import { SkillWorkshopTool } from '../../tools/SkillWorkshopTool/SkillWorkshopTool.js'
+import { asSystemPrompt } from '../../utils/systemPromptType.js'
+import type { REPLHookContext } from '../../utils/hooks/postSamplingHooks.js'
+import {
+  checkAndCreateSkills,
+  type SkillCaptureSummary,
+  triggerSkillCheck,
+} from '../../services/autonomousSkillCreation.js'
 import {
   inspectClawHubSkill,
   installClawHubSkill,
@@ -15,6 +22,9 @@ type SkillDeps = {
   searchClawHubSkills: typeof searchClawHubSkills
   inspectClawHubSkill: typeof inspectClawHubSkill
   installClawHubSkill: typeof installClawHubSkill
+  runAutoCapture: (
+    context: Parameters<LocalCommandCall>[1],
+  ) => Promise<SkillCaptureSummary>
 }
 
 let skillTestDeps: Partial<SkillDeps> | null = null
@@ -25,6 +35,7 @@ function getSkillDeps(): SkillDeps {
     searchClawHubSkills,
     inspectClawHubSkill,
     installClawHubSkill,
+    runAutoCapture,
     ...skillTestDeps,
   }
 }
@@ -51,6 +62,7 @@ function usage(error?: string): string {
     '  /skill search <query>',
     '  /skill inspect <slug>',
     '  /skill install <slug>',
+    '  /skill capture',
     '  /skill list',
     '  /skill read <name>',
     '  /skill delete <name>',
@@ -61,10 +73,9 @@ function usage(error?: string): string {
     '  /skill search "calendar"',
     '  /skill inspect calendar',
     '  /skill install calendar',
+    '  /skill capture',
     '  /skill read release-readiness',
     '  /skill delete old-skill',
-    '',
-    'Note: auto-capture mode is not wired as a standalone slash-command toggle yet.',
   ]
   return error ? `${error}\n\n${lines.join('\n')}` : lines.join('\n')
 }
@@ -90,6 +101,64 @@ async function runWorkshop(
   input: Parameters<typeof SkillWorkshopTool.call>[0],
 ): Promise<SkillWorkshopResult> {
   return (await getSkillDeps().runSkillWorkshop(input, {} as never)).data
+}
+
+function toHookContext(
+  context: Parameters<LocalCommandCall>[1],
+): REPLHookContext {
+  return {
+    messages: context.messages ?? [],
+    systemPrompt: context.renderedSystemPrompt ?? asSystemPrompt([]),
+    userContext: {},
+    systemContext: {},
+    toolUseContext: context,
+    querySource: context.options.querySource,
+  }
+}
+
+async function runAutoCapture(
+  context: Parameters<LocalCommandCall>[1],
+): Promise<SkillCaptureSummary> {
+  triggerSkillCheck()
+  return checkAndCreateSkills(toHookContext(context), { force: true })
+}
+
+function renderAutoCaptureSummary(summary: SkillCaptureSummary): string {
+  const lines = [
+    'Skill auto-capture scan complete',
+    '-'.repeat(40),
+    `Topics scanned: ${summary.topicsScanned}`,
+    `Eligible repeated topics: ${summary.eligibleTopics.length}`,
+    `Created: ${summary.created.length}`,
+    `Already installed: ${summary.skippedExisting.length}`,
+    `Errors: ${summary.errors.length}`,
+  ]
+
+  if (summary.throttled) {
+    lines.push('', 'Scan was skipped by the cooldown gate.')
+  }
+  if (summary.created.length > 0) {
+    lines.push('', 'Created skills:')
+    lines.push(
+      ...summary.created.map(item => `- ${item.slug} (${item.count} memories)`),
+    )
+  }
+  if (summary.skippedExisting.length > 0) {
+    lines.push('', 'Existing skills:')
+    lines.push(...summary.skippedExisting.map(item => `- ${item.slug}`))
+  }
+  if (summary.errors.length > 0) {
+    lines.push('', 'Errors:')
+    lines.push(...summary.errors.map(item => `- ${item.slug}: ${item.error}`))
+  }
+  if (
+    !summary.throttled &&
+    summary.eligibleTopics.length === 0
+  ) {
+    lines.push('', 'No memory topic has reached the 3-session capture threshold yet.')
+  }
+
+  return lines.join('\n')
 }
 
 function renderSkillList(skills: string[]): string {
@@ -145,7 +214,7 @@ function renderClawHubSkillDetail(
   return lines.join('\n')
 }
 
-export const call: LocalCommandCall = async (args: string) => {
+export const call: LocalCommandCall = async (args: string, context) => {
   const tokens = splitCommandArgs(args)
   const subcommand = tokens[0]?.toLowerCase()
 
@@ -154,12 +223,8 @@ export const call: LocalCommandCall = async (args: string) => {
   }
 
   if (subcommand === '--capture' || subcommand === 'capture') {
-    return {
-      type: 'text',
-      value: usage(
-        'Auto-capture is not exposed as a standalone `/skill --capture` toggle yet.',
-      ),
-    }
+    const summary = await getSkillDeps().runAutoCapture(context)
+    return { type: 'text', value: renderAutoCaptureSummary(summary) }
   }
 
   if (subcommand === 'search') {

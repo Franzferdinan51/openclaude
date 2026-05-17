@@ -39,6 +39,15 @@ import { getMemoryBaseDir } from '../memdir/paths.js'
 const PATTERN_THRESHOLD = 3 // sessions before skill is created
 const SKILL_TURN_BUDGET = 6
 
+export type SkillCaptureSummary = {
+  topicsScanned: number
+  eligibleTopics: Array<{ topic: string; slug: string; count: number }>
+  skippedExisting: Array<{ topic: string; slug: string; count: number }>
+  created: Array<{ topic: string; slug: string; count: number }>
+  errors: Array<{ topic: string; slug: string; count: number; error: string }>
+  throttled: boolean
+}
+
 export function getAutonomousSkillsDir(
   configHomeDir = getClaudeConfigHomeDir(),
 ): string {
@@ -219,20 +228,37 @@ const CHECK_COOLDOWN_MS = 30_000 // don't check more than once per 30s
  */
 export async function checkAndCreateSkills(
   context: REPLHookContext,
-): Promise<void> {
+  options: { force?: boolean } = {},
+): Promise<SkillCaptureSummary> {
+  const summary: SkillCaptureSummary = {
+    topicsScanned: 0,
+    eligibleTopics: [],
+    skippedExisting: [],
+    created: [],
+    errors: [],
+    throttled: false,
+  }
+
   // Throttle: don't check more than once per 30 seconds
   const now = Date.now()
-  if (now - lastCheckTime < CHECK_COOLDOWN_MS) return
+  if (!options.force && now - lastCheckTime < CHECK_COOLDOWN_MS) {
+    summary.throttled = true
+    return summary
+  }
   lastCheckTime = now
 
   const topics = scanMemoryTopics()
+  summary.topicsScanned = topics.size
 
   for (const [topic, count] of topics) {
     if (count < PATTERN_THRESHOLD) continue
 
     const slug = slugify(topic)
+    const eligibleTopic = { topic, slug, count }
+    summary.eligibleTopics.push(eligibleTopic)
     if (skillExists(slug)) {
       logForDebugging(`[skillCreation] skill already exists for "${topic}", skipping`)
+      summary.skippedExisting.push(eligibleTopic)
       continue
     }
 
@@ -246,16 +272,23 @@ export async function checkAndCreateSkills(
 
     try {
       await authorSkill(topic, slug, context)
+      summary.created.push(eligibleTopic)
       logEvent('tengu_skill_creation_success', {
         slug: slug as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
       })
     } catch (err) {
       logForDebugging(`[skillCreation] failed to author skill: ${err}`)
+      summary.errors.push({
+        ...eligibleTopic,
+        error: err instanceof Error ? err.message : String(err),
+      })
       logEvent('tengu_skill_creation_error', {
         error: String(err).slice(0, 100) as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
       })
     }
   }
+
+  return summary
 }
 
 async function authorSkill(
