@@ -181,10 +181,22 @@ async function writeZipArchiveIntoSkillDir(
       await writeFile(destination, Buffer.from(content))
     }
 
+    const skillPath = join(skillDir, 'SKILL.md')
+    try {
+      const skillFile = await stat(skillPath)
+      if (!skillFile.isFile()) {
+        throw new Error()
+      }
+    } catch {
+      throw new Error(
+        `Invalid ClawHub skill archive for "${slug}": missing root SKILL.md.`,
+      )
+    }
+
     const originPath = join(skillDir, '.clawhub', 'origin.json')
     await mkdir(dirname(originPath), { recursive: true })
     await writeFile(originPath, JSON.stringify(origin, null, 2), 'utf8')
-    return join(skillDir, 'SKILL.md')
+    return skillPath
   } catch (error) {
     await rm(skillDir, { recursive: true, force: true })
     throw error

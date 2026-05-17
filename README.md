@@ -767,6 +767,7 @@ ClawHub registry notes:
 - DuckHive searches ClawHub directly through its public skill APIs.
 - `/skill inspect <slug>` surfaces ClawHub moderation verdicts, summaries, and reason codes when the registry provides them.
 - `/skill install <slug>` refuses registry entries marked malware-blocked or `malicious` before downloading the archive.
+- `/skill install <slug>` also validates the downloaded archive contains a root `SKILL.md`; invalid archives are removed instead of leaving an unloadable skill directory behind.
 - Installed ClawHub skills are written under DuckHive's resolved `skills/` directory and get local provenance metadata at `.clawhub/origin.json`.
 - Override the registry base with `DUCKHIVE_CLAWHUB_REGISTRY` or `CLAWHUB_REGISTRY` if you need a different ClawHub-compatible endpoint.
 - `/curate` output uses ASCII-safe grades like `[A]` and plain separators so skill-library reports stay readable in Windows shells and log captures.

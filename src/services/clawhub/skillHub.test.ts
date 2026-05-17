@@ -208,6 +208,35 @@ describe('ClawHub skill service', () => {
     )
   })
 
+  test('rejects archives that do not contain a root SKILL.md', async () => {
+    const configHome = await mkdtemp(join(tmpdir(), 'duckhive-clawhub-'))
+    const archive = zipSync({
+      'README.md': new TextEncoder().encode('# Not a DuckHive skill\n'),
+    })
+    let callIndex = 0
+
+    setClawHubSkillServiceTestDeps({
+      getConfigHomeDir: () => configHome,
+      fetchImpl: (async () => {
+        callIndex += 1
+        if (callIndex === 1) {
+          return new Response(
+            JSON.stringify({
+              skill: { slug: 'calendar' },
+              latestVersion: { version: '1.0.0' },
+            }),
+          )
+        }
+        return new Response(archive)
+      }) as typeof fetch,
+    })
+
+    await expect(installClawHubSkill('calendar')).rejects.toThrow(
+      /missing root SKILL\.md/,
+    )
+    await expect(stat(join(configHome, 'skills', 'calendar'))).rejects.toThrow()
+  })
+
   test('refuses to download a malware-blocked skill', async () => {
     let callCount = 0
     setClawHubSkillServiceTestDeps({
