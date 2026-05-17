@@ -354,6 +354,15 @@ describe('Context overflow 500 fix', () => {
   })
 })
 
+describe('DuckHive startup identity', () => {
+  test('setup Node version guard does not show OpenClaude branding', async () => {
+    const content = await file('setup.ts').text()
+
+    expect(content).toContain('DuckHive requires Node.js version 18 or higher')
+    expect(content).not.toContain('OpenClaude requires Node.js')
+  })
+})
+
 // ---------------------------------------------------------------------------
 // Fix N: Skill improvement survey was accidentally hard-disabled in REPL
 // ---------------------------------------------------------------------------
