@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { spawnSync } from 'node:child_process'
 import {
@@ -140,6 +140,7 @@ export function checkCliLauncherPath(options: {
     stdout?: string | Buffer
     stderr?: string | Buffer
   }
+  resolveRealPath?: (path: string) => string
 } = {}): CheckResult {
   const platform = options.platform ?? process.platform
   const cwd = options.cwd ?? process.cwd()
@@ -152,6 +153,7 @@ export function checkCliLauncherPath(options: {
         cwd,
         encoding: 'utf8',
       }))
+  const resolveRealPath = options.resolveRealPath ?? realpathSync.native
   const sourceLauncher = resolve(
     cwd,
     'bin',
@@ -182,10 +184,30 @@ export function checkCliLauncherPath(options: {
       )
     }
 
+    const shimDir = dirname(paths[0])
+    const packageDir = resolve(shimDir, 'node_modules', 'duckhive')
+    const expectedRealPath = resolveRealPath(cwd)
+    const packageRealPath = existsSync(packageDir)
+      ? resolveRealPath(packageDir)
+      : null
+    const normalizePath = (value: string) =>
+      platform === 'win32' ? value.toLowerCase() : value
+
+    if (
+      packageRealPath &&
+      normalizePath(packageRealPath) !== normalizePath(expectedRealPath)
+    ) {
+      return fail(
+        'CLI launcher',
+        `duckhive resolves on PATH: ${paths[0]}, but its package target is ${packageRealPath} instead of this checkout ${expectedRealPath}. Reinstall or relink this checkout.`,
+      )
+    }
+
     const versionSuffix = versionOutput ? ` Version: ${versionOutput}.` : ''
+    const targetSuffix = packageRealPath ? ` Target: ${packageRealPath}.` : ''
     return pass(
       'CLI launcher',
-      `duckhive resolves on PATH: ${paths[0]}.${versionSuffix}`,
+      `duckhive resolves on PATH: ${paths[0]}.${versionSuffix}${targetSuffix}`,
     )
   }
 

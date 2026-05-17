@@ -1,4 +1,7 @@
 import { afterEach, describe, expect, test } from 'bun:test'
+import { mkdirSync, mkdtempSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 
 import {
   checkCliLauncherPath,
@@ -186,10 +189,16 @@ describe('checkTerminalStdio', () => {
 
 describe('checkCliLauncherPath', () => {
   test('reports a duckhive command resolved on PATH', () => {
+    const shimDir = mkdtempSync(join(tmpdir(), 'duckhive-shim-'))
+    const packageDir = join(shimDir, 'node_modules', 'duckhive')
+    mkdirSync(packageDir, { recursive: true })
+    const launcherPath = join(shimDir, 'duckhive.cmd')
+
     const result = checkCliLauncherPath({
       platform: 'win32',
-      cwd: process.cwd(),
+      cwd: packageDir,
       expectedVersion: '0.11.0',
+      resolveRealPath: path => path,
       runCommand: (command, args) =>
         command === 'cmd.exe' && args.join(' ').includes('duckhive --version')
           ? {
@@ -198,8 +207,7 @@ describe('checkCliLauncherPath', () => {
             }
           : {
               status: 0,
-              stdout:
-                'C:\\Users\\franz\\AppData\\Local\\DuckHive\\bin\\duckhive.cmd\r\n',
+              stdout: `${launcherPath}\r\n`,
             },
     })
 
@@ -207,6 +215,38 @@ describe('checkCliLauncherPath', () => {
     expect(result.detail).toContain('duckhive resolves on PATH')
     expect(result.detail).toContain('duckhive.cmd')
     expect(result.detail).toContain('0.11.0 (DuckHive)')
+    expect(result.detail).toContain(`Target: ${packageDir}`)
+  })
+
+  test('fails when the PATH launcher targets a different checkout', () => {
+    const shimDir = mkdtempSync(join(tmpdir(), 'duckhive-shim-'))
+    const packageDir = join(shimDir, 'node_modules', 'duckhive')
+    const checkoutDir = join(shimDir, 'checkout')
+    mkdirSync(packageDir, { recursive: true })
+    mkdirSync(checkoutDir, { recursive: true })
+    const launcherPath = join(shimDir, 'duckhive.cmd')
+
+    const result = checkCliLauncherPath({
+      platform: 'win32',
+      cwd: checkoutDir,
+      expectedVersion: '0.11.0',
+      resolveRealPath: path => path,
+      runCommand: (command, args) =>
+        command === 'cmd.exe' && args.join(' ').includes('duckhive --version')
+          ? {
+              status: 0,
+              stdout: '0.11.0 (DuckHive)\r\n',
+            }
+          : {
+              status: 0,
+              stdout: `${launcherPath}\r\n`,
+            },
+    })
+
+    expect(result.ok).toBe(false)
+    expect(result.detail).toContain('package target')
+    expect(result.detail).toContain(packageDir)
+    expect(result.detail).toContain(checkoutDir)
   })
 
   test('fails when the PATH launcher resolves to a stale DuckHive version', () => {
