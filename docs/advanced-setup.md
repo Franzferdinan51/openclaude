@@ -1,4 +1,4 @@
-# OpenClaude Advanced Setup
+# DuckHive Advanced Setup
 
 This guide is for users who want source builds, Bun workflows, provider profiles, diagnostics, or more control over runtime behavior.
 
@@ -7,7 +7,7 @@ This guide is for users who want source builds, Bun workflows, provider profiles
 ### Option A: npm
 
 ```bash
-npm install -g @gitlawb/openclaude
+npm install -g github:Franzferdinan51/DuckHive
 ```
 
 ### Option B: From source with Bun
@@ -15,19 +15,20 @@ npm install -g @gitlawb/openclaude
 Use Bun `1.3.13` or newer for source builds on Windows. Older Bun versions can fail during `bun run build`.
 
 ```bash
-git clone https://github.com/Gitlawb/openclaude.git
-cd openclaude
+git clone https://github.com/Franzferdinan51/DuckHive.git
+cd DuckHive
 
 bun install
 bun run build
 npm link
+duckhive --version
 ```
 
 ### Option C: Run directly with Bun
 
 ```bash
-git clone https://github.com/Gitlawb/openclaude.git
-cd openclaude
+git clone https://github.com/Franzferdinan51/DuckHive.git
+cd DuckHive
 
 bun install
 bun run dev
@@ -48,9 +49,9 @@ export OPENAI_MODEL=gpt-4o
 `codexplan` maps to GPT-5.5 on the Codex backend with high reasoning.
 `codexspark` maps to GPT-5.3 Codex Spark for faster loops.
 
-If you use the in-app provider wizard, choose `Codex OAuth` to open ChatGPT sign-in in your browser and let OpenClaude store Codex credentials securely.
+If you use the in-app provider wizard, choose `Codex OAuth` to open ChatGPT sign-in in your browser and let DuckHive store Codex credentials securely.
 
-If you already use the Codex CLI, OpenClaude reads `~/.codex/auth.json` automatically. You can also point it elsewhere with `CODEX_AUTH_JSON_PATH` or override the token directly with `CODEX_API_KEY`.
+If you already use the Codex CLI, DuckHive reads `~/.codex/auth.json` automatically. You can also point it elsewhere with `CODEX_AUTH_JSON_PATH` or override the token directly with `CODEX_API_KEY`.
 
 If you set `CODEX_API_KEY` manually and are not relying on `auth.json` or stored
 Codex OAuth credentials, also set `CHATGPT_ACCOUNT_ID` (or
@@ -64,7 +65,7 @@ export OPENAI_MODEL=codexplan
 export CODEX_API_KEY=...
 export CHATGPT_ACCOUNT_ID=...
 
-openclaude
+duckhive
 ```
 
 ### DeepSeek

@@ -21,6 +21,17 @@ npm --version
 npm install -g github:Franzferdinan51/DuckHive
 ```
 
+For a source checkout:
+
+```powershell
+git clone https://github.com/Franzferdinan51/DuckHive.git
+cd DuckHive
+bun install
+bun run build
+.\bin\duckhive.cmd --version
+.\bin\duckhive.cmd --yolo
+```
+
 ## 3. Pick One Provider
 
 ### Option A: OpenAI
@@ -102,6 +113,23 @@ Close PowerShell, open a new one, and try again:
 ```powershell
 duckhive
 ```
+
+If PowerShell still says `duckhive` is not recognized, use the local source
+launcher from the repository root:
+
+```powershell
+.\bin\duckhive.cmd --dangerously-skip-permissions
+```
+
+Or link the checkout onto your PATH:
+
+```powershell
+npm link
+duckhive --version
+duckhive --yolo
+```
+
+`--yolo` is an alias for `--dangerously-skip-permissions`.
 
 ## 5. If Your Provider Fails
 
