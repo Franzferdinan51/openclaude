@@ -1,5 +1,5 @@
 /**
- * OpenClaude startup screen — filled-block text logo with sunset gradient.
+ * DuckHive startup screen — filled-block text logo with sunset gradient.
  * Called once at CLI startup before the Ink UI renders.
  *
  * Addresses: https://github.com/Gitlawb/openclaude/issues/55
@@ -8,6 +8,8 @@
 import { isLocalProviderUrl, resolveProviderRequest } from '../services/api/providerConfig.js'
 import {
   getRouteLabel,
+  getRouteDefaultBaseUrl,
+  getRouteDefaultModel,
   resolveRouteIdFromBaseUrl,
 } from '../integrations/routeMetadata.js'
 import { getLocalOpenAICompatibleProviderLabel } from '../utils/providerDiscovery.js'
@@ -70,15 +72,6 @@ const LOGO_HIVE = [
   `  ██║   ██║       ██║ ██╔═══╝`,
   `  ████████║ ██║       ██████╗`,
   `  ╚═══════╝ ╚═╝       ╚═════╝`,
-]
-
-const LOGO_CLAUDE = [
-  `  \u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557 \u2588\u2588\u2557      \u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557 \u2588\u2588\u2557   \u2588\u2588\u2557 \u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557  \u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557`,
-  `  \u2588\u2588\u2554\u2550\u2550\u2550\u2550\u2550\u255d \u2588\u2588\u2551      \u2588\u2588\u2554\u2550\u2550\u2550\u2588\u2588\u2551 \u2588\u2588\u2551   \u2588\u2588\u2551 \u2588\u2588\u2554\u2550\u2550\u2550\u2588\u2588\u2557 \u2588\u2588\u2554\u2550\u2550\u2550\u2550\u2550\u255d`,
-  `  \u2588\u2588\u2551       \u2588\u2588\u2551      \u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2551 \u2588\u2588\u2551   \u2588\u2588\u2551 \u2588\u2588\u2551   \u2588\u2588\u2551 \u2588\u2588\u2588\u2588\u2588\u2588\u2557  `,
-  `  \u2588\u2588\u2551       \u2588\u2588\u2551      \u2588\u2588\u2554\u2550\u2550\u2550\u2588\u2588\u2551 \u2588\u2588\u2551   \u2588\u2588\u2551 \u2588\u2588\u2551   \u2588\u2588\u2551 \u2588\u2588\u2554\u2550\u2550\u2550\u255d  `,
-  `  \u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557 \u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557\u2588\u2588\u2551   \u2588\u2588\u2551 \u255a\u2588\u2588\u2588\u2588\u2588\u2588\u2554\u255d \u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2554\u255d \u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557`,
-  `  \u255a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u255d \u255a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u255d\u255a\u2550\u255d   \u255a\u2550\u255d  \u255a\u2550\u2550\u2550\u2550\u2550\u255d  \u255a\u2550\u2550\u2550\u2550\u2550\u2550\u255d  \u255a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u255d`,
 ]
 
 const LOGO_DUCKHIVE = [
@@ -172,8 +165,15 @@ export function detectProvider(modelOverride?: string): { name: string; model: s
     return { name, model: displayModel, baseUrl, isLocal }
   }
 
-  // Default: Anthropic - check settings.model first, then env vars
+  // Explicit Anthropic settings still win, but the no-config DuckHive banner
+  // should match the runtime fallback: MiniMax M2.7, not upstream defaults.
   const settings = getSettings_DEPRECATED() || {}
+  if (!modelOverride && !process.env.ANTHROPIC_MODEL && !process.env.CLAUDE_MODEL && !settings.model) {
+    const model = getRouteDefaultModel('minimax') ?? 'MiniMax-M2.7'
+    const baseUrl = getRouteDefaultBaseUrl('minimax') ?? 'https://api.minimax.io/v1'
+    return { name: 'MiniMax', model, baseUrl, isLocal: false }
+  }
+
   const modelSetting = modelOverride || process.env.ANTHROPIC_MODEL || process.env.CLAUDE_MODEL || settings.model || 'claude-sonnet-4-6'
   const resolvedModel = parseUserSpecifiedModel(modelSetting)
   const baseUrl = process.env.ANTHROPIC_BASE_URL ?? 'https://api.anthropic.com'

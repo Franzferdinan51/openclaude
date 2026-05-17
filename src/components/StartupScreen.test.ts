@@ -115,9 +115,19 @@ describe('printStartupScreen logo', () => {
 
     const plainOutput = stripAnsi(output)
     expect(plainOutput).toContain('Any model. Every tool. Zero limits.')
-    expect(plainOutput).toContain('Provider  Anthropic')
+    expect(plainOutput).toContain('Provider  MiniMax')
+    expect(plainOutput).toContain('Model     MiniMax-M2.7')
     expect(plainOutput).not.toContain('OPENCLAUDE')
     expect(plainOutput).not.toContain('CLAUDE')
+  })
+
+  test('defaults the no-config startup banner to MiniMax', () => {
+    expect(detectProvider()).toEqual({
+      name: 'MiniMax',
+      model: 'MiniMax-M2.7',
+      baseUrl: 'https://api.minimax.io/v1',
+      isLocal: false,
+    })
   })
 })
 
@@ -267,7 +277,7 @@ describe('detectProvider — explicit dedicated-provider env flags', () => {
 // --- modelOverride from --model flag ---
 
 describe('detectProvider — modelOverride from --model flag', () => {
-  test('modelOverride overrides default Anthropic model', () => {
+  test('modelOverride selects Anthropic model when explicitly provided', () => {
     const result = detectProvider('claude-opus-4-6')
     expect(result.name).toBe('Anthropic')
     expect(result.model).toContain('opus')
@@ -320,14 +330,14 @@ describe('detectProvider — modelOverride from --model flag', () => {
     expect(result.model).toContain('gpt-4o')
   })
 
-  test('undefined modelOverride preserves default behavior', () => {
+  test('undefined modelOverride preserves explicit Anthropic env behavior', () => {
     process.env.ANTHROPIC_MODEL = 'claude-sonnet-4-6'
     const result = detectProvider(undefined)
     expect(result.name).toBe('Anthropic')
     expect(result.model).toContain('sonnet')
   })
 
-  test('no argument preserves default behavior', () => {
+  test('no argument preserves explicit Anthropic env behavior', () => {
     process.env.ANTHROPIC_MODEL = 'claude-sonnet-4-6'
     const result = detectProvider()
     expect(result.name).toBe('Anthropic')
