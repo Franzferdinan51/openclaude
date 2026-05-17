@@ -2,8 +2,8 @@ import { describe, expect, test } from 'bun:test'
 import { determineStdinMode } from './App.js'
 
 describe('determineStdinMode', () => {
-  test('uses data events on Windows to avoid readable-event startup stalls', () => {
-    expect(determineStdinMode({ env: {}, platform: 'win32' })).toBe('data')
+  test('uses readable events on Windows by default to preserve interactive typing', () => {
+    expect(determineStdinMode({ env: {}, platform: 'win32' })).toBe('readable')
   })
 
   test('keeps legacy readable events on non-Windows by default', () => {

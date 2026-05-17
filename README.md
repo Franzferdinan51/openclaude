@@ -89,7 +89,7 @@ cd DuckHive && bun install && bun run build
 ./bin/duckhive
 ```
 
-Interactive `duckhive` follows the OpenClaude-style classic REPL as the safe default on Windows. The launcher now disables early key capture and uses data-event stdin on Windows before the UI loads, so the prompt can own keyboard input cleanly. Run `duckhive tui` to launch the Go TUI explicitly, set `DUCKHIVE_TUI_WINDOWS_EXPERIMENT=1` only if you want to test automatic Windows TUI handoff, or set `DUCKHIVE_WINDOWS_EARLY_INPUT_EXPERIMENT=1` only if you intentionally want the older early-input buffering path. Auxiliary Council startup is also opt-in via `DUCKHIVE_AUTO_START_COUNCIL=1`, so default CLI startup does not wait on a daemon before the REPL is interactive.
+Interactive `duckhive` follows the OpenClaude-style classic REPL as the safe default on Windows. The launcher disables early key capture on Windows and keeps the legacy readable stdin path by default, so the prompt owns keyboard input instead of freezing behind the startup UI. Run `duckhive tui` to launch the Go TUI explicitly, set `DUCKHIVE_TUI_WINDOWS_EXPERIMENT=1` only if you want to test automatic Windows TUI handoff, set `DUCKHIVE_USE_DATA_STDIN=1` only for stdin diagnostics, or set `DUCKHIVE_WINDOWS_EARLY_INPUT_EXPERIMENT=1` only if you intentionally want the older early-input buffering path. Auxiliary Council startup is also opt-in via `DUCKHIVE_AUTO_START_COUNCIL=1`, so default CLI startup does not wait on a daemon before the REPL is interactive.
 
 **After setup:**
 ```bash
