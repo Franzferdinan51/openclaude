@@ -111,6 +111,18 @@ describe('/channel command', () => {
     expect(connectCall).not.toHaveBeenCalled()
   })
 
+  test('shows clean channel help for help aliases', async () => {
+    const result = expectTextResult(await call('--help', {} as never))
+
+    expect(result.value).toContain('Channel Adapters')
+    expect(result.value).toContain('telegram - configured')
+    expect(result.value).toContain('webhook - config present')
+    expect(result.value).toContain('email - config present')
+    expect(result.value).toContain('console - built in')
+    expect(result.value).not.toContain('Unknown channel action')
+    expect(connectCall).not.toHaveBeenCalled()
+  })
+
   test('delegates telegram status to /connect and rewrites the heading', async () => {
     connectCall.mockImplementationOnce(async () => ({
       type: 'text' as const,

@@ -6,6 +6,6 @@ export default {
   name: 'swarm',
   description: 'Execute code swarming with parallel agent execution',
   aliases: ['hive-swarm', 'code-swarm'],
-  supportsNonInteractive: false,
+  supportsNonInteractive: true,
   load: async () => ({ call: swarmCall }),
 } satisfies Command

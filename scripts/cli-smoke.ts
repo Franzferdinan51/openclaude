@@ -409,6 +409,17 @@ const cases: SmokeCase[] = [
     excludes: ['Warning: ignoring saved provider profile', 'Unknown skill: export'],
   },
   {
+    name: 'headless swarm help',
+    args: ['--bare', '-p', '/swarm --help'],
+    timeoutMs: 30000,
+    includes: [
+      'Swarm Command - Parallel Agent Execution',
+      'REPL usage:     /swarm <task description>',
+      'Voting modes:',
+    ],
+    excludes: ['Warning: ignoring saved provider profile', 'Unknown skill: swarm'],
+  },
+  {
     name: 'top-level mmx help',
     args: ['mmx', '--help'],
     includes: [

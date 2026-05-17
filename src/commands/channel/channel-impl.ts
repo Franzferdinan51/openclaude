@@ -367,7 +367,7 @@ export const call: LocalCommandCall = async (args: string) => {
   const channelType = parsedArgs[1]?.toLowerCase() ?? ''
   const storageData = getSecureStorage().read()
 
-  if (!action) {
+  if (!action || action === 'help' || action === '--help' || action === '-h') {
     return { type: 'text', value: listChannels(storageData, env) }
   }
 
