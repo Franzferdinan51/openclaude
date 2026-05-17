@@ -350,6 +350,33 @@ async function main(): Promise<void> {
     return;
   }
 
+  // Fast-path for channel and Telegram connector setup/status outside the REPL.
+  if (args[0] === 'channel') {
+    profileCheckpoint('cli_channel_path');
+    const {
+      enableConfigs
+    } = await import('../utils/config.js');
+    enableConfigs();
+    const {
+      channelHandler
+    } = await import('../cli/channel.js');
+    await channelHandler(args.slice(1));
+    return;
+  }
+
+  if (args[0] === 'connect' || args[0] === 'telegram') {
+    profileCheckpoint('cli_connect_path');
+    const {
+      enableConfigs
+    } = await import('../utils/config.js');
+    enableConfigs();
+    const {
+      connectHandler
+    } = await import('../cli/connect.js');
+    await connectHandler(args.slice(1));
+    return;
+  }
+
   // Fast-path for DuckHive AgentRun inspection/control.
   // These commands share the /run, Telegram, WebUI, and harness control plane.
   if (args[0] === 'ps' || args[0] === 'logs' || args[0] === 'attach' || args[0] === 'pause' || args[0] === 'resume' || args[0] === 'approve' || args[0] === 'recover' || args[0] === 'kill' || args.includes('--bg') || args.includes('--background')) {

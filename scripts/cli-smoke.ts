@@ -204,6 +204,44 @@ const cases: SmokeCase[] = [
       'test prompt',
     ],
   },
+  {
+    name: 'top-level channel help',
+    args: ['channel', '--help'],
+    env: createIsolatedConfigEnv,
+    includes: [
+      'Channel Adapters',
+      'telegram - not connected',
+      'console - built in',
+    ],
+  },
+  {
+    name: 'top-level channel console status',
+    args: ['channel', 'status', 'console'],
+    includes: [
+      'Channel Adapter Status',
+      'Console',
+      'console - built in',
+    ],
+  },
+  {
+    name: 'top-level connect help',
+    args: ['connect', '--help'],
+    env: createIsolatedConfigEnv,
+    includes: [
+      'Connect Telegram to DuckHive',
+      '/connect <your-bot-token>',
+      'DUCKHIVE_TELEGRAM_ALLOWED_CHAT_ID',
+    ],
+  },
+  {
+    name: 'top-level telegram status alias',
+    args: ['telegram', 'status'],
+    env: createIsolatedConfigEnv,
+    includes: [
+      'Telegram Connection Status',
+      'Status: Not connected',
+    ],
+  },
 ]
 
 const failures: string[] = []
