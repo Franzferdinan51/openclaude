@@ -1190,9 +1190,9 @@ Recent verification snapshot:
 - `bun test`: `2415 pass`, `0 fail`
 - `bun run build`, `bun run smoke`, `bun run verify:privacy`, and `bun run doctor:runtime`: passing
 - `cd tui && go test ./...`: passing
-- `duckhive --version`: `0.9.2 (DuckHive)`
+- `duckhive --version`: `0.11.0 (DuckHive)`
 - `openclaude --version`: upstream OpenClaude remains separately owned when installed
-- package dry-run includes `config/`, `duckhive/sdk`, `duckhive/harness`, and `skills/newest-desktop-control/`
+- package dry-run publishes as `duckhive@0.11.0`, includes the `duckhive` launcher, `duckhive/sdk`, `duckhive/harness`, `config/`, and the runtime `skills/newest-desktop-control/` skill files without test fixtures
 
 Known debt: `bun run typecheck` is still a repo-wide hardening task. The current pass has already added missing transport/OAuth/optional-integration type surfaces, but remaining errors are broad pre-existing TypeScript debt in dormant optional modules, legacy command surfaces, ACP/bridge paths, telemetry, and older UI/test typing. Runtime build, tests, SDK bundle checks, privacy verification, smoke, doctor, and TUI Go tests are the current green gates.
 
