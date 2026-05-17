@@ -308,6 +308,20 @@ async function main(): Promise<void> {
     return;
   }
 
+  // Fast-path for Codex-style persisted goal management outside the REPL.
+  if (args[0] === 'goal' || args[0] === 'g') {
+    profileCheckpoint('cli_goal_path');
+    const {
+      enableConfigs
+    } = await import('../utils/config.js');
+    enableConfigs();
+    const {
+      goalHandler
+    } = await import('../cli/goal.js');
+    await goalHandler(args.slice(1));
+    return;
+  }
+
   // Fast-path for DuckHive AgentRun inspection/control.
   // These commands share the /run, Telegram, WebUI, and harness control plane.
   if (args[0] === 'ps' || args[0] === 'logs' || args[0] === 'attach' || args[0] === 'pause' || args[0] === 'resume' || args[0] === 'approve' || args[0] === 'recover' || args[0] === 'kill' || args.includes('--bg') || args.includes('--background')) {

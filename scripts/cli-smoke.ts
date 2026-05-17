@@ -144,6 +144,26 @@ const cases: SmokeCase[] = [
       'Attached Session:',
     ],
   },
+  {
+    name: 'top-level goal help',
+    args: ['goal', '--help'],
+    includes: [
+      'DuckHive /goal - Persisted Workflow Goals',
+      '/goal <description>',
+      '/goal step add',
+    ],
+  },
+  {
+    name: 'top-level goal command',
+    args: ['goal', 'Build', 'top-level', 'smoke', 'goal'],
+    env: createIsolatedConfigEnv,
+    timeoutMs: 30000,
+    includes: [
+      'Goal created successfully!',
+      'Build top-level smoke goal',
+      'Attached Session:',
+    ],
+  },
 ]
 
 const failures: string[] = []

@@ -9,6 +9,8 @@ const PROVIDER_FREE_COMMANDS = new Set([
   'mcp',
   'plugin',
   'plugins',
+  'goal',
+  'g',
   'ps',
   'logs',
   'attach',
