@@ -639,8 +639,12 @@ func (m *MainModel) handleOutbound(msg model.OutMsg) (tea.Model, tea.Cmd) {
 		}
 
 	case model.MsgModelPicker:
+		if m.bridge != nil {
+			m.state.StatusMsg = "opening model picker"
+			return m, bridge.SendUserMessageCmd(m.bridge, "/model")
+		}
 		m.state.ActiveScreen = model.ScreenSettings
-		m.state.StatusMsg = "model presets live in settings for now"
+		m.state.StatusMsg = "bridge unavailable; showing model settings"
 
 	case model.MsgSuspend:
 		m.state.IsSuspended = true

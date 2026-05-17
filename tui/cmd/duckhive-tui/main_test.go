@@ -293,6 +293,50 @@ func TestResumeMsgClearsSuspendedState(t *testing.T) {
 	}
 }
 
+func TestModelPickerUsesBackendWhenBridgeIsConfigured(t *testing.T) {
+	m := &MainModel{
+		state:      model.NewAppState(),
+		bridge:     bridge.NewSubprocessAdapter("duckhive"),
+		msgList:    components.NewMessageList(80, 20),
+		input:      components.NewInputArea(80, 3),
+		transcript: screens.NewTranscriptPanel(),
+	}
+
+	_, cmd := m.handleOutbound(model.MsgModelPicker{})
+	if cmd == nil {
+		t.Fatal("expected model picker command")
+	}
+	if msg := cmd(); msg != nil {
+		t.Fatalf("expected nil bridge send result, got %#v", msg)
+	}
+	if m.state.ActiveScreen != model.ScreenREPL {
+		t.Fatalf("ActiveScreen = %v", m.state.ActiveScreen)
+	}
+	if m.state.StatusMsg != "opening model picker" {
+		t.Fatalf("StatusMsg = %q", m.state.StatusMsg)
+	}
+}
+
+func TestModelPickerFallsBackToSettingsWithoutBridge(t *testing.T) {
+	m := &MainModel{
+		state:      model.NewAppState(),
+		msgList:    components.NewMessageList(80, 20),
+		input:      components.NewInputArea(80, 3),
+		transcript: screens.NewTranscriptPanel(),
+	}
+
+	_, cmd := m.handleOutbound(model.MsgModelPicker{})
+	if cmd != nil {
+		t.Fatal("expected no backend command")
+	}
+	if m.state.ActiveScreen != model.ScreenSettings {
+		t.Fatalf("ActiveScreen = %v", m.state.ActiveScreen)
+	}
+	if m.state.StatusMsg != "bridge unavailable; showing model settings" {
+		t.Fatalf("StatusMsg = %q", m.state.StatusMsg)
+	}
+}
+
 func TestExternalEditorLoadsEditedContentBackIntoInput(t *testing.T) {
 	m := &MainModel{
 		state:      model.NewAppState(),
