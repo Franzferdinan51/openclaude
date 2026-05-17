@@ -8,6 +8,7 @@ type LoopRecord = {
   times?: number
   remaining?: number
   nextRunAt?: string
+  outputMode?: string
 }
 
 let configStore: Record<string, unknown>
@@ -84,6 +85,33 @@ describe('/loop command', () => {
     expect(getStoredLoops()).toHaveLength(0)
   })
 
+  test('REPL /loop create accepts separated option values', async () => {
+    const { call } = await importFreshLoopModule()
+
+    const result = await call(
+      'create "Review nightly build" --every 20 --times 4 --output full',
+    )
+
+    expect(result.value).toContain('Loop created!')
+    expect(getStoredLoops()).toHaveLength(1)
+    expect(getStoredLoops()[0]?.prompt).toBe('Review nightly build')
+    expect(getStoredLoops()[0]?.everyMinutes).toBe(20)
+    expect(getStoredLoops()[0]?.times).toBe(4)
+    expect(getStoredLoops()[0]?.remaining).toBe(4)
+    expect(getStoredLoops()[0]?.outputMode).toBe('full')
+  })
+
+  test('create rejects invalid loop options before storing loops', async () => {
+    const loopCommand = await importFreshLoopCommand()
+
+    const invalidEvery = await loopCommand(['create', 'Review', '--every', 'nope'])
+    const invalidOutput = await loopCommand(['create', 'Review', '--output=verbose'])
+
+    expect(invalidEvery).toContain('--every requires a positive integer')
+    expect(invalidOutput).toContain('--output must be one of')
+    expect(getStoredLoops()).toHaveLength(0)
+  })
+
   test('list shows stored loops and active filter includes scheduled loops', async () => {
     const loopCommand = await importFreshLoopCommand()
     await loopCommand(['create', '"Watch CI"', '--every=10'])
@@ -95,6 +123,44 @@ describe('/loop command', () => {
     expect(result).toContain('Showing 1 of 1 total')
     expect(result).toContain('[scheduled] **Watch CI**')
     expect([...result].every(char => char.charCodeAt(0) < 128)).toBe(true)
+  })
+
+  test('list rejects unknown filters instead of silently showing all loops', async () => {
+    const loopCommand = await importFreshLoopCommand()
+    await loopCommand(['create', 'Watch CI', '--every=10'])
+
+    const result = await loopCommand(['list', 'mystery'])
+
+    expect(result).toContain('Unknown loop filter')
+    expect(result).toContain('all, active, scheduled, paused, completed')
+  })
+
+  test('status shows loop details by id and summary without an id', async () => {
+    const loopCommand = await importFreshLoopCommand()
+    await loopCommand(['create', 'Track release', '--every=10'])
+    const loopId = getStoredLoops()[0]!.id
+
+    const detail = await loopCommand(['status', loopId])
+    const summary = await loopCommand(['status'])
+
+    expect(detail).toContain('Track release')
+    expect(detail).toContain(`ID: \`${loopId}\``)
+    expect(summary).toContain('Loop Status Summary')
+    expect(summary).toContain('Active: 1 | Paused: 0 | Total: 1')
+  })
+
+  test('status and lifecycle commands reject ambiguous partial loop ids', async () => {
+    const loopCommand = await importFreshLoopCommand()
+    await loopCommand(['create', 'First loop', '--every=10'])
+    await loopCommand(['create', 'Second loop', '--every=20'])
+
+    const status = await loopCommand(['status', 'loop_'])
+    const pause = await loopCommand(['pause', 'loop_'])
+
+    expect(status).toContain('Loop reference is ambiguous: loop_')
+    expect(status).toContain('Matches:')
+    expect(pause).toContain('Loop reference is ambiguous: loop_')
+    expect(getStoredLoops().every(loop => loop.status === 'scheduled')).toBe(true)
   })
 
   test('pause, resume, and clear update the stored loop lifecycle', async () => {
