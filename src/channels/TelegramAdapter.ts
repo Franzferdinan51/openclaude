@@ -62,6 +62,11 @@ export interface TelegramAdapterConfig extends ChannelAdapterConfig {
    */
   allowedChatId?: number
   /**
+   * Telegram chat IDs allowed to send inbound messages.
+   * Useful for shared bots; outbound sendMessage still targets allowedChatId.
+   */
+  allowedChatIds?: Array<number | string>
+  /**
    * Timeout for long-polling getUpdates, in milliseconds.
    * Defaults to 55000 (just under Telegram's 60s server timeout).
    */
@@ -91,6 +96,7 @@ const DEFAULT_API_BASE = 'https://api.telegram.org'
 export class TelegramAdapter implements ChannelAdapter {
   private readonly botToken: string
   private readonly allowedChatId?: number
+  private readonly allowedChatIds: Set<number> | null
   private readonly longPollTimeout: number
   private readonly apiBase: string
   private readonly contentPrefix?: string
@@ -120,6 +126,11 @@ export class TelegramAdapter implements ChannelAdapter {
     }
     this.botToken = token
     this.allowedChatId = config.allowedChatId
+    this.allowedChatIds = parseAllowedChatIds(
+      config.allowedChatIds ??
+        config.allowedChatId ??
+        process.env.DUCKHIVE_TELEGRAM_ALLOWED_CHAT_ID,
+    )
     this.longPollTimeout = config.longPollTimeout ?? DEFAULT_LONG_POLL_TIMEOUT_MS
     this.apiBase = config.apiBase ?? DEFAULT_API_BASE
     this.contentPrefix = config.contentPrefix
@@ -248,8 +259,8 @@ export class TelegramAdapter implements ChannelAdapter {
     // Ignore messages sent by the bot itself.
     if (tgMsg.from?.is_bot) return null
 
-    // Filter to allowed chat if configured.
-    if (this.allowedChatId && tgMsg.chat.id !== this.allowedChatId) return null
+    // Filter to allowed chats if configured.
+    if (this.allowedChatIds && !this.allowedChatIds.has(tgMsg.chat.id)) return null
 
     const text = tgMsg.text?.trim()
     if (!text) return null
@@ -282,4 +293,19 @@ export class TelegramAdapter implements ChannelAdapter {
     }
     return res.json() as Promise<T>
   }
+}
+
+function parseAllowedChatIds(
+  value: TelegramAdapterConfig['allowedChatIds'] | number | string | undefined,
+): Set<number> | null {
+  if (value === undefined || value === null || value === '') {
+    return null
+  }
+
+  const rawValues = Array.isArray(value) ? value : String(value).split(',')
+  const ids = rawValues
+    .map(item => Number(String(item).trim()))
+    .filter(item => Number.isFinite(item))
+
+  return ids.length > 0 ? new Set(ids) : null
 }

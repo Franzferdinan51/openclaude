@@ -83,4 +83,84 @@ describe('TelegramAdapter', () => {
     expect(second?.content).toBe('second allowed')
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
+
+  test('filters inbound messages with comma-separated DuckHive allowlist env', async () => {
+    process.env.DUCKHIVE_TELEGRAM_ALLOWED_CHAT_ID = '42, 77'
+    globalThis.fetch = mock(async () =>
+      telegramResponse({
+        ok: true,
+        result: [
+          {
+            update_id: 1,
+            message: {
+              message_id: 1,
+              chat: { id: 13, type: 'private', username: 'blocked' },
+              from: { id: 13, is_bot: false, first_name: 'Blocked' },
+              text: 'blocked',
+              date: 1,
+            },
+          },
+          {
+            update_id: 2,
+            message: {
+              message_id: 2,
+              chat: { id: 77, type: 'private', username: 'owner' },
+              from: { id: 77, is_bot: false, first_name: 'Owner' },
+              text: 'allowed from env',
+              date: 1,
+            },
+          },
+        ],
+      }),
+    ) as unknown as typeof fetch
+
+    const adapter = new TelegramAdapter({
+      botToken: '123:test-token',
+      longPollTimeout: 1000,
+    })
+
+    const message = await adapter.receiveMessage()
+
+    expect(message?.content).toBe('allowed from env')
+  })
+
+  test('filters inbound messages with configured allowed chat id array', async () => {
+    globalThis.fetch = mock(async () =>
+      telegramResponse({
+        ok: true,
+        result: [
+          {
+            update_id: 1,
+            message: {
+              message_id: 1,
+              chat: { id: 99, type: 'private', username: 'blocked' },
+              from: { id: 99, is_bot: false, first_name: 'Blocked' },
+              text: 'blocked',
+              date: 1,
+            },
+          },
+          {
+            update_id: 2,
+            message: {
+              message_id: 2,
+              chat: { id: 43, type: 'private', username: 'owner' },
+              from: { id: 43, is_bot: false, first_name: 'Owner' },
+              text: 'allowed from config',
+              date: 1,
+            },
+          },
+        ],
+      }),
+    ) as unknown as typeof fetch
+
+    const adapter = new TelegramAdapter({
+      botToken: '123:test-token',
+      allowedChatIds: [42, '43'],
+      longPollTimeout: 1000,
+    })
+
+    const message = await adapter.receiveMessage()
+
+    expect(message?.content).toBe('allowed from config')
+  })
 })
