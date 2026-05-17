@@ -14,6 +14,8 @@ import {
   isClaudeSettingsPath,
 } from './permissions/filesystem.ts'
 import { getValidationTip } from './settings/validationTips.ts'
+import loginCommandFactory from '../commands/login/index.ts'
+import logoutCommand from '../commands/logout/index.ts'
 
 const originalConfigDir = process.env.CLAUDE_CONFIG_DIR
 const repoRoot = join(import.meta.dir, '..', '..')
@@ -164,5 +166,14 @@ describe('DuckHive CLI help surfaces', () => {
     expect(source).not.toContain('requires Claude subscription')
     expect(source).not.toContain('Sign in to your Anthropic account')
     expect(source).not.toContain('Log out from your Anthropic account')
+  })
+})
+
+describe('DuckHive slash auth surfaces', () => {
+  test('/login and /logout descriptions avoid Anthropic-only wording', () => {
+    expect(loginCommandFactory().description).toBe(
+      'Sign in with a DuckHive-compatible hosted account',
+    )
+    expect(logoutCommand.description).toBe('Sign out from your hosted auth account')
   })
 })
