@@ -1,11 +1,12 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, mock, test } from 'bun:test'
 
 const actualSettings = await import('../utils/settings/settings.js')
+let mockedDeprecatedSettings: Record<string, unknown> = {}
 
 beforeAll(() => {
   mock.module('../utils/settings/settings.js', () => ({
     ...actualSettings,
-    getSettings_DEPRECATED: () => ({}),
+    getSettings_DEPRECATED: () => mockedDeprecatedSettings,
   }))
 })
 
@@ -58,6 +59,7 @@ const originalIsTTY = process.stdout.isTTY
 const originalWrite = process.stdout.write
 
 beforeEach(() => {
+  mockedDeprecatedSettings = {}
   for (const key of ENV_KEYS) {
     originalEnv[key] = process.env[key]
     delete process.env[key]
@@ -122,6 +124,28 @@ describe('printStartupScreen logo', () => {
   })
 
   test('defaults the no-config startup banner to MiniMax', () => {
+    expect(detectProvider()).toEqual({
+      name: 'MiniMax',
+      model: 'MiniMax-M2.7',
+      baseUrl: 'https://api.minimax.io/v1',
+      isLocal: false,
+    })
+  })
+
+  test('labels saved MiMo settings as Xiaomi MiMo instead of Anthropic', () => {
+    mockedDeprecatedSettings = { model: 'mimo-v2.5-pro' }
+
+    expect(detectProvider()).toEqual({
+      name: 'Xiaomi MiMo',
+      model: 'mimo-v2.5-pro',
+      baseUrl: 'https://api.xiaomimimo.com/v1',
+      isLocal: false,
+    })
+  })
+
+  test('labels saved MiniMax settings as MiniMax instead of Anthropic', () => {
+    mockedDeprecatedSettings = { model: 'MiniMax-M2.7' }
+
     expect(detectProvider()).toEqual({
       name: 'MiniMax',
       model: 'MiniMax-M2.7',

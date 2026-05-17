@@ -174,6 +174,25 @@ export function detectProvider(modelOverride?: string): { name: string; model: s
     return { name: 'MiniMax', model, baseUrl, isLocal: false }
   }
 
+  if (!modelOverride && !process.env.ANTHROPIC_MODEL && !process.env.CLAUDE_MODEL && settings.model) {
+    const savedModel = String(settings.model)
+    const savedModelLower = savedModel.toLowerCase()
+    const savedRouteId = savedModelLower.startsWith('mimo-')
+      ? 'xiaomi-mimo'
+      : savedModelLower.startsWith('minimax-')
+        ? 'minimax'
+        : null
+    if (savedRouteId) {
+      const baseUrl = getRouteDefaultBaseUrl(savedRouteId) ?? 'https://api.minimax.io/v1'
+      return {
+        name: getRouteLabel(savedRouteId) ?? 'MiniMax',
+        model: savedModel,
+        baseUrl,
+        isLocal: isLocalProviderUrl(baseUrl),
+      }
+    }
+  }
+
   const modelSetting = modelOverride || process.env.ANTHROPIC_MODEL || process.env.CLAUDE_MODEL || settings.model || 'claude-sonnet-4-6'
   const resolvedModel = parseUserSpecifiedModel(modelSetting)
   const baseUrl = process.env.ANTHROPIC_BASE_URL ?? 'https://api.anthropic.com'
