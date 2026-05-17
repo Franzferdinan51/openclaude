@@ -54,8 +54,8 @@ function setupConsumerProject(name: string): string {
     ),
   )
 
-  // Simulate node_modules/@gitlawb/openclaude structure
-  const pkgDir = join(tmpDir, 'node_modules', '@gitlawb', 'openclaude')
+  // Simulate node_modules/duckhive structure.
+  const pkgDir = join(tmpDir, 'node_modules', 'duckhive')
   mkdirSync(pkgDir, { recursive: true })
   mkdirSync(join(pkgDir, 'src', 'entrypoints', 'sdk'), { recursive: true })
   mkdirSync(join(pkgDir, 'dist'), { recursive: true })
@@ -65,7 +65,7 @@ function setupConsumerProject(name: string): string {
     join(pkgDir, 'package.json'),
     JSON.stringify(
       {
-        name: '@gitlawb/openclaude',
+        name: 'duckhive',
         version: '0.0.0-test',
         type: 'module',
         exports: {
@@ -145,7 +145,7 @@ describe('package consumer types', () => {
         `  SDKRateLimitError,`,
         `  QueryOptions,`,
         `  SDKSession,`,
-        `} from '@gitlawb/openclaude/sdk'`,
+        `} from 'duckhive/sdk'`,
         ``,
         `// Use the types so they're not unused-imports-eliminated`,
         `type _Msg = SDKMessage`,
@@ -172,7 +172,7 @@ describe('package consumer types', () => {
     writeFileSync(
       join(tmpDir, 'consumer.ts'),
       [
-        `import type { SDKMessage, SDKUserMessage, SDKResultMessage } from '@gitlawb/openclaude/sdk'`,
+        `import type { SDKMessage, SDKUserMessage, SDKResultMessage } from 'duckhive/sdk'`,
         ``,
         `// Discriminated union check — if types are broken, this won't compile`,
         `function handle(msg: SDKMessage) {`,
@@ -197,7 +197,7 @@ describe('package consumer types', () => {
     writeFileSync(
       join(tmpDir, 'consumer.ts'),
       [
-        `import { SDKRateLimitError } from '@gitlawb/openclaude/sdk'`,
+        `import { SDKRateLimitError } from 'duckhive/sdk'`,
         ``,
         `// Constructor should accept (message?, resetsAt?, rateLimitType?)`,
         `const err = new SDKRateLimitError('rate limited', 12345, 'requests')`,
@@ -219,7 +219,7 @@ describe('package consumer types', () => {
     writeFileSync(
       join(tmpDir, 'consumer.ts'),
       [
-        `import { registerAgentHarness, resolveAgentHarness, type AgentHarness } from '@gitlawb/openclaude/harness'`,
+        `import { registerAgentHarness, resolveAgentHarness, type AgentHarness } from 'duckhive/harness'`,
         ``,
         `const harness: AgentHarness = {`,
         `  id: 'fixture',`,

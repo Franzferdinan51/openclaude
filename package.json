@@ -1,5 +1,5 @@
 {
-  "name": "@gitlawb/openclaude",
+  "name": "duckhive",
   "version": "0.11.0",
   "description": "DuckHive opens coding-agent workflows to any LLM - OpenAI, Gemini, DeepSeek, Ollama, and 200+ models",
   "type": "module",
