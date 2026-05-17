@@ -609,7 +609,7 @@ Code swarming launches parallel sub-agents across DuckHive's current runtime rou
 /swarm --dry-run       # Preview what would spawn
 ```
 
-`/swarm` accepts the higher-level aliases shown above such as `coding`, `security`, `code-review`, `analysis`, `backend`, and `frontend`, but resolves them onto the current runtime routing buckets: `build`, `audit`, `research`, `data`, `mobile`, and `game`. Unsupported domains are rejected clearly instead of falling through into a runtime error.
+`/swarm` accepts the higher-level aliases shown above such as `coding`, `security`, `code-review`, `analysis`, `backend`, and `frontend`, but resolves them onto the current runtime routing buckets: `build`, `audit`, `research`, `data`, `mobile`, and `game`. Unsupported domains are rejected clearly instead of falling through into a runtime error. `--count` is now validated as an integer from 1 to 8, so bad values like `0`, `-1`, `1.5`, or `9` stop before any teammate spawn is attempted. The review phase reports quality gates as configured targets until agent output supplies evidence; it no longer claims test/security/performance/documentation checks passed without proof.
 
 ### Swarm Voting — Multi-Agent Response Routing
 
