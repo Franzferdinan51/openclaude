@@ -1,6 +1,6 @@
 # 🦆 DuckHive
 
-![DuckHive](https://img.shields.io/badge/DuckHive-v0.9.2-gold?style=for-the-badge&logo=buymeacoffee)
+![DuckHive](https://img.shields.io/badge/DuckHive-v0.11.0-gold?style=for-the-badge&logo=buymeacoffee)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue?style=for-the-badge&logo=typescript)](package.json)
 [![Bun](https://img.shields.io/badge/Bun-1.3-yellow?style=for-the-badge&logo=bun)](package.json)
