@@ -96,6 +96,23 @@ const cases: SmokeCase[] = [
     ],
   },
   {
+    name: 'input-test help',
+    args: ['input-test', '--help'],
+    includes: [
+      'DuckHive input-test',
+      'without starting providers',
+      '--stdin-mode data input-test',
+    ],
+  },
+  {
+    name: 'input-test non-interactive failure',
+    args: ['input-test'],
+    expectedStatus: 1,
+    includes: [
+      'DuckHive input-test needs stdin and stdout attached to a real terminal',
+    ],
+  },
+  {
     name: 'background run list',
     args: ['ps'],
     includes: ['DuckHive background runs'],

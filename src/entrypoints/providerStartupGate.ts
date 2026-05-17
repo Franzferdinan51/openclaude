@@ -5,6 +5,7 @@ const PROVIDER_FREE_COMMANDS = new Set([
   'doctor',
   'doctor:runtime',
   'doctor-runtime',
+  'input-test',
   'install',
   'mcp',
   'plugin',

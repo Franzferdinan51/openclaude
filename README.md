@@ -134,16 +134,19 @@ without `-p/--print`, it exits instead of painting a dead REPL. Use
 `duckhive -p "<prompt>"` for headless output, or run `duckhive runtime-doctor`
 from the terminal where you plan to type into the REPL.
 
-If the REPL renders but will not accept typing, run `duckhive runtime-doctor`
-from the same terminal. It checks Windows stdin mode, TUI fallback, provider
-routing, ClawHub skill hub, computer-use fallback, Telegram connector config,
-the installed `duckhive` launcher on `PATH`, and harness command registration
-without starting the chat UI. Add `--strict-interactive` when you want the
-doctor to fail unless stdin and stdout are attached to a real terminal. From a
-source checkout, `bun run doctor:runtime:strict` runs that same strict terminal
-readiness check, and `bun run doctor:runtime:strict:json` emits the failing
-strict report as JSON for logs or issue reports. On Windows, `duckhive runtime-doctor`
-should report `OpenClaude-compatible readable stdin is active by default`.
+If the REPL renders but will not accept typing, run `duckhive input-test` from
+the same terminal first. It exercises the raw keyboard path without starting
+providers, the REPL, or the TUI, and echoes characters until Enter is pressed.
+Then run `duckhive runtime-doctor`. It checks Windows stdin mode, TUI fallback,
+provider routing, ClawHub skill hub, computer-use fallback, Telegram connector
+config, the installed `duckhive` launcher on `PATH`, and harness command
+registration without starting the chat UI. Add `--strict-interactive` when you
+want the doctor to fail unless stdin and stdout are attached to a real terminal.
+From a source checkout, `bun run doctor:runtime:strict` runs that same strict
+terminal readiness check, and `bun run doctor:runtime:strict:json` emits the
+failing strict report as JSON for logs or issue reports. On Windows,
+`duckhive runtime-doctor` should report `OpenClaude-compatible readable stdin is
+active by default`.
 The startup context loader also uses a Windows-safe filesystem-root stop
 condition now, so `DUCK.md` / `AGENTS.md` parent-directory discovery cannot loop
 forever on `C:\` before `/goal`, headless print mode, or the interactive prompt

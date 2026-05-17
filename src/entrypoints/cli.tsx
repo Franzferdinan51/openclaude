@@ -382,6 +382,16 @@ async function main(): Promise<void> {
     return;
   }
 
+  // Fast-path for terminal keyboard diagnostics outside provider/REPL startup.
+  if (cliCommand === 'input-test') {
+    profileCheckpoint('cli_input_test_path');
+    const {
+      inputTestHandler
+    } = await import('../cli/inputTest.js');
+    await inputTestHandler(cliCommandArgs);
+    return;
+  }
+
   // Fast-path for Skill Workshop and ClawHub operations outside the REPL.
   if (cliCommand === 'skill' || cliCommand === 'skill-workshop' || cliCommand === 'skills') {
     profileCheckpoint('cli_skill_path');

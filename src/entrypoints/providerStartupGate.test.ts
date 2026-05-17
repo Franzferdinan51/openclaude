@@ -30,6 +30,7 @@ test('skips provider startup for utility commands', () => {
   expect(shouldSkipProviderStartup(['doctor:runtime'])).toBe(true)
   expect(shouldSkipProviderStartup(['runtime-doctor'])).toBe(true)
   expect(shouldSkipProviderStartup(['doctor-runtime'])).toBe(true)
+  expect(shouldSkipProviderStartup(['input-test'])).toBe(true)
   expect(shouldSkipProviderStartup(['mcp', 'list'])).toBe(true)
   expect(shouldSkipProviderStartup(['plugin', 'list'])).toBe(true)
   expect(shouldSkipProviderStartup(['skill', '--help'])).toBe(true)
