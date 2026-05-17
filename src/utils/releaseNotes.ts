@@ -18,7 +18,7 @@ import {
 
 const MAX_RELEASE_NOTES_SHOWN = 5
 const RELEASES_API_URL =
-  'https://api.github.com/repos/Gitlawb/openclaude/releases?per_page=10'
+  'https://api.github.com/repos/Franzferdinan51/DuckHive/releases?per_page=10'
 const SECTION_HEADER_PREFIX = '__section__:'
 
 type GitHubRelease = {
@@ -29,7 +29,7 @@ type GitHubRelease = {
 }
 
 /**
- * We fetch OpenClaude release notes from GitHub instead of bundling them with
+ * We fetch DuckHive release notes from GitHub instead of bundling them with
  * the build.
  *
  * This is necessary because Ink's static rendering makes it difficult to
@@ -176,7 +176,7 @@ async function fetchGitHubReleases(): Promise<GitHubRelease[]> {
   const response = await axios.get<GitHubRelease[]>(RELEASES_API_URL, {
     headers: {
       Accept: 'application/vnd.github+json',
-      'User-Agent': 'openclaude',
+      'User-Agent': 'duckhive',
     },
   })
 
