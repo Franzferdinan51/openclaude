@@ -4349,8 +4349,7 @@ async function run(): Promise<CommanderCommand> {
     });
   }
 
-  // Doctor command - check installation health
-  program.command('runtime-doctor').alias('doctor-runtime').description(`Run ${PRODUCT_DISPLAY_NAME} runtime checks without starting the REPL`).option('--json', 'Print JSON results').option('--out <path>', 'Write a redacted diagnostic report to a file').option('--strict-interactive', 'Fail when stdin/stdout are not attached to a real terminal').action(async (options: {
+  const runRuntimeDoctorCommand = async (options: {
     json?: boolean;
     out?: string;
     strictInteractive?: boolean;
@@ -4370,7 +4369,11 @@ async function run(): Promise<CommanderCommand> {
     }
     await runRuntimeDoctor(args);
     process.exit(process.exitCode ?? 0);
-  });
+  };
+
+  // Doctor command - check installation health
+  program.command('runtime-doctor').alias('doctor-runtime').description(`Run ${PRODUCT_DISPLAY_NAME} runtime checks without starting the REPL`).option('--json', 'Print JSON results').option('--out <path>', 'Write a redacted diagnostic report to a file').option('--strict-interactive', 'Fail when stdin/stdout are not attached to a real terminal').action(runRuntimeDoctorCommand);
+  program.command('doctor:runtime').description(`Compatibility alias for \`duckhive runtime-doctor\`; runs ${PRODUCT_DISPLAY_NAME} runtime checks without starting the REPL`).option('--json', 'Print JSON results').option('--out <path>', 'Write a redacted diagnostic report to a file').option('--strict-interactive', 'Fail when stdin/stdout are not attached to a real terminal').action(runRuntimeDoctorCommand);
 
   program.command('doctor').description(`Open the interactive ${PRODUCT_DISPLAY_NAME} diagnostics UI for updater, MCP, plugin, and sandbox health. If the REPL or terminal input is not usable, run \`duckhive runtime-doctor\` instead; it runs terminal-safe checks without starting the chat UI. Note: The workspace trust dialog is skipped and stdio servers from .mcp.json are spawned for health checks. Only use this command in directories you trust.`).action(async () => {
     const [{

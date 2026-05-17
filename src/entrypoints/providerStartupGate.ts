@@ -3,6 +3,7 @@ const PROVIDER_FREE_COMMANDS = new Set([
   'auth',
   'auto-mode',
   'doctor',
+  'doctor:runtime',
   'doctor-runtime',
   'install',
   'mcp',

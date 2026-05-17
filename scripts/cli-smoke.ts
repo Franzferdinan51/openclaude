@@ -61,6 +61,16 @@ const cases: SmokeCase[] = [
     ],
   },
   {
+    name: 'runtime doctor colon alias',
+    args: ['doctor:runtime'],
+    includes: [
+      '[PASS] CLI input mode',
+      process.platform === 'win32'
+        ? 'PowerShell-safe data stdin is active by default'
+        : 'Readable stdin default active',
+    ],
+  },
+  {
     name: 'runtime doctor strict interactive failure',
     args: ['runtime-doctor', '--strict-interactive'],
     expectedStatus: 1,
