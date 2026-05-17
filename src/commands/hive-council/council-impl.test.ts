@@ -88,6 +88,45 @@ describe('/council command', () => {
     expect(result.value).toContain('Session: council-42')
   })
 
+  test('starts deliberation with separated mode flag values', async () => {
+    const startDeliberation = mock(async () => ({ success: true, sessionId: 'council-42' }))
+    setHive({ startDeliberation })
+
+    const result = expectTextResult(
+      await call('"Should we ship?" --mode consensus', {} as never),
+    )
+
+    expect(startDeliberation).toHaveBeenCalledWith('Should we ship?', 'consensus')
+    expect(result.value).toContain('Mode: consensus')
+  })
+
+  test('preserves escaped quotes in council questions', async () => {
+    const startDeliberation = mock(async () => ({ success: true, sessionId: 'council-42' }))
+    setHive({ startDeliberation })
+
+    const result = expectTextResult(
+      await call('"Should we ship the \\"fast\\" path?" --mode consensus', {} as never),
+    )
+
+    expect(startDeliberation).toHaveBeenCalledWith(
+      'Should we ship the "fast" path?',
+      'consensus',
+    )
+    expect(result.value).toContain('Council deliberation started')
+  })
+
+  test('rejects unterminated council questions before starting deliberation', async () => {
+    const startDeliberation = mock(async () => ({ success: true, sessionId: 'unused' }))
+    setHive({ startDeliberation })
+
+    const result = expectTextResult(
+      await call('"Should we ship? --mode consensus', {} as never),
+    )
+
+    expect(result.value).toContain('Unterminated quoted string in /council arguments.')
+    expect(startDeliberation).not.toHaveBeenCalled()
+  })
+
   test('rejects unknown modes before starting deliberation', async () => {
     const startDeliberation = mock(async () => ({ success: true, sessionId: 'unused' }))
     setHive({ startDeliberation })

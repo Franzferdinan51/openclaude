@@ -71,6 +71,30 @@ describe('/team command', () => {
     expect(result.value).toContain('Template: analysis')
   })
 
+  test('preserves escaped quotes in team names', async () => {
+    const spawnTeam = mock(async () => ({ success: true }))
+    setHive({ spawnTeam })
+
+    const result = expectTextResult(
+      await call('spawn "Research \\"Redis\\" caching" analysis', {} as never),
+    )
+
+    expect(spawnTeam).toHaveBeenCalledWith('Research "Redis" caching', 'analysis')
+    expect(result.value).toContain('Team spawned.')
+  })
+
+  test('rejects unterminated quoted team names before spawning', async () => {
+    const spawnTeam = mock(async () => ({ success: true }))
+    setHive({ spawnTeam })
+
+    const result = expectTextResult(
+      await call('spawn "Research Redis caching analysis', {} as never),
+    )
+
+    expect(result.value).toContain('Unterminated quoted string in /team arguments.')
+    expect(spawnTeam).not.toHaveBeenCalled()
+  })
+
   test('rejects unknown explicit templates instead of silently using research', async () => {
     const spawnTeam = mock(async () => ({ success: true }))
     setHive({ spawnTeam })

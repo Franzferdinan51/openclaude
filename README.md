@@ -431,7 +431,7 @@ bun run council:serve
 /senate show DECREE-001
 ```
 
-`/council` now resolves its available modes from the live Hive Nation backend when one is running, with a local compatibility fallback when it is not. That keeps the CLI aligned with the merged Agent-Teams council server instead of freezing an older client-side mode list. DuckHive also exposes `/council --modes` for the live mode catalog and `/council --councilors` for the live councilor deck, so the command can inspect the upstream council runtime instead of only starting a deliberation blind. Council mode parsing accepts the upstream AI-Bot-Council-Concensus spelling by mapping `concensus` to `consensus`, and missing `--mode` values now fail before starting a deliberation. The bridge now accepts the checked-in Council server's raw `/api/councilors` array shape directly, the bundled source-checkout runtime now exposes the `/api/team*` and `/api/decree*` routes that DuckHive's `/team`, `/senate`, and `/decree` surfaces already use, and the runtime health contract now includes `services`, `uptime`, and memory stats so DuckHive's governance context no longer treats a live Council server as partially offline by default. When Hive Nation is offline, the governance wrappers now consistently point source checkouts at `bun run council:serve` and `DUCKHIVE_COUNCIL_URL` instead of only `/council` doing it.
+`/council` now resolves its available modes from the live Hive Nation backend when one is running, with a local compatibility fallback when it is not. That keeps the CLI aligned with the merged Agent-Teams council server instead of freezing an older client-side mode list. DuckHive also exposes `/council --modes` for the live mode catalog and `/council --councilors` for the live councilor deck, so the command can inspect the upstream council runtime instead of only starting a deliberation blind. Council mode parsing accepts the upstream AI-Bot-Council-Concensus spelling by mapping `concensus` to `consensus`, accepts both `--mode=value` and `--mode value`, preserves escaped quotes in questions, and rejects unterminated quoted questions before starting a deliberation. The bridge now accepts the checked-in Council server's raw `/api/councilors` array shape directly, the bundled source-checkout runtime now exposes the `/api/team*` and `/api/decree*` routes that DuckHive's `/team`, `/senate`, and `/decree` surfaces already use, and the runtime health contract now includes `services`, `uptime`, and memory stats so DuckHive's governance context no longer treats a live Council server as partially offline by default. When Hive Nation is offline, the governance wrappers now consistently point source checkouts at `bun run council:serve` and `DUCKHIVE_COUNCIL_URL` instead of only `/council` doing it.
 
 ---
 
@@ -656,7 +656,7 @@ mcporter call browseros.click element=42
 
 ### Agent Teams
 
-Spawn multi-agent crews that work in parallel on complex tasks. DuckHive integrates Agent Teams for structured delegation.
+Spawn multi-agent crews that work in parallel on complex tasks. DuckHive integrates Agent Teams for structured delegation. `/team`, `/council`, and `/orchestrate` now share hardened terminal argument behavior: escaped quotes survive inside names/questions/tasks, unterminated quoted input fails before spawning teams or starting deliberation, and orchestration accepts both `--mode=value` / `--team=value` and the separated `--mode value` / `--team value` forms.
 
 ```bash
 # Terminal

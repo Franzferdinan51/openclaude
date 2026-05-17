@@ -18,8 +18,57 @@ const TEAM_TEMPLATES: TeamTemplate[] = [
   'swarm',
 ]
 
-function splitCommandArgs(args: string): string[] {
-  return args.match(/"[^"]*"|'[^']*'|\S+/g)?.map(arg => arg.replace(/^["']|["']$/g, '')) ?? []
+function splitCommandArgs(args: string): { args: string[]; error?: string } {
+  const tokens: string[] = []
+  let current = ''
+  let quote: '"' | "'" | null = null
+  let tokenStarted = false
+
+  for (let i = 0; i < args.length; i++) {
+    const ch = args[i]!
+
+    if (quote) {
+      if (ch === quote) {
+        quote = null
+        continue
+      }
+      if (ch === '\\' && i + 1 < args.length) {
+        const next = args[i + 1]!
+        if (next === quote || next === '\\') {
+          current += next
+          i += 1
+          continue
+        }
+      }
+      current += ch
+      continue
+    }
+
+    if (ch === '"' || ch === "'") {
+      quote = ch
+      tokenStarted = true
+      continue
+    }
+
+    if (/\s/.test(ch)) {
+      if (tokenStarted) {
+        tokens.push(current)
+        current = ''
+        tokenStarted = false
+      }
+      continue
+    }
+
+    current += ch
+    tokenStarted = true
+  }
+
+  if (quote) {
+    return { args: tokens, error: 'Unterminated quoted string in /orchestrate arguments.' }
+  }
+
+  if (tokenStarted) tokens.push(current)
+  return { args: tokens }
 }
 
 function normalizeCouncilMode(value: string): string {
@@ -29,14 +78,29 @@ function normalizeCouncilMode(value: string): string {
 
 export const call: LocalCommandCall = async (args: string) => {
   const hive = getHiveBridge()
-  const parsedArgs = splitCommandArgs(args)
+  const parsed = splitCommandArgs(args)
+  if (parsed.error) {
+    return { type: 'text', value: parsed.error }
+  }
+  const parsedArgs = parsed.args
   const flags: Record<string, string | boolean> = {}
   const positional: string[] = []
 
-  for (const arg of parsedArgs) {
+  for (let i = 0; i < parsedArgs.length; i++) {
+    const arg = parsedArgs[i]!
     if (arg.startsWith('--')) {
-      const [k, v] = arg.slice(2).split('=')
-      flags[k] = v ?? true
+      const [k, v] = arg.slice(2).split(/=(.*)/s, 2)
+      if ((k === 'mode' || k === 'team') && v === undefined) {
+        const next = parsedArgs[i + 1]
+        if (next && !next.startsWith('--')) {
+          flags[k] = next
+          i += 1
+        } else {
+          flags[k] = true
+        }
+      } else {
+        flags[k] = v ?? true
+      }
     } else {
       positional.push(arg)
     }

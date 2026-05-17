@@ -33,8 +33,57 @@ export function setTeamTestDeps(overrides: Partial<TeamDeps> | null): void {
   teamTestDeps = overrides
 }
 
-function splitCommandArgs(args: string): string[] {
-  return args.match(/"[^"]*"|'[^']*'|\S+/g)?.map(arg => arg.replace(/^["']|["']$/g, '')) ?? []
+function splitCommandArgs(args: string): { args: string[]; error?: string } {
+  const tokens: string[] = []
+  let current = ''
+  let quote: '"' | "'" | null = null
+  let tokenStarted = false
+
+  for (let i = 0; i < args.length; i++) {
+    const ch = args[i]!
+
+    if (quote) {
+      if (ch === quote) {
+        quote = null
+        continue
+      }
+      if (ch === '\\' && i + 1 < args.length) {
+        const next = args[i + 1]!
+        if (next === quote || next === '\\') {
+          current += next
+          i += 1
+          continue
+        }
+      }
+      current += ch
+      continue
+    }
+
+    if (ch === '"' || ch === "'") {
+      quote = ch
+      tokenStarted = true
+      continue
+    }
+
+    if (/\s/.test(ch)) {
+      if (tokenStarted) {
+        tokens.push(current)
+        current = ''
+        tokenStarted = false
+      }
+      continue
+    }
+
+    current += ch
+    tokenStarted = true
+  }
+
+  if (quote) {
+    return { args: tokens, error: 'Unterminated quoted string in /team arguments.' }
+  }
+
+  if (tokenStarted) tokens.push(current)
+  return { args: tokens }
 }
 
 function renderTemplates(includeRoles = false): string {
@@ -62,7 +111,11 @@ function formatHiveOfflineError(error?: string): string {
 
 export const call: LocalCommandCall = async (args: string) => {
   const hive = getTeamDeps().getHiveBridge()
-  const parts = splitCommandArgs(args)
+  const parsed = splitCommandArgs(args)
+  if (parsed.error) {
+    return { type: 'text', value: parsed.error }
+  }
+  const parts = parsed.args
   const subcommand = parts[0]?.toLowerCase() ?? ''
 
   if (!subcommand || subcommand === 'list' || subcommand === 'ls') {
