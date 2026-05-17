@@ -291,6 +291,10 @@ The terminal `/run` surface validates status filters against the real AgentRun l
 duckhive ps [status]          # List AgentRuns
 duckhive logs <id> [limit]    # Show recent AgentRun events
 duckhive attach <id>          # Inspect an AgentRun and show attach guidance
+duckhive pause <id>           # Pause a run
+duckhive resume <id>          # Resume a paused run
+duckhive approve <id> [appr]  # Approve a pending run action
+duckhive recover <id> [note]  # Mark a failed/stuck run for recovery
 duckhive kill <id>            # Cancel an AgentRun
 duckhive --bg "long task"     # Register a queued AgentRun for shared controls
 ```

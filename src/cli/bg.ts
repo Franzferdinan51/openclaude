@@ -41,6 +41,10 @@ function usage(error?: string): string {
     '  duckhive ps [status]',
     '  duckhive logs <run-id> [limit]',
     '  duckhive attach <run-id>',
+    '  duckhive pause <run-id>',
+    '  duckhive resume <run-id>',
+    '  duckhive approve <run-id> [approval-id]',
+    '  duckhive recover <run-id> [summary]',
     '  duckhive kill <run-id>',
     '',
     'These commands use the shared AgentRun store also used by /run, Telegram, WebUI, and the harness API.',
@@ -245,6 +249,105 @@ export async function killHandler(args: string[] = []): Promise<void> {
     return
   }
   writeLine(stdout, `Run stopped: ${runId}`)
+}
+
+export async function pauseHandler(args: string[] = []): Promise<void> {
+  const { stdout, stderr } = deps()
+  const [runId, extra] = args
+  if (runId === '--help' || runId === '-h') {
+    writeLine(stdout, usage())
+    return
+  }
+  if (!runId) {
+    writeLine(stderr, usage('pause requires a run id.'))
+    process.exitCode = 1
+    return
+  }
+  if (extra) {
+    writeLine(stderr, usage('pause accepts exactly one run id.'))
+    process.exitCode = 1
+    return
+  }
+  const run = resolveStore().pauseRun(runId)
+  if (!run) {
+    writeLine(stderr, `Run not found: ${runId}`)
+    process.exitCode = 1
+    return
+  }
+  writeLine(stdout, `Run paused: ${runId}`)
+}
+
+export async function resumeHandler(args: string[] = []): Promise<void> {
+  const { stdout, stderr } = deps()
+  const [runId, extra] = args
+  if (runId === '--help' || runId === '-h') {
+    writeLine(stdout, usage())
+    return
+  }
+  if (!runId) {
+    writeLine(stderr, usage('resume requires a run id.'))
+    process.exitCode = 1
+    return
+  }
+  if (extra) {
+    writeLine(stderr, usage('resume accepts exactly one run id.'))
+    process.exitCode = 1
+    return
+  }
+  const run = resolveStore().resumeRun(runId)
+  if (!run) {
+    writeLine(stderr, `Run not found: ${runId}`)
+    process.exitCode = 1
+    return
+  }
+  writeLine(stdout, `Run resumed: ${runId}`)
+}
+
+export async function approveHandler(args: string[] = []): Promise<void> {
+  const { stdout, stderr } = deps()
+  const [runId, approvalId, extra] = args
+  if (runId === '--help' || runId === '-h') {
+    writeLine(stdout, usage())
+    return
+  }
+  if (!runId) {
+    writeLine(stderr, usage('approve requires a run id.'))
+    process.exitCode = 1
+    return
+  }
+  if (extra) {
+    writeLine(stderr, usage('approve accepts a run id and optional approval id.'))
+    process.exitCode = 1
+    return
+  }
+  const run = resolveStore().approveRun(runId, approvalId)
+  if (!run) {
+    writeLine(stderr, `Run not found: ${runId}`)
+    process.exitCode = 1
+    return
+  }
+  writeLine(stdout, approvalId ? `Run approved: ${runId} (${approvalId})` : `Run approved: ${runId}`)
+}
+
+export async function recoverHandler(args: string[] = []): Promise<void> {
+  const { stdout, stderr } = deps()
+  const [runId, ...summaryParts] = args
+  if (runId === '--help' || runId === '-h') {
+    writeLine(stdout, usage())
+    return
+  }
+  if (!runId) {
+    writeLine(stderr, usage('recover requires a run id.'))
+    process.exitCode = 1
+    return
+  }
+  const run = resolveStore().recoverRun(runId, summaryParts.join(' ').trim() || undefined)
+  if (!run) {
+    writeLine(stderr, `Run not found: ${runId}`)
+    process.exitCode = 1
+    return
+  }
+  writeLine(stdout, `Run marked for recovery: ${runId}`)
 }
 
 export async function handleBgFlag(args: string[] = []): Promise<void> {

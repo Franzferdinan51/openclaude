@@ -2,10 +2,14 @@ import { afterEach, describe, expect, test } from 'bun:test'
 import { createAgentRunStore } from '../agent-runs/index.js'
 import {
   attachHandler,
+  approveHandler,
   handleBgFlag,
   killHandler,
   logsHandler,
+  pauseHandler,
   psHandler,
+  recoverHandler,
+  resumeHandler,
   setBgTestDeps,
 } from './bg.js'
 
@@ -105,6 +109,32 @@ describe('background AgentRun CLI handlers', () => {
 
     expect(stdout.text()).toContain('Run stopped: run_bg')
     expect(store.getRun('run_bg')?.status).toBe('cancelled')
+    expect(stderr.text()).toBe('')
+  })
+
+  test('pause resume approve and recover mutate AgentRuns through top-level handlers', async () => {
+    const store = makeStore()
+    store.createRun({
+      title: 'Review terminal startup',
+      status: 'awaiting_approval',
+      permissionState: { pendingApprovalIds: ['approval-1', 'approval-2'] },
+    })
+    const stdout = makeWriter()
+    const stderr = makeWriter()
+    setBgTestDeps({ getAgentRunStore: () => store, stdout: stdout.stream, stderr: stderr.stream })
+
+    await pauseHandler(['run_bg'])
+    await resumeHandler(['run_bg'])
+    await approveHandler(['run_bg', 'approval-1'])
+    await recoverHandler(['run_bg', 'retry after tool failure'])
+
+    expect(stdout.text()).toContain('Run paused: run_bg')
+    expect(stdout.text()).toContain('Run resumed: run_bg')
+    expect(stdout.text()).toContain('Run approved: run_bg (approval-1)')
+    expect(stdout.text()).toContain('Run marked for recovery: run_bg')
+    expect(store.getRun('run_bg')?.status).toBe('recovering')
+    expect(store.getRun('run_bg')?.permissionState?.pendingApprovalIds).toEqual(['approval-2'])
+    expect(store.getRun('run_bg')?.progress?.summary).toBe('retry after tool failure')
     expect(stderr.text()).toBe('')
   })
 

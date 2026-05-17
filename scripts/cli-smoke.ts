@@ -15,6 +15,8 @@ type SmokeCase = {
 const cliPath = resolve(process.cwd(), 'dist', 'cli.mjs')
 const windowsLauncherPath = resolve(process.cwd(), 'bin', 'duckhive.cmd')
 const tempDirs: string[] = []
+const bgControlConfigDir = mkdtempSync(join(tmpdir(), 'duckhive-cli-smoke-bg-'))
+tempDirs.push(bgControlConfigDir)
 
 function createIsolatedConfigEnv(): Record<string, string> {
   const configDir = mkdtempSync(join(tmpdir(), 'duckhive-cli-smoke-'))
@@ -101,12 +103,25 @@ const cases: SmokeCase[] = [
   {
     name: 'background spawn queues AgentRun',
     args: ['--bg', 'test prompt'],
-    env: createIsolatedConfigEnv,
+    env: () => ({
+      CLAUDE_CONFIG_DIR: bgControlConfigDir,
+      CLAUDE_CODE_SYNC_PLUGIN_INSTALL_TIMEOUT_MS: '1',
+    }),
     includes: [
       'Background AgentRun queued:',
       'Title: test prompt',
       'duckhive attach',
     ],
+  },
+  {
+    name: 'background pause control',
+    args: ['pause', 'latest'],
+    expectedStatus: 1,
+    env: () => ({
+      CLAUDE_CONFIG_DIR: bgControlConfigDir,
+      CLAUDE_CODE_SYNC_PLUGIN_INSTALL_TIMEOUT_MS: '1',
+    }),
+    includes: ['Run not found: latest'],
   },
   {
     name: 'non-interactive repl guidance',

@@ -310,7 +310,7 @@ async function main(): Promise<void> {
 
   // Fast-path for DuckHive AgentRun inspection/control.
   // These commands share the /run, Telegram, WebUI, and harness control plane.
-  if (args[0] === 'ps' || args[0] === 'logs' || args[0] === 'attach' || args[0] === 'kill' || args.includes('--bg') || args.includes('--background')) {
+  if (args[0] === 'ps' || args[0] === 'logs' || args[0] === 'attach' || args[0] === 'pause' || args[0] === 'resume' || args[0] === 'approve' || args[0] === 'recover' || args[0] === 'kill' || args.includes('--bg') || args.includes('--background')) {
     profileCheckpoint('cli_bg_path');
     const {
       enableConfigs
@@ -326,6 +326,18 @@ async function main(): Promise<void> {
         break;
       case 'attach':
         await bg.attachHandler(args.slice(1));
+        break;
+      case 'pause':
+        await bg.pauseHandler(args.slice(1));
+        break;
+      case 'resume':
+        await bg.resumeHandler(args.slice(1));
+        break;
+      case 'approve':
+        await bg.approveHandler(args.slice(1));
+        break;
+      case 'recover':
+        await bg.recoverHandler(args.slice(1));
         break;
       case 'kill':
         await bg.killHandler(args.slice(1));
