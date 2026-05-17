@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
+import { readFileSync } from 'fs'
 import { homedir } from 'os'
 import { join } from 'path'
 import {
@@ -15,6 +16,7 @@ import {
 import { getValidationTip } from './settings/validationTips.ts'
 
 const originalConfigDir = process.env.CLAUDE_CONFIG_DIR
+const repoRoot = join(import.meta.dir, '..', '..')
 
 beforeEach(async () => {
   await acquireSharedMutationLock('DuckHiveUiSurfaces.test.ts')
@@ -143,5 +145,20 @@ describe('DuckHive validation tips', () => {
       suggestion:
         'Valid modes: "acceptEdits" (ask before file changes), "plan" (analysis only), "bypassPermissions" (auto-accept all), or "default" (standard behavior)',
     })
+  })
+})
+
+describe('DuckHive CLI help surfaces', () => {
+  test('top-level help strings advertise MiniMax and DuckHive-compatible auth', () => {
+    const source = readFileSync(join(repoRoot, 'src', 'main.tsx'), 'utf8')
+
+    expect(source).toContain(
+      'AI provider to use (minimax, openai, anthropic, gemini, github, bedrock, vertex, ollama)',
+    )
+    expect(source).toContain("e.g. 'MiniMax-M2.7' or 'gpt-5.2'")
+    expect(source).toContain(
+      'Set up a long-lived subscription authentication token for compatible hosted accounts',
+    )
+    expect(source).not.toContain('requires Claude subscription')
   })
 })
