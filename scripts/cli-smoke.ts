@@ -226,6 +226,7 @@ const cases: SmokeCase[] = [
     args: ['computer-use', '--help'],
     includes: [
       'Computer Use',
+      'duckhive computer-use status',
       '/computer-use status',
       'newest-desktop-control',
     ],
@@ -235,6 +236,9 @@ const cases: SmokeCase[] = [
     args: ['cu', 'status'],
     includes: [
       'DuckHive Computer Use',
+      process.platform === 'darwin'
+        ? 'duckhive computer-use'
+        : 'duckhive desktop',
       process.platform === 'darwin'
         ? 'Fallback gateway: `newest-desktop-control`'
         : 'Native OpenAI Codex computer-use requires macOS',

@@ -264,6 +264,7 @@ describe('call', () => {
     expect(result.value).toContain(
       'computer-use is configured in DuckHive MCP, but the plugin bundle is currently missing',
     )
+    expect(result.value).toContain('duckhive computer-use disable')
     expect(result.value).toContain('/computer-use disable')
     expect(result.value).not.toContain('already wired into DuckHive MCP')
     expect(addMcpConfig).not.toHaveBeenCalled()
@@ -287,7 +288,7 @@ describe('call', () => {
       'Configured in DuckHive MCP, but the plugin bundle is currently missing',
     )
     expect(result.value).toContain(
-      'Restore the plugin bundle or run `/computer-use disable` to remove the stale MCP entry.',
+      'Restore the plugin bundle or run `duckhive computer-use disable` / `/computer-use disable` to remove the stale MCP entry.',
     )
     expect(result.value).not.toContain('Auto-wired into DuckHive MCP')
     expect(addMcpConfig).not.toHaveBeenCalled()
@@ -316,12 +317,12 @@ describe('call', () => {
         'Reserved for DuckHive built-in computer-use runtime',
       )
       expect(result.value).toContain(
-        'do not wire the Codex plugin through `/computer-use enable`.',
+        'do not wire the Codex plugin through `duckhive computer-use enable` / `/computer-use enable`.',
       )
     } else {
       expect(result.value).toContain('Not in DuckHive MCP config')
       expect(result.value).toContain(
-        'Run `/computer-use enable` to wire the plugin into DuckHive MCP.',
+        'Run `duckhive computer-use enable` or `/computer-use enable` to wire the plugin into DuckHive MCP.',
       )
     }
     expect(addMcpConfig).not.toHaveBeenCalled()
@@ -343,7 +344,7 @@ describe('call', () => {
 
     expect(result.value).toContain('Configured in DuckHive MCP')
     expect(result.value).toContain(
-      'Restart DuckHive or run `/mcp reload` to activate tools.',
+      'Restart DuckHive or run `duckhive mcp reload` / `/mcp reload` to activate tools.',
     )
     expect(addMcpConfig).not.toHaveBeenCalled()
   })
@@ -354,6 +355,7 @@ describe('call', () => {
     const result = expectTextResult(await call('status', {} as never))
 
     expect(result.value).toContain('requires macOS')
+    expect(result.value).toContain('duckhive desktop')
     expect(result.value).toContain('/desktop')
     expect(result.value).toContain('newest-desktop-control')
     expect(result.value).toContain('computer_use_* compatibility tools')
@@ -376,6 +378,7 @@ describe('call', () => {
 
     expect(result.value).toContain('requires macOS')
     expect(result.value).toContain('Stale MCP config detected')
+    expect(result.value).toContain('duckhive computer-use disable')
     expect(result.value).toContain('/computer-use disable')
     expect(result.value).toContain('newest-desktop-control')
     expect(addMcpConfig).not.toHaveBeenCalled()
@@ -411,7 +414,7 @@ describe('call', () => {
     expect(result.value).toContain('D:\\custom\\computer-use')
     if (!hasBuiltinComputerUseRuntime()) {
       expect(result.value).toContain(
-        'Run `/computer-use enable` to wire the plugin into DuckHive MCP.',
+        'Run `duckhive computer-use enable` or `/computer-use enable` to wire the plugin into DuckHive MCP.',
       )
     }
     expect(addMcpConfig).not.toHaveBeenCalled()
@@ -482,8 +485,10 @@ describe('call', () => {
     const enableResult = expectTextResult(await call('enable extra', {} as never))
     const unknownResult = expectTextResult(await call('wat', {} as never))
 
-    expect(enableResult.value).toBe('Usage: /computer-use enable')
+    expect(enableResult.value).toContain('Usage: duckhive computer-use enable')
+    expect(enableResult.value).toContain('or: /computer-use enable')
     expect(unknownResult.value).toContain('Unknown computer-use action: wat')
+    expect(unknownResult.value).toContain('duckhive computer-use status')
     expect(unknownResult.value).toContain('/computer-use status')
     expect(unknownResult.value).toContain('newest-desktop-control')
     expect(addMcpConfig).not.toHaveBeenCalled()
@@ -492,14 +497,16 @@ describe('call', () => {
   test('rejects extra args for status', async () => {
     const result = expectTextResult(await call('status extra', {} as never))
 
-    expect(result.value).toBe('Usage: /computer-use status')
+    expect(result.value).toContain('Usage: duckhive computer-use status')
+    expect(result.value).toContain('or: /computer-use status')
     expect(addMcpConfig).not.toHaveBeenCalled()
   })
 
   test('rejects extra args for enable', async () => {
     const result = expectTextResult(await call('enable extra', {} as never))
 
-    expect(result.value).toBe('Usage: /computer-use enable')
+    expect(result.value).toContain('Usage: duckhive computer-use enable')
+    expect(result.value).toContain('or: /computer-use enable')
     expect(addMcpConfig).not.toHaveBeenCalled()
   })
 
@@ -520,7 +527,8 @@ describe('call', () => {
   test('rejects extra args for disable', async () => {
     const result = expectTextResult(await call('disable extra', {} as never))
 
-    expect(result.value).toBe('Usage: /computer-use disable')
+    expect(result.value).toContain('Usage: duckhive computer-use disable')
+    expect(result.value).toContain('or: /computer-use disable')
     expect(removeMcpConfig).not.toHaveBeenCalled()
   })
 })

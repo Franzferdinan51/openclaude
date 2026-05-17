@@ -19,11 +19,21 @@ const CODEX_DESKTOP_APP_BUNDLE = 'Codex.app'
 const CODEX_APP_BUNDLE = 'Codex Computer Use.app'
 const SKY_CLIENT_BIN = 'SkyComputerUseClient'
 const BUILTIN_COMPUTER_USE_RESERVED = feature('CHICAGO_MCP') ? true : false
+const COMPUTER_USE_USAGE = {
+  status: 'Usage: duckhive computer-use status\n   or: /computer-use status',
+  enable: 'Usage: duckhive computer-use enable\n   or: /computer-use enable',
+  disable: 'Usage: duckhive computer-use disable\n   or: /computer-use disable',
+}
 const COMPUTER_USE_HELP =
   `Computer Use\n${'-'.repeat(50)}\n` +
-  '/computer-use status  - Check plugin and config status\n' +
-  '/computer-use enable  - Wire into DuckHive MCP\n' +
-  '/computer-use disable - Remove from DuckHive MCP\n\n' +
+  'Terminal:\n' +
+  '  duckhive computer-use status   - Check plugin and config status\n' +
+  '  duckhive computer-use enable   - Wire into DuckHive MCP\n' +
+  '  duckhive computer-use disable  - Remove from DuckHive MCP\n\n' +
+  'REPL:\n' +
+  '  /computer-use status           - Check plugin and config status\n' +
+  '  /computer-use enable           - Wire into DuckHive MCP\n' +
+  '  /computer-use disable          - Remove from DuckHive MCP\n\n' +
   '32 tools: screenshot, click, type, scroll, drag, open_app, and more.\n' +
   'If the Codex plugin is unavailable, use `newest-desktop-control` for desktop, Android, and computer_use_* compatibility aliases.'
 
@@ -395,21 +405,21 @@ export const call: LocalCommandCall = async (
   if (subcommand === 'status' && parts.length > 1) {
     return {
       type: 'text',
-      value: 'Usage: /computer-use status',
+      value: COMPUTER_USE_USAGE.status,
     }
   }
 
   if (subcommand === 'enable' && parts.length > 1) {
     return {
       type: 'text',
-      value: 'Usage: /computer-use enable',
+      value: COMPUTER_USE_USAGE.enable,
     }
   }
 
   if (subcommand === 'disable' && parts.length > 1) {
     return {
       type: 'text',
-      value: 'Usage: /computer-use disable',
+      value: COMPUTER_USE_USAGE.disable,
     }
   }
 
@@ -425,7 +435,7 @@ export const call: LocalCommandCall = async (
     return {
       type: 'text',
       value: result.ok
-        ? 'computer-use removed from DuckHive MCP.\nRestart DuckHive or run `/mcp reload` to deactivate tools.'
+        ? 'computer-use removed from DuckHive MCP.\nRestart DuckHive or run `duckhive mcp reload` / `/mcp reload` to deactivate tools.'
         : `Failed: ${result.error}`,
     }
   }
@@ -433,14 +443,14 @@ export const call: LocalCommandCall = async (
   if (!isComputerUseSupportedPlatform()) {
     const configured = await isInDuckHiveMCPConfig()
     const staleConfigGuidance = configured
-      ? '\n\nStale MCP config detected: `computer-use` is configured for this project, but native Codex computer-use cannot run on this platform. Run `/computer-use disable` to remove the stale entry, then use `newest-desktop-control` for cross-platform automation.'
+      ? '\n\nStale MCP config detected: `computer-use` is configured for this project, but native Codex computer-use cannot run on this platform. Run `duckhive computer-use disable` or `/computer-use disable` to remove the stale entry, then use `newest-desktop-control` for cross-platform automation.'
       : ''
     return {
       type: 'text',
       value:
         'DuckHive Computer Use\n' +
         'Native OpenAI Codex computer-use requires macOS because it depends on SkyComputerUseClient.\n' +
-        'On this platform, use `/desktop` for the legacy automation surface or the bundled `newest-desktop-control` MCP gateway for cross-platform desktop, Android, and computer_use_* compatibility tools.' +
+        'On this platform, use `duckhive desktop` / `/desktop` for the legacy automation surface or the bundled `newest-desktop-control` MCP gateway for cross-platform desktop, Android, and computer_use_* compatibility tools.' +
         staleConfigGuidance,
     }
   }
@@ -461,12 +471,12 @@ export const call: LocalCommandCall = async (
       : 'Not in DuckHive MCP config'
     const nextStep = configured
       ? pluginDir && binPath
-        ? 'Restart DuckHive or run `/mcp reload` to activate tools.'
-        : 'Restore the plugin bundle or run `/computer-use disable` to remove the stale MCP entry.'
+        ? 'Restart DuckHive or run `duckhive mcp reload` / `/mcp reload` to activate tools.'
+        : 'Restore the plugin bundle or run `duckhive computer-use disable` / `/computer-use disable` to remove the stale MCP entry.'
       : isBuiltinComputerUseReserved()
-        ? 'This DuckHive build already reserves `computer-use` for the built-in runtime; do not wire the Codex plugin through `/computer-use enable`.'
+        ? 'This DuckHive build already reserves `computer-use` for the built-in runtime; do not wire the Codex plugin through `duckhive computer-use enable` / `/computer-use enable`.'
       : pluginDir && binPath
-        ? 'Run `/computer-use enable` to wire the plugin into DuckHive MCP.'
+        ? 'Run `duckhive computer-use enable` or `/computer-use enable` to wire the plugin into DuckHive MCP.'
         : 'Install Codex.app or use the bundled `newest-desktop-control` MCP gateway for cross-platform desktop/Android tools.'
 
     return {
@@ -490,7 +500,7 @@ export const call: LocalCommandCall = async (
         type: 'text',
         value:
           'This DuckHive build already reserves `computer-use` for the built-in runtime.\n' +
-          'Use the built-in DuckHive computer-use path instead of wiring the Codex plugin through `/computer-use enable`.',
+          'Use the built-in DuckHive computer-use path instead of wiring the Codex plugin through `duckhive computer-use enable` / `/computer-use enable`.',
       }
     }
 
@@ -500,14 +510,14 @@ export const call: LocalCommandCall = async (
           type: 'text',
           value:
             'computer-use is configured in DuckHive MCP, but the plugin bundle is currently missing.\n' +
-            'Reinstall Codex.app or restore the plugin bundle, or run `/computer-use disable` to remove the stale MCP entry.',
+            'Reinstall Codex.app or restore the plugin bundle, or run `duckhive computer-use disable` / `/computer-use disable` to remove the stale MCP entry.',
         }
       }
       return {
         type: 'text',
         value:
           'computer-use is already wired into DuckHive MCP.\n' +
-          'Restart DuckHive or run `/mcp reload` to activate tools.',
+          'Restart DuckHive or run `duckhive mcp reload` / `/mcp reload` to activate tools.',
       }
     }
     if (!pluginDir || !binPath) {
@@ -522,7 +532,7 @@ export const call: LocalCommandCall = async (
     return {
       type: 'text',
       value: result.ok
-        ? 'computer-use enabled.\nRestart DuckHive or run `/mcp reload` to activate tools.'
+        ? 'computer-use enabled.\nRestart DuckHive or run `duckhive mcp reload` / `/mcp reload` to activate tools.'
         : `Failed: ${result.error}`,
     }
   }
