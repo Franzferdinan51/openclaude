@@ -61,6 +61,14 @@ export function createStdinOverride(
     return undefined
   }
 
+  // Keep the Windows default aligned with OpenClaude: the original
+  // process.stdin must own the console. Reopening CONIN$ can produce a stream
+  // that looks TTY-capable but never delivers readable keyboard events through
+  // PowerShell/npm launchers, leaving the REPL painted but frozen.
+  if (platform === 'win32' && !isEnvTruthy(env.DUCKHIVE_USE_CONIN_STDIN)) {
+    return undefined
+  }
+
   const inputDevicePath = getTerminalInputDevicePath(platform)
   if (!inputDevicePath) {
     return undefined
@@ -86,8 +94,9 @@ export function createStdinOverride(
 /**
  * Gets a ReadStream for the terminal input device when stdin is piped.
  * This allows interactive Ink rendering even when stdin is a pipe.
- * On Windows this uses CONIN$, which keeps PowerShell/npm shims from
- * launching a rendered REPL that cannot enter raw keyboard input mode.
+ * On Windows this intentionally leaves process.stdin alone by default because
+ * OpenClaude's working input path relies on the original console stream.
+ * Set DUCKHIVE_USE_CONIN_STDIN=1 only for diagnostics.
  * Result is cached for the lifetime of the process.
  */
 function getStdinOverride(): ReadStream | undefined {

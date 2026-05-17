@@ -26,7 +26,21 @@ describe('terminal stdin override', () => {
     ).toBeUndefined()
   })
 
-  test('opens CONIN$ for Windows non-TTY interactive launches', () => {
+  test('skips CONIN$ on Windows by default to preserve OpenClaude stdin behavior', () => {
+    expect(
+      createStdinOverride({
+        stdinIsTTY: false,
+        platform: 'win32',
+        argv: ['node', 'duckhive'],
+        env: {},
+        openDevice: () => {
+          throw new Error('should not open')
+        },
+      }),
+    ).toBeUndefined()
+  })
+
+  test('opens CONIN$ for explicit Windows stdin diagnostics', () => {
     const opened: string[] = []
     const fakeStream = { isTTY: true } as ReadStream
 
@@ -34,7 +48,7 @@ describe('terminal stdin override', () => {
       stdinIsTTY: false,
       platform: 'win32',
       argv: ['node', 'duckhive'],
-      env: {},
+      env: { DUCKHIVE_USE_CONIN_STDIN: '1' },
       openDevice: path => {
         opened.push(path)
         return 42
@@ -73,7 +87,7 @@ describe('terminal stdin override', () => {
       stdinIsTTY: false,
       platform: 'win32',
       argv: ['node', 'duckhive'],
-      env: {},
+      env: { DUCKHIVE_USE_CONIN_STDIN: '1' },
       openDevice: () => 7,
       createReadStream: () => {
         throw new Error('bad console handle')

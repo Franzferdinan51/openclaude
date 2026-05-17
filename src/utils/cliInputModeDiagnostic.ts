@@ -22,6 +22,13 @@ export function detectCliInputModeWarnings(
     })
   }
 
+  if (isEnvTruthy(env.DUCKHIVE_USE_CONIN_STDIN)) {
+    warnings.push({
+      issue: 'Windows CONIN$ stdin override is enabled',
+      fix: 'Remove DUCKHIVE_USE_CONIN_STDIN if the UI starts but typing does not appear.',
+    })
+  }
+
   if (
     env.DUCKHIVE_USE_READABLE_STDIN === '0' ||
     env.OPENCLAUDE_USE_READABLE_STDIN === '0'
