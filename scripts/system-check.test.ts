@@ -2,6 +2,7 @@ import { afterEach, describe, expect, test } from 'bun:test'
 
 import {
   checkCliInputMode,
+  checkHarnessCommandSurfaces,
   checkOpenAIEnv,
   formatReachabilityFailureDetail,
 } from './system-check.ts'
@@ -166,5 +167,18 @@ describe('checkOpenAIEnv', () => {
       label: 'Provider mode',
       detail: 'Anthropic login flow enabled (CLAUDE_CODE_USE_OPENAI is off).',
     })
+  })
+})
+
+describe('checkHarnessCommandSurfaces', () => {
+  test('verifies the terminal-first harness command set is registered', () => {
+    const result = checkHarnessCommandSurfaces()
+
+    expect(result.ok).toBe(true)
+    expect(result.detail).toContain('goal')
+    expect(result.detail).toContain('computer-use')
+    expect(result.detail).toContain('channel')
+    expect(result.detail).toContain('council')
+    expect(result.detail).toContain('tui')
   })
 })

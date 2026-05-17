@@ -23,6 +23,7 @@ import {
   getTransportKindForRoute,
   resolveActiveRouteIdFromEnv,
 } from '../src/integrations/routeMetadata.js'
+import { builtInCommandNames } from '../src/commands.js'
 
 type CheckResult = {
   ok: boolean
@@ -271,6 +272,39 @@ function isLocalBaseUrl(baseUrl: string): boolean {
 const GEMINI_DEFAULT_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/openai'
 const MISTRAL_DEFAULT_BASE_URL = 'https://api.mistral.ai/v1'
 const GITHUB_COPILOT_BASE = 'https://api.githubcopilot.com'
+
+const REQUIRED_HARNESS_COMMANDS = [
+  'goal',
+  'computer-use',
+  'channel',
+  'connect',
+  'skill',
+  'skills',
+  'spawn',
+  'orchestrate',
+  'team',
+  'council',
+  'senate',
+  'tui',
+  'doctor',
+] as const
+
+export function checkHarnessCommandSurfaces(): CheckResult {
+  const commandNames = new Set(builtInCommandNames())
+  const missing = REQUIRED_HARNESS_COMMANDS.filter(name => !commandNames.has(name))
+
+  if (missing.length > 0) {
+    return fail(
+      'Harness command surfaces',
+      `Missing required terminal commands: ${missing.join(', ')}.`,
+    )
+  }
+
+  return pass(
+    'Harness command surfaces',
+    `${REQUIRED_HARNESS_COMMANDS.length} core commands registered: ${REQUIRED_HARNESS_COMMANDS.join(', ')}.`,
+  )
+}
 
 function getActiveDescriptorOpenAICompatibleRouteId(): string | null {
   const routeId = resolveActiveRouteIdFromEnv(process.env)
@@ -910,6 +944,7 @@ async function main(): Promise<void> {
   results.push(checkCliInputMode())
   results.push(checkTuiLaunchPath())
   results.push(checkComputerUseReadiness())
+  results.push(checkHarnessCommandSurfaces())
   results.push(...checkOpenAIEnv())
   results.push(await checkBaseUrlReachability())
   results.push(await checkProviderGenerationReadiness())
