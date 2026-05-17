@@ -231,13 +231,13 @@ describe('checkCliLauncherPath', () => {
     const result = checkCliLauncherPath({
       platform: 'win32',
       cwd: packageDir,
-      expectedVersion: '0.11.0',
+      expectedVersion: '0.12.0',
       resolveRealPath: path => path,
       runCommand: (command, args) =>
         command === 'cmd.exe' && args.join(' ').includes('duckhive --version')
           ? {
               status: 0,
-              stdout: '0.11.0 (DuckHive)\r\n',
+              stdout: '0.12.0 (DuckHive)\r\n',
             }
           : {
               status: 0,
@@ -248,7 +248,7 @@ describe('checkCliLauncherPath', () => {
     expect(result.ok).toBe(true)
     expect(result.detail).toContain('duckhive resolves on PATH')
     expect(result.detail).toContain('duckhive.cmd')
-    expect(result.detail).toContain('0.11.0 (DuckHive)')
+    expect(result.detail).toContain('0.12.0 (DuckHive)')
     expect(result.detail).toContain(`Target: ${packageDir}`)
   })
 
@@ -263,13 +263,13 @@ describe('checkCliLauncherPath', () => {
     const result = checkCliLauncherPath({
       platform: 'win32',
       cwd: checkoutDir,
-      expectedVersion: '0.11.0',
+      expectedVersion: '0.12.0',
       resolveRealPath: path => path,
       runCommand: (command, args) =>
         command === 'cmd.exe' && args.join(' ').includes('duckhive --version')
           ? {
               status: 0,
-              stdout: '0.11.0 (DuckHive)\r\n',
+              stdout: '0.12.0 (DuckHive)\r\n',
             }
           : {
               status: 0,
@@ -287,7 +287,7 @@ describe('checkCliLauncherPath', () => {
     const result = checkCliLauncherPath({
       platform: 'win32',
       cwd: process.cwd(),
-      expectedVersion: '0.11.0',
+      expectedVersion: '0.12.0',
       runCommand: (command, args) =>
         command === 'cmd.exe' && args.join(' ').includes('duckhive --version')
           ? {
@@ -303,7 +303,7 @@ describe('checkCliLauncherPath', () => {
 
     expect(result.ok).toBe(false)
     expect(result.detail).toContain('duckhive resolves on PATH')
-    expect(result.detail).toContain('instead of 0.11.0')
+    expect(result.detail).toContain('instead of 0.12.0')
     expect(result.detail).toContain('Reinstall or relink')
   })
 

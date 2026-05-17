@@ -5,7 +5,7 @@ describe('formatDuckCustodianOverview', () => {
   test('renders ASCII-safe terminal status output', () => {
     const overview: DuckCustodianOverview = {
       duckhive: {
-        version: '0.11.0',
+        version: '0.12.0',
         configPath: 'C:/DuckHive/config.json',
         configValid: true,
         configErrors: [],
