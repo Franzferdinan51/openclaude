@@ -97,7 +97,7 @@
     "security:pr-scan": "bun run scripts/pr-intent-scan.ts",
     "test:provider-recommendation": "bun test src/utils/providerRecommendation.test.ts src/utils/providerProfile.test.ts",
     "typecheck": "tsc --noEmit",
-    "smoke": "bun run build && bun run scripts/cli-smoke.ts",
+    "smoke": "bun test src/ink/components/App.stdinMode.test.ts src/components/TextInput.test.tsx && bun run build && bun run scripts/cli-smoke.ts",
     "verify:privacy": "bun run scripts/verify-no-phone-home.ts",
     "build:verified": "bun run build && bun run verify:privacy",
     "test:provider": "bun test src/services/api/*.test.ts src/utils/context.test.ts",
