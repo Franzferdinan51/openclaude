@@ -8,6 +8,7 @@ import { existsSync, readFileSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath, pathToFileURL } from 'url'
 import { fork } from 'child_process'
+import { applyLauncherProviderDefaults } from './duckhive-provider-bootstrap.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -61,35 +62,11 @@ try {
     const config = loadDuckhiveConfig()
     applyConfigToEnv(config)
     configApply = config
-    if (config?.providers?.default && !process.env.DUCKHIVE_PROVIDER) {
-      process.env.DUCKHIVE_PROVIDER = config.providers.default
-    }
+    applyLauncherProviderDefaults(process.env, config)
   }
 } catch {}
-
-if ((configApply?.providers?.default === 'minimax' || process.env.MINIMAX_API_KEY) && process.env.MINIMAX_API_KEY) {
-  process.env.CLAUDE_CODE_USE_OPENAI = '1'
-  process.env.OPENAI_API_KEY = process.env.MINIMAX_API_KEY
-  process.env.OPENAI_BASE_URL = process.env.OPENAI_BASE_URL || 'https://api.minimax.io/v1'
-  process.env.OPENAI_MODEL = process.env.OPENAI_MODEL || 'MiniMax-M2.7'
-}
 if (!process.env.ANTHROPIC_SMALL_FAST_MODEL) {
   process.env.ANTHROPIC_SMALL_FAST_MODEL = 'gpt-4o-mini'
-}
-if (configApply?.providers?.default === 'kimi' && process.env.MINIMAX_API_KEY) {
-  process.env.OPENAI_BASE_URL = 'https://api.moonshot.cn/v1'
-  process.env.OPENAI_MODEL = process.env.OPENAI_MODEL || 'moonshot-v1-128k'
-} else if (configApply?.providers?.default === 'lmstudio') {
-  process.env.CLAUDE_CODE_USE_OPENAI = '1'
-  process.env.OPENAI_API_KEY = process.env.OPENAI_API_KEY || 'lm-studio'
-  process.env.OPENAI_BASE_URL = process.env.OPENAI_BASE_URL || 'http://localhost:1234/v1'
-  process.env.OPENAI_MODEL = process.env.OPENAI_MODEL || 'local-model'
-} else if (configApply?.providers?.default === 'chatgpt' || configApply?.providers?.default === 'openai') {
-  process.env.CLAUDE_CODE_USE_OPENAI = '1'
-  process.env.OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-5.4'
-} else if (configApply?.providers?.default === 'openrouter') {
-  process.env.OPENAI_BASE_URL = 'https://openrouter.ai/api/v1'
-  process.env.OPENAI_MODEL = process.env.OPENAI_MODEL || 'minimax/minimax-m2.5:free'
 }
 
 if (existsSync(distPath)) {
