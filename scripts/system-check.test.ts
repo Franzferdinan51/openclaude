@@ -6,6 +6,7 @@ import { join } from 'node:path'
 import {
   checkCliLauncherPath,
   checkCliInputMode,
+  checkAgentRunCliControls,
   checkHarnessCommandSurfaces,
   checkOpenAIEnv,
   checkSkillHubRegistry,
@@ -342,6 +343,40 @@ describe('checkHarnessCommandSurfaces', () => {
     expect(result.detail).toContain('g')
     expect(result.detail).toContain('subagent')
     expect(result.detail).toContain('cu')
+  })
+})
+
+describe('checkAgentRunCliControls', () => {
+  test('verifies top-level AgentRun commands avoid provider startup', () => {
+    const result = checkAgentRunCliControls({
+      cliPath: 'dist/cli.mjs',
+      runCommand: () => ({
+        status: 0,
+        stdout: 'DuckHive background run controls\n',
+      }),
+    })
+
+    expect(result.ok).toBe(true)
+    expect(result.detail).toContain('pause')
+    expect(result.detail).toContain('recover')
+    expect(result.detail).toContain('without provider startup')
+  })
+
+  test('fails if a top-level AgentRun command emits provider startup warnings', () => {
+    const result = checkAgentRunCliControls({
+      cliPath: 'dist/cli.mjs',
+      runCommand: (_command, args) => ({
+        status: args.includes('pause') ? 0 : 0,
+        stdout: 'DuckHive background run controls\n',
+        stderr: args.includes('pause')
+          ? 'Warning: ignoring saved provider profile. broken\n'
+          : '',
+      }),
+    })
+
+    expect(result.ok).toBe(false)
+    expect(result.detail).toContain('pause')
+    expect(result.detail).toContain('provider-blocked')
   })
 })
 
