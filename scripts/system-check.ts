@@ -421,20 +421,35 @@ const REQUIRED_HARNESS_COMMANDS = [
   'doctor',
 ] as const
 
+const REQUIRED_HARNESS_ALIASES = [
+  'g',
+  'subagent',
+  'cu',
+] as const
+
 export function checkHarnessCommandSurfaces(): CheckResult {
   const commandNames = new Set(builtInCommandNames())
   const missing = REQUIRED_HARNESS_COMMANDS.filter(name => !commandNames.has(name))
+  const missingAliases = REQUIRED_HARNESS_ALIASES.filter(name => !commandNames.has(name))
 
-  if (missing.length > 0) {
+  if (missing.length > 0 || missingAliases.length > 0) {
+    const details: string[] = []
+    if (missing.length > 0) {
+      details.push(`commands: ${missing.join(', ')}`)
+    }
+    if (missingAliases.length > 0) {
+      details.push(`aliases: ${missingAliases.join(', ')}`)
+    }
+
     return fail(
       'Harness command surfaces',
-      `Missing required terminal commands: ${missing.join(', ')}.`,
+      `Missing required terminal surfaces: ${details.join('; ')}.`,
     )
   }
 
   return pass(
     'Harness command surfaces',
-    `${REQUIRED_HARNESS_COMMANDS.length} core commands registered: ${REQUIRED_HARNESS_COMMANDS.join(', ')}.`,
+    `${REQUIRED_HARNESS_COMMANDS.length} core commands registered: ${REQUIRED_HARNESS_COMMANDS.join(', ')}. Key aliases registered: ${REQUIRED_HARNESS_ALIASES.join(', ')}.`,
   )
 }
 
