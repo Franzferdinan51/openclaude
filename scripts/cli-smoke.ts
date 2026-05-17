@@ -7,6 +7,7 @@ type SmokeCase = {
   name: string
   args: string[]
   includes: string[]
+  excludes?: string[]
   expectedStatus?: number
   env?: () => Record<string, string>
   timeoutMs?: number
@@ -298,6 +299,7 @@ const cases: SmokeCase[] = [
       '/loop status [id]',
       '/loop create "Check git status"',
     ],
+    excludes: ['Warning: ignoring saved provider profile'],
   },
   {
     name: 'headless android usage',
@@ -308,6 +310,7 @@ const cases: SmokeCase[] = [
       '/android devices',
       '/android text "hello world"',
     ],
+    excludes: ['Warning: ignoring saved provider profile'],
   },
   {
     name: 'headless vision usage',
@@ -318,6 +321,7 @@ const cases: SmokeCase[] = [
       '/vision phone_screenshot',
       '/vision analyze "Describe the screenshot"',
     ],
+    excludes: ['Warning: ignoring saved provider profile'],
   },
   {
     name: 'headless shadow list',
@@ -328,6 +332,7 @@ const cases: SmokeCase[] = [
       'Shadow Git',
       'No checkpoints yet',
     ],
+    excludes: ['Warning: ignoring saved provider profile'],
   },
   {
     name: 'top-level mmx help',
@@ -603,6 +608,14 @@ function checkSmokeCase(
     if (!normalizedOutput.includes(expected.replace(/\s+/g, ' '))) {
       failures.push(
         `${smokeCase.name}: missing "${expected}"\n${output}`,
+      )
+    }
+  }
+
+  for (const forbidden of smokeCase.excludes ?? []) {
+    if (normalizedOutput.includes(forbidden.replace(/\s+/g, ' '))) {
+      failures.push(
+        `${smokeCase.name}: unexpectedly included "${forbidden}"\n${output}`,
       )
     }
   }

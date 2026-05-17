@@ -53,6 +53,28 @@ const PROVIDER_FREE_COMMANDS = new Set([
   'upgrade',
 ])
 
+const PROVIDER_FREE_PRINT_SLASH_COMMANDS = new Set([
+  ...PROVIDER_FREE_COMMANDS,
+  'android',
+  'adb',
+  'vision',
+  'vision-assist',
+  'shadow',
+  'shadow-git',
+  'checkpoint',
+  'snap',
+  'savepoint',
+  'router',
+  'route-model',
+  'model-router',
+  'budget',
+  'spend',
+  'cache',
+  'provider-cache',
+  'export',
+  'loop',
+])
+
 const GLOBAL_OPTIONS_WITH_VALUE = new Set([
   '--debug-file',
   '--effort',
@@ -107,6 +129,26 @@ export function getCliCommandPosition(
   return undefined
 }
 
+function getPrintPrompt(args: readonly string[]): string | undefined {
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i]
+    if (arg === '-p' || arg === '--print') {
+      return args[i + 1]
+    }
+  }
+  return undefined
+}
+
+function isProviderFreePrintSlashCommand(args: readonly string[]): boolean {
+  const prompt = getPrintPrompt(args)
+  if (!prompt?.startsWith('/')) {
+    return false
+  }
+
+  const command = prompt.slice(1).trim().split(/\s+/, 1)[0]
+  return Boolean(command && PROVIDER_FREE_PRINT_SLASH_COMMANDS.has(command))
+}
+
 export function shouldSkipProviderStartup(args: string[]): boolean {
   if (args.includes('--help') || args.includes('-h') || isVersionRequest(args)) {
     return true
@@ -117,7 +159,7 @@ export function shouldSkipProviderStartup(args: string[]): boolean {
   }
 
   if (args.includes('--print') || args.includes('-p')) {
-    return false
+    return isProviderFreePrintSlashCommand(args)
   }
 
   const command = getCliCommandPosition(args)?.command
