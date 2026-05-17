@@ -1,5 +1,5 @@
 /**
- * DuckHive mmx CLI subcommand — MiniMax AI Platform
+ * DuckHive mmx CLI subcommand - MiniMax AI Platform
  *
  * Registers `duckhive mmx` subcommand group:
  *   duckhive mmx text chat --message "Hello"
@@ -35,18 +35,7 @@ function findMmx(): string {
 
 const MMX_BIN = findMmx()
 
-export function registerDuckhiveMmxCommand(program: Command): void {
-  const mmx = program
-    .command('mmx [args...]')
-    .description('MiniMax AI Platform — text, image, speech, music, video, vision, search')
-    .configureHelp({ sortSubcommands: true, sortOptions: true })
-    .allowUnknownOption(true)
-    .allowExcessArguments(true)
-
-  // Pass all args to mmx CLI
-  mmx.action(async (args: string[] = []) => {
-    if (args.length === 0) {
-      console.log(`🦆 DuckHive MiniMax Integration
+export const MMX_HELP_TEXT = `DuckHive MiniMax Integration
 
 Usage: duckhive mmx <resource> <command> [flags]
 
@@ -70,7 +59,20 @@ Examples:
   duckhive mmx vision ./photo.jpg
   duckhive mmx search "latest AI news"
   duckhive mmx quota
-`)
+`
+
+export function registerDuckhiveMmxCommand(program: Command): void {
+  const mmx = program
+    .command('mmx [args...]')
+    .description('MiniMax AI Platform - text, image, speech, music, video, vision, search')
+    .configureHelp({ sortSubcommands: true, sortOptions: true })
+    .allowUnknownOption(true)
+    .allowExcessArguments(true)
+
+  // Pass all args to mmx CLI
+  mmx.action(async (args: string[] = []) => {
+    if (args.length === 0) {
+      console.log(MMX_HELP_TEXT)
       process.exit(0)
     }
 

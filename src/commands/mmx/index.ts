@@ -1,5 +1,5 @@
 /**
- * DuckHive mmx command — MiniMax CLI integration
+ * DuckHive mmx command - MiniMax CLI integration
  */
 import { spawn } from 'child_process'
 import { existsSync } from 'fs'
@@ -47,7 +47,7 @@ export async function runMmxCommand(args: string[], timeoutMs = 30000): Promise<
 export default {
   type: 'local' as const,
   name: 'mmx',
-  description: 'MiniMax AI Platform — text, image, speech, music, video, vision, search',
+  description: 'MiniMax AI Platform - text, image, speech, music, video, vision, search',
   aliases: ['minimax'],
   supportsNonInteractive: true,
   load() {
