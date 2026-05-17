@@ -117,4 +117,14 @@ describe('/budget command', () => {
     if (result.type !== 'text') throw new Error('unexpected result type')
     expect(result.value).toContain('Budget spend counters reset')
   })
+
+  test('shows clean usage for help aliases', async () => {
+    const result = await call('--help', {} as never)
+
+    expect(result.type).toBe('text')
+    if (result.type !== 'text') throw new Error('unexpected result type')
+    expect(result.value).toContain('Budget')
+    expect(result.value).toContain('/budget set <provider> <usd>')
+    expect(result.value).not.toContain('Unknown budget action')
+  })
 })

@@ -250,6 +250,11 @@ function renderCompare(task: string, models: ModelInfo[], primary: RouteResult):
 }
 
 export const call: LocalCommandCall = async (args: string) => {
+  const trimmedArgs = args.trim().toLowerCase()
+  if (trimmedArgs === 'help' || trimmedArgs === '--help' || trimmedArgs === '-h') {
+    return { type: 'text', value: usage() }
+  }
+
   const parsed = parseArgs(args)
   if (!parsed.ok) {
     return { type: 'text', value: usage(parsed.error) }

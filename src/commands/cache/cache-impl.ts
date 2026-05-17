@@ -114,6 +114,11 @@ function renderStats(): string {
 }
 
 export const call: LocalCommandCall = async (args: string) => {
+  const trimmedArgs = args.trim().toLowerCase()
+  if (trimmedArgs === 'help' || trimmedArgs === '--help' || trimmedArgs === '-h') {
+    return { type: 'text', value: usage() }
+  }
+
   const parsed = splitCommandArgs(args)
   if (parsed.error) {
     return { type: 'text', value: usage(parsed.error) }

@@ -178,4 +178,14 @@ describe('/router command', () => {
     expect(result.value).toContain('vision must be true or false')
     expect(result.value).toContain('/router route')
   })
+
+  test('shows clean usage for help aliases', async () => {
+    const result = await call('--help', {} as never)
+
+    expect(result.type).toBe('text')
+    if (result.type !== 'text') throw new Error('unexpected result type')
+    expect(result.value).toContain('Model router')
+    expect(result.value).toContain('/router list')
+    expect(result.value).not.toContain('Unknown router action')
+  })
 })

@@ -84,4 +84,14 @@ describe('/cache command', () => {
     expect(clearCache).not.toHaveBeenCalled()
     expect(resetSessionMetrics).not.toHaveBeenCalled()
   })
+
+  test('shows clean usage for help aliases', async () => {
+    const result = await call('--help', {} as never)
+
+    expect(result.type).toBe('text')
+    if (result.type !== 'text') throw new Error('unexpected result type')
+    expect(result.value).toContain('Cache')
+    expect(result.value).toContain('/cache clear')
+    expect(result.value).not.toContain('Unknown cache action')
+  })
 })
