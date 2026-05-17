@@ -1,11 +1,12 @@
 import * as React from 'react'
 import { useState } from 'react'
-import type { LocalJSXCommandContext, LocalJSXCommandOnDone } from '../../types/command.js'
+import { setSessionBypassPermissionsMode } from '../../bootstrap/state.js'
 import { Dialog } from '../../components/design-system/Dialog.js'
 import { Box, Text } from '../../ink.js'
-import { type AppState, useAppState, useSetAppState } from '../../state/AppState.js'
-import { updateSettingsForSource } from '../../utils/settings/settings.js'
-import { getSettings_DEPRECATED } from '../../utils/settings/settings.js'
+import { type AppState, useSetAppState } from '../../state/AppState.js'
+import type { LocalJSXCommandContext, LocalJSXCommandOnDone } from '../../types/command.js'
+import { transitionPermissionMode } from '../../utils/permissions/permissionSetup.js'
+import { getSettings_DEPRECATED, updateSettingsForSource } from '../../utils/settings/settings.js'
 
 export function isYoloModeEnabled(): boolean {
   // Check CLI flag first (--yolo sets this env var)
@@ -16,16 +17,43 @@ export function isYoloModeEnabled(): boolean {
   return settings?.permissions?.yoloMode === true
 }
 
+export function getYoloModeResultMessage(enable: boolean): string {
+  return enable
+    ? 'Yolo mode ON - all tool calls auto-approved'
+    : 'Yolo mode OFF - normal permission checks resumed'
+}
+
+export function applyYoloModeToAppState(prev: AppState, enable: boolean): AppState {
+  const currentContext = prev.toolPermissionContext
+  const nextMode = enable
+    ? 'bypassPermissions'
+    : currentContext.mode === 'bypassPermissions'
+      ? 'default'
+      : currentContext.mode
+  const transitionedContext = transitionPermissionMode(
+    currentContext.mode,
+    nextMode,
+    currentContext,
+  )
+
+  return {
+    ...prev,
+    yoloMode: enable,
+    toolPermissionContext: {
+      ...transitionedContext,
+      mode: nextMode,
+    },
+  }
+}
+
 function applyYoloMode(enable: boolean, setAppState: (f: (prev: AppState) => AppState) => void): void {
   updateSettingsForSource('userSettings', {
     permissions: {
       yoloMode: enable ? true : undefined,
     },
   })
-  setAppState((prev) => ({
-    ...prev,
-    yoloMode: enable,
-  }))
+  setSessionBypassPermissionsMode(enable)
+  setAppState((prev) => applyYoloModeToAppState(prev, enable))
 }
 
 interface YoloPickerProps {
@@ -34,16 +62,12 @@ interface YoloPickerProps {
 }
 
 export function YoloPicker({ onDone, initialYoloMode }: YoloPickerProps): React.ReactElement {
-  const [enableYoloMode, setEnableYoloMode] = useState(initialYoloMode)
+  const [enableYoloMode] = useState(initialYoloMode)
   const setAppState = useSetAppState()
 
   function handleConfirm() {
     applyYoloMode(enableYoloMode, setAppState)
-    if (enableYoloMode) {
-      onDone('🔓 Yolo mode ON - all tool calls auto-approved')
-    } else {
-      onDone('🔒 Yolo mode OFF - normal permission checks resumed')
-    }
+    onDone(getYoloModeResultMessage(enableYoloMode))
   }
 
   function handleCancel() {
@@ -83,6 +107,11 @@ export async function call(onDone: LocalJSXCommandOnDone, context: LocalJSXComma
     targetState = !currentlyEnabled
   } else {
     onDone(`Unknown subcommand: ${subcommand}. Use: /yolo [on|off|toggle]`)
+    return null
+  }
+
+  if (targetState && !context.getAppState().toolPermissionContext.isBypassPermissionsModeAvailable) {
+    onDone('Cannot enable yolo mode because permission bypass is unavailable. Start DuckHive with --yolo or --dangerously-skip-permissions, or enable permissions.allowBypassPermissionsMode in settings.')
     return null
   }
 
