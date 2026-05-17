@@ -7,6 +7,7 @@ import {
   getProviderValidationError,
   validateProviderEnvForStartupOrExit,
 } from '../utils/providerValidation.js'
+import { applyEarlyCliFlags } from './earlyCliFlags.js'
 
 // OpenClaude: polyfill globalThis.File for Node < 20.
 // undici v7 references `File` at module evaluation time (webidl type
@@ -405,16 +406,9 @@ async function main(): Promise<void> {
     process.argv = [process.argv[0]!, process.argv[1]!, 'update'];
   }
 
-  // --bare: set SIMPLE early so gates fire during module eval / commander
-  // option building (not just inside the action handler).
-  if (args.includes('--bare')) {
-    process.env.CLAUDE_CODE_SIMPLE = '1';
-  }
-
-  // --yolo: enable yolo/permission bypass mode early
-  if (args.includes('--yolo')) {
-    process.env.CLAUDE_CODE_YOLO = '1';
-  }
+  // Apply startup flags before importing main so modules that read env during
+  // evaluation see the same mode Commander later resolves.
+  applyEarlyCliFlags(args);
 
 
   if (

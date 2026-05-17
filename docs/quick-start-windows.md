@@ -130,6 +130,8 @@ duckhive --yolo
 ```
 
 `--yolo` is an alias for `--dangerously-skip-permissions`.
+Both flags are applied during the earliest launcher phase, before the full CLI
+imports, so they work consistently for startup and the interactive REPL.
 
 By default, Windows startup stays on the classic OpenClaude-style REPL and
 DuckHive applies the safe stdin settings before the UI loads. The Go TUI is

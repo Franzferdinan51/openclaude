@@ -108,6 +108,10 @@ bun run build
 .\bin\duckhive.cmd --yolo
 ```
 
+`--yolo` and `--dangerously-skip-permissions` are the same startup mode. Both
+are applied before the full CLI imports so permission-bypass startup is visible
+to early-loaded modules as well as the interactive REPL.
+
 You can also use the packaged local launcher scripts from a source checkout:
 ```powershell
 bun run start:local -- --dangerously-skip-permissions
