@@ -113,6 +113,8 @@ const (
 	localTUICommandCouncil    localTUICommand = "council"
 	localTUICommandProvider   localTUICommand = "provider"
 	localTUICommandSearch     localTUICommand = "search"
+	localTUICommandComputer   localTUICommand = "computer-use"
+	localTUICommandConnect    localTUICommand = "connect"
 )
 
 func main() {
@@ -868,6 +870,16 @@ func parseLocalTUICommand(text string) (localTUICommand, bool) {
 			return "", false
 		}
 		return localTUICommandSearch, true
+	case "/computer-use", "/cu":
+		if hasArgs {
+			return "", false
+		}
+		return localTUICommandComputer, true
+	case "/connect", "/telegram", "/channel":
+		if hasArgs {
+			return "", false
+		}
+		return localTUICommandConnect, true
 	default:
 		return "", false
 	}
@@ -933,6 +945,10 @@ func bridgeBackedLocalCommand(text string) (string, bool) {
 		return "/goal", true
 	case "/provider", "/model", "/search-provider":
 		return strings.ToLower(strings.TrimSpace(text)), true
+	case "/computer-use", "/cu":
+		return "/computer-use", true
+	case "/connect", "/telegram", "/channel":
+		return "/connect", true
 	default:
 		return "", false
 	}
@@ -956,6 +972,10 @@ func bridgeBackedLocalCommandStatus(command string) string {
 		return "opening model manager"
 	case "/search-provider":
 		return "opening search-provider manager"
+	case "/computer-use":
+		return "opening computer-use status"
+	case "/connect":
+		return "opening connector status"
 	default:
 		return "dispatching command"
 	}
@@ -975,6 +995,10 @@ func bridgeBackedLocalFallback(command string) (localTUICommand, bool) {
 		return localTUICommandProvider, true
 	case "/search-provider":
 		return localTUICommandSearch, true
+	case "/computer-use":
+		return localTUICommandComputer, true
+	case "/connect":
+		return localTUICommandConnect, true
 	default:
 		return "", false
 	}
@@ -994,6 +1018,10 @@ func bridgeBackedLocalFallbackStatus(command string) string {
 		return "bridge unavailable; showing local provider card"
 	case "/search-provider":
 		return "bridge unavailable; showing local search card"
+	case "/computer-use":
+		return "bridge unavailable; showing local computer-use card"
+	case "/connect":
+		return "bridge unavailable; showing local connector card"
 	default:
 		return "bridge unavailable"
 	}
@@ -1017,6 +1045,10 @@ func localCommandStatus(command localTUICommand) string {
 		return "provider surface"
 	case localTUICommandSearch:
 		return "search provider surface"
+	case localTUICommandComputer:
+		return "computer-use surface"
+	case localTUICommandConnect:
+		return "connector surface"
 	default:
 		return "ready"
 	}
@@ -1038,6 +1070,10 @@ func (m *MainModel) localCommandContent(command localTUICommand) string {
 		return m.providerSnapshot()
 	case localTUICommandSearch:
 		return m.searchSnapshot()
+	case localTUICommandComputer:
+		return m.computerUseSnapshot()
+	case localTUICommandConnect:
+		return m.connectorSnapshot()
 	default:
 		return m.commandDeckText()
 	}
@@ -1062,6 +1098,14 @@ func (m *MainModel) commandDeckText() string {
 		"Search providers",
 		"  /search-provider - open the real backend search-provider manager when the bridge is connected.",
 		"  /search-provider <mode> - in a bridged session, persist auto/native/ddg/searxng/tavily/exa/you/jina/bing/mojeek/linkup/custom.",
+		"",
+		"Computer use",
+		"  /computer-use - open the backend computer-use status surface; /computer-use tools lists native Codex and fallback tools.",
+		"  /cu tools - provider-free shortcut for Codex computer-use and newest-desktop-control tool discovery.",
+		"",
+		"Connectors",
+		"  /connect - open Telegram/channel connector status when the bridge is connected.",
+		"  /telegram status and /channel status telegram stay available in the backend while provider setup is broken.",
 		"",
 		"Session controls",
 		"  /status - status snapshot. /goal - goal status. /doctor - backend diagnostic UI when the bridge is connected. /repl - return to the classic REPL.",
@@ -1146,6 +1190,42 @@ func (m *MainModel) goalSnapshot() string {
 		"",
 		"Use bare /goal in a bridged TUI session to open the live backend status.",
 		"Use /repl if you need the classic REPL goal workflow while the bridge is offline.",
+	}, "\n")
+}
+
+func (m *MainModel) computerUseSnapshot() string {
+	return strings.Join([]string{
+		"Computer use",
+		"",
+		"Codex-style computer-use inspection is available through the DuckHive backend.",
+		fmt.Sprintf("Bridge: %s", boolLabel(m.state.BridgeConnected, "connected", "local only")),
+		"",
+		"Common commands:",
+		"  /computer-use status       inspect native Codex computer-use wiring",
+		"  /computer-use tools        list native Codex and newest-desktop-control tools",
+		"  /computer-use disable      remove stale project MCP config",
+		"  /cu tools                  shortcut for the provider-free tool catalog",
+		"",
+		"Fallback gateway:",
+		"  newest-desktop-control exposes desktop_*, android_*, and computer_use_* MCP aliases.",
+		"Use /repl if you need the classic REPL computer-use workflow while the bridge is offline.",
+	}, "\n")
+}
+
+func (m *MainModel) connectorSnapshot() string {
+	return strings.Join([]string{
+		"Connectors",
+		"",
+		"Telegram and channel status are available through provider-free backend commands.",
+		fmt.Sprintf("Bridge: %s", boolLabel(m.state.BridgeConnected, "connected", "local only")),
+		"",
+		"Common commands:",
+		"  /connect status            show Telegram connector status",
+		"  /telegram status           Telegram status alias",
+		"  /channel status telegram   channel adapter status",
+		"  /channel send telegram ... send through the Telegram adapter",
+		"",
+		"Use /repl if you need the classic REPL connector setup flow while the bridge is offline.",
 	}, "\n")
 }
 
@@ -1730,6 +1810,8 @@ func (m *MainModel) renderCommandRail() string {
 		tui.CardMuted.Render("/runs agent runs"),
 		tui.CardMuted.Render("/provider models"),
 		tui.CardMuted.Render("/search-provider search"),
+		tui.CardMuted.Render("/computer-use tools"),
+		tui.CardMuted.Render("/connect status"),
 		tui.CardMuted.Render("/agents super agent"),
 		tui.CardMuted.Render("/council deliberation"),
 		tui.CardMuted.Render("/repl classic UI"),

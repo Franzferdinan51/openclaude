@@ -126,6 +126,13 @@ func TestParseLocalTUICommand(t *testing.T) {
 		{name: "models alias opens provider card", input: "/models", wantCommand: localTUICommandProvider, wantHandled: true},
 		{name: "search alias opens search provider card", input: "/search", wantCommand: localTUICommandSearch, wantHandled: true},
 		{name: "search-providers alias opens search provider card", input: "/search-providers", wantCommand: localTUICommandSearch, wantHandled: true},
+		{name: "computer-use opens computer-use card", input: "/computer-use", wantCommand: localTUICommandComputer, wantHandled: true},
+		{name: "cu opens computer-use card", input: "/cu", wantCommand: localTUICommandComputer, wantHandled: true},
+		{name: "computer-use with args passes through to backend", input: "/computer-use tools"},
+		{name: "connect opens connector card", input: "/connect", wantCommand: localTUICommandConnect, wantHandled: true},
+		{name: "telegram opens connector card", input: "/telegram", wantCommand: localTUICommandConnect, wantHandled: true},
+		{name: "channel opens connector card", input: "/channel", wantCommand: localTUICommandConnect, wantHandled: true},
+		{name: "telegram with args passes through to backend", input: "/telegram status"},
 		{name: "normal input passes through", input: "fix the bug"},
 	}
 
@@ -156,6 +163,8 @@ func TestHandleLocalTUICommandUsesBackendForProviderCommands(t *testing.T) {
 		{name: "council manager", input: "/council", wantStatus: "opening council"},
 		{name: "agents manager", input: "/agents", wantStatus: "opening agents"},
 		{name: "doctor manager", input: "/doctor", wantStatus: "opening doctor"},
+		{name: "computer-use manager", input: "/computer-use", wantStatus: "opening computer-use status"},
+		{name: "connect manager", input: "/connect", wantStatus: "opening connector status"},
 	}
 
 	for _, tt := range tests {
@@ -202,6 +211,8 @@ func TestHandleLocalTUICommandFallsBackLocallyWhenBridgeIsUnavailable(t *testing
 		{name: "agents fallback", input: "/agents", wantStatus: "bridge unavailable; showing local agents card", wantSubstring: "Super Agent"},
 		{name: "council fallback", input: "/council", wantStatus: "bridge unavailable; showing local council card", wantSubstring: "AI Council"},
 		{name: "search fallback", input: "/search-provider", wantStatus: "bridge unavailable; showing local search card", wantSubstring: "Search providers"},
+		{name: "computer-use fallback", input: "/computer-use", wantStatus: "bridge unavailable; showing local computer-use card", wantSubstring: "Computer use"},
+		{name: "connect fallback", input: "/connect", wantStatus: "bridge unavailable; showing local connector card", wantSubstring: "Connectors"},
 	}
 
 	for _, tt := range tests {
@@ -290,6 +301,10 @@ func TestLocalCommandContentSurfacesCoreAgentFeatures(t *testing.T) {
 		"AI Council",
 		"Search providers",
 		"/search-provider",
+		"Computer use",
+		"/computer-use tools",
+		"Connectors",
+		"/telegram status",
 	} {
 		if !strings.Contains(content, want) {
 			t.Fatalf("local command content missing %q:\n%s", want, content)
@@ -313,6 +328,48 @@ func TestGoalSnapshotSurfacesCodexGoalWorkflow(t *testing.T) {
 	} {
 		if !strings.Contains(content, want) {
 			t.Fatalf("goal snapshot missing %q:\n%s", want, content)
+		}
+	}
+}
+
+func TestComputerUseSnapshotSurfacesToolCatalogWorkflow(t *testing.T) {
+	m := &MainModel{
+		state: model.NewAppState(),
+	}
+	m.state.BridgeConnected = true
+
+	content := m.localCommandContent(localTUICommandComputer)
+	for _, want := range []string{
+		"Computer use",
+		"Codex-style computer-use",
+		"/computer-use tools",
+		"newest-desktop-control",
+		"computer_use_*",
+		"Bridge: connected",
+	} {
+		if !strings.Contains(content, want) {
+			t.Fatalf("computer-use snapshot missing %q:\n%s", want, content)
+		}
+	}
+}
+
+func TestConnectorSnapshotSurfacesTelegramWorkflow(t *testing.T) {
+	m := &MainModel{
+		state: model.NewAppState(),
+	}
+	m.state.BridgeConnected = true
+
+	content := m.localCommandContent(localTUICommandConnect)
+	for _, want := range []string{
+		"Connectors",
+		"Telegram",
+		"/connect status",
+		"/telegram status",
+		"/channel status telegram",
+		"Bridge: connected",
+	} {
+		if !strings.Contains(content, want) {
+			t.Fatalf("connector snapshot missing %q:\n%s", want, content)
 		}
 	}
 }
