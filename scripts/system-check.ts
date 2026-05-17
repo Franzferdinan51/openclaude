@@ -836,6 +836,32 @@ function checkDescriptorRouteEnv(routeId: string): CheckResult[] {
   return results
 }
 
+function checkDefaultMiniMaxEnv(): CheckResult[] {
+  const results: CheckResult[] = []
+  const defaultModel = getRouteDefaultModel('minimax') ?? 'MiniMax-M2.7'
+  const defaultBaseUrl = getRouteDefaultBaseUrl('minimax')
+  const credentialVars = getRouteCredentialEnvVars('minimax')
+  const credential = getRouteCredentialValue('minimax')
+
+  results.push(pass('Provider mode', 'MiniMax provider enabled by DuckHive default.'))
+  results.push(pass('OPENAI_MODEL', defaultModel))
+  if (defaultBaseUrl) {
+    results.push(pass('OPENAI_BASE_URL', redactUrlForDisplay(defaultBaseUrl)))
+  }
+  if (credentialVars.length > 0) {
+    results.push(
+      credential
+        ? pass(credentialVars.join(' or '), 'Configured.')
+        : pass(
+            credentialVars.join(' or '),
+            `Not configured. Startup will use MiniMax defaults and request auth when generation is needed; set one of: ${credentialVars.join(', ')}.`,
+          ),
+    )
+  }
+
+  return results
+}
+
 export function checkOpenAIEnv(): CheckResult[] {
   const results: CheckResult[] = []
   const useGemini = isTruthy(process.env.CLAUDE_CODE_USE_GEMINI)
@@ -861,8 +887,13 @@ export function checkOpenAIEnv(): CheckResult[] {
   }
 
   if (!useOpenAI) {
-    results.push(pass('Provider mode', 'Anthropic login flow enabled (CLAUDE_CODE_USE_OPENAI is off).'))
-    return results
+    const explicitDuckHiveProvider =
+      process.env.DUCKHIVE_PROVIDER ?? process.env.DUCKHIVE_DEFAULT_PROVIDER
+    if (explicitDuckHiveProvider?.trim().toLowerCase() === 'anthropic') {
+      results.push(pass('Provider mode', 'Anthropic login flow enabled by explicit DuckHive provider selection.'))
+      return results
+    }
+    return checkDefaultMiniMaxEnv()
   }
 
   const request = resolveDoctorProviderRequest()

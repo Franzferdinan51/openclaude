@@ -341,13 +341,25 @@ describe('checkOpenAIEnv', () => {
     expect(results.some(result => result.label.includes('MINIMAX_API_KEY'))).toBe(true)
   })
 
-  test('keeps Anthropic mode when no DuckHive or OpenAI-compatible provider is active', () => {
+  test('reports DuckHive MiniMax default when no provider env is active', () => {
     clearProviderEnv()
 
     expect(checkOpenAIEnv()[0]).toEqual({
       ok: true,
       label: 'Provider mode',
-      detail: 'Anthropic login flow enabled (CLAUDE_CODE_USE_OPENAI is off).',
+      detail: 'MiniMax provider enabled by DuckHive default.',
+    })
+    expect(checkOpenAIEnv().some(result => result.label.includes('MINIMAX_API_KEY'))).toBe(true)
+  })
+
+  test('keeps Anthropic mode when explicitly selected', () => {
+    clearProviderEnv()
+    process.env.DUCKHIVE_PROVIDER = 'anthropic'
+
+    expect(checkOpenAIEnv()[0]).toEqual({
+      ok: true,
+      label: 'Provider mode',
+      detail: 'Anthropic login flow enabled by explicit DuckHive provider selection.',
     })
   })
 })
