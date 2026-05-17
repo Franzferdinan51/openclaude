@@ -1,11 +1,22 @@
 import { spawn } from 'child_process'
-import type { LocalCommandCall } from '../../types/command.js'
+import type { LocalCommandCall, LocalCommandResult } from '../../types/command.js'
 import {
   DUCKHIVE_UI_SURFACE_LABELS,
   normalizeDuckHiveUISurface,
   setDuckHiveUISurfacePreferenceSync,
   type DuckHiveUISurface,
 } from '../../utils/duckhiveUi.js'
+
+export const TUI_HANDOFF_GRACE_MS = 750
+
+type TuiHandoffChild = {
+  once(event: 'error', listener: (err: Error) => void): TuiHandoffChild
+  once(event: 'spawn', listener: () => void): TuiHandoffChild
+  once(
+    event: 'close',
+    listener: (code: number | null, signal: NodeJS.Signals | null) => void,
+  ): TuiHandoffChild
+}
 
 function getCurrentUISurface(): DuckHiveUISurface {
   return process.env.DUCKHIVE_AUTO_TUI === '1' ? 'tui' : 'legacy'
@@ -48,6 +59,54 @@ export function buildTuiSlashCommandEnv(
   delete env.DUCKHIVE_NO_AUTO_TUI
   delete env.DUCKHIVE_TUI_DIRECT
   return env
+}
+
+export function waitForTuiHandoff(
+  child: TuiHandoffChild,
+  options: {
+    graceMs?: number
+    exitCurrentProcess?: () => void
+  } = {},
+): Promise<LocalCommandResult> {
+  const graceMs = options.graceMs ?? TUI_HANDOFF_GRACE_MS
+  const exitCurrentProcess = options.exitCurrentProcess ?? (() => process.exit(0))
+
+  return new Promise(resolve => {
+    let settled = false
+    let handoffTimer: ReturnType<typeof setTimeout> | undefined
+
+    const settle = (result: LocalCommandResult) => {
+      if (settled) return
+      settled = true
+      if (handoffTimer) clearTimeout(handoffTimer)
+      resolve(result)
+    }
+
+    child.once('error', err => {
+      settle({
+        type: 'text',
+        value: `Failed to launch the Go TUI: ${err.message}`,
+      })
+    })
+
+    child.once('spawn', () => {
+      handoffTimer = setTimeout(() => {
+        exitCurrentProcess()
+        settle({ type: 'skip' })
+      }, graceMs)
+    })
+
+    child.once('close', code => {
+      const suffix =
+        code === 0
+          ? 'The Go TUI exited before the handoff completed.'
+          : 'The Go TUI failed before the handoff completed.'
+      settle({
+        type: 'text',
+        value: `${suffix} Run \`duckhive tui\` to see the full startup message, or continue using the classic REPL.`,
+      })
+    })
+  })
 }
 
 export const call: LocalCommandCall = async (args: string) => {
@@ -111,16 +170,6 @@ export const call: LocalCommandCall = async (args: string) => {
       env,
     })
 
-    child.once('error', err => {
-      resolve({
-        type: 'text',
-        value: `Failed to launch the Go TUI: ${err.message}`,
-      })
-    })
-
-    child.once('spawn', () => {
-      setTimeout(() => process.exit(0), 0)
-      resolve({ type: 'skip' })
-    })
+    void waitForTuiHandoff(child).then(resolve)
   })
 }
