@@ -33,4 +33,5 @@ This matrix tracks the harness capabilities we want to absorb from the upstream 
 - Bubble Tea now has a live elapsed session clock and bridge-fed API-duration rail data.
 - Bubble Tea shell mode now works cross-platform on Windows as well as Unix-like shells.
 - Bubble Tea shell interrupts, suspend/resume, external-editor handoff, composer undo, and `ctrl+p` model dispatch are now real behaviors instead of placeholder status text.
-- The remaining model-picker work is now about building a richer dedicated picker surface, not making the shortcut do anything at all.
+- `ctrl+p` now opens the bridged backend `/model` selector when available and falls back to a local model-picker panel with fast/coding/reasoning/vision route presets plus provider guidance when offline.
+- The remaining model-picker work is now about making the local panel interactive and backed by shared provider state, not making the shortcut do anything at all.

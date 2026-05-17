@@ -8,7 +8,7 @@ This file started with the Go TUI work, but it now tracks harness-wide integrati
 
 - Turn the requested upstream repos into concrete DuckHive workstreams instead of repo-by-repo copy-paste.
 - Shift imported feature work from TUI-only surfaces into shared harness layers first.
-- Add richer model-routing controls and a dedicated model picker surface backed by shared provider state.
+- Add interactive model-routing controls backed by shared provider state.
 - Define the Crush-style shell pass so it improves the default `duckhive` UI without reintroducing noisy rails or status chrome.
 
 ## Next
@@ -21,7 +21,7 @@ This file started with the Go TUI work, but it now tracks harness-wide integrati
 
 ## Later
 
-- Build a real model picker with fast/coding/reasoning/vision presets and provider details, but keep `/models` and `/provider` authoritative.
+- Make the local model picker mutate shared provider state safely, but keep `/models` and `/provider` authoritative.
 - Add checkpoint browsing and resume flows across TUI, slash commands, and print mode.
 - Add multi-agent and council execution views with task state plus shared orchestration APIs.
 - Add media workflow panels for image, video, speech, music, and search jobs on top of shared media job primitives.
@@ -45,6 +45,7 @@ This file started with the Go TUI work, but it now tracks harness-wide integrati
 - Wired native Bubble Tea suspend/resume instead of leaving Ctrl+Z as placeholder status text.
 - Added real external-editor round-trip support for `ctrl+x ctrl+e`, including temp-file cleanup and Windows quoted editor paths.
 - Added composer undo for typed input, canceled input, history replacement, and external-editor apply.
-- Wired `ctrl+p` to the real backend `/model` command when a bridge is live, with an honest local settings fallback when offline.
+- Wired `ctrl+p` to the real backend `/model` command when a bridge is live, with an honest local model-picker fallback when offline.
+- Added a local Bubble Tea model-picker panel with fast/coding/reasoning/vision presets, provider details, backend command guidance, and escape/ctrl+d return behavior.
 - Surfaced Codex-style `/goal` status in the Bubble Tea command deck, command rail, and bridged/local fallback cards.
 - Hardened legacy Go TUI prompt and streaming markers to ASCII-safe output so Windows terminals and log captures do not show mojibake.

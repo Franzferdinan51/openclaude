@@ -734,7 +734,7 @@ func TestModelPickerUsesBackendWhenBridgeIsConfigured(t *testing.T) {
 	}
 }
 
-func TestModelPickerFallsBackToSettingsWithoutBridge(t *testing.T) {
+func TestModelPickerFallsBackToLocalPickerWithoutBridge(t *testing.T) {
 	m := &MainModel{
 		state:      model.NewAppState(),
 		msgList:    components.NewMessageList(80, 20),
@@ -746,10 +746,51 @@ func TestModelPickerFallsBackToSettingsWithoutBridge(t *testing.T) {
 	if cmd != nil {
 		t.Fatal("expected no backend command")
 	}
-	if m.state.ActiveScreen != model.ScreenSettings {
+	if m.state.ActiveScreen != model.ScreenModelPicker {
 		t.Fatalf("ActiveScreen = %v", m.state.ActiveScreen)
 	}
-	if m.state.StatusMsg != "bridge unavailable; showing model settings" {
+	if m.state.StatusMsg != "bridge unavailable; showing local model picker" {
+		t.Fatalf("StatusMsg = %q", m.state.StatusMsg)
+	}
+}
+
+func TestModelPickerViewShowsRoutingPresets(t *testing.T) {
+	m := &MainModel{
+		state:  model.NewAppState(),
+		width:  100,
+		height: 32,
+	}
+	m.cap.activeProvider = "minimax"
+	m.cap.configuredProviders = []string{"minimax", "codex"}
+
+	view := m.modelPickerView()
+	for _, want := range []string{
+		"Model Picker",
+		"Provider: minimax",
+		"Fast: local/Ollama or MiniMax",
+		"Coding: Codex, Kimi, Gemini",
+		"Reasoning: Codex plan",
+		"Vision: Kimi/Gemini/OpenAI-compatible",
+		"/provider opens the full provider manager",
+	} {
+		if !strings.Contains(view, want) {
+			t.Fatalf("model picker missing %q:\n%s", want, view)
+		}
+	}
+}
+
+func TestModelPickerEscapeReturnsToRepl(t *testing.T) {
+	m := &MainModel{
+		state: model.NewAppState(),
+	}
+	m.state.ActiveScreen = model.ScreenModelPicker
+
+	_, _ = m.Update(tea.KeyMsg{Type: tea.KeyEsc})
+
+	if m.state.ActiveScreen != model.ScreenREPL {
+		t.Fatalf("ActiveScreen = %v", m.state.ActiveScreen)
+	}
+	if m.state.StatusMsg != "model picker closed" {
 		t.Fatalf("StatusMsg = %q", m.state.StatusMsg)
 	}
 }

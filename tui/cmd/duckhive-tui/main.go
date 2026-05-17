@@ -249,6 +249,14 @@ func (m *MainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case model.ScreenSettings:
 			_, cmd := m.settings.Update(msg)
 			return m, cmd
+		case model.ScreenModelPicker:
+			switch msg.String() {
+			case "escape", "esc", "ctrl+d":
+				m.state.ActiveScreen = model.ScreenREPL
+				m.state.StatusMsg = "model picker closed"
+				return m, nil
+			}
+			return m, nil
 		}
 
 		if m.dialog != nil {
@@ -313,6 +321,8 @@ func (m *MainModel) View() string {
 		return m.welcome.View()
 	case model.ScreenSettings:
 		return m.settings.View()
+	case model.ScreenModelPicker:
+		return m.modelPickerView()
 	default:
 		return m.replView()
 	}
@@ -684,8 +694,8 @@ func (m *MainModel) handleOutbound(msg model.OutMsg) (tea.Model, tea.Cmd) {
 			m.state.StatusMsg = "opening model picker"
 			return m, bridge.SendUserMessageCmd(m.bridge, "/model")
 		}
-		m.state.ActiveScreen = model.ScreenSettings
-		m.state.StatusMsg = "bridge unavailable; showing model settings"
+		m.state.ActiveScreen = model.ScreenModelPicker
+		m.state.StatusMsg = "bridge unavailable; showing local model picker"
 
 	case model.MsgSuspend:
 		m.state.IsSuspended = true
@@ -1290,6 +1300,49 @@ func (m *MainModel) providerSnapshot() string {
 		"Use /provider in a bridged session for the full provider manager.",
 		"Use --provider <provider> for one session or ~/.duckhive/config.json for defaults.",
 	}, "\n")
+}
+
+func (m *MainModel) modelPickerView() string {
+	width := m.width
+	if width == 0 {
+		width = 100
+	}
+	cardWidth := maxInt(58, min(width-8, 104))
+	configured := "none"
+	if len(m.cap.configuredProviders) > 0 {
+		configured = strings.Join(m.cap.configuredProviders, ", ")
+	}
+	presets := []string{
+		"Fast: local/Ollama or MiniMax for low-latency edits",
+		"Coding: Codex, Kimi, Gemini, or MiniMax routes for repo work",
+		"Reasoning: Codex plan or higher-context provider profiles",
+		"Vision: Kimi/Gemini/OpenAI-compatible vision-capable routes",
+	}
+	lines := []string{
+		tui.HeaderTitle.Render("Model Picker"),
+		"",
+		tui.HeaderSubtitle.Render("Current route"),
+		fmt.Sprintf("  Provider: %s", m.displayProvider()),
+		fmt.Sprintf("  Model: %s", m.displayModel()),
+		fmt.Sprintf("  Configured keys: %s", configured),
+		"",
+		tui.HeaderSubtitle.Render("DuckHive presets"),
+	}
+	for _, preset := range presets {
+		lines = append(lines, "  - "+preset)
+	}
+	lines = append(lines,
+		"",
+		tui.HeaderSubtitle.Render("How to change"),
+		"  /model opens the backend model selector when the bridge is connected.",
+		"  /provider opens the full provider manager.",
+		"  duckhive provider status is available before the REPL starts.",
+		"  Set DUCKHIVE_PROVIDER or OPENAI_MODEL for one-session routing.",
+		"",
+		tui.DimText.Render("press esc or ctrl+d to return to the TUI"),
+	)
+	card := tui.Card.Width(cardWidth).Render(lipgloss.JoinVertical(lipgloss.Left, lines...))
+	return lipgloss.Place(width, maxInt(12, m.height-2), lipgloss.Center, lipgloss.Center, card)
 }
 
 func (m *MainModel) searchSnapshot() string {
