@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"runtime"
 	"strings"
 	"testing"
@@ -365,6 +366,35 @@ func TestLocalShellCommandForOSRespectsWindowsShellEnv(t *testing.T) {
 	wantArgs := []string{"-NoLogo", "-NoProfile", "-Command", "echo hi"}
 	if strings.Join(args, "\x00") != strings.Join(wantArgs, "\x00") {
 		t.Fatalf("args = %#v, want %#v", args, wantArgs)
+	}
+}
+
+func TestHandleShellResultTreatsCancellationAsInterrupt(t *testing.T) {
+	m := &MainModel{
+		state:      model.NewAppState(),
+		msgList:    components.NewMessageList(80, 20),
+		transcript: screens.NewTranscriptPanel(),
+	}
+
+	m.handleShellResult(shellCommandResultMsg{
+		command:  "sleep 5",
+		err:      context.Canceled,
+		duration: 1500 * time.Millisecond,
+		canceled: true,
+	})
+
+	if m.state.StatusMsg != "shell interrupted after 1.5s" {
+		t.Fatalf("StatusMsg = %q", m.state.StatusMsg)
+	}
+	if len(m.state.Messages) == 0 {
+		t.Fatal("expected a tool result message")
+	}
+	last := m.state.Messages[len(m.state.Messages)-1]
+	if last.IsError {
+		t.Fatal("canceled shell result should not be marked as error")
+	}
+	if last.Content != "(interrupted)" {
+		t.Fatalf("Content = %q", last.Content)
 	}
 }
 

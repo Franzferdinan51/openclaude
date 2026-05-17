@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -58,6 +59,7 @@ type shellCommandResultMsg struct {
 	output   string
 	err      error
 	duration time.Duration
+	canceled bool
 }
 
 type timerTickMsg struct{}
@@ -1066,6 +1068,7 @@ func (m *MainModel) runShellCommand(command string) tea.Cmd {
 			output:   rendered,
 			err:      err,
 			duration: time.Since(start),
+			canceled: errors.Is(ctx.Err(), context.Canceled),
 		}
 	}
 }
@@ -1076,11 +1079,14 @@ func (m *MainModel) handleShellResult(msg shellCommandResultMsg) {
 	m.state.IsLoading = false
 
 	status := model.ToolStatusCompleted
-	if msg.err != nil {
+	if msg.err != nil || msg.canceled {
 		status = model.ToolStatusFailed
 	}
 
 	content := msg.output
+	if msg.canceled && content == "" {
+		content = "(interrupted)"
+	}
 	if msg.err != nil && content == "" {
 		content = msg.err.Error()
 	}
@@ -1090,7 +1096,7 @@ func (m *MainModel) handleShellResult(msg shellCommandResultMsg) {
 		Type:      model.MsgTypeToolResult,
 		Content:   content,
 		Timestamp: time.Now(),
-		IsError:   msg.err != nil,
+		IsError:   msg.err != nil && !msg.canceled,
 		ToolCalls: []model.ToolCall{{
 			Name:   "shell",
 			Output: content,
@@ -1098,6 +1104,10 @@ func (m *MainModel) handleShellResult(msg shellCommandResultMsg) {
 		}},
 	})
 
+	if msg.canceled {
+		m.state.StatusMsg = fmt.Sprintf("shell interrupted after %s", msg.duration.Round(time.Millisecond))
+		return
+	}
 	if msg.err != nil {
 		m.state.StatusMsg = fmt.Sprintf("shell failed after %s", msg.duration.Round(time.Millisecond))
 		return
