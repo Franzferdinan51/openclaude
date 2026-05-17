@@ -14,6 +14,15 @@ import {
 import { detectCliInputModeWarnings } from '../src/utils/cliInputModeDiagnostic.js'
 import { DEFAULT_GEMINI_MODEL } from '../src/utils/providerProfile.js'
 import { redactUrlForDisplay } from '../src/utils/urlRedaction.js'
+import {
+  getRouteCredentialEnvVars,
+  getRouteCredentialValue,
+  getRouteDefaultBaseUrl,
+  getRouteDefaultModel,
+  getRouteLabel,
+  getTransportKindForRoute,
+  resolveActiveRouteIdFromEnv,
+} from '../src/integrations/routeMetadata.js'
 
 type CheckResult = {
   ok: boolean
@@ -263,6 +272,26 @@ const GEMINI_DEFAULT_BASE_URL = 'https://generativelanguage.googleapis.com/v1bet
 const MISTRAL_DEFAULT_BASE_URL = 'https://api.mistral.ai/v1'
 const GITHUB_COPILOT_BASE = 'https://api.githubcopilot.com'
 
+function getActiveDescriptorOpenAICompatibleRouteId(): string | null {
+  const routeId = resolveActiveRouteIdFromEnv(process.env)
+  if (!routeId || routeId === 'anthropic') {
+    return null
+  }
+
+  const transport = getTransportKindForRoute(routeId)
+  return transport === 'openai-compatible' || transport === 'local'
+    ? routeId
+    : null
+}
+
+function resolveDoctorProviderRequest() {
+  const routeId = getActiveDescriptorOpenAICompatibleRouteId()
+  return resolveProviderRequest({
+    model: process.env.OPENAI_MODEL || (routeId ? getRouteDefaultModel(routeId) : undefined),
+    baseUrl: process.env.OPENAI_BASE_URL || (routeId ? getRouteDefaultBaseUrl(routeId) : undefined),
+  })
+}
+
 function currentBaseUrl(): string {
   if (isTruthy(process.env.CLAUDE_CODE_USE_GEMINI)) {
     return process.env.GEMINI_BASE_URL ?? GEMINI_DEFAULT_BASE_URL
@@ -353,7 +382,47 @@ function checkGithubEnv(): CheckResult[] {
   return results
 }
 
-function checkOpenAIEnv(): CheckResult[] {
+function checkDescriptorRouteEnv(routeId: string): CheckResult[] {
+  const results: CheckResult[] = []
+  const label = getRouteLabel(routeId) ?? routeId
+  const defaultModel = getRouteDefaultModel(routeId)
+  const defaultBaseUrl = getRouteDefaultBaseUrl(routeId)
+  const credentialVars = getRouteCredentialEnvVars(routeId)
+  const credential = getRouteCredentialValue(routeId)
+
+  results.push(pass('Provider mode', `${label} provider enabled.`))
+  results.push(
+    pass(
+      'OPENAI_MODEL',
+      process.env.OPENAI_MODEL ||
+        defaultModel ||
+        'Not set. Runtime fallback model will be used.',
+    ),
+  )
+  if (defaultBaseUrl || process.env.OPENAI_BASE_URL) {
+    results.push(
+      pass(
+        'OPENAI_BASE_URL',
+        redactUrlForDisplay(process.env.OPENAI_BASE_URL ?? defaultBaseUrl ?? ''),
+      ),
+    )
+  }
+
+  if (credentialVars.length > 0) {
+    results.push(
+      credential
+        ? pass(credentialVars.join(' or '), 'Configured.')
+        : fail(
+            credentialVars.join(' or '),
+            `Missing. Set one of: ${credentialVars.join(', ')}.`,
+          ),
+    )
+  }
+
+  return results
+}
+
+export function checkOpenAIEnv(): CheckResult[] {
   const results: CheckResult[] = []
   const useGemini = isTruthy(process.env.CLAUDE_CODE_USE_GEMINI)
   const useGithub = isTruthy(process.env.CLAUDE_CODE_USE_GITHUB)
@@ -372,15 +441,17 @@ function checkOpenAIEnv(): CheckResult[] {
     return checkGithubEnv()
   }
 
+  const activeRouteId = resolveActiveRouteIdFromEnv(process.env)
+  if (!useOpenAI && activeRouteId && activeRouteId !== 'anthropic') {
+    return checkDescriptorRouteEnv(activeRouteId)
+  }
+
   if (!useOpenAI) {
     results.push(pass('Provider mode', 'Anthropic login flow enabled (CLAUDE_CODE_USE_OPENAI is off).'))
     return results
   }
 
-  const request = resolveProviderRequest({
-    model: process.env.OPENAI_MODEL,
-    baseUrl: process.env.OPENAI_BASE_URL,
-  })
+  const request = resolveDoctorProviderRequest()
 
   results.push(
     pass(
@@ -445,8 +516,9 @@ async function checkBaseUrlReachability(): Promise<CheckResult> {
   const useOpenAI = isTruthy(process.env.CLAUDE_CODE_USE_OPENAI)
   const useGithub = isTruthy(process.env.CLAUDE_CODE_USE_GITHUB)
   const useMistral = isTruthy(process.env.CLAUDE_CODE_USE_MISTRAL)
+  const descriptorRouteId = getActiveDescriptorOpenAICompatibleRouteId()
 
-  if (!useGemini && !useOpenAI && !useGithub && !useMistral) {
+  if (!useGemini && !useOpenAI && !useGithub && !useMistral && !descriptorRouteId) {
     return pass('Provider reachability', 'Skipped (OpenAI-compatible mode disabled).')
   }
 
@@ -462,8 +534,8 @@ async function checkBaseUrlReachability(): Promise<CheckResult> {
     ? (process.env.GEMINI_BASE_URL ?? geminiBaseUrl)
     : undefined
   const request = resolveProviderRequest({
-    model: process.env.OPENAI_MODEL,
-    baseUrl: resolvedBaseUrl ?? process.env.OPENAI_BASE_URL,
+    model: process.env.OPENAI_MODEL || (descriptorRouteId ? getRouteDefaultModel(descriptorRouteId) : undefined),
+    baseUrl: resolvedBaseUrl ?? process.env.OPENAI_BASE_URL ?? (descriptorRouteId ? getRouteDefaultBaseUrl(descriptorRouteId) : undefined),
   })
   const endpoint = request.transport === 'codex_responses'
     ? `${request.baseUrl}/responses`
@@ -506,6 +578,8 @@ async function checkBaseUrlReachability(): Promise<CheckResult> {
       headers.Authorization = `Bearer ${process.env.GEMINI_API_KEY ?? process.env.GOOGLE_API_KEY}`
     } else if (useMistral && process.env.MISTRAL_API_KEY) {
       headers.Authorization = `Bearer ${process.env.MISTRAL_API_KEY}`
+    } else if (descriptorRouteId && getRouteCredentialValue(descriptorRouteId)) {
+      headers.Authorization = `Bearer ${getRouteCredentialValue(descriptorRouteId)}`
     } else if (process.env.OPENAI_API_KEY) {
       headers.Authorization = `Bearer ${process.env.OPENAI_API_KEY}`
     }
@@ -551,8 +625,9 @@ async function checkProviderGenerationReadiness(): Promise<CheckResult> {
   const useOpenAI = isTruthy(process.env.CLAUDE_CODE_USE_OPENAI)
   const useGithub = isTruthy(process.env.CLAUDE_CODE_USE_GITHUB)
   const useMistral = isTruthy(process.env.CLAUDE_CODE_USE_MISTRAL)
+  const descriptorRouteId = getActiveDescriptorOpenAICompatibleRouteId()
 
-  if (!useGemini && !useOpenAI && !useGithub && !useMistral) {
+  if (!useGemini && !useOpenAI && !useGithub && !useMistral && !descriptorRouteId) {
     return pass('Provider generation readiness', 'Skipped (OpenAI-compatible mode disabled).')
   }
 
@@ -570,14 +645,11 @@ async function checkProviderGenerationReadiness(): Promise<CheckResult> {
     )
   }
 
-  if (!useOpenAI) {
+  if (!useOpenAI && !descriptorRouteId) {
     return pass('Provider generation readiness', 'Skipped (OpenAI-compatible mode disabled).')
   }
 
-  const request = resolveProviderRequest({
-    model: process.env.OPENAI_MODEL,
-    baseUrl: process.env.OPENAI_BASE_URL,
-  })
+  const request = resolveDoctorProviderRequest()
 
   if (request.transport === 'codex_responses') {
     return pass(
@@ -641,8 +713,9 @@ function isAtomicChatUrl(baseUrl: string): boolean {
 }
 
 function checkOllamaProcessorMode(): CheckResult {
+  const descriptorRouteId = getActiveDescriptorOpenAICompatibleRouteId()
   if (
-    !isTruthy(process.env.CLAUDE_CODE_USE_OPENAI) ||
+    (!isTruthy(process.env.CLAUDE_CODE_USE_OPENAI) && !descriptorRouteId) ||
     isTruthy(process.env.CLAUDE_CODE_USE_GEMINI) ||
     isTruthy(process.env.CLAUDE_CODE_USE_GITHUB) ||
     isTruthy(process.env.CLAUDE_CODE_USE_MISTRAL)
@@ -650,7 +723,9 @@ function checkOllamaProcessorMode(): CheckResult {
     return pass('Ollama processor mode', 'Skipped (OpenAI-compatible mode disabled).')
   }
 
-  const baseUrl = currentBaseUrl()
+  const baseUrl = descriptorRouteId
+    ? (process.env.OPENAI_BASE_URL ?? getRouteDefaultBaseUrl(descriptorRouteId) ?? currentBaseUrl())
+    : currentBaseUrl()
   if (!isLocalBaseUrl(baseUrl)) {
     return pass('Ollama processor mode', 'Skipped (provider URL is not local).')
   }

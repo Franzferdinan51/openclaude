@@ -1,9 +1,51 @@
-import { describe, expect, test } from 'bun:test'
+import { afterEach, describe, expect, test } from 'bun:test'
 
 import {
   checkCliInputMode,
+  checkOpenAIEnv,
   formatReachabilityFailureDetail,
 } from './system-check.ts'
+
+const originalEnv = {
+  CLAUDE_CODE_USE_OPENAI: process.env.CLAUDE_CODE_USE_OPENAI,
+  CLAUDE_CODE_USE_GEMINI: process.env.CLAUDE_CODE_USE_GEMINI,
+  CLAUDE_CODE_USE_GITHUB: process.env.CLAUDE_CODE_USE_GITHUB,
+  CLAUDE_CODE_USE_MISTRAL: process.env.CLAUDE_CODE_USE_MISTRAL,
+  DUCKHIVE_PROVIDER: process.env.DUCKHIVE_PROVIDER,
+  DUCKHIVE_DEFAULT_PROVIDER: process.env.DUCKHIVE_DEFAULT_PROVIDER,
+  OPENAI_MODEL: process.env.OPENAI_MODEL,
+  OPENAI_BASE_URL: process.env.OPENAI_BASE_URL,
+  MINIMAX_API_KEY: process.env.MINIMAX_API_KEY,
+  MMX_API_KEY: process.env.MMX_API_KEY,
+}
+
+function restoreEnv(name: keyof typeof originalEnv): void {
+  const value = originalEnv[name]
+  if (value === undefined) {
+    delete process.env[name]
+  } else {
+    process.env[name] = value
+  }
+}
+
+function clearProviderEnv(): void {
+  delete process.env.CLAUDE_CODE_USE_OPENAI
+  delete process.env.CLAUDE_CODE_USE_GEMINI
+  delete process.env.CLAUDE_CODE_USE_GITHUB
+  delete process.env.CLAUDE_CODE_USE_MISTRAL
+  delete process.env.DUCKHIVE_PROVIDER
+  delete process.env.DUCKHIVE_DEFAULT_PROVIDER
+  delete process.env.OPENAI_MODEL
+  delete process.env.OPENAI_BASE_URL
+  delete process.env.MINIMAX_API_KEY
+  delete process.env.MMX_API_KEY
+}
+
+afterEach(() => {
+  for (const name of Object.keys(originalEnv) as Array<keyof typeof originalEnv>) {
+    restoreEnv(name)
+  }
+})
 
 describe('formatReachabilityFailureDetail', () => {
   test('returns generic failure detail for non-codex transport', () => {
@@ -97,5 +139,32 @@ describe('checkCliInputMode', () => {
 
     expect(result.ok).toBe(true)
     expect(result.detail).toBe('Readable stdin default active.')
+  })
+})
+
+describe('checkOpenAIEnv', () => {
+  test('reports DuckHive MiniMax provider preference instead of Anthropic mode', () => {
+    clearProviderEnv()
+    process.env.DUCKHIVE_PROVIDER = 'minimax'
+    process.env.MINIMAX_API_KEY = 'minimax-test-key'
+
+    const results = checkOpenAIEnv()
+
+    expect(results[0]).toEqual({
+      ok: true,
+      label: 'Provider mode',
+      detail: 'MiniMax provider enabled.',
+    })
+    expect(results.some(result => result.label.includes('MINIMAX_API_KEY'))).toBe(true)
+  })
+
+  test('keeps Anthropic mode when no DuckHive or OpenAI-compatible provider is active', () => {
+    clearProviderEnv()
+
+    expect(checkOpenAIEnv()[0]).toEqual({
+      ok: true,
+      label: 'Provider mode',
+      detail: 'Anthropic login flow enabled (CLAUDE_CODE_USE_OPENAI is off).',
+    })
   })
 })
