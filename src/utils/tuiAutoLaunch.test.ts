@@ -2,6 +2,8 @@ import { expect, test } from 'bun:test'
 import {
   buildStandaloneTuiLaunchEnv,
   getDefaultStandaloneTuiBridgeArgs,
+  getStandaloneTuiExecutablePath,
+  resolveDuckHiveBaseDir,
   shouldUseStandaloneTuiHelper,
   shouldAutoLaunchStandaloneTui,
 } from './tuiAutoLaunch.js'
@@ -81,6 +83,27 @@ test('builds bridge wiring for standalone TUI launches', () => {
 
 test('standalone TUI bridge uses bare mode to reduce JS startup work', () => {
   expect(getDefaultStandaloneTuiBridgeArgs('/tmp/duckhive')).toContain('--bare')
+})
+
+test('resolves the DuckHive base directory from bundled and source paths', () => {
+  const seen = new Set([
+    '/repo/package.json',
+    '/repo/bin/duckhive',
+    '/repo/dist/cli.mjs',
+  ])
+  const fileExists = (path: string) => seen.has(path.replace(/\\/g, '/'))
+
+  expect(resolveDuckHiveBaseDir('/repo/dist/cli.mjs', fileExists)).toBe('/repo')
+  expect(resolveDuckHiveBaseDir('/repo/src/utils/tuiAutoLaunch.ts', fileExists)).toBe('/repo')
+})
+
+test('uses the Windows TUI executable name on Windows', () => {
+  expect(getStandaloneTuiExecutablePath('/tmp/duckhive', 'win32').replace(/\\/g, '/')).toBe(
+    '/tmp/duckhive/tui/duckhive-tui.exe',
+  )
+  expect(getStandaloneTuiExecutablePath('/tmp/duckhive', 'linux').replace(/\\/g, '/')).toBe(
+    '/tmp/duckhive/tui/duckhive-tui',
+  )
 })
 
 test('uses the PTY helper by default when it exists', () => {

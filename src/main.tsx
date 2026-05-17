@@ -3880,6 +3880,21 @@ async function run(): Promise<CommanderCommand> {
     return program;
   }
 
+  program.command('tui').description('Launch the DuckHive Bubble Tea TUI').action(async () => {
+    const {
+      launchStandaloneTui,
+      resolveDuckHiveBaseDir,
+    } = await import('./utils/tuiAutoLaunch.js');
+    const launched = await launchStandaloneTui(resolveDuckHiveBaseDir());
+    if (!launched) {
+      // biome-ignore lint/suspicious/noConsole:: command failure must be visible
+      console.error(process.platform === 'win32'
+        ? 'DuckHive TUI binary not found. Run `scripts\\install.ps1` or build `tui\\duckhive-tui.exe` first.'
+        : 'DuckHive TUI binary not found. Run `scripts/install.sh` or build `tui/duckhive-tui` first.');
+      process.exitCode = 1;
+    }
+  });
+
   // claude mcp
 
   const mcp = program.command('mcp').description('Configure and manage MCP servers').configureHelp(createSortedHelpConfig()).enablePositionalOptions();

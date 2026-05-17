@@ -1,5 +1,6 @@
 import { existsSync } from 'fs'
-import { join } from 'path'
+import { dirname, join } from 'path'
+import { fileURLToPath } from 'url'
 import {
   getPreferredDuckHiveUISurface,
   type DuckHiveConfig,
@@ -11,6 +12,29 @@ export type LaunchStandaloneTuiOptions = {
   env?: NodeJS.ProcessEnv
   bridgeCmd?: string
   bridgeArgs?: string[]
+}
+
+export function resolveDuckHiveBaseDir(
+  startPath = fileURLToPath(import.meta.url),
+  fileExists: (path: string) => boolean = existsSync,
+): string {
+  let currentDir = dirname(startPath)
+
+  for (let i = 0; i < 8; i++) {
+    if (
+      fileExists(join(currentDir, 'package.json')) &&
+      (fileExists(join(currentDir, 'bin', 'duckhive')) ||
+        fileExists(join(currentDir, 'dist', 'cli.mjs')))
+    ) {
+      return currentDir
+    }
+
+    const parent = dirname(currentDir)
+    if (parent === currentDir) break
+    currentDir = parent
+  }
+
+  return dirname(dirname(startPath))
 }
 
 export function shouldAutoLaunchStandaloneTui(
@@ -148,6 +172,17 @@ export function buildStandaloneTuiLaunchEnv(
   return env
 }
 
+export function getStandaloneTuiExecutablePath(
+  baseDir: string,
+  platform = process.platform,
+): string {
+  return join(
+    baseDir,
+    'tui',
+    platform === 'win32' ? 'duckhive-tui.exe' : 'duckhive-tui',
+  )
+}
+
 export async function launchStandaloneTui(
   baseDir: string,
   options?: LaunchStandaloneTuiOptions,
@@ -155,7 +190,7 @@ export async function launchStandaloneTui(
   const args = options?.args ?? []
   const env = buildStandaloneTuiLaunchEnv(baseDir, options)
 
-  const tuiPath = join(baseDir, 'tui', 'duckhive-tui')
+  const tuiPath = getStandaloneTuiExecutablePath(baseDir)
   if (!existsSync(tuiPath)) {
     return false
   }
