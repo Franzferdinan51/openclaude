@@ -131,6 +131,58 @@ function checkBuildArtifacts(): CheckResult {
   return pass('Build artifacts', distCli)
 }
 
+export function checkCliLauncherPath(options: {
+  platform?: NodeJS.Platform
+  cwd?: string
+  runCommand?: (command: string, args: string[]) => {
+    status: number | null
+    stdout?: string | Buffer
+    stderr?: string | Buffer
+  }
+} = {}): CheckResult {
+  const platform = options.platform ?? process.platform
+  const cwd = options.cwd ?? process.cwd()
+  const runCommand =
+    options.runCommand ??
+    ((command: string, args: string[]) =>
+      spawnSync(command, args, {
+        cwd,
+        encoding: 'utf8',
+      }))
+  const sourceLauncher = resolve(
+    cwd,
+    'bin',
+    platform === 'win32' ? 'duckhive.cmd' : 'duckhive',
+  )
+
+  const command = platform === 'win32' ? 'where.exe' : 'sh'
+  const args = platform === 'win32' ? ['duckhive'] : ['-lc', 'command -v duckhive']
+  const result = runCommand(command, args)
+  const output = String(result.stdout ?? '').trim()
+  const paths = output.split(/\r?\n/).map(line => line.trim()).filter(Boolean)
+
+  if (result.status === 0 && paths.length > 0) {
+    return pass(
+      'CLI launcher',
+      `duckhive resolves on PATH: ${paths[0]}.`,
+    )
+  }
+
+  if (existsSync(sourceLauncher)) {
+    return fail(
+      'CLI launcher',
+      platform === 'win32'
+        ? `duckhive is not on PATH. Run .\\install.ps1, open a new PowerShell, or start from this checkout with .\\bin\\duckhive.cmd.`
+        : `duckhive is not on PATH. Run ./install.sh, open a new shell, or start from this checkout with ./bin/duckhive.`,
+    )
+  }
+
+  return fail(
+    'CLI launcher',
+    `duckhive is not on PATH and the source launcher is missing at ${sourceLauncher}. Reinstall DuckHive.`,
+  )
+}
+
 export function checkTerminalStdio(io = {
   stdinIsTTY: process.stdin.isTTY === true,
   stdoutIsTTY: process.stdout.isTTY === true,
@@ -981,6 +1033,7 @@ export async function runRuntimeDoctor(argv: string[] = process.argv.slice(2)): 
   results.push(checkNodeVersion())
   results.push(checkBunRuntime())
   results.push(checkBuildArtifacts())
+  results.push(checkCliLauncherPath())
   results.push(checkCliInputMode())
   results.push(checkTerminalStdio())
   results.push(checkTuiLaunchPath())

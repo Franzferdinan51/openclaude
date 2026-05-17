@@ -130,7 +130,8 @@ If `duckhive` is not recognized in PowerShell, the package is not installed on y
 If the REPL renders but will not accept typing, run `duckhive runtime-doctor`
 from the same terminal. It checks Windows stdin mode, TUI fallback, provider
 routing, ClawHub skill hub, computer-use fallback, Telegram connector config,
-and harness command registration without starting the chat UI.
+the installed `duckhive` launcher on `PATH`, and harness command registration
+without starting the chat UI.
 
 ---
 

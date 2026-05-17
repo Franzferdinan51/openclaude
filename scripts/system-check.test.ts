@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
 import {
+  checkCliLauncherPath,
   checkCliInputMode,
   checkHarnessCommandSurfaces,
   checkOpenAIEnv,
@@ -180,6 +181,40 @@ describe('checkTerminalStdio', () => {
     expect(result.ok).toBe(true)
     expect(result.detail).toContain('stdin=not TTY')
     expect(result.detail).toContain('interactive REPL needs stdin and stdout')
+  })
+})
+
+describe('checkCliLauncherPath', () => {
+  test('reports a duckhive command resolved on PATH', () => {
+    const result = checkCliLauncherPath({
+      platform: 'win32',
+      cwd: process.cwd(),
+      runCommand: () => ({
+        status: 0,
+        stdout: 'C:\\Users\\franz\\AppData\\Local\\DuckHive\\bin\\duckhive.cmd\r\n',
+      }),
+    })
+
+    expect(result.ok).toBe(true)
+    expect(result.detail).toContain('duckhive resolves on PATH')
+    expect(result.detail).toContain('duckhive.cmd')
+  })
+
+  test('reports the Windows install fix when duckhive is not on PATH', () => {
+    const result = checkCliLauncherPath({
+      platform: 'win32',
+      cwd: process.cwd(),
+      runCommand: () => ({
+        status: 1,
+        stdout: '',
+        stderr: 'INFO: Could not find files',
+      }),
+    })
+
+    expect(result.ok).toBe(false)
+    expect(result.detail).toContain('duckhive is not on PATH')
+    expect(result.detail).toContain('.\\install.ps1')
+    expect(result.detail).toContain('.\\bin\\duckhive.cmd')
   })
 })
 
