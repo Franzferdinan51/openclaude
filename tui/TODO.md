@@ -46,3 +46,4 @@ This file started with the Go TUI work, but it now tracks harness-wide integrati
 - Added real external-editor round-trip support for `ctrl+x ctrl+e`, including temp-file cleanup and Windows quoted editor paths.
 - Added composer undo for typed input, canceled input, history replacement, and external-editor apply.
 - Wired `ctrl+p` to the real backend `/model` command when a bridge is live, with an honest local settings fallback when offline.
+- Surfaced Codex-style `/goal` status in the Bubble Tea command deck, command rail, and bridged/local fallback cards.

@@ -109,6 +109,7 @@ const (
 	localTUICommandStatus     localTUICommand = "status"
 	localTUICommandSuperAgent localTUICommand = "super-agent"
 	localTUICommandRuns       localTUICommand = "runs"
+	localTUICommandGoal       localTUICommand = "goal"
 	localTUICommandCouncil    localTUICommand = "council"
 	localTUICommandProvider   localTUICommand = "provider"
 	localTUICommandSearch     localTUICommand = "search"
@@ -846,6 +847,11 @@ func parseLocalTUICommand(text string) (localTUICommand, bool) {
 			return "", false
 		}
 		return localTUICommandRuns, true
+	case "/goal", "/goals":
+		if hasArgs {
+			return "", false
+		}
+		return localTUICommandGoal, true
 	case "/council":
 		if hasArgs {
 			return "", false
@@ -922,6 +928,8 @@ func bridgeBackedLocalCommand(text string) (string, bool) {
 		return "/council", true
 	case "/run":
 		return "/run", true
+	case "/goal", "/goals":
+		return "/goal", true
 	case "/provider", "/model", "/search-provider":
 		return strings.ToLower(strings.TrimSpace(text)), true
 	default:
@@ -939,6 +947,8 @@ func bridgeBackedLocalCommandStatus(command string) string {
 		return "opening council"
 	case "/run":
 		return "opening agent runs"
+	case "/goal":
+		return "opening goal status"
 	case "/provider":
 		return "opening provider manager"
 	case "/model":
@@ -958,6 +968,8 @@ func bridgeBackedLocalFallback(command string) (localTUICommand, bool) {
 		return localTUICommandCouncil, true
 	case "/run":
 		return localTUICommandRuns, true
+	case "/goal":
+		return localTUICommandGoal, true
 	case "/provider", "/model":
 		return localTUICommandProvider, true
 	case "/search-provider":
@@ -975,6 +987,8 @@ func bridgeBackedLocalFallbackStatus(command string) string {
 		return "bridge unavailable; showing local council card"
 	case "/run":
 		return "bridge unavailable; showing local run card"
+	case "/goal":
+		return "bridge unavailable; showing local goal card"
 	case "/provider", "/model":
 		return "bridge unavailable; showing local provider card"
 	case "/search-provider":
@@ -994,6 +1008,8 @@ func localCommandStatus(command localTUICommand) string {
 		return "super agent surface"
 	case localTUICommandRuns:
 		return "agent run surface"
+	case localTUICommandGoal:
+		return "goal surface"
 	case localTUICommandCouncil:
 		return "council surface"
 	case localTUICommandProvider:
@@ -1013,6 +1029,8 @@ func (m *MainModel) localCommandContent(command localTUICommand) string {
 		return m.superAgentSnapshot()
 	case localTUICommandRuns:
 		return m.runsSnapshot()
+	case localTUICommandGoal:
+		return m.goalSnapshot()
 	case localTUICommandCouncil:
 		return m.councilSnapshot()
 	case localTUICommandProvider:
@@ -1031,6 +1049,7 @@ func (m *MainModel) commandDeckText() string {
 		"Super Agent",
 		"  /agents - open the real backend agent surface; /agent, /teams, /super keep the local TUI Agent Teams card.",
 		"  /run - open the real AgentRun command surface; /runs and /tasks keep the local TUI card.",
+		"  /goal - show Codex-style persisted goal status; /goal <description> creates one in a bridged session.",
 		"  /orchestrate <task> --dry-run - analyze complexity, council need, and team plan in the JS backend.",
 		"  /team templates - list Agent Team templates; /team spawn <name> <type> starts one when Hive Nation is online.",
 		"",
@@ -1044,7 +1063,7 @@ func (m *MainModel) commandDeckText() string {
 		"  /search-provider <mode> - in a bridged session, persist auto/native/ddg/searxng/tavily/exa/you/jina/bing/mojeek/linkup/custom.",
 		"",
 		"Session controls",
-		"  /status - status snapshot. /doctor - backend diagnostic UI when the bridge is connected. /repl - return to the classic REPL.",
+		"  /status - status snapshot. /goal - goal status. /doctor - backend diagnostic UI when the bridge is connected. /repl - return to the classic REPL.",
 		"  Ctrl+T toggles the side deck. Ctrl+O toggles transcript. Ctrl+X toggles local shell mode.",
 	}, "\n")
 }
@@ -1108,6 +1127,25 @@ func (m *MainModel) runsSnapshot() string {
 		"  show live run tree in this rail, dependency-aware worker retries, and verification handoff per child run.",
 	}
 	return strings.Join(lines, "\n")
+}
+
+func (m *MainModel) goalSnapshot() string {
+	return strings.Join([]string{
+		"Persisted goals",
+		"",
+		"Codex-style goal tracking is available through the DuckHive backend.",
+		fmt.Sprintf("Bridge: %s", boolLabel(m.state.BridgeConnected, "connected", "local only")),
+		"",
+		"Common commands:",
+		"  /goal <description>          create and attach a goal",
+		"  /goal list                   list persisted goals",
+		"  /goal status [goal-id]       show current or selected goal",
+		"  /goal step add <description> add a step to the active goal",
+		"  /goal pause|resume|complete  move the goal lifecycle",
+		"",
+		"Use bare /goal in a bridged TUI session to open the live backend status.",
+		"Use /repl if you need the classic REPL goal workflow while the bridge is offline.",
+	}, "\n")
 }
 
 func (m *MainModel) councilSnapshot() string {
@@ -1526,7 +1564,7 @@ func (m *MainModel) updateComposer() {
 		m.input.SetPlaceholder("MiniMax/media/search/vision task. Try /search-provider")
 	default:
 		m.input.SetPrompt("> ")
-		m.input.SetPlaceholder("Ask DuckHive, /help, /agents, /council, /status")
+		m.input.SetPlaceholder("Ask DuckHive, /help, /goal, /agents, /council, /status")
 	}
 }
 
@@ -1687,6 +1725,7 @@ func (m *MainModel) renderCommandRail() string {
 		lipgloss.Left,
 		tui.CardMuted.Render("/help deck"),
 		tui.CardMuted.Render("/status snapshot"),
+		tui.CardMuted.Render("/goal status"),
 		tui.CardMuted.Render("/runs agent runs"),
 		tui.CardMuted.Render("/provider models"),
 		tui.CardMuted.Render("/search-provider search"),
@@ -1699,7 +1738,7 @@ func (m *MainModel) renderCommandRail() string {
 func (m *MainModel) renderFooter() string {
 	status := m.state.StatusMsg
 	if status == "" {
-		status = "ready · /help deck · /runs agent runs · /agents super agent · /repl classic"
+		status = "ready · /help deck · /goal status · /runs agent runs · /agents super agent · /repl classic"
 	}
 
 	help := formatHelp(tui.ActiveBindings(m.keys, m.currentContext()))

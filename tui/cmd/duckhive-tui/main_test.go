@@ -118,6 +118,8 @@ func TestParseLocalTUICommand(t *testing.T) {
 		{name: "teams opens super agent", input: "/teams", wantCommand: localTUICommandSuperAgent, wantHandled: true},
 		{name: "runs opens agent run surface", input: "/runs", wantCommand: localTUICommandRuns, wantHandled: true},
 		{name: "tasks opens agent run surface", input: "/tasks", wantCommand: localTUICommandRuns, wantHandled: true},
+		{name: "goal opens goal surface", input: "/goal", wantCommand: localTUICommandGoal, wantHandled: true},
+		{name: "goals opens goal surface", input: "/goals", wantCommand: localTUICommandGoal, wantHandled: true},
 		{name: "council opens council", input: "/council", wantCommand: localTUICommandCouncil, wantHandled: true},
 		{name: "providers alias opens provider card", input: "/providers", wantCommand: localTUICommandProvider, wantHandled: true},
 		{name: "models alias opens provider card", input: "/models", wantCommand: localTUICommandProvider, wantHandled: true},
@@ -149,6 +151,7 @@ func TestHandleLocalTUICommandUsesBackendForProviderCommands(t *testing.T) {
 		{name: "model manager", input: "/model", wantStatus: "opening model manager"},
 		{name: "search manager", input: "/search-provider", wantStatus: "opening search-provider manager"},
 		{name: "run manager", input: "/run", wantStatus: "opening agent runs"},
+		{name: "goal manager", input: "/goal", wantStatus: "opening goal status"},
 		{name: "council manager", input: "/council", wantStatus: "opening council"},
 		{name: "agents manager", input: "/agents", wantStatus: "opening agents"},
 		{name: "doctor manager", input: "/doctor", wantStatus: "opening doctor"},
@@ -194,6 +197,7 @@ func TestHandleLocalTUICommandFallsBackLocallyWhenBridgeIsUnavailable(t *testing
 	}{
 		{name: "provider fallback", input: "/provider", wantStatus: "bridge unavailable; showing local provider card", wantSubstring: "Model providers"},
 		{name: "run fallback", input: "/run", wantStatus: "bridge unavailable; showing local run card", wantSubstring: "AgentRun control plane"},
+		{name: "goal fallback", input: "/goal", wantStatus: "bridge unavailable; showing local goal card", wantSubstring: "Persisted goals"},
 		{name: "agents fallback", input: "/agents", wantStatus: "bridge unavailable; showing local agents card", wantSubstring: "Super Agent"},
 		{name: "council fallback", input: "/council", wantStatus: "bridge unavailable; showing local council card", wantSubstring: "AI Council"},
 		{name: "search fallback", input: "/search-provider", wantStatus: "bridge unavailable; showing local search card", wantSubstring: "Search providers"},
@@ -280,12 +284,34 @@ func TestLocalCommandContentSurfacesCoreAgentFeatures(t *testing.T) {
 		"Super Agent",
 		"Agent Teams",
 		"AgentRun",
+		"Codex-style persisted goal status",
+		"/goal",
 		"AI Council",
 		"Search providers",
 		"/search-provider",
 	} {
 		if !strings.Contains(content, want) {
 			t.Fatalf("local command content missing %q:\n%s", want, content)
+		}
+	}
+}
+
+func TestGoalSnapshotSurfacesCodexGoalWorkflow(t *testing.T) {
+	m := &MainModel{
+		state: model.NewAppState(),
+	}
+	m.state.BridgeConnected = true
+
+	content := m.localCommandContent(localTUICommandGoal)
+	for _, want := range []string{
+		"Persisted goals",
+		"Codex-style goal tracking",
+		"/goal <description>",
+		"/goal step add",
+		"Bridge: connected",
+	} {
+		if !strings.Contains(content, want) {
+			t.Fatalf("goal snapshot missing %q:\n%s", want, content)
 		}
 	}
 }

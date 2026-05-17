@@ -53,6 +53,7 @@ Current TUI foundations:
 - Welcome screen that highlights imported feature pillars
 - Agent, Shell, Council, and Media composer modes
 - Kimi-style `Ctrl-X` shell toggle inside the TUI
+- Codex-style `/goal` status surfaced in the command deck, rail, and bridge-backed command path
 - Session rail for bridge state, checkpoints, context files, and imported capability status
 - Transcript rail toggle and tracked TUI backlog files
 - Quieter terminal-first styling with inspector/transcript rails kept opt-in
