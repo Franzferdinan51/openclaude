@@ -89,7 +89,7 @@ cd DuckHive && bun install && bun run build
 ./bin/duckhive
 ```
 
-Interactive `duckhive` follows the OpenClaude-style classic REPL as the safe default on Windows. The launcher disables early key capture on Windows and the renderer uses OpenClaude-compatible readable stdin by default, so the prompt owns keyboard input instead of freezing behind the startup UI. The renderer also leaves Windows `process.stdin` as the default input owner instead of reopening `CONIN$`; set `DUCKHIVE_USE_CONIN_STDIN=1` only for stdin diagnostics. The launcher-provided DuckHive provider preference is now honored by the runtime route resolver, so the default MiniMax path does not fall back into Anthropic setup screens before the chat prompt mounts. Explicit `--dangerously-skip-permissions` / `--yolo` startup is treated as user consent and no longer blocks the REPL behind an extra pre-prompt selector. Startup/status UI copy now avoids mojibake-prone separators and upstream `claude`/`openclaude` command guidance in terminal-sensitive surfaces, so Windows logs and PowerShell renders stay DuckHive-branded and readable. Run `duckhive tui` to launch the Go TUI explicitly, set `DUCKHIVE_TUI_WINDOWS_EXPERIMENT=1` only if you want to test automatic Windows TUI handoff, set `DUCKHIVE_USE_DATA_STDIN=1` only to debug the fallback data-event input path, or set `DUCKHIVE_WINDOWS_EARLY_INPUT_EXPERIMENT=1` only if you intentionally want the older early-input buffering path. Auxiliary Council startup is also opt-in via `DUCKHIVE_AUTO_START_COUNCIL=1`, so default CLI startup does not wait on a daemon before the REPL is interactive.
+Interactive `duckhive` follows the OpenClaude-style classic REPL as the safe default on Windows. The launcher disables early key capture on Windows and the renderer now uses the PowerShell-safe data-event stdin path by default, so the prompt owns keyboard input instead of freezing behind the startup UI when launched through npm's `duckhive.ps1` shim. The renderer also leaves Windows `process.stdin` as the default input owner instead of reopening `CONIN$`; set `DUCKHIVE_USE_CONIN_STDIN=1` only for stdin diagnostics. The launcher-provided DuckHive provider preference is now honored by the runtime route resolver, so the default MiniMax path does not fall back into Anthropic setup screens before the chat prompt mounts. Explicit `--dangerously-skip-permissions` / `--yolo` startup is treated as user consent and no longer blocks the REPL behind an extra pre-prompt selector. Startup/status UI copy now avoids mojibake-prone separators and upstream `claude`/`openclaude` command guidance in terminal-sensitive surfaces, so Windows logs and PowerShell renders stay DuckHive-branded and readable. Run `duckhive tui` to launch the Go TUI explicitly, set `DUCKHIVE_TUI_WINDOWS_EXPERIMENT=1` only if you want to test automatic Windows TUI handoff, set `DUCKHIVE_USE_READABLE_STDIN=1` only when comparing against the older readable-event input path, or set `DUCKHIVE_WINDOWS_EARLY_INPUT_EXPERIMENT=1` only if you intentionally want the older early-input buffering path. Auxiliary Council startup is also opt-in via `DUCKHIVE_AUTO_START_COUNCIL=1`, so default CLI startup does not wait on a daemon before the REPL is interactive.
 
 **After setup:**
 ```bash
@@ -135,12 +135,13 @@ without starting the chat UI. Add `--strict-interactive` when you want the
 doctor to fail unless stdin and stdout are attached to a real terminal. From a
 source checkout, `bun run doctor:runtime:strict` runs that same strict terminal
 readiness check, and `bun run doctor:runtime:strict:json` emits the failing
-strict report as JSON for logs or issue reports. On Windows, DuckHive clears
-inherited fragile stdin overrides such as `DUCKHIVE_USE_DATA_STDIN`,
-`OPENCLAUDE_USE_DATA_STDIN`, readable-stdin opt-outs, and
-`DUCKHIVE_USE_CONIN_STDIN` at startup so the default REPL stays on the
-OpenClaude-compatible readable input path; set `DUCKHIVE_ALLOW_FRAGILE_STDIN=1`
-only when intentionally testing those diagnostic modes.
+strict report as JSON for logs or issue reports. On Windows, `duckhive runtime-doctor`
+should report `PowerShell-safe data stdin is active by default`.
+DuckHive only clears `DUCKHIVE_USE_CONIN_STDIN` at startup unless
+`DUCKHIVE_ALLOW_FRAGILE_STDIN=1` is set, because reopening `CONIN$` is the input
+path most likely to produce a painted-but-dead prompt under PowerShell. Data
+stdin remains the supported Windows default, while `DUCKHIVE_USE_READABLE_STDIN=1`
+is available only as an explicit compatibility override.
 
 ---
 
