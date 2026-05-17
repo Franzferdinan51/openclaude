@@ -279,14 +279,14 @@ export class ConsoleAdapter implements ChannelAdapter {
             '  exit, quit — Disconnect and exit\n' +
             '  clear      — Clear the screen\n' +
             '  status     — Show connection status\n' +
-            '  model <id> — Switch model (stub for future use)\n' +
+            '  model <id> — Forward /model <id> to DuckHive\n' +
             `${RESET}`
           : 'Commands:\n' +
             '  help, ?    — Show this help\n' +
             '  exit, quit — Disconnect and exit\n' +
             '  clear      — Clear the screen\n' +
             '  status     — Show connection status\n' +
-            '  model <id> — Switch model (stub)\n',
+            '  model <id> — Forward /model <id> to DuckHive\n',
       )
       if (this.rl) this.rl.prompt()
       return null // Help was printed — wait for next input.
@@ -306,6 +306,19 @@ export class ConsoleAdapter implements ChannelAdapter {
       this.output.write('\x1b[2J\x1b[H')
       if (this.rl) this.rl.prompt()
       return null
+    }
+
+    if (cmd.startsWith('model ')) {
+      const modelId = input.slice(input.indexOf(' ') + 1).trim()
+      if (!modelId) {
+        this.output.write('Usage: model <id>\n')
+        if (this.rl) this.rl.prompt()
+        return null
+      }
+      return normalizeMessage(`/model ${modelId}`, 'user', {
+        from: this.sourceLabel,
+        color: '#28a745',
+      })
     }
 
     // Unknown command — pass through to the agent.
