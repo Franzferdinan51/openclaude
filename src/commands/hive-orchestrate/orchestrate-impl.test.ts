@@ -172,4 +172,64 @@ describe('/orchestrate command', () => {
     expect(result.value).toContain('Council warranted: YES (vision)')
     expect(executeOptions).toEqual({ councilMode: 'vision' })
   })
+
+  test('rejects unknown team templates instead of silently ignoring them', async () => {
+    let analyzeCalled = false
+    mock.module('../../orchestrator/hybrid/index.js', () => ({
+      createHybridOrchestrator: () => ({
+        analyze: () => {
+          analyzeCalled = true
+          return {
+            analysis: {
+              complexity: 5,
+              category: 'complex',
+              needsCouncil: false,
+            },
+            executionPlan: ['Analyze task'],
+          }
+        },
+        execute: async () => ({
+          status: 'completed',
+          councilTriggered: false,
+          teamSpawned: false,
+          steps: [],
+        }),
+      }),
+    }))
+
+    const { call } = await importFreshOrchestrateModule()
+    const result = await call('Build API --team=quantum', {} as never)
+
+    expect(result.type).toBe('text')
+    expect(result.value).toContain('Unknown team template: quantum')
+    expect(result.value).toContain('research, code, security')
+    expect(analyzeCalled).toBe(false)
+  })
+
+  test('accepts known team templates in dry-run planning', async () => {
+    mock.module('../../orchestrator/hybrid/index.js', () => ({
+      createHybridOrchestrator: () => ({
+        analyze: () => ({
+          analysis: {
+            complexity: 3,
+            category: 'moderate',
+            needsCouncil: false,
+          },
+          executionPlan: ['Analyze task'],
+        }),
+        execute: async () => ({
+          status: 'completed',
+          councilTriggered: false,
+          teamSpawned: false,
+          steps: [],
+        }),
+      }),
+    }))
+
+    const { call } = await importFreshOrchestrateModule()
+    const result = await call('Build API --team=code --dry-run', {} as never)
+
+    expect(result.type).toBe('text')
+    expect(result.value).toContain('Team spawn: YES (code)')
+  })
 })

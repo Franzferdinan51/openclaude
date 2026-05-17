@@ -7,6 +7,16 @@ import type { DeliberationMode, TeamTemplate } from '../../services/hive-bridge/
 import { createHybridOrchestrator } from '../../orchestrator/hybrid/index.js'
 
 const orchestrator = createHybridOrchestrator()
+const TEAM_TEMPLATES: TeamTemplate[] = [
+  'research',
+  'code',
+  'security',
+  'emergency',
+  'planning',
+  'analysis',
+  'devops',
+  'swarm',
+]
 
 function splitCommandArgs(args: string): string[] {
   return args.match(/"[^"]*"|'[^']*'|\S+/g)?.map(arg => arg.replace(/^["']|["']$/g, '')) ?? []
@@ -36,7 +46,8 @@ export const call: LocalCommandCall = async (args: string) => {
 
   const task = positional.join(' ').trim()
   const councilMode = (flags.mode as DeliberationMode) ?? defaultMode
-  const teamTemplate = flags.team as TeamTemplate | undefined
+  const requestedTeam = typeof flags.team === 'string' ? flags.team : undefined
+  const teamTemplate = requestedTeam as TeamTemplate | undefined
   const forceCouncil = flags.council === true
   const dryRun = flags['dry-run'] === true || flags.dry === true
 
@@ -53,6 +64,15 @@ Flags:
   --dry-run           Show plan without executing
 
 Example: /orchestrate Build a REST API --council --team=code`,
+    }
+  }
+
+  if (requestedTeam && !TEAM_TEMPLATES.includes(requestedTeam as TeamTemplate)) {
+    return {
+      type: 'text',
+      value:
+        `Unknown team template: ${requestedTeam}\n` +
+        `Available templates: ${TEAM_TEMPLATES.join(', ')}`,
     }
   }
 
