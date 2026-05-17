@@ -45,6 +45,7 @@
     "src/entrypoints/sdk/coreTypes.generated.ts",
     "tui/bridge.go",
     "tui/cmd/",
+    "tui/duckhive-tui.exe",
     "tui/go.mod",
     "tui/go.sum",
     "tui/model.go",
