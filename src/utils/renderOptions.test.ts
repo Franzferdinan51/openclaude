@@ -26,10 +26,11 @@ describe('terminal stdin override', () => {
     ).toBeUndefined()
   })
 
-  test('skips CONIN$ on Windows by default to preserve PowerShell-safe stdin behavior', () => {
+  test('skips CONIN$ on Windows when stdout is not interactive', () => {
     expect(
       createStdinOverride({
         stdinIsTTY: false,
+        stdoutIsTTY: false,
         platform: 'win32',
         argv: ['node', 'duckhive'],
         env: {},
@@ -40,15 +41,16 @@ describe('terminal stdin override', () => {
     ).toBeUndefined()
   })
 
-  test('opens CONIN$ for explicit Windows stdin diagnostics', () => {
+  test('opens CONIN$ on Windows when stdout is interactive but stdin is detached', () => {
     const opened: string[] = []
     const fakeStream = { isTTY: true } as ReadStream
 
     const stream = createStdinOverride({
       stdinIsTTY: false,
+      stdoutIsTTY: true,
       platform: 'win32',
       argv: ['node', 'duckhive'],
-      env: { DUCKHIVE_USE_CONIN_STDIN: '1' },
+      env: {},
       openDevice: path => {
         opened.push(path)
         return 42
@@ -66,10 +68,26 @@ describe('terminal stdin override', () => {
     expect(stream).toBe(fakeStream)
   })
 
+  test('skips CONIN$ when the Windows fallback is explicitly disabled', () => {
+    expect(
+      createStdinOverride({
+        stdinIsTTY: false,
+        stdoutIsTTY: true,
+        platform: 'win32',
+        argv: ['node', 'duckhive'],
+        env: { DUCKHIVE_DISABLE_CONIN_STDIN: '1' },
+        openDevice: () => {
+          throw new Error('should not open')
+        },
+      }),
+    ).toBeUndefined()
+  })
+
   test('skips override for MCP processes', () => {
     expect(
       createStdinOverride({
         stdinIsTTY: false,
+        stdoutIsTTY: true,
         platform: 'win32',
         argv: ['node', 'duckhive', 'mcp'],
         openDevice: () => {
@@ -85,9 +103,10 @@ describe('terminal stdin override', () => {
 
     const stream = createStdinOverride({
       stdinIsTTY: false,
+      stdoutIsTTY: true,
       platform: 'win32',
       argv: ['node', 'duckhive'],
-      env: { DUCKHIVE_USE_CONIN_STDIN: '1' },
+      env: {},
       openDevice: () => 7,
       createReadStream: () => {
         throw new Error('bad console handle')

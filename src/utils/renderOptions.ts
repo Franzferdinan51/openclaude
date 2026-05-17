@@ -9,6 +9,7 @@ let cachedStdinOverride: ReadStream | undefined | null = null
 
 type StdinOverrideOptions = {
   stdinIsTTY?: boolean
+  stdoutIsTTY?: boolean
   argv?: string[]
   env?: NodeJS.ProcessEnv
   platform?: NodeJS.Platform
@@ -38,6 +39,7 @@ export function createStdinOverride(
   options: StdinOverrideOptions = {},
 ): ReadStream | undefined {
   const stdinIsTTY = options.stdinIsTTY ?? process.stdin.isTTY
+  const stdoutIsTTY = options.stdoutIsTTY ?? process.stdout.isTTY
   const argv = options.argv ?? process.argv
   const env = options.env ?? process.env
   const platform = options.platform ?? process.platform
@@ -61,11 +63,19 @@ export function createStdinOverride(
     return undefined
   }
 
-  // Keep the Windows default on the PowerShell-safe process.stdin path.
-  // Reopening CONIN$ can produce a stream that looks TTY-capable but never
-  // delivers keyboard events through PowerShell/npm launchers, leaving the
-  // REPL painted but frozen.
-  if (platform === 'win32' && !isEnvTruthy(env.DUCKHIVE_USE_CONIN_STDIN)) {
+  // In normal PowerShell/cmd launches process.stdin is already the right
+  // console stream. When shims or parent processes detach stdin while stdout
+  // is still a TTY, Ink can paint the REPL but cannot enter raw input mode.
+  // In that specific case, reopen CONIN$ as the keyboard owner.
+  if (
+    platform === 'win32' &&
+    !stdoutIsTTY &&
+    !isEnvTruthy(env.DUCKHIVE_USE_CONIN_STDIN)
+  ) {
+    return undefined
+  }
+
+  if (platform === 'win32' && isEnvTruthy(env.DUCKHIVE_DISABLE_CONIN_STDIN)) {
     return undefined
   }
 
@@ -94,9 +104,10 @@ export function createStdinOverride(
 /**
  * Gets a ReadStream for the terminal input device when stdin is piped.
  * This allows interactive Ink rendering even when stdin is a pipe.
- * On Windows this intentionally leaves process.stdin alone by default because
- * the PowerShell-safe input path relies on the original console stream.
- * Set DUCKHIVE_USE_CONIN_STDIN=1 only for diagnostics.
+ * On Windows this leaves process.stdin alone when it is already a TTY. If a
+ * PowerShell/npm shim detaches stdin while stdout is still interactive, it
+ * falls back to CONIN$ so the classic REPL can actually receive keystrokes.
+ * Set DUCKHIVE_DISABLE_CONIN_STDIN=1 to opt out for diagnostics.
  * Result is cached for the lifetime of the process.
  */
 function getStdinOverride(): ReadStream | undefined {
