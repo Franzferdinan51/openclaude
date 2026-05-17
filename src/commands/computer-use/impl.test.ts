@@ -360,6 +360,27 @@ describe('call', () => {
     expect(addMcpConfig).not.toHaveBeenCalled()
   })
 
+  test('status reports stale MCP config on non-macOS platforms', async () => {
+    currentPlatform = 'win32'
+    configState = {
+      mcpServers: {
+        'computer-use': {
+          type: 'stdio',
+          command: 'SkyComputerUseClient',
+          args: ['mcp'],
+        },
+      },
+    }
+
+    const result = expectTextResult(await call('status', {} as never))
+
+    expect(result.value).toContain('requires macOS')
+    expect(result.value).toContain('Stale MCP config detected')
+    expect(result.value).toContain('/computer-use disable')
+    expect(result.value).toContain('newest-desktop-control')
+    expect(addMcpConfig).not.toHaveBeenCalled()
+  })
+
   test('disable removes stale MCP config even on non-macOS platforms', async () => {
     currentPlatform = 'win32'
     configState = {

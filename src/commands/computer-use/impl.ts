@@ -431,12 +431,17 @@ export const call: LocalCommandCall = async (
   }
 
   if (!isComputerUseSupportedPlatform()) {
+    const configured = await isInDuckHiveMCPConfig()
+    const staleConfigGuidance = configured
+      ? '\n\nStale MCP config detected: `computer-use` is configured for this project, but native Codex computer-use cannot run on this platform. Run `/computer-use disable` to remove the stale entry, then use `newest-desktop-control` for cross-platform automation.'
+      : ''
     return {
       type: 'text',
       value:
         'DuckHive Computer Use\n' +
         'Native OpenAI Codex computer-use requires macOS because it depends on SkyComputerUseClient.\n' +
-        'On this platform, use `/desktop` for the legacy automation surface or the bundled `newest-desktop-control` MCP gateway for cross-platform desktop, Android, and computer_use_* compatibility tools.',
+        'On this platform, use `/desktop` for the legacy automation surface or the bundled `newest-desktop-control` MCP gateway for cross-platform desktop, Android, and computer_use_* compatibility tools.' +
+        staleConfigGuidance,
     }
   }
 
