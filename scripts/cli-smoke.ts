@@ -5,6 +5,7 @@ type SmokeCase = {
   name: string
   args: string[]
   includes: string[]
+  expectedStatus?: number
 }
 
 const cliPath = resolve(process.cwd(), 'dist', 'cli.mjs')
@@ -38,6 +39,15 @@ const cases: SmokeCase[] = [
       '--strict-interactive',
     ],
   },
+  {
+    name: 'runtime doctor strict interactive failure',
+    args: ['runtime-doctor', '--strict-interactive'],
+    expectedStatus: 1,
+    includes: [
+      '[FAIL] Terminal stdio',
+      'Strict interactive check failed',
+    ],
+  },
 ]
 
 const failures: string[] = []
@@ -54,9 +64,10 @@ for (const smokeCase of cases) {
   const output = `${result.stdout ?? ''}${result.stderr ?? ''}`
   const normalizedOutput = output.replace(/\s+/g, ' ')
 
-  if (result.status !== 0) {
+  const expectedStatus = smokeCase.expectedStatus ?? 0
+  if (result.status !== expectedStatus) {
     failures.push(
-      `${smokeCase.name}: exited ${result.status ?? 'unknown'}\n${output}`,
+      `${smokeCase.name}: exited ${result.status ?? 'unknown'} instead of ${expectedStatus}\n${output}`,
     )
     continue
   }
