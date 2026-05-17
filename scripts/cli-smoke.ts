@@ -60,6 +60,7 @@ const cases: SmokeCase[] = [
     includes: [
       'Usage: duckhive doctor',
       'terminal input is not usable',
+      'duckhive input-test',
       'duckhive runtime-doctor',
     ],
   },
