@@ -23,12 +23,57 @@ export function setRunTestDeps(overrides: Partial<RunDeps> | null): void {
   runTestDeps = overrides
 }
 
-function splitCommandArgs(args: string): string[] {
-  return (
-    args.match(/"[^"]*"|'[^']*'|\S+/g)?.map(arg =>
-      arg.replace(/^["']|["']$/g, ''),
-    ) ?? []
-  )
+function splitCommandArgs(args: string): { args: string[]; error?: string } {
+  const tokens: string[] = []
+  let current = ''
+  let quote: '"' | "'" | null = null
+  let tokenStarted = false
+
+  for (let i = 0; i < args.length; i++) {
+    const ch = args[i]!
+
+    if (quote) {
+      if (ch === quote) {
+        quote = null
+        continue
+      }
+      if (ch === '\\' && i + 1 < args.length) {
+        const next = args[i + 1]!
+        if (next === quote || next === '\\') {
+          current += next
+          i += 1
+          continue
+        }
+      }
+      current += ch
+      continue
+    }
+
+    if (ch === '"' || ch === "'") {
+      quote = ch
+      tokenStarted = true
+      continue
+    }
+
+    if (/\s/.test(ch)) {
+      if (tokenStarted) {
+        tokens.push(current)
+        current = ''
+        tokenStarted = false
+      }
+      continue
+    }
+
+    current += ch
+    tokenStarted = true
+  }
+
+  if (quote) {
+    return { args: tokens, error: 'Unterminated quoted string in /run arguments.' }
+  }
+
+  if (tokenStarted) tokens.push(current)
+  return { args: tokens }
 }
 
 function usage(error?: string): string {
@@ -156,7 +201,9 @@ function resolveStore(): AgentRunStore {
 }
 
 export const call: LocalCommandCall = async (args: string) => {
-  const tokens = splitCommandArgs(args)
+  const parsedArgs = splitCommandArgs(args)
+  if (parsedArgs.error) return { type: 'text', value: usage(parsedArgs.error) }
+  const tokens = parsedArgs.args
   const subcommand = tokens[0]?.toLowerCase()
   const store = resolveStore()
 

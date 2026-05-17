@@ -309,7 +309,7 @@ The same consolidated surface is available outside the REPL as
 commands share the same durable AgentRun store as `/run`, Telegram, WebUI,
 `duckhive ps/logs/attach/...`, and `--bg`.
 
-The terminal `/run` surface validates status filters against the real AgentRun lifecycle and clamps event tails to 200 rows, so mistyped statuses and unbounded tails do not silently hide runs or flood the CLI. Top-level terminal run controls are also wired into the same store for non-REPL use:
+The terminal `/run` surface validates status filters against the real AgentRun lifecycle, clamps event tails to 200 rows, preserves escaped quotes in quoted recovery summaries, and rejects unterminated quoted arguments before mutating run state. That keeps mistyped statuses, malformed recovery text, and unbounded tails from silently hiding runs, corrupting summaries, or flooding the CLI. Top-level terminal run controls are also wired into the same store for non-REPL use:
 
 ```bash
 duckhive ps [status]          # List AgentRuns

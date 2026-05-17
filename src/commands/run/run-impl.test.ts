@@ -153,6 +153,33 @@ describe('/run command', () => {
     expect(recovered.value).toContain('Run marked for recovery: run_1')
   })
 
+  test('preserves escaped quotes in quoted recovery summaries', async () => {
+    const store = makeStore()
+    store.createRun({ title: 'Review auth flow', status: 'failed' })
+    setRunTestDeps({ getAgentRunStore: () => store })
+
+    const result = await call('recover run_1 "Retry \\"provider fallback\\""', {} as never)
+
+    expect(result.type).toBe('text')
+    if (result.type !== 'text') throw new Error('unexpected result type')
+    expect(result.value).toContain('Run marked for recovery: run_1')
+    expect(store.getRun('run_1')?.progress?.summary).toBe('Retry "provider fallback"')
+  })
+
+  test('rejects unterminated quoted arguments before mutating runs', async () => {
+    const store = makeStore()
+    store.createRun({ title: 'Review auth flow', status: 'failed' })
+    setRunTestDeps({ getAgentRunStore: () => store })
+
+    const result = await call('recover run_1 "Retry provider fallback', {} as never)
+
+    expect(result.type).toBe('text')
+    if (result.type !== 'text') throw new Error('unexpected result type')
+    expect(result.value).toContain('Unterminated quoted string in /run arguments.')
+    expect(result.value).toContain('Usage:')
+    expect(store.getRun('run_1')?.progress?.summary).toBeUndefined()
+  })
+
   test('rejects extra arguments for control subcommands before mutating runs', async () => {
     const store = makeStore()
     store.createRun({
