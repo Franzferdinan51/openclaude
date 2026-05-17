@@ -268,6 +268,8 @@ const cases: SmokeCase[] = [
     includes: [
       'Channel Adapters',
       'telegram - not connected',
+      'duckhive channel connect telegram --token <TOKEN>',
+      '/channel connect telegram --token <TOKEN>',
       'console - built in',
     ],
   },

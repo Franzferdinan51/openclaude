@@ -43,6 +43,38 @@ const channelRuntimeAdapters: {
   email: null,
 }
 
+const CHANNEL_USAGE = {
+  status:
+    'Usage: duckhive channel status [channel-type]\n   or: /channel status [channel-type]',
+  connect:
+    'Usage: duckhive channel connect <channel-type> [options]\n   or: /channel connect <channel-type> [options]',
+  connectTelegram:
+    'Usage: duckhive channel connect telegram --token <TOKEN>\n   or: /channel connect telegram --token <TOKEN>',
+  connectWebhook:
+    'Usage: duckhive channel connect webhook\n   or: /channel connect webhook',
+  connectEmail:
+    'Usage: duckhive channel connect email\n   or: /channel connect email',
+  disconnect:
+    'Usage: duckhive channel disconnect <channel-type>\n   or: /channel disconnect <channel-type>',
+  disconnectTelegram:
+    'Usage: duckhive channel disconnect telegram\n   or: /channel disconnect telegram',
+  disconnectWebhook:
+    'Usage: duckhive channel disconnect webhook\n   or: /channel disconnect webhook',
+  disconnectEmail:
+    'Usage: duckhive channel disconnect email\n   or: /channel disconnect email',
+  send:
+    'Usage: duckhive channel send <channel-type> <message>\n   or: /channel send <channel-type> <message>',
+  action:
+    'Usage: duckhive channel <list|status|connect|disconnect|send>\n   or: /channel <list|status|connect|disconnect|send>',
+}
+
+function formatChannelCommands(commands: string[]): string[] {
+  return [
+    `  terminal: ${commands.map(command => `duckhive channel ${command}`).join(' | ')}`,
+    `  REPL:     ${commands.map(command => `/channel ${command}`).join(' | ')}`,
+  ]
+}
+
 function getChannelDeps(): ChannelDeps {
   return {
     connectCall,
@@ -187,7 +219,11 @@ function getTelegramSnapshot(storageData: ReturnType<ReturnType<typeof getSecure
     `  token: ${token ? 'present' : 'missing'}`,
     `  chat:  ${chatId ? String(chatId) : 'not registered yet'}`,
     `  source: ${source}`,
-    `  commands: /channel connect telegram --token <TOKEN> | /channel status telegram | /channel send telegram <MESSAGE>`,
+    ...formatChannelCommands([
+      'connect telegram --token <TOKEN>',
+      'status telegram',
+      'send telegram <MESSAGE>',
+    ]),
   ]
 }
 
@@ -201,7 +237,11 @@ function getWebhookSnapshot(env: NodeJS.ProcessEnv, runtimeConnected = false): s
     `  outbound: ${env.WEBHOOK_OUTBOUND_URL ?? 'missing WEBHOOK_OUTBOUND_URL'}`,
     `  inbound: ${boolLabel(inboundReady, 'ready', 'not ready')} | outbound: ${boolLabel(outboundReady, 'ready', 'not ready')}`,
     `  runtime: ${boolLabel(runtimeConnected, 'connected', 'not connected')}`,
-    `  commands: /channel connect webhook | /channel disconnect webhook | /channel send webhook <MESSAGE>`,
+    ...formatChannelCommands([
+      'connect webhook',
+      'disconnect webhook',
+      'send webhook <MESSAGE>',
+    ]),
   ]
 }
 
@@ -220,7 +260,11 @@ function getEmailSnapshot(env: NodeJS.ProcessEnv, runtimeConnected = false): str
     `  to:   ${env.EMAIL_TO ?? 'missing EMAIL_TO'}`,
     `  inbound: ${boolLabel(inboundReady, 'ready', 'not ready')} | outbound: ${boolLabel(outboundReady, 'ready', 'not ready')}`,
     `  runtime: ${boolLabel(runtimeConnected, 'connected', 'not connected')}`,
-    `  commands: /channel connect email | /channel disconnect email | /channel send email <MESSAGE>`,
+    ...formatChannelCommands([
+      'connect email',
+      'disconnect email',
+      'send email <MESSAGE>',
+    ]),
   ]
 }
 
@@ -268,7 +312,7 @@ function isTextResult(result: LocalCommandResult): result is Extract<LocalComman
 }
 
 function parseTelegramConnectToken(args: string[]): { token?: string; error?: string } {
-  const usage = 'Usage: /channel connect telegram --token <TOKEN>'
+  const usage = CHANNEL_USAGE.connectTelegram
   const rest = args.slice(2)
   if (rest.length === 0) return { error: usage }
 
@@ -328,7 +372,7 @@ export const call: LocalCommandCall = async (args: string) => {
     if (parsedArgs.length > 2) {
       return {
         type: 'text',
-        value: `Usage: /channel status [channel-type]\n\nAvailable: telegram, webhook, email, console`,
+        value: `${CHANNEL_USAGE.status}\n\nAvailable: telegram, webhook, email, console`,
       }
     }
     if (!channelType) {
@@ -364,7 +408,7 @@ export const call: LocalCommandCall = async (args: string) => {
     if (channelType && channelType !== 'telegram') {
       return {
         type: 'text',
-        value: `Usage: /channel status [channel-type]\n\nAvailable: telegram, webhook, email, console`,
+        value: `${CHANNEL_USAGE.status}\n\nAvailable: telegram, webhook, email, console`,
       }
     }
     const result = await connectCall('status', {} as never)
@@ -382,7 +426,7 @@ export const call: LocalCommandCall = async (args: string) => {
       if (parsedArgs.length > 2) {
         return {
           type: 'text',
-          value: 'Usage: /channel connect webhook',
+          value: CHANNEL_USAGE.connectWebhook,
         }
       }
       try {
@@ -403,7 +447,7 @@ export const call: LocalCommandCall = async (args: string) => {
       if (parsedArgs.length > 2) {
         return {
           type: 'text',
-          value: 'Usage: /channel connect email',
+          value: CHANNEL_USAGE.connectEmail,
         }
       }
       try {
@@ -424,14 +468,14 @@ export const call: LocalCommandCall = async (args: string) => {
       return {
         type: 'text',
         value:
-          'Usage: /channel connect <channel-type> [options]\n\nAvailable: telegram (--token <TOKEN>), webhook, email',
+          `${CHANNEL_USAGE.connect}\n\nAvailable: telegram (--token <TOKEN>), webhook, email`,
       }
     }
     const { token, error } = parseTelegramConnectToken(parsedArgs)
     if (!token) {
       return {
         type: 'text',
-        value: error ?? 'Usage: /channel connect telegram --token <TOKEN>',
+        value: error ?? CHANNEL_USAGE.connectTelegram,
       }
     }
     return connectCall(token, {} as never)
@@ -442,7 +486,7 @@ export const call: LocalCommandCall = async (args: string) => {
       if (parsedArgs.length > 2) {
         return {
           type: 'text',
-          value: 'Usage: /channel disconnect webhook',
+          value: CHANNEL_USAGE.disconnectWebhook,
         }
       }
       const disconnected = await disconnectWebhookRuntime()
@@ -457,7 +501,7 @@ export const call: LocalCommandCall = async (args: string) => {
       if (parsedArgs.length > 2) {
         return {
           type: 'text',
-          value: 'Usage: /channel disconnect email',
+          value: CHANNEL_USAGE.disconnectEmail,
         }
       }
       const disconnected = await disconnectEmailRuntime()
@@ -472,13 +516,13 @@ export const call: LocalCommandCall = async (args: string) => {
       return {
         type: 'text',
         value:
-          'Usage: /channel disconnect <channel-type>\n\nAvailable: telegram, webhook, email',
+          `${CHANNEL_USAGE.disconnect}\n\nAvailable: telegram, webhook, email`,
       }
     }
     if (parsedArgs.length > 2) {
       return {
         type: 'text',
-        value: 'Usage: /channel disconnect telegram',
+        value: CHANNEL_USAGE.disconnectTelegram,
       }
     }
     return connectCall('disconnect', {} as never)
@@ -493,7 +537,7 @@ export const call: LocalCommandCall = async (args: string) => {
     ) {
       return {
         type: 'text',
-        value: `Usage: /channel send <channel-type> <message>\n\nAvailable: telegram, webhook, email, console`,
+        value: `${CHANNEL_USAGE.send}\n\nAvailable: telegram, webhook, email, console`,
       }
     }
 
@@ -501,7 +545,7 @@ export const call: LocalCommandCall = async (args: string) => {
     if (!message) {
       return {
         type: 'text',
-        value: `Usage: /channel send ${channelType || '<channel-type>'} <message>`,
+        value: `Usage: duckhive channel send ${channelType || '<channel-type>'} <message>\n   or: /channel send ${channelType || '<channel-type>'} <message>`,
       }
     }
 
@@ -567,7 +611,7 @@ export const call: LocalCommandCall = async (args: string) => {
     type: 'text',
     value:
       `Unknown channel action: ${parsedArgs[0]}\n\n` +
-      'Usage: /channel <list|status|connect|disconnect|send> [channel-type] [message]\n' +
+      `${CHANNEL_USAGE.action} [channel-type] [message]\n` +
       'Available channels: telegram, webhook, email, console',
   }
 }

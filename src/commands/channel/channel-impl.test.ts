@@ -87,6 +87,8 @@ describe('/channel command', () => {
     expect(result.value).toContain('telegram - configured')
     expect(result.value).toContain('chat:  42')
     expect(result.value).toContain('source: storage')
+    expect(result.value).toContain('terminal: duckhive channel connect telegram --token <TOKEN>')
+    expect(result.value).toContain('REPL:     /channel connect telegram --token <TOKEN>')
     expect(result.value).toContain('webhook - config present')
     expect(result.value).toContain('inbound: ready | outbound: ready')
     expect(result.value).toContain('runtime: not connected')
@@ -113,7 +115,8 @@ describe('/channel command', () => {
   test('status rejects trailing positional arguments instead of silently ignoring them', async () => {
     const result = expectTextResult(await call('status telegram extra', {} as never))
 
-    expect(result.value).toContain('Usage: /channel status [channel-type]')
+    expect(result.value).toContain('Usage: duckhive channel status [channel-type]')
+    expect(result.value).toContain('or: /channel status [channel-type]')
     expect(connectCall).not.toHaveBeenCalled()
   })
 
@@ -177,7 +180,8 @@ describe('/channel command', () => {
     const result = expectTextResult(await call('stats telegram', {} as never))
 
     expect(result.value).toContain('Unknown channel action: stats')
-    expect(result.value).toContain('Usage: /channel <list|status|connect|disconnect|send>')
+    expect(result.value).toContain('Usage: duckhive channel <list|status|connect|disconnect|send>')
+    expect(result.value).toContain('or: /channel <list|status|connect|disconnect|send>')
     expect(result.value).toContain('Available channels: telegram, webhook, email, console')
     expect(result.value).not.toContain('Channel Adapters')
     expect(connectCall).not.toHaveBeenCalled()
@@ -269,14 +273,16 @@ describe('/channel command', () => {
   test('connect without a token returns channel-specific usage instead of delegating to /connect', async () => {
     const result = expectTextResult(await call('connect telegram', {} as never))
 
-    expect(result.value).toBe('Usage: /channel connect telegram --token <TOKEN>')
+    expect(result.value).toContain('Usage: duckhive channel connect telegram --token <TOKEN>')
+    expect(result.value).toContain('or: /channel connect telegram --token <TOKEN>')
     expect(connectCall).not.toHaveBeenCalled()
   })
 
   test('connect with a bare --token flag returns usage instead of treating the flag as the token', async () => {
     const result = expectTextResult(await call('connect telegram --token', {} as never))
 
-    expect(result.value).toBe('Usage: /channel connect telegram --token <TOKEN>')
+    expect(result.value).toContain('Usage: duckhive channel connect telegram --token <TOKEN>')
+    expect(result.value).toContain('or: /channel connect telegram --token <TOKEN>')
     expect(connectCall).not.toHaveBeenCalled()
   })
 
@@ -312,7 +318,8 @@ describe('/channel command', () => {
       ),
     )
 
-    expect(result.value).toBe('Usage: /channel connect telegram --token <TOKEN>')
+    expect(result.value).toContain('Usage: duckhive channel connect telegram --token <TOKEN>')
+    expect(result.value).toContain('or: /channel connect telegram --token <TOKEN>')
     expect(connectCall).not.toHaveBeenCalled()
   })
 
@@ -324,14 +331,16 @@ describe('/channel command', () => {
       ),
     )
 
-    expect(result.value).toBe('Usage: /channel connect telegram --token <TOKEN>')
+    expect(result.value).toContain('Usage: duckhive channel connect telegram --token <TOKEN>')
+    expect(result.value).toContain('or: /channel connect telegram --token <TOKEN>')
     expect(connectCall).not.toHaveBeenCalled()
   })
 
   test('connect without a channel type returns the exact supported usage', async () => {
     const result = expectTextResult(await call('connect', {} as never))
 
-    expect(result.value).toContain('Usage: /channel connect <channel-type> [options]')
+    expect(result.value).toContain('Usage: duckhive channel connect <channel-type> [options]')
+    expect(result.value).toContain('or: /channel connect <channel-type> [options]')
     expect(connectCall).not.toHaveBeenCalled()
   })
 
@@ -345,7 +354,8 @@ describe('/channel command', () => {
   test('disconnect without a channel type returns channel-specific usage instead of disconnecting Telegram implicitly', async () => {
     const result = expectTextResult(await call('disconnect', {} as never))
 
-    expect(result.value).toContain('Usage: /channel disconnect <channel-type>')
+    expect(result.value).toContain('Usage: duckhive channel disconnect <channel-type>')
+    expect(result.value).toContain('or: /channel disconnect <channel-type>')
     expect(connectCall).not.toHaveBeenCalled()
   })
 
@@ -366,14 +376,16 @@ describe('/channel command', () => {
   test('disconnect rejects trailing positional arguments instead of silently ignoring them', async () => {
     const result = expectTextResult(await call('disconnect telegram extra', {} as never))
 
-    expect(result.value).toBe('Usage: /channel disconnect telegram')
+    expect(result.value).toContain('Usage: duckhive channel disconnect telegram')
+    expect(result.value).toContain('or: /channel disconnect telegram')
     expect(connectCall).not.toHaveBeenCalled()
   })
 
   test('rejects unsupported channel types', async () => {
     const result = expectTextResult(await call('connect slack token', {} as never))
 
-    expect(result.value).toContain('Usage: /channel connect <channel-type> [options]')
+    expect(result.value).toContain('Usage: duckhive channel connect <channel-type> [options]')
+    expect(result.value).toContain('or: /channel connect <channel-type> [options]')
     expect(connectCall).not.toHaveBeenCalled()
   })
 
