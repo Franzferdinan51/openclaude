@@ -3,6 +3,8 @@ import { z } from 'zod/v4'
 import { buildTool, type ToolDef } from '../../Tool.js'
 import { lazySchema } from '../../utils/lazySchema.js'
 
+const DUCKHIVE_VERSION = 'v0.13.1'
+
 const inputSchema = lazySchema(() =>
   z.strictObject({
     action: z.enum(['render', 'clear', 'model', 'tokens', 'session', 'mode']).describe('Status bar action'),
@@ -34,7 +36,9 @@ const styles = {
   bgRed: (s: string) => `\x1b[41m${s}\x1b[0m`,
 }
 
-function truncate(s: string, n: number) { return s.length > n ? s.slice(0, n - 1) + '…' : s }
+function truncate(s: string, n: number) {
+  return s.length > n ? s.slice(0, Math.max(0, n - 3)) + '...' : s
+}
 
 function renderBar(items: Array<{label: string; value: string; color: string}>, width = 80) {
   const parts: string[] = []
@@ -43,16 +47,15 @@ function renderBar(items: Array<{label: string; value: string; color: string}>, 
   }
   const line = parts.join('')
   if (line.length > width) {
-    // Truncate from the right
-    return line.slice(0, width - 1) + '…'
+    return line.slice(0, Math.max(0, width - 3)) + '...'
   }
   return line
 }
 
 export const StatusBarTool = buildTool({
   name: 'statusbar',
-  async description() { return 'Bubble Tea style status bar — renders colored session info (model, tokens, mode, cost) in REPL footer. Lip Gloss inspired ANSI styling.' },
-  async prompt() { return 'Bubble Tea style status bar for REPL — shows model name, token count, mode indicator, session cost. Use /statusbar render to display the current status bar.' },
+  async description() { return 'Bubble Tea style status bar - renders colored session info (model, tokens, mode, cost) in REPL footer. Lip Gloss inspired ANSI styling.' },
+  async prompt() { return 'Bubble Tea style status bar for REPL - shows model name, token count, mode indicator, session cost. Use /statusbar render to display the current status bar.' },
   get inputSchema(): InputSchema { return inputSchema() },
   get outputSchema() {
     return z.object({
@@ -81,7 +84,7 @@ export const StatusBarTool = buildTool({
         if (message) items.push({ label: 'msg', value: truncate(message, 30), color: styles.white })
 
         const bar = renderBar(items)
-        const separator = styles.dim('─'.repeat(Math.min(bar.length, 80)))
+        const separator = styles.dim('-'.repeat(Math.min(bar.length, 80)))
         return {
           data: {
             success: true,
@@ -91,11 +94,11 @@ export const StatusBarTool = buildTool({
         }
       }
       case 'model':
-        return { data: { success: true, action: 'model', output: model ? styles.green(`● ${model}`) : styles.red('○ no model') } }
+        return { data: { success: true, action: 'model', output: model ? styles.green(`* ${model}`) : styles.red('o no model') } }
       case 'tokens':
         return { data: { success: true, action: 'tokens', output: tokens !== undefined ? styles.blue(`${tokens.toLocaleString()} tok`) : '0 tok' } }
       case 'session':
-        return { data: { success: true, action: 'session', output: styles.cyan('DuckHive v0.8.0') } }
+        return { data: { success: true, action: 'session', output: styles.cyan(`DuckHive ${DUCKHIVE_VERSION}`) } }
       case 'mode':
         return { data: { success: true, action: 'mode', output: mode ? styles.yellow(`[${mode.toUpperCase()}]`) : '[CHAT]' } }
       case 'clear':
