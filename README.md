@@ -1199,6 +1199,8 @@ bun run doctor:runtime
 cd tui && go test ./...
 ```
 
+`bun run doctor:runtime` reports the terminal TUI launch path too. On Windows without Go or `tui\duckhive-tui.exe`, the doctor and `duckhive tui` both point at the missing Go prerequisite while leaving the classic REPL as the safe default.
+
 Recent verification snapshot:
 
 - `bun test`: `2415 pass`, `0 fail`

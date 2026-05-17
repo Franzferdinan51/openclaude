@@ -119,6 +119,45 @@ function checkBuildArtifacts(): CheckResult {
   return pass('Build artifacts', distCli)
 }
 
+function checkTuiLaunchPath(): CheckResult {
+  const isWindows = process.platform === 'win32'
+  const binary = resolve(
+    process.cwd(),
+    'tui',
+    isWindows ? 'duckhive-tui.exe' : 'duckhive-tui',
+  )
+  if (existsSync(binary)) {
+    return pass('Terminal TUI', `Ready: ${binary}`)
+  }
+
+  const source = resolve(process.cwd(), 'tui', 'cmd', 'duckhive-tui', 'main.go')
+  if (!existsSync(source)) {
+    return fail(
+      'Terminal TUI',
+      `Missing Bubble Tea source at ${source}. Reinstall DuckHive or restore the tui directory.`,
+    )
+  }
+
+  const goVersion = spawnSync('go', ['version'], {
+    cwd: process.cwd(),
+    encoding: 'utf8',
+    shell: true,
+  })
+  if (goVersion.status === 0) {
+    return pass(
+      'Terminal TUI',
+      `Binary missing, but Go is available for on-demand build: ${(goVersion.stdout || '').trim()}`,
+    )
+  }
+
+  return pass(
+    'Terminal TUI',
+    isWindows
+      ? 'Binary missing and Go is not installed. `duckhive tui` will explain this and the classic REPL remains the Windows-safe default.'
+      : 'Binary missing and Go is not installed. Run `scripts/install.sh` after installing Go, or use the classic REPL.',
+  )
+}
+
 function isLocalBaseUrl(baseUrl: string): boolean {
   return isProviderLocalUrl(baseUrl)
 }
@@ -696,6 +735,7 @@ async function main(): Promise<void> {
   results.push(checkNodeVersion())
   results.push(checkBunRuntime())
   results.push(checkBuildArtifacts())
+  results.push(checkTuiLaunchPath())
   results.push(...checkOpenAIEnv())
   results.push(await checkBaseUrlReachability())
   results.push(await checkProviderGenerationReadiness())
