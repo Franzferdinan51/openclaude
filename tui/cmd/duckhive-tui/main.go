@@ -87,6 +87,7 @@ type MainModel struct {
 	shellRunning  bool
 	editorPath    string
 	editorCleanup func() error
+	inputUndo     []string
 	handoff       *uiHandoff
 }
 
@@ -228,7 +229,9 @@ func (m *MainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, cmd
 		}
 
+		previousInput := m.input.Value()
 		_, cmd := m.input.Update(msg)
+		m.recordInputUndoIfChanged(previousInput)
 		return m, cmd
 
 	case model.InMsg:
@@ -535,9 +538,11 @@ func (m *MainModel) handleOutbound(msg model.OutMsg) (tea.Model, tea.Cmd) {
 		return m, m.submitInput()
 
 	case model.MsgHistoryUp:
+		m.pushInputUndoSnapshot(m.input.Value())
 		m.input.HistoryPrev()
 
 	case model.MsgHistoryDown:
+		m.pushInputUndoSnapshot(m.input.Value())
 		m.input.HistoryNext()
 
 	case model.MsgInterrupt:
@@ -589,6 +594,7 @@ func (m *MainModel) handleOutbound(msg model.OutMsg) (tea.Model, tea.Cmd) {
 		m.msgList.ScrollDown(maxInt(4, m.msgListHeight()/2))
 
 	case model.MsgCancelInput:
+		m.pushInputUndoSnapshot(m.input.Value())
 		m.input.Reset()
 
 	case model.MsgConfirmYes, model.MsgConfirmNo:
@@ -645,7 +651,11 @@ func (m *MainModel) handleOutbound(msg model.OutMsg) (tea.Model, tea.Cmd) {
 		return m, m.openExternalEditor()
 
 	case model.MsgUndo:
-		m.state.StatusMsg = "undo is not wired yet in the Go TUI"
+		if m.applyInputUndo() {
+			m.state.StatusMsg = "input restored"
+		} else {
+			m.state.StatusMsg = "nothing to undo"
+		}
 	}
 
 	return m, nil
@@ -1174,8 +1184,37 @@ func (m *MainModel) handleExternalEditorFinished(msg externalEditorFinishedMsg) 
 		return
 	}
 
+	m.pushInputUndoSnapshot(m.input.Value())
 	m.input.SetValue(string(content))
 	m.state.StatusMsg = "external editor applied"
+}
+
+func (m *MainModel) recordInputUndoIfChanged(previous string) {
+	current := m.input.Value()
+	if current == previous {
+		return
+	}
+	m.pushInputUndoSnapshot(previous)
+}
+
+func (m *MainModel) pushInputUndoSnapshot(previous string) {
+	if len(m.inputUndo) > 0 && m.inputUndo[len(m.inputUndo)-1] == previous {
+		return
+	}
+	m.inputUndo = append(m.inputUndo, previous)
+	if len(m.inputUndo) > 100 {
+		m.inputUndo = append([]string(nil), m.inputUndo[len(m.inputUndo)-100:]...)
+	}
+}
+
+func (m *MainModel) applyInputUndo() bool {
+	if len(m.inputUndo) == 0 {
+		return false
+	}
+	previous := m.inputUndo[len(m.inputUndo)-1]
+	m.inputUndo = m.inputUndo[:len(m.inputUndo)-1]
+	m.input.SetValue(previous)
+	return true
 }
 
 func prepareExternalEditorLaunch(goos, initialContent string) (*exec.Cmd, string, func() error, error) {

@@ -349,6 +349,61 @@ func TestExternalEditorFailureDoesNotOverwriteInput(t *testing.T) {
 	}
 }
 
+func TestUndoRestoresPreviousTypedInput(t *testing.T) {
+	m := &MainModel{
+		state:      model.NewAppState(),
+		msgList:    components.NewMessageList(80, 20),
+		input:      components.NewInputArea(80, 3),
+		transcript: screens.NewTranscriptPanel(),
+	}
+	m.input.SetValue("hello")
+	m.pushInputUndoSnapshot("")
+
+	_, _ = m.handleOutbound(model.MsgUndo{})
+
+	if got := m.input.Value(); got != "" {
+		t.Fatalf("input value = %q", got)
+	}
+	if m.state.StatusMsg != "input restored" {
+		t.Fatalf("StatusMsg = %q", m.state.StatusMsg)
+	}
+}
+
+func TestUndoRestoresCanceledComposerInput(t *testing.T) {
+	m := &MainModel{
+		state:      model.NewAppState(),
+		msgList:    components.NewMessageList(80, 20),
+		input:      components.NewInputArea(80, 3),
+		transcript: screens.NewTranscriptPanel(),
+	}
+	m.input.SetValue("draft command")
+
+	_, _ = m.handleOutbound(model.MsgCancelInput{})
+	if got := m.input.Value(); got != "" {
+		t.Fatalf("input after cancel = %q", got)
+	}
+
+	_, _ = m.handleOutbound(model.MsgUndo{})
+	if got := m.input.Value(); got != "draft command" {
+		t.Fatalf("input after undo = %q", got)
+	}
+}
+
+func TestUndoReportsEmptyStack(t *testing.T) {
+	m := &MainModel{
+		state:      model.NewAppState(),
+		msgList:    components.NewMessageList(80, 20),
+		input:      components.NewInputArea(80, 3),
+		transcript: screens.NewTranscriptPanel(),
+	}
+
+	_, _ = m.handleOutbound(model.MsgUndo{})
+
+	if m.state.StatusMsg != "nothing to undo" {
+		t.Fatalf("StatusMsg = %q", m.state.StatusMsg)
+	}
+}
+
 func TestRenderHeaderShowsElapsedSessionClock(t *testing.T) {
 	m := &MainModel{
 		state: model.NewAppState(),
