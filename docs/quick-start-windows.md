@@ -152,9 +152,10 @@ This checks the Windows stdin mode, TUI fallback, provider routing, ClawHub
 skill hub, computer-use fallback, Telegram connector config, and harness command
 registry without starting the chat UI.
 
-By default, Windows startup stays on the classic OpenClaude-style REPL and
-DuckHive applies the safe stdin settings before the UI loads. The renderer
-uses the same readable stdin path as OpenClaude by default. The Go TUI is
+By default, Windows startup stays on the classic REPL and DuckHive applies the
+safe stdin settings before the UI loads. The renderer uses DuckHive's
+PowerShell-safe data-event stdin path by default instead of the older readable
+event path from OpenClaude. The Go TUI is
 available with `duckhive tui`, but automatic Windows TUI handoff remains opt-in
 with `DUCKHIVE_TUI_WINDOWS_EXPERIMENT=1`.
 
@@ -165,15 +166,16 @@ sure the Windows-safe stdin defaults are active before launching:
 
 ```powershell
 $env:DUCKHIVE_DISABLE_EARLY_INPUT='1'
-Remove-Item Env:\DUCKHIVE_USE_DATA_STDIN -ErrorAction SilentlyContinue
-Remove-Item Env:\OPENCLAUDE_USE_DATA_STDIN -ErrorAction SilentlyContinue
+$env:DUCKHIVE_USE_DATA_STDIN='1'
+Remove-Item Env:\DUCKHIVE_USE_READABLE_STDIN -ErrorAction SilentlyContinue
+Remove-Item Env:\OPENCLAUDE_USE_READABLE_STDIN -ErrorAction SilentlyContinue
 Remove-Item Env:\DUCKHIVE_USE_CONIN_STDIN -ErrorAction SilentlyContinue
 duckhive --dangerously-skip-permissions
 ```
 
-This keeps startup from touching `stdin` before Ink owns raw mode and lets Ink
-use the default OpenClaude-compatible readable input path. Remove
-`DUCKHIVE_DISABLE_EARLY_INPUT` after confirming your terminal works normally.
+This keeps startup from touching `stdin` before Ink owns raw mode and forces the
+same data-event input path that the Windows launcher uses by default. Remove
+the temporary env overrides after confirming your terminal works normally.
 
 ## 6. If Your Provider Fails
 
