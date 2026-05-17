@@ -6,7 +6,7 @@ test('Windows CLI defaults to safe REPL stdin ownership', () => {
   applyDefaultCliEnvironment(env, { platform: 'win32' })
 
   expect(env.DUCKHIVE_DISABLE_EARLY_INPUT).toBe('1')
-  expect(env.DUCKHIVE_USE_DATA_STDIN).toBe('1')
+  expect(env.DUCKHIVE_USE_DATA_STDIN).toBeUndefined()
 })
 
 test('Windows early-input experiment leaves stdin env untouched', () => {
