@@ -274,7 +274,16 @@ DuckHive's CLI surface for that same lifecycle is the consolidated `/run` comman
 /run recover <id> [summary]
 ```
 
-The terminal `/run` surface validates status filters against the real AgentRun lifecycle and clamps event tails to 200 rows, so mistyped statuses and unbounded tails do not silently hide runs or flood the CLI.
+The terminal `/run` surface validates status filters against the real AgentRun lifecycle and clamps event tails to 200 rows, so mistyped statuses and unbounded tails do not silently hide runs or flood the CLI. Top-level terminal run controls are also wired into the same store for non-REPL use:
+
+```bash
+duckhive ps [status]          # List AgentRuns
+duckhive logs <id> [limit]    # Show recent AgentRun events
+duckhive attach <id>          # Inspect an AgentRun and show attach guidance
+duckhive kill <id>            # Cancel an AgentRun
+```
+
+The old upstream `--bg`/`--background` spawning path no longer silently no-ops in DuckHive. Until open-build process spawning is implemented, it exits with explicit guidance and points users at `ps`, `logs`, `attach`, and `kill` for existing AgentRuns.
 
 Long Telegram responses are chunked, Markdown delivery falls back to plain text, `/approve` uses the same AgentRun approval path as the CLI/WebUI and can acknowledge one pending approval ID without clearing the rest, and `bun run doctor:runtime` reports the Agent Harness, Telegram, and computer-use readiness state.
 

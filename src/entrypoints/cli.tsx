@@ -308,10 +308,9 @@ async function main(): Promise<void> {
     return;
   }
 
-  // Fast-path for `claude ps|logs|attach|kill` and `--bg`/`--background`.
-  // Session management against the ~/.claude/sessions/ registry. Flag
-  // literals are inlined so bg.js only loads when actually dispatching.
-  if (feature('BG_SESSIONS') && (args[0] === 'ps' || args[0] === 'logs' || args[0] === 'attach' || args[0] === 'kill' || args.includes('--bg') || args.includes('--background'))) {
+  // Fast-path for DuckHive AgentRun inspection/control.
+  // These commands share the /run, Telegram, WebUI, and harness control plane.
+  if (args[0] === 'ps' || args[0] === 'logs' || args[0] === 'attach' || args[0] === 'kill' || args.includes('--bg') || args.includes('--background')) {
     profileCheckpoint('cli_bg_path');
     const {
       enableConfigs
@@ -323,13 +322,13 @@ async function main(): Promise<void> {
         await bg.psHandler(args.slice(1));
         break;
       case 'logs':
-        await bg.logsHandler(args[1]);
+        await bg.logsHandler(args.slice(1));
         break;
       case 'attach':
-        await bg.attachHandler(args[1]);
+        await bg.attachHandler(args.slice(1));
         break;
       case 'kill':
-        await bg.killHandler(args[1]);
+        await bg.killHandler(args.slice(1));
         break;
       default:
         await bg.handleBgFlag(args);

@@ -1,16 +1,240 @@
+import {
+  AGENT_RUN_STATUSES,
+  getAgentRunStore,
+  type AgentRun,
+  type AgentRunStatus,
+  type AgentRunStore,
+} from '../agent-runs/index.js'
 
-const _stub: any = new Proxy(() => ({}), { 
-  get: (target, prop) => {
-    if (prop === 'then') return undefined;
-    if (typeof prop === 'symbol' || prop === 'toString' || prop === 'valueOf') return target[prop];
-    return _stub;
-  },
-  apply: () => ({})
-});
-export default _stub;
-export const __stub = true;
-export const psHandler: any = _stub;
-export const logsHandler: any = _stub;
-export const attachHandler: any = _stub;
-export const killHandler: any = _stub;
-export const handleBgFlag: any = _stub;
+type BgDeps = {
+  getAgentRunStore: typeof getAgentRunStore
+  stdout: Pick<NodeJS.WriteStream, 'write'>
+  stderr: Pick<NodeJS.WriteStream, 'write'>
+}
+
+let testDeps: Partial<BgDeps> | null = null
+
+function deps(): BgDeps {
+  return {
+    getAgentRunStore,
+    stdout: process.stdout,
+    stderr: process.stderr,
+    ...testDeps,
+  }
+}
+
+export function setBgTestDeps(overrides: Partial<BgDeps> | null): void {
+  testDeps = overrides
+}
+
+function writeLine(stream: Pick<NodeJS.WriteStream, 'write'>, text: string): void {
+  stream.write(`${text}\n`)
+}
+
+function usage(error?: string): string {
+  const lines = [
+    'DuckHive background run controls',
+    '',
+    'Usage:',
+    '  duckhive ps [status]',
+    '  duckhive logs <run-id> [limit]',
+    '  duckhive attach <run-id>',
+    '  duckhive kill <run-id>',
+    '',
+    'These commands use the shared AgentRun store also used by /run, Telegram, WebUI, and the harness API.',
+    'Background spawning with --bg is not available in this open build yet.',
+  ]
+  return error ? `${error}\n\n${lines.join('\n')}` : lines.join('\n')
+}
+
+function parseStatus(status?: string): { status?: AgentRunStatus; error?: string } {
+  if (!status) return {}
+  if ((AGENT_RUN_STATUSES as readonly string[]).includes(status)) {
+    return { status: status as AgentRunStatus }
+  }
+  return {
+    error: `Invalid run status: ${status}. Expected one of: ${AGENT_RUN_STATUSES.join(', ')}`,
+  }
+}
+
+function parseTailLimit(raw?: string): { limit?: number; error?: string } {
+  if (!raw) return { limit: 20 }
+  const limit = Number(raw)
+  if (!Number.isFinite(limit) || limit < 1) return { error: `Invalid log limit: ${raw}` }
+  return { limit: Math.min(200, Math.floor(limit)) }
+}
+
+function formatDate(timestamp?: number): string {
+  return timestamp ? new Date(timestamp).toLocaleString() : 'n/a'
+}
+
+function formatRunLine(run: AgentRun): string {
+  const agent = run.selectedAgent ? ` agent=${run.selectedAgent}` : ''
+  const model = run.provider || run.model ? ` model=${run.provider ?? 'unknown'}/${run.model ?? 'unknown'}` : ''
+  return `${run.id} [${run.status}] ${run.title}${agent}${model}`
+}
+
+function renderRunList(store: AgentRunStore, status?: AgentRunStatus): string {
+  const runs = store.listRuns(status ? { status } : {})
+  if (runs.length === 0) {
+    return status
+      ? `DuckHive background runs\n\nNo AgentRuns with status: ${status}`
+      : 'DuckHive background runs\n\nNo AgentRuns recorded yet.'
+  }
+  return ['DuckHive background runs', '-'.repeat(40), ...runs.map(formatRunLine)].join('\n')
+}
+
+function renderRunDetail(store: AgentRunStore, runId: string): string {
+  const run = store.getRun(runId)
+  if (!run) return `Run not found: ${runId}`
+  const lines = [
+    `Run: ${run.id}`,
+    '-'.repeat(40),
+    `Title: ${run.title}`,
+    `Status: ${run.status}`,
+    `Harness: ${run.runtimeHarness}`,
+    `Created: ${formatDate(run.createdAt)}`,
+    `Updated: ${formatDate(run.updatedAt)}`,
+  ]
+  if (run.description) lines.push(`Description: ${run.description}`)
+  if (run.selectedAgent) lines.push(`Agent: ${run.selectedAgent}`)
+  if (run.provider || run.model) lines.push(`Model: ${run.provider ?? 'unknown'}/${run.model ?? 'unknown'}`)
+  if (run.progress?.summary) lines.push(`Progress: ${run.progress.summary}`)
+  if (run.permissionState?.pendingApprovalIds?.length) {
+    lines.push(`Pending approvals: ${run.permissionState.pendingApprovalIds.join(', ')}`)
+  }
+  if (run.childRunIds.length) lines.push(`Children: ${run.childRunIds.join(', ')}`)
+  lines.push('', 'Live terminal attach is not implemented yet; use `duckhive logs <run-id>` for the event tail.')
+  return lines.join('\n')
+}
+
+function renderRunLogs(store: AgentRunStore, runId: string, limit: number): string {
+  const run = store.getRun(runId)
+  if (!run) return `Run not found: ${runId}`
+  const events = store.tailEvents(runId, limit)
+  if (events.length === 0) return `Run logs: ${runId}\n\nNo events recorded yet.`
+  const lines = [`Run logs: ${runId}`, '-'.repeat(40)]
+  for (const event of events) {
+    const payload = event.payload ? ` ${JSON.stringify(event.payload)}` : ''
+    lines.push(`${new Date(event.timestamp).toLocaleTimeString()} ${event.type}${payload}`)
+  }
+  return lines.join('\n')
+}
+
+function resolveStore(): AgentRunStore {
+  return deps().getAgentRunStore()
+}
+
+export async function psHandler(args: string[] = []): Promise<void> {
+  const { stdout, stderr } = deps()
+  const [status, extra] = args
+  if (status === '--help' || status === '-h') {
+    writeLine(stdout, usage())
+    return
+  }
+  if (extra) {
+    writeLine(stderr, usage('ps accepts at most one optional status filter.'))
+    process.exitCode = 1
+    return
+  }
+  const parsed = parseStatus(status)
+  if (parsed.error) {
+    writeLine(stderr, usage(parsed.error))
+    process.exitCode = 1
+    return
+  }
+  writeLine(stdout, renderRunList(resolveStore(), parsed.status))
+}
+
+export async function logsHandler(args: string[] = []): Promise<void> {
+  const { stdout, stderr } = deps()
+  const [runId, rawLimit, extra] = args
+  if (runId === '--help' || runId === '-h') {
+    writeLine(stdout, usage())
+    return
+  }
+  if (!runId) {
+    writeLine(stderr, usage('logs requires a run id.'))
+    process.exitCode = 1
+    return
+  }
+  if (extra) {
+    writeLine(stderr, usage('logs accepts a run id and optional limit.'))
+    process.exitCode = 1
+    return
+  }
+  const parsedLimit = parseTailLimit(rawLimit)
+  if (parsedLimit.error) {
+    writeLine(stderr, usage(parsedLimit.error))
+    process.exitCode = 1
+    return
+  }
+  const store = resolveStore()
+  if (!store.getRun(runId)) {
+    writeLine(stderr, `Run not found: ${runId}`)
+    process.exitCode = 1
+    return
+  }
+  writeLine(stdout, renderRunLogs(store, runId, parsedLimit.limit ?? 20))
+}
+
+export async function attachHandler(args: string[] = []): Promise<void> {
+  const { stdout, stderr } = deps()
+  const [runId, extra] = args
+  if (runId === '--help' || runId === '-h') {
+    writeLine(stdout, usage())
+    return
+  }
+  if (!runId) {
+    writeLine(stderr, usage('attach requires a run id.'))
+    process.exitCode = 1
+    return
+  }
+  if (extra) {
+    writeLine(stderr, usage('attach accepts exactly one run id.'))
+    process.exitCode = 1
+    return
+  }
+  const store = resolveStore()
+  if (!store.getRun(runId)) {
+    writeLine(stderr, `Run not found: ${runId}`)
+    process.exitCode = 1
+    return
+  }
+  writeLine(stdout, renderRunDetail(store, runId))
+}
+
+export async function killHandler(args: string[] = []): Promise<void> {
+  const { stdout, stderr } = deps()
+  const [runId, extra] = args
+  if (runId === '--help' || runId === '-h') {
+    writeLine(stdout, usage())
+    return
+  }
+  if (!runId) {
+    writeLine(stderr, usage('kill requires a run id.'))
+    process.exitCode = 1
+    return
+  }
+  if (extra) {
+    writeLine(stderr, usage('kill accepts exactly one run id.'))
+    process.exitCode = 1
+    return
+  }
+  const run = resolveStore().cancelRun(runId)
+  if (!run) {
+    writeLine(stderr, `Run not found: ${runId}`)
+    process.exitCode = 1
+    return
+  }
+  writeLine(stdout, `Run stopped: ${runId}`)
+}
+
+export async function handleBgFlag(_args: string[] = []): Promise<void> {
+  const { stderr } = deps()
+  writeLine(
+    stderr,
+    usage('Background spawning with --bg/--background is not available yet in this open DuckHive build. Existing AgentRuns can still be inspected and stopped with ps/logs/attach/kill.'),
+  )
+  process.exitCode = 1
+}

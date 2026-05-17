@@ -30,6 +30,11 @@ test('skips provider startup for utility commands', () => {
   expect(shouldSkipProviderStartup(['doctor-runtime'])).toBe(true)
   expect(shouldSkipProviderStartup(['mcp', 'list'])).toBe(true)
   expect(shouldSkipProviderStartup(['plugin', 'list'])).toBe(true)
+  expect(shouldSkipProviderStartup(['ps'])).toBe(true)
+  expect(shouldSkipProviderStartup(['logs', 'run_123'])).toBe(true)
+  expect(shouldSkipProviderStartup(['attach', 'run_123'])).toBe(true)
+  expect(shouldSkipProviderStartup(['kill', 'run_123'])).toBe(true)
+  expect(shouldSkipProviderStartup(['--bg', 'Long running task'])).toBe(true)
 })
 
 test('keeps provider startup for interactive and print prompts', () => {

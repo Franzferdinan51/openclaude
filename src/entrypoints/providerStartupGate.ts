@@ -8,6 +8,10 @@ const PROVIDER_FREE_COMMANDS = new Set([
   'mcp',
   'plugin',
   'plugins',
+  'ps',
+  'logs',
+  'attach',
+  'kill',
   'runtime-doctor',
   'setup-token',
   'tui',
@@ -21,6 +25,10 @@ export function isVersionRequest(args: readonly string[]): boolean {
 
 export function shouldSkipProviderStartup(args: string[]): boolean {
   if (args.includes('--help') || args.includes('-h') || isVersionRequest(args)) {
+    return true
+  }
+
+  if (args.includes('--bg') || args.includes('--background')) {
     return true
   }
 

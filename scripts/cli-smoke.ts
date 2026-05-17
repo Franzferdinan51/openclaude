@@ -69,6 +69,20 @@ const cases: SmokeCase[] = [
       'Strict interactive check failed',
     ],
   },
+  {
+    name: 'background run list',
+    args: ['ps'],
+    includes: ['DuckHive background runs'],
+  },
+  {
+    name: 'background spawn guidance',
+    args: ['--bg', 'test prompt'],
+    expectedStatus: 1,
+    includes: [
+      'Background spawning with --bg/--background is not available yet',
+      'ps/logs/attach/kill',
+    ],
+  },
 ]
 
 const failures: string[] = []

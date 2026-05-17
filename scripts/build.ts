@@ -163,16 +163,6 @@ result = await Bun.build({
             'export async function daemonMain() { throw new Error("Daemon mode is unavailable in the open build."); }',
           ],
           [
-            '../cli/bg.js',
-            `
-export async function psHandler() { throw new Error("Background sessions are unavailable in the open build."); }
-export async function logsHandler() { throw new Error("Background sessions are unavailable in the open build."); }
-export async function attachHandler() { throw new Error("Background sessions are unavailable in the open build."); }
-export async function killHandler() { throw new Error("Background sessions are unavailable in the open build."); }
-export async function handleBgFlag() { throw new Error("Background sessions are unavailable in the open build."); }
-`,
-          ],
-          [
             '../cli/handlers/templateJobs.js',
             'export async function templatesMain() { throw new Error("Template jobs are unavailable in the open build."); }',
           ],
@@ -193,7 +183,7 @@ export async function handleBgFlag() { throw new Error("Background sessions are 
         // before the JS plugin phase runs.
 
         build.onResolve(
-          { filter: /^\.\.\/(daemon\/workerRegistry|daemon\/main|cli\/bg|cli\/handlers\/templateJobs|environment-runner\/main|self-hosted-runner\/main)\.js$/ },
+          { filter: /^\.\.\/(daemon\/workerRegistry|daemon\/main|cli\/handlers\/templateJobs|environment-runner\/main|self-hosted-runner\/main)\.js$/ },
           args => {
             if (!internalFeatureStubModules.has(args.path)) return null
             return {
