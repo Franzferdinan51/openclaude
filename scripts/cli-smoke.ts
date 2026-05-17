@@ -56,7 +56,7 @@ const cases: SmokeCase[] = [
     includes: [
       '[PASS] CLI input mode',
       process.platform === 'win32'
-        ? 'PowerShell-safe data stdin is active by default'
+        ? 'OpenClaude-compatible readable stdin is active by default'
         : 'Readable stdin default active',
     ],
   },
@@ -66,7 +66,7 @@ const cases: SmokeCase[] = [
     includes: [
       '[PASS] CLI input mode',
       process.platform === 'win32'
-        ? 'PowerShell-safe data stdin is active by default'
+        ? 'OpenClaude-compatible readable stdin is active by default'
         : 'Readable stdin default active',
     ],
   },

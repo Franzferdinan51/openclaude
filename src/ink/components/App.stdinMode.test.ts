@@ -50,8 +50,8 @@ async function waitForCondition(
 }
 
 describe('determineStdinMode', () => {
-  test('uses data events on Windows by default for PowerShell/npm shim input', () => {
-    expect(determineStdinMode({ env: {}, platform: 'win32' })).toBe('data')
+  test('uses readable events on Windows by default to match OpenClaude input', () => {
+    expect(determineStdinMode({ env: {}, platform: 'win32' })).toBe('readable')
   })
 
   test('keeps readable events on Windows with explicit opt-in', () => {

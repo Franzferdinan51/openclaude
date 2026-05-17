@@ -16,12 +16,14 @@ export function detectCliInputModeWarnings(
   const warnings: CliInputModeWarning[] = []
 
   if (
-    env.DUCKHIVE_USE_READABLE_STDIN === '1' ||
-    env.OPENCLAUDE_USE_READABLE_STDIN === '1'
+    env.DUCKHIVE_USE_DATA_STDIN === '1' ||
+    env.OPENCLAUDE_USE_DATA_STDIN === '1' ||
+    env.DUCKHIVE_USE_READABLE_STDIN === '0' ||
+    env.OPENCLAUDE_USE_READABLE_STDIN === '0'
   ) {
     warnings.push({
-      issue: 'Windows readable stdin override is enabled',
-      fix: 'Remove DUCKHIVE_USE_READABLE_STDIN=1/OPENCLAUDE_USE_READABLE_STDIN=1 to restore DuckHive\'s PowerShell-safe data input path.',
+      issue: 'Windows data stdin override is enabled',
+      fix: 'Remove DUCKHIVE_USE_DATA_STDIN=1/OPENCLAUDE_USE_DATA_STDIN=1 and DUCKHIVE_USE_READABLE_STDIN=0/OPENCLAUDE_USE_READABLE_STDIN=0 to restore DuckHive\'s OpenClaude-compatible readable input path.',
     })
   }
 
