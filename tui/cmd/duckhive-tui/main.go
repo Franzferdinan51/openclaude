@@ -1036,10 +1036,10 @@ func (m *MainModel) commandDeckText() string {
 		"",
 		"Search providers",
 		"  /search-provider - open the real backend search-provider manager when the bridge is connected.",
-		"  /search-provider <mode> - in the classic REPL, persist auto/native/ddg/searxng/tavily/exa/you/jina/bing/mojeek/linkup/custom.",
+		"  /search-provider <mode> - in a bridged session, persist auto/native/ddg/searxng/tavily/exa/you/jina/bing/mojeek/linkup/custom.",
 		"",
 		"Session controls",
-		"  /status - status snapshot. /doctor - backend diagnostic UI in the classic REPL. /repl - return to the classic REPL.",
+		"  /status - status snapshot. /doctor - backend diagnostic UI when the bridge is connected. /repl - return to the classic REPL.",
 		"  Ctrl+T toggles the side deck. Ctrl+O toggles transcript. Ctrl+X toggles local shell mode.",
 	}, "\n")
 }
@@ -1059,7 +1059,7 @@ func (m *MainModel) statusSnapshot() string {
 		fmt.Sprintf("AgentRun control: %s", boolLabel(true, "enabled", "disabled")),
 		fmt.Sprintf("Checkpoints: %d", m.cap.checkpointCount),
 		"",
-		"Use /doctor in the classic REPL for the full backend diagnostic UI.",
+		"Use /doctor when the bridge is connected for the full backend diagnostic UI.",
 	}, "\n")
 }
 
@@ -1114,7 +1114,7 @@ func (m *MainModel) councilSnapshot() string {
 		"Roles include governance, technology, ethics, practical review, skepticism, coding, security, QA, vision, and specialist councilors.",
 		"",
 		"Use /council <question> in a bridged session to start deliberation.",
-		"Use /council --status in the classic REPL for active deliberation state.",
+		"Use /council --status in a bridged session for active deliberation state.",
 	}, "\n")
 }
 
@@ -1131,7 +1131,7 @@ func (m *MainModel) providerSnapshot() string {
 		fmt.Sprintf("Configured keys: %s", configured),
 		"First-class DuckHive presets: MiniMax, LM Studio, ChatGPT/OpenAI.",
 		"",
-		"Use /provider in the classic REPL for the full provider manager.",
+		"Use /provider in a bridged session for the full provider manager.",
 		"Use --provider <provider> for one session or ~/.duckhive/config.json for defaults.",
 	}, "\n")
 }
@@ -1156,7 +1156,7 @@ func (m *MainModel) searchSnapshot() string {
 		"SearXNG:",
 		"  /search-provider searxng --url http://localhost:8080/search",
 		"",
-		"Use /search-provider <mode> in the classic REPL to persist the default.",
+		"Use /search-provider <mode> in a bridged session to persist the default.",
 	}, "\n")
 }
 
