@@ -131,7 +131,8 @@ If the REPL renders but will not accept typing, run `duckhive runtime-doctor`
 from the same terminal. It checks Windows stdin mode, TUI fallback, provider
 routing, ClawHub skill hub, computer-use fallback, Telegram connector config,
 the installed `duckhive` launcher on `PATH`, and harness command registration
-without starting the chat UI.
+without starting the chat UI. Add `--strict-interactive` when you want the
+doctor to fail unless stdin and stdout are attached to a real terminal.
 
 ---
 

@@ -35,6 +35,7 @@ type CheckResult = {
 type CliOptions = {
   json: boolean
   outFile: string | null
+  strictInteractive: boolean
 }
 
 function pass(label: string, detail?: string): CheckResult {
@@ -55,12 +56,18 @@ function parseOptions(argv: string[]): CliOptions {
   const options: CliOptions = {
     json: false,
     outFile: null,
+    strictInteractive: false,
   }
 
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i]
     if (arg === '--json') {
       options.json = true
+      continue
+    }
+
+    if (arg === '--strict-interactive') {
+      options.strictInteractive = true
       continue
     }
 
@@ -230,13 +237,20 @@ export function checkTerminalStdio(io = {
   stdinIsTTY: process.stdin.isTTY === true,
   stdoutIsTTY: process.stdout.isTTY === true,
   stderrIsTTY: process.stderr.isTTY === true,
-}): CheckResult {
+}, options: { strictInteractive?: boolean } = {}): CheckResult {
   const detail = `stdin=${io.stdinIsTTY ? 'TTY' : 'not TTY'}, stdout=${io.stdoutIsTTY ? 'TTY' : 'not TTY'}, stderr=${io.stderrIsTTY ? 'TTY' : 'not TTY'}.`
 
   if (io.stdinIsTTY && io.stdoutIsTTY) {
     return pass(
       'Terminal stdio',
       `${detail} Interactive REPL input/output can attach to this terminal.`,
+    )
+  }
+
+  if (options.strictInteractive) {
+    return fail(
+      'Terminal stdio',
+      `${detail} Strict interactive check failed: the REPL needs stdin and stdout attached to a real terminal.`,
     )
   }
 
@@ -1078,7 +1092,9 @@ export async function runRuntimeDoctor(argv: string[] = process.argv.slice(2)): 
   results.push(checkBuildArtifacts())
   results.push(checkCliLauncherPath())
   results.push(checkCliInputMode())
-  results.push(checkTerminalStdio())
+  results.push(checkTerminalStdio(undefined, {
+    strictInteractive: options.strictInteractive,
+  }))
   results.push(checkTuiLaunchPath())
   results.push(checkComputerUseReadiness())
   results.push(checkHarnessCommandSurfaces())

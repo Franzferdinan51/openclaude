@@ -4350,9 +4350,10 @@ async function run(): Promise<CommanderCommand> {
   }
 
   // Doctor command - check installation health
-  program.command('runtime-doctor').alias('doctor-runtime').description(`Run ${PRODUCT_DISPLAY_NAME} runtime checks without starting the REPL`).option('--json', 'Print JSON results').option('--out <path>', 'Write a redacted diagnostic report to a file').action(async (options: {
+  program.command('runtime-doctor').alias('doctor-runtime').description(`Run ${PRODUCT_DISPLAY_NAME} runtime checks without starting the REPL`).option('--json', 'Print JSON results').option('--out <path>', 'Write a redacted diagnostic report to a file').option('--strict-interactive', 'Fail when stdin/stdout are not attached to a real terminal').action(async (options: {
     json?: boolean;
     out?: string;
+    strictInteractive?: boolean;
   }) => {
     const {
       runRuntimeDoctor
@@ -4363,6 +4364,9 @@ async function run(): Promise<CommanderCommand> {
     }
     if (options.out) {
       args.push('--out', options.out);
+    }
+    if (options.strictInteractive) {
+      args.push('--strict-interactive');
     }
     await runRuntimeDoctor(args);
     process.exit(process.exitCode ?? 0);

@@ -185,6 +185,21 @@ describe('checkTerminalStdio', () => {
     expect(result.detail).toContain('stdin=not TTY')
     expect(result.detail).toContain('interactive REPL needs stdin and stdout')
   })
+
+  test('fails redirected stdio when strict interactive mode is requested', () => {
+    const result = checkTerminalStdio(
+      {
+        stdinIsTTY: false,
+        stdoutIsTTY: false,
+        stderrIsTTY: true,
+      },
+      { strictInteractive: true },
+    )
+
+    expect(result.ok).toBe(false)
+    expect(result.detail).toContain('Strict interactive check failed')
+    expect(result.detail).toContain('stdin and stdout attached')
+  })
 })
 
 describe('checkCliLauncherPath', () => {

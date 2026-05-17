@@ -35,6 +35,7 @@ const cases: SmokeCase[] = [
     includes: [
       'Usage: duckhive runtime-doctor|doctor-runtime',
       'without starting the REPL',
+      '--strict-interactive',
     ],
   },
 ]
