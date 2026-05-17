@@ -243,6 +243,11 @@ func (m *MainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case timerTickMsg:
 		return m, startTimerCmd()
 
+	case tea.ResumeMsg:
+		m.state.IsSuspended = false
+		m.state.StatusMsg = "resumed"
+		return m, nil
+
 	default:
 		return m, nil
 	}
@@ -622,7 +627,9 @@ func (m *MainModel) handleOutbound(msg model.OutMsg) (tea.Model, tea.Cmd) {
 		m.state.StatusMsg = "model presets live in settings for now"
 
 	case model.MsgSuspend:
-		m.state.StatusMsg = "suspend is not wired yet in the Go TUI"
+		m.state.IsSuspended = true
+		m.state.StatusMsg = "suspending"
+		return m, tea.Suspend
 
 	case model.MsgExternalEditor:
 		m.state.StatusMsg = "external editor is not wired yet in the Go TUI"

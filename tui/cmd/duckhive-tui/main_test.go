@@ -252,6 +252,44 @@ func TestInterruptExitsWhenIdleEvenWithBridge(t *testing.T) {
 	}
 }
 
+func TestSuspendReturnsBubbleTeaSuspendCommand(t *testing.T) {
+	m := &MainModel{
+		state:      model.NewAppState(),
+		msgList:    components.NewMessageList(80, 20),
+		transcript: screens.NewTranscriptPanel(),
+	}
+
+	_, cmd := m.handleOutbound(model.MsgSuspend{})
+	if cmd == nil {
+		t.Fatal("expected suspend command")
+	}
+	if _, ok := cmd().(tea.SuspendMsg); !ok {
+		t.Fatalf("command did not return tea.SuspendMsg")
+	}
+	if !m.state.IsSuspended {
+		t.Fatal("expected suspended state")
+	}
+	if m.state.StatusMsg != "suspending" {
+		t.Fatalf("StatusMsg = %q", m.state.StatusMsg)
+	}
+}
+
+func TestResumeMsgClearsSuspendedState(t *testing.T) {
+	m := &MainModel{
+		state: model.NewAppState(),
+	}
+	m.state.IsSuspended = true
+
+	_, _ = m.Update(tea.ResumeMsg{})
+
+	if m.state.IsSuspended {
+		t.Fatal("expected suspended state to clear on resume")
+	}
+	if m.state.StatusMsg != "resumed" {
+		t.Fatalf("StatusMsg = %q", m.state.StatusMsg)
+	}
+}
+
 func TestRenderHeaderShowsElapsedSessionClock(t *testing.T) {
 	m := &MainModel{
 		state: model.NewAppState(),
