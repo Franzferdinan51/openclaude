@@ -20,10 +20,12 @@ covers the named requirement.
 | Other harnesses must be tracked for feature pulls | Live `git ls-remote` confirms Codex `main` at `e7bffc5a20e92cbc64d6c16a1b257d0b2e4cd5df`, OpenClaw `main` at `800a0d316636d426feb237476f3e006336f609db`, and Hermes Agent `main` at `f36c89cd5798da0f313192555739975e57ffdef5`. | Tracked |
 | Windows TUI must be runnable | A local verified Go 1.26.3 toolchain built `tui\duckhive-tui.exe`; `node dist\cli.mjs runtime-doctor` now reports `Terminal TUI - Ready`. | Verified binary readiness |
 | TUI tests must be verified | Local Go 1.26.3 ran `cd tui && go test ./...` successfully after fixing the stale header version and header wrap. | Verified |
+| Full repository test suite must be rerun after the latest packaging/TUI audit changes | `bun test` now reports `3226 pass`, `0 fail`, `8002 expect()` calls across 368 files. | Verified |
 
 ## Current Green Gates
 
 - `npm run typecheck`
+- `bun test`
 - `npm run build`
 - `npm run smoke`
 - `npm run verify:privacy`
@@ -36,4 +38,4 @@ covers the named requirement.
 
 - Test `duckhive tui` manually from a real interactive PowerShell terminal. Non-interactive `--help` style launches enter the TUI and time out by design, while `runtime-doctor` verifies binary readiness.
 - Continue feature-by-feature upstream imports rather than merging upstream harnesses wholesale. DuckHive and OpenClaude histories are divergent, so release commits, branding changes, and unrelated upstream removals must be reviewed selectively.
-- Re-run full `bun test` before declaring the whole product complete. The current pass verifies focused regressions, smoke, build, typecheck, privacy, runtime doctor, and package dry-run, but not the full test suite after the latest documentation audit.
+- Keep importing upstream features as independent, verified slices. The current tested state is green, but the product goal remains open-ended until each new upstream slice has its own impact analysis, implementation, and verification.

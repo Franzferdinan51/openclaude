@@ -609,12 +609,11 @@ if (process.platform === 'win32') {
       ],
     },
     {
-      name: 'windows wrapper tui missing binary failure',
-      args: ['tui'],
-      expectedStatus: 1,
+      name: 'windows wrapper runtime doctor sees packaged tui',
+      args: ['runtime-doctor'],
       includes: [
-        'DuckHive TUI binary was not found',
-        'The default classic REPL still works with',
+        '[PASS] Terminal TUI',
+        'duckhive-tui.exe',
       ],
     },
     {

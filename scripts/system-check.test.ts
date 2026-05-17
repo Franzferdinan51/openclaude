@@ -365,7 +365,7 @@ describe('checkHarnessCommandSurfaces', () => {
     expect(result.detail).toContain('decree')
     expect(result.detail).toContain('swarm')
     expect(result.detail).toContain('tui')
-    expect(result.detail).toContain('Key aliases registered')
+    expect(result.detail).toContain('Key aliases declared')
     expect(result.detail).toContain('g')
     expect(result.detail).toContain('subagent')
     expect(result.detail).toContain('cu')
