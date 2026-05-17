@@ -379,6 +379,20 @@ describe('/goal command', () => {
     expect(result).not.toContain('Other goal')
   })
 
+  test('status ignores historical completed session goals when a current goal is active', async () => {
+    const goalCommand = await importFreshGoalCommand()
+
+    await goalCommand(['create', 'Finished', 'goal'])
+    await goalCommand(['complete'])
+    await goalCommand(['create', 'Current', 'goal'])
+
+    const result = await goalCommand(['status'])
+
+    expect(result).toContain('Current goal')
+    expect(result).not.toContain('Finished goal')
+    expect(result).not.toContain('Multiple goals are attached to this session')
+  })
+
   test('step add without an id prefers the current session goal', async () => {
     const goalCommand = await importFreshGoalCommand()
 

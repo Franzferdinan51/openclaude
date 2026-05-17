@@ -352,7 +352,10 @@ async function goalStatus(args: string[]): Promise<string> {
   const goals = getGoals()
 
   if (args.length === 0) {
-    const currentSessionGoal = getCurrentSessionGoal(goals)
+    const currentSessionGoal = getCurrentSessionGoal(goals, [
+      'active',
+      'paused',
+    ])
     if (currentSessionGoal.goal) {
       return formatGoal(currentSessionGoal.goal, true)
     }
