@@ -3892,6 +3892,7 @@ async function run(): Promise<CommanderCommand> {
         ? 'DuckHive TUI binary not found. Run `scripts\\install.ps1` or build `tui\\duckhive-tui.exe` first.'
         : 'DuckHive TUI binary not found. Run `scripts/install.sh` or build `tui/duckhive-tui` first.');
       process.exitCode = 1;
+      process.exit(1);
     }
   });
 

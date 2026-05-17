@@ -2,6 +2,7 @@ import { expect, test } from 'bun:test'
 import {
   buildStandaloneTuiLaunchEnv,
   getDefaultStandaloneTuiBridgeArgs,
+  getStandaloneTuiBuildCommand,
   getStandaloneTuiExecutablePath,
   resolveDuckHiveBaseDir,
   shouldUseStandaloneTuiHelper,
@@ -104,6 +105,22 @@ test('uses the Windows TUI executable name on Windows', () => {
   expect(getStandaloneTuiExecutablePath('/tmp/duckhive', 'linux').replace(/\\/g, '/')).toBe(
     '/tmp/duckhive/tui/duckhive-tui',
   )
+})
+
+test('build command targets the platform-specific TUI binary', () => {
+  const windows = getStandaloneTuiBuildCommand('/tmp/duckhive', 'win32')
+  expect(windows.cwd.replace(/\\/g, '/')).toBe('/tmp/duckhive/tui')
+  expect(windows.command).toBe('go')
+  expect(windows.args).toEqual([
+    'build',
+    '-o',
+    'duckhive-tui.exe',
+    './cmd/duckhive-tui',
+  ])
+
+  const linux = getStandaloneTuiBuildCommand('/tmp/duckhive', 'linux')
+  expect(linux.args).toContain('duckhive-tui')
+  expect(linux.args).not.toContain('duckhive-tui.exe')
 })
 
 test('uses the PTY helper by default when it exists', () => {

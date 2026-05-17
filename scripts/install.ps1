@@ -59,7 +59,7 @@ if (Get-Command go -ErrorAction SilentlyContinue) {
   go build -o duckhive-tui.exe ./cmd/duckhive-tui
   Pop-Location
 } else {
-  Write-Step "Go not found; keeping the existing tui\duckhive-tui binary if present."
+  Write-Step "Go not found; Windows TUI binary tui\duckhive-tui.exe will be built on first `duckhive tui` launch if Go is later installed."
 }
 Pop-Location
 

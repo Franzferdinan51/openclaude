@@ -131,6 +131,11 @@ duckhive --yolo
 
 `--yolo` is an alias for `--dangerously-skip-permissions`.
 
+By default, Windows startup stays on the classic OpenClaude-style REPL and
+DuckHive applies the safe stdin settings before the UI loads. The Go TUI is
+available with `duckhive tui`, but automatic Windows TUI handoff remains opt-in
+with `DUCKHIVE_TUI_WINDOWS_EXPERIMENT=1`.
+
 ## 5. If the REPL Renders But Will Not Accept Typing
 
 If the classic REPL opens but the prompt will not accept keyboard input, force

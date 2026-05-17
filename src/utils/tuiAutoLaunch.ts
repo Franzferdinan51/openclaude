@@ -14,6 +14,12 @@ export type LaunchStandaloneTuiOptions = {
   bridgeArgs?: string[]
 }
 
+export type StandaloneTuiBuildCommand = {
+  cwd: string
+  command: string
+  args: string[]
+}
+
 export function resolveDuckHiveBaseDir(
   startPath = fileURLToPath(import.meta.url),
   fileExists: (path: string) => boolean = existsSync,
@@ -183,6 +189,45 @@ export function getStandaloneTuiExecutablePath(
   )
 }
 
+export function getStandaloneTuiBuildCommand(
+  baseDir: string,
+  platform = process.platform,
+): StandaloneTuiBuildCommand {
+  return {
+    cwd: join(baseDir, 'tui'),
+    command: 'go',
+    args: [
+      'build',
+      '-o',
+      platform === 'win32' ? 'duckhive-tui.exe' : 'duckhive-tui',
+      './cmd/duckhive-tui',
+    ],
+  }
+}
+
+async function ensureStandaloneTuiExecutable(
+  baseDir: string,
+): Promise<boolean> {
+  const tuiPath = getStandaloneTuiExecutablePath(baseDir)
+  if (existsSync(tuiPath)) {
+    return true
+  }
+
+  if (!existsSync(join(baseDir, 'tui', 'cmd', 'duckhive-tui', 'main.go'))) {
+    return false
+  }
+
+  const { spawnSync } = await import('child_process')
+  const build = getStandaloneTuiBuildCommand(baseDir)
+  const result = spawnSync(build.command, build.args, {
+    cwd: build.cwd,
+    env: process.env,
+    stdio: 'inherit',
+  })
+
+  return result.status === 0 && existsSync(tuiPath)
+}
+
 export async function launchStandaloneTui(
   baseDir: string,
   options?: LaunchStandaloneTuiOptions,
@@ -191,7 +236,7 @@ export async function launchStandaloneTui(
   const env = buildStandaloneTuiLaunchEnv(baseDir, options)
 
   const tuiPath = getStandaloneTuiExecutablePath(baseDir)
-  if (!existsSync(tuiPath)) {
+  if (!(await ensureStandaloneTuiExecutable(baseDir))) {
     return false
   }
 

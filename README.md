@@ -89,7 +89,7 @@ cd DuckHive && bun install && bun run build
 ./bin/duckhive
 ```
 
-Interactive `duckhive` launches the Go TUI first on macOS/Linux. On Windows, the default startup path stays on the legacy TypeScript REPL unless you explicitly run `duckhive tui` or set `DUCKHIVE_TUI_WINDOWS_EXPERIMENT=1`. Use `DUCKHIVE_NO_AUTO_TUI=1 ./bin/duckhive` to force the legacy TypeScript REPL on any platform. DuckHive also keeps Windows on the safer no-raw-mode startup path for early keystroke capture by default; set `DUCKHIVE_WINDOWS_EARLY_INPUT_EXPERIMENT=1` only if you intentionally want to test the older early-input buffering path there.
+Interactive `duckhive` follows the OpenClaude-style classic REPL as the safe default on Windows. The launcher now disables early key capture and uses data-event stdin on Windows before the UI loads, so the prompt can own keyboard input cleanly. Run `duckhive tui` to launch the Go TUI explicitly, set `DUCKHIVE_TUI_WINDOWS_EXPERIMENT=1` only if you want to test automatic Windows TUI handoff, or set `DUCKHIVE_WINDOWS_EARLY_INPUT_EXPERIMENT=1` only if you intentionally want the older early-input buffering path. Auxiliary Council startup is also opt-in via `DUCKHIVE_AUTO_START_COUNCIL=1`, so default CLI startup does not wait on a daemon before the REPL is interactive.
 
 **After setup:**
 ```bash
