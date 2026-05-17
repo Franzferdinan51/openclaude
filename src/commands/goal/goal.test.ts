@@ -260,6 +260,22 @@ describe('/goal command', () => {
     expect(resumed).toContain('Goal resumed!')
   })
 
+  test('pause and resume carry the current active step lifecycle', async () => {
+    const goalCommand = await importFreshGoalCommand()
+    await goalCommand(['create', 'Ship', 'release'])
+    await goalCommand(['step', 'add', 'Run', 'smoke', 'tests'])
+
+    const paused = await goalCommand(['pause'])
+    expect(paused).toContain('Goal paused.')
+    expect(getStoredGoals()[0]?.status).toBe('paused')
+    expect(getStoredGoals()[0]?.steps[0]?.status).toBe('paused')
+
+    const resumed = await goalCommand(['resume'])
+    expect(resumed).toContain('Goal resumed!')
+    expect(getStoredGoals()[0]?.status).toBe('active')
+    expect(getStoredGoals()[0]?.steps[0]?.status).toBe('active')
+  })
+
   test('resume without an id prefers the current session paused goal', async () => {
     const goalCommand = await importFreshGoalCommand()
 
