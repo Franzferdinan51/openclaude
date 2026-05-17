@@ -45,6 +45,51 @@ describe('/skill command', () => {
     expect(result.value).toContain('release readiness')
   })
 
+  test('preserves escaped quotes in local skill names', async () => {
+    const runSkillWorkshop = mock(async (input: any) => ({
+      data: {
+        success: true,
+        action: 'pending',
+        skill: input.skillName,
+        path: '/tmp/skills/release-readiness/SKILL.md',
+      },
+    }))
+    setSkillTestDeps({ runSkillWorkshop: runSkillWorkshop as never })
+
+    const result = await call('"release \\"readiness\\""', {} as never)
+
+    expect(result.type).toBe('text')
+    if (result.type !== 'text') throw new Error('unexpected result type')
+    expect(runSkillWorkshop).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'create',
+        skillName: 'release "readiness"',
+      }),
+      expect.anything(),
+      undefined,
+      undefined,
+    )
+    expect(result.value).toContain('release "readiness"')
+  })
+
+  test('rejects unterminated skill names before creating skills', async () => {
+    const runSkillWorkshop = mock(async () => ({
+      data: {
+        success: true,
+        action: 'pending',
+      },
+    }))
+    setSkillTestDeps({ runSkillWorkshop: runSkillWorkshop as never })
+
+    const result = await call('"release readiness', {} as never)
+
+    expect(result.type).toBe('text')
+    if (result.type !== 'text') throw new Error('unexpected result type')
+    expect(result.value).toContain('Unterminated quoted string in /skill arguments.')
+    expect(result.value).toContain('Skill Workshop')
+    expect(runSkillWorkshop).not.toHaveBeenCalled()
+  })
+
   test('lists saved skills', async () => {
     setSkillTestDeps({
       runSkillWorkshop: (async () => ({
@@ -66,15 +111,16 @@ describe('/skill command', () => {
   })
 
   test('searches ClawHub skills', async () => {
+    const searchClawHubSkills = mock(async () => [
+      {
+        slug: 'calendar',
+        displayName: 'Calendar',
+        summary: 'Manage calendars',
+        ownerHandle: 'openclaw',
+      },
+    ])
     setSkillTestDeps({
-      searchClawHubSkills: (async () => [
-        {
-          slug: 'calendar',
-          displayName: 'Calendar',
-          summary: 'Manage calendars',
-          ownerHandle: 'openclaw',
-        },
-      ]) as never,
+      searchClawHubSkills: searchClawHubSkills as never,
     })
 
     const result = await call('search "calendar"', {} as never)
@@ -84,6 +130,31 @@ describe('/skill command', () => {
     expect(result.value).toContain('ClawHub search: calendar')
     expect(result.value).toContain('calendar (Calendar)')
     expect(result.value).toContain('Manage calendars')
+    expect(searchClawHubSkills).toHaveBeenCalledWith('calendar')
+  })
+
+  test('preserves escaped quotes in ClawHub search queries', async () => {
+    const searchClawHubSkills = mock(async () => [])
+    setSkillTestDeps({ searchClawHubSkills: searchClawHubSkills as never })
+
+    const result = await call('search "calendar \\"sync\\""', {} as never)
+
+    expect(result.type).toBe('text')
+    if (result.type !== 'text') throw new Error('unexpected result type')
+    expect(searchClawHubSkills).toHaveBeenCalledWith('calendar "sync"')
+    expect(result.value).toContain('No skills found for: calendar "sync"')
+  })
+
+  test('rejects unterminated ClawHub search queries before network calls', async () => {
+    const searchClawHubSkills = mock(async () => [])
+    setSkillTestDeps({ searchClawHubSkills: searchClawHubSkills as never })
+
+    const result = await call('search "calendar sync', {} as never)
+
+    expect(result.type).toBe('text')
+    if (result.type !== 'text') throw new Error('unexpected result type')
+    expect(result.value).toContain('Unterminated quoted string in /skill arguments.')
+    expect(searchClawHubSkills).not.toHaveBeenCalled()
   })
 
   test('inspects a ClawHub skill', async () => {

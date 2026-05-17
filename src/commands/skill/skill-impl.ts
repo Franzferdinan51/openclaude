@@ -50,12 +50,57 @@ export function setSkillTestDeps(overrides: Partial<SkillDeps> | null): void {
   skillTestDeps = overrides
 }
 
-function splitCommandArgs(args: string): string[] {
-  return (
-    args.match(/"[^"]*"|'[^']*'|\S+/g)?.map(arg =>
-      arg.replace(/^["']|["']$/g, ''),
-    ) ?? []
-  )
+function splitCommandArgs(args: string): { args: string[]; error?: string } {
+  const tokens: string[] = []
+  let current = ''
+  let quote: '"' | "'" | null = null
+  let tokenStarted = false
+
+  for (let i = 0; i < args.length; i++) {
+    const ch = args[i]!
+
+    if (quote) {
+      if (ch === quote) {
+        quote = null
+        continue
+      }
+      if (ch === '\\' && i + 1 < args.length) {
+        const next = args[i + 1]!
+        if (next === quote || next === '\\') {
+          current += next
+          i += 1
+          continue
+        }
+      }
+      current += ch
+      continue
+    }
+
+    if (ch === '"' || ch === "'") {
+      quote = ch
+      tokenStarted = true
+      continue
+    }
+
+    if (/\s/.test(ch)) {
+      if (tokenStarted) {
+        tokens.push(current)
+        current = ''
+        tokenStarted = false
+      }
+      continue
+    }
+
+    current += ch
+    tokenStarted = true
+  }
+
+  if (quote) {
+    return { args: tokens, error: 'Unterminated quoted string in /skill arguments.' }
+  }
+
+  if (tokenStarted) tokens.push(current)
+  return { args: tokens }
 }
 
 function usage(error?: string): string {
@@ -262,7 +307,11 @@ function renderClawHubSkillDetail(
 }
 
 export const call: LocalCommandCall = async (args: string, context) => {
-  const tokens = splitCommandArgs(args)
+  const parsed = splitCommandArgs(args)
+  if (parsed.error) {
+    return { type: 'text', value: usage(parsed.error) }
+  }
+  const tokens = parsed.args
   const subcommand = tokens[0]?.toLowerCase()
 
   if (!subcommand) {

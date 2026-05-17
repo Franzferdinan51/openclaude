@@ -895,6 +895,7 @@ duckhive skills              # List saved skills when running outside the REPL
 
 ClawHub registry notes:
 - DuckHive searches ClawHub directly through its public skill APIs and requests ClawHub's non-suspicious result filter by default.
+- `/skill` and `duckhive skill` preserve escaped quotes in local skill names and ClawHub search queries, and reject unterminated quoted input before creating a local skill or calling the registry.
 - `/skill inspect <slug>` surfaces ClawHub moderation verdicts, summaries, and reason codes when the registry provides them.
 - `/skill install <slug>` refuses registry entries marked malware-blocked or `malicious` before downloading the archive.
 - `/skill install <slug>` also validates the downloaded archive contains a root `SKILL.md`; invalid archives are removed instead of leaving an unloadable skill directory behind.
