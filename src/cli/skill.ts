@@ -34,7 +34,12 @@ export async function skillHandler(args: readonly string[]): Promise<void> {
 }
 
 export async function skillsHandler(args: readonly string[]): Promise<void> {
-  if (args.length === 0 || hasHelpFlag(args)) {
+  if (hasHelpFlag(args)) {
+    await runSkillCommand([])
+    return
+  }
+
+  if (args.length === 0) {
     await runSkillCommand(['list'])
     return
   }

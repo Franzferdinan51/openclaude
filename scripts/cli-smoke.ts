@@ -421,6 +421,16 @@ const cases: SmokeCase[] = [
     ],
   },
   {
+    name: 'top-level skills help',
+    args: ['skills', '--help'],
+    env: createIsolatedConfigEnv,
+    includes: [
+      'Skill Workshop',
+      '/skill search <query>',
+      '/skill install <slug>',
+    ],
+  },
+  {
     name: 'top-level skill help after stdin-mode option',
     args: ['--stdin-mode', 'data', 'skill', '--help'],
     env: createIsolatedConfigEnv,
