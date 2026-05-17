@@ -80,6 +80,8 @@ async function main(): Promise<void> {
     const { applyDefaultCliEnvironment } = await import('../utils/defaultCliEnvironment.js')
     applyDefaultCliEnvironment()
   }
+  const { shouldSkipProviderStartup } = await import('./providerStartupGate.js')
+  const skipProviderStartup = shouldSkipProviderStartup(args)
 
   // Fast-path for --version/-v: zero module loading needed
   if (args.length === 1 && (args[0] === '--version' || args[0] === '-v' || args[0] === '-V')) {
@@ -89,6 +91,7 @@ async function main(): Promise<void> {
     return;
   }
 
+  if (!skipProviderStartup) {
   // --provider: set provider env vars early so saved-profile resolution,
   // validation, and the startup banner all see the intended provider/model.
   if (args.includes('--provider')) {
@@ -150,6 +153,7 @@ async function main(): Promise<void> {
   if (args.includes('--model')) {
     const { applyModelFlagFromArgs } = await import('../utils/providerFlag.js')
     applyModelFlagFromArgs(args)
+  }
   }
 
   // Parse --model early so the startup screen can display the override
