@@ -339,9 +339,12 @@ describe('checkHarnessCommandSurfaces', () => {
 
     expect(result.ok).toBe(true)
     expect(result.detail).toContain('goal')
+    expect(result.detail).toContain('run')
     expect(result.detail).toContain('computer-use')
     expect(result.detail).toContain('channel')
     expect(result.detail).toContain('council')
+    expect(result.detail).toContain('decree')
+    expect(result.detail).toContain('swarm')
     expect(result.detail).toContain('tui')
   })
 })

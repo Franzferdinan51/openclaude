@@ -404,6 +404,7 @@ const GITHUB_COPILOT_BASE = 'https://api.githubcopilot.com'
 
 const REQUIRED_HARNESS_COMMANDS = [
   'goal',
+  'run',
   'computer-use',
   'channel',
   'connect',
@@ -414,6 +415,8 @@ const REQUIRED_HARNESS_COMMANDS = [
   'team',
   'council',
   'senate',
+  'decree',
+  'swarm',
   'tui',
   'doctor',
 ] as const
