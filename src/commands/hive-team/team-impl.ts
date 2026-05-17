@@ -97,7 +97,17 @@ export const call: LocalCommandCall = async (args: string) => {
     const hasTemplateFirst = isTemplateName(templateFirstType ?? '')
     const hasTemplateLast = isTemplateName(templateLastType ?? '')
 
-    if (parts.length >= 4 && !hasTemplateFirst && !hasTemplateLast && templateLastType) {
+    const hasQuotedNameThenTemplate =
+      parts.length === 3 &&
+      Boolean(parts[1]?.includes(' ')) &&
+      !hasTemplateFirst &&
+      !hasTemplateLast
+
+    if (
+      ((parts.length >= 4 && !hasTemplateFirst && !hasTemplateLast) ||
+        hasQuotedNameThenTemplate) &&
+      templateLastType
+    ) {
       return {
         type: 'text',
         value: renderUnknownTemplateError(templateLastType),
