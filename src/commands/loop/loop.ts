@@ -1,5 +1,5 @@
 /**
- * /loop Command — Scheduled Prompt Loops
+ * /loop Command - Scheduled Prompt Loops
  * Inspired by OpenClaude /loop feature
  *
  * Usage:
@@ -11,7 +11,7 @@
  *   /loop clear <id>
  */
 
-import { bold, italic } from '../../components/styles.js'
+import { bold } from '../../components/styles.js'
 import { getGlobalConfig, saveGlobalConfig } from '../../utils/config.js'
 
 export type LoopStatus = 'scheduled' | 'running' | 'paused' | 'completed' | 'failed'
@@ -53,15 +53,15 @@ async function saveLoops(loops: Loop[]): Promise<void> {
 }
 
 function formatLoop(loop: Loop): string {
-  const statusIcon: Record<LoopStatus, string> = {
-    scheduled: '⏳',
-    running: '🔄',
-    paused: '⏸️',
-    completed: '✅',
-    failed: '❌',
+  const statusLabel: Record<LoopStatus, string> = {
+    scheduled: '[scheduled]',
+    running: '[running]',
+    paused: '[paused]',
+    completed: '[done]',
+    failed: '[failed]',
   }
 
-  let output = `${statusIcon[loop.status]} **${loop.prompt.substring(0, 60)}${loop.prompt.length > 60 ? '...' : ''}**\n`
+  let output = `${statusLabel[loop.status]} **${loop.prompt.substring(0, 60)}${loop.prompt.length > 60 ? '...' : ''}**\n`
   output += `   ID: \`${loop.id}\`\n`
   output += `   Status: ${loop.status.toUpperCase()}\n`
 

@@ -49,6 +49,8 @@ describe('/loop command', () => {
     ])
 
     expect(result).toContain('Loop created!')
+    expect(result).toContain('[scheduled] **Check deploy health**')
+    expect([...result].every(char => char.charCodeAt(0) < 128)).toBe(true)
     const loops = getStoredLoops()
     expect(loops).toHaveLength(1)
     expect(loops[0]?.prompt).toBe('Check deploy health')
@@ -67,6 +69,8 @@ describe('/loop command', () => {
     expect(result).toContain('Scheduled Loops')
     expect(result).toContain('Watch CI')
     expect(result).toContain('Showing 1 of 1 total')
+    expect(result).toContain('[scheduled] **Watch CI**')
+    expect([...result].every(char => char.charCodeAt(0) < 128)).toBe(true)
   })
 
   test('pause, resume, and clear update the stored loop lifecycle', async () => {
@@ -77,10 +81,12 @@ describe('/loop command', () => {
 
     const paused = await loopCommand(['pause', createdLoop!.id])
     expect(paused).toContain('Loop paused.')
+    expect(paused).toContain('[paused]')
     expect(getStoredLoops()[0]?.status).toBe('paused')
 
     const resumed = await loopCommand(['resume', createdLoop!.id])
     expect(resumed).toContain('Loop resumed!')
+    expect(resumed).toContain('[scheduled]')
     expect(getStoredLoops()[0]?.status).toBe('scheduled')
     expect(getStoredLoops()[0]?.nextRunAt).toBeDefined()
 
