@@ -1353,6 +1353,91 @@ function checkAgentHarnessRuntime(): CheckResult {
   )
 }
 
+export async function checkCouncilRuntimeReadiness(options: {
+  cwd?: string
+  councilUrl?: string
+  fetchJson?: (url: string) => Promise<unknown>
+} = {}): Promise<CheckResult> {
+  const cwd = options.cwd ?? process.cwd()
+  const serverPath = resolve(cwd, 'src', 'services', 'council-server', 'council-api-server.cjs')
+  const hasServerSource = existsSync(serverPath)
+  const packageJsonPath = resolve(cwd, 'package.json')
+  const hasServeScript = (() => {
+    try {
+      const parsed = JSON.parse(readFileSync(packageJsonPath, 'utf8')) as {
+        scripts?: Record<string, unknown>
+      }
+      return typeof parsed.scripts?.['council:serve'] === 'string'
+    } catch {
+      return false
+    }
+  })()
+
+  if (!hasServerSource || !hasServeScript) {
+    return fail(
+      'AI Council runtime',
+      `Missing local Council runtime pieces: ${hasServerSource ? '' : 'src/services/council-server/council-api-server.cjs '}${hasServeScript ? '' : 'package script council:serve'}`.trim(),
+    )
+  }
+
+  const councilUrl = (options.councilUrl ?? process.env.DUCKHIVE_COUNCIL_URL ?? 'http://localhost:3007').replace(/\/+$/, '')
+  const fetchJson =
+    options.fetchJson ??
+    (async (url: string) => {
+      const response = await fetch(url, {
+        signal: AbortSignal.timeout(1500),
+      })
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`)
+      }
+      return await response.json()
+    })
+
+  try {
+    const health = await fetchJson(`${councilUrl}/api/health`) as {
+      status?: unknown
+      services?: { council?: unknown; hiveCore?: unknown }
+      version?: unknown
+    }
+    const councilReady = health?.status === 'ok' || health?.services?.council === true
+    if (!councilReady) {
+      return fail(
+        'AI Council runtime',
+        `Council endpoint responded at ${councilUrl}, but health did not report ready status. Check /api/health.`,
+      )
+    }
+
+    const councilors = await fetchJson(`${councilUrl}/api/councilors`)
+    const councilorCount = Array.isArray(councilors)
+      ? councilors.length
+      : (
+          councilors &&
+          typeof councilors === 'object' &&
+          'councilors' in councilors &&
+          Array.isArray((councilors as { councilors?: unknown }).councilors)
+        )
+        ? (councilors as { councilors: unknown[] }).councilors.length
+        : 0
+    if (councilorCount === 0) {
+      return fail(
+        'AI Council runtime',
+        `Council endpoint responded at ${councilUrl}, but /api/councilors did not return a usable councilor catalog.`,
+      )
+    }
+
+    return pass(
+      'AI Council runtime',
+      `Live at ${councilUrl}; councilors=${councilorCount}; services council=${health.services?.council === true ? 'ready' : 'unknown'}, hiveCore=${health.services?.hiveCore === true ? 'ready' : 'unknown'}, version=${String(health.version ?? 'unknown')}.`,
+    )
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error)
+    return pass(
+      'AI Council runtime',
+      `Local runtime source is present but not currently reachable at ${councilUrl} (${reason}). Start with \`bun run council:serve\` or set DUCKHIVE_COUNCIL_URL to a running Hive Nation service.`,
+    )
+  }
+}
+
 export function checkTelegramChannelConfig(): CheckResult {
   const hasDuckHiveToken = Boolean(process.env.DUCKHIVE_TELEGRAM_BOT_TOKEN?.trim())
   const hasLegacyToken = Boolean(process.env.TELEGRAM_BOT_TOKEN?.trim())
@@ -1513,6 +1598,7 @@ export async function runRuntimeDoctor(argv: string[] = process.argv.slice(2)): 
   results.push(await checkProviderGenerationReadiness())
   results.push(checkOllamaProcessorMode())
   results.push(checkAgentHarnessRuntime())
+  results.push(await checkCouncilRuntimeReadiness())
   results.push(checkTelegramChannelConfig())
 
   if (!options.json) {

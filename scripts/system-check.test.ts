@@ -10,6 +10,7 @@ import {
   checkConnectorCliControls,
   checkHarnessCommandSurfaces,
   checkHarnessStateReadiness,
+  checkCouncilRuntimeReadiness,
   checkTuiInputSmoke,
   checkTopLevelCliHelpSurface,
   checkOpenAIEnv,
@@ -475,6 +476,72 @@ describe('checkHarnessStateReadiness', () => {
     expect(result.detail).toContain('MCP=not detected')
     expect(result.detail).toContain('ACP=not detected')
     expect(result.detail).toContain('permissions=not detected')
+  })
+})
+
+describe('checkCouncilRuntimeReadiness', () => {
+  test('reports a live Hive Nation council runtime', async () => {
+    const result = await checkCouncilRuntimeReadiness({
+      councilUrl: 'http://localhost:3007',
+      fetchJson: async url =>
+        url.endsWith('/api/councilors')
+          ? [{ id: 'speaker' }, { id: 'skeptic' }]
+          : {
+              status: 'ok',
+              version: '3.1.0',
+              services: { council: true, hiveCore: true },
+            },
+    })
+
+    expect(result.ok).toBe(true)
+    expect(result.detail).toContain('Live at http://localhost:3007')
+    expect(result.detail).toContain('councilors=2')
+    expect(result.detail).toContain('council=ready')
+    expect(result.detail).toContain('hiveCore=ready')
+  })
+
+  test('fails when live council runtime has no councilor catalog', async () => {
+    const result = await checkCouncilRuntimeReadiness({
+      councilUrl: 'http://localhost:3007',
+      fetchJson: async url =>
+        url.endsWith('/api/councilors')
+          ? []
+          : {
+              status: 'ok',
+              version: '3.1.0',
+              services: { council: true, hiveCore: true },
+            },
+    })
+
+    expect(result.ok).toBe(false)
+    expect(result.detail).toContain('/api/councilors')
+    expect(result.detail).toContain('usable councilor catalog')
+  })
+
+  test('reports source-checkout start command when council runtime is offline', async () => {
+    const result = await checkCouncilRuntimeReadiness({
+      councilUrl: 'http://localhost:3999',
+      fetchJson: async () => {
+        throw new Error('connection refused')
+      },
+    })
+
+    expect(result.ok).toBe(true)
+    expect(result.detail).toContain('not currently reachable')
+    expect(result.detail).toContain('bun run council:serve')
+    expect(result.detail).toContain('DUCKHIVE_COUNCIL_URL')
+  })
+
+  test('fails when local council runtime source is missing', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'duckhive-council-missing-'))
+    writeFileSync(join(root, 'package.json'), JSON.stringify({ scripts: {} }))
+
+    const result = await checkCouncilRuntimeReadiness({ cwd: root })
+
+    expect(result.ok).toBe(false)
+    expect(result.detail).toContain('Missing local Council runtime pieces')
+    expect(result.detail).toContain('council-api-server.cjs')
+    expect(result.detail).toContain('council:serve')
   })
 })
 
