@@ -100,4 +100,31 @@ describe('/run command', () => {
     expect(approved.value).toContain('Run approved: run_1')
     expect(recovered.value).toContain('Run marked for recovery: run_1')
   })
+
+  test('rejects extra arguments for control subcommands before mutating runs', async () => {
+    const store = makeStore()
+    store.createRun({
+      title: 'Review auth flow',
+      status: 'running',
+      permissionState: { pendingApprovalIds: ['approval-1'] },
+    })
+    setRunTestDeps({ getAgentRunStore: () => store })
+
+    for (const args of [
+      'tail run_1 5 extra',
+      'pause run_1 extra',
+      'resume run_1 extra',
+      'stop run_1 extra',
+      'approve run_1 approval-1 extra',
+      'run_1 extra',
+    ]) {
+      const result = await call(args, {} as never)
+      expect(result.type).toBe('text')
+      if (result.type !== 'text') throw new Error('unexpected result type')
+      expect(result.value).toContain('Usage:')
+    }
+
+    expect(store.getRun('run_1')?.status).toBe('running')
+    expect(store.getRun('run_1')?.permissionState?.pendingApprovalIds).toEqual(['approval-1'])
+  })
 })

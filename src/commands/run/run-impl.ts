@@ -132,6 +132,7 @@ export const call: LocalCommandCall = async (args: string) => {
     const runId = tokens[1]
     const limit = tokens[2] ? Number(tokens[2]) : 20
     if (!runId) return { type: 'text', value: usage('tail requires a run id.') }
+    if (tokens.length > 3) return { type: 'text', value: usage('tail accepts at most a run id and optional limit.') }
     if (!Number.isFinite(limit) || limit < 1) {
       return { type: 'text', value: usage(`Invalid tail limit: ${tokens[2]}`) }
     }
@@ -141,6 +142,7 @@ export const call: LocalCommandCall = async (args: string) => {
   if (subcommand === 'pause') {
     const runId = tokens[1]
     if (!runId) return { type: 'text', value: usage('pause requires a run id.') }
+    if (tokens.length > 2) return { type: 'text', value: usage('pause accepts exactly one run id.') }
     const run = store.pauseRun(runId)
     return {
       type: 'text',
@@ -151,6 +153,7 @@ export const call: LocalCommandCall = async (args: string) => {
   if (subcommand === 'resume') {
     const runId = tokens[1]
     if (!runId) return { type: 'text', value: usage('resume requires a run id.') }
+    if (tokens.length > 2) return { type: 'text', value: usage('resume accepts exactly one run id.') }
     const run = store.resumeRun(runId)
     return {
       type: 'text',
@@ -161,6 +164,7 @@ export const call: LocalCommandCall = async (args: string) => {
   if (subcommand === 'stop' || subcommand === 'cancel') {
     const runId = tokens[1]
     if (!runId) return { type: 'text', value: usage('stop requires a run id.') }
+    if (tokens.length > 2) return { type: 'text', value: usage('stop accepts exactly one run id.') }
     const run = store.cancelRun(runId)
     return {
       type: 'text',
@@ -172,6 +176,7 @@ export const call: LocalCommandCall = async (args: string) => {
     const runId = tokens[1]
     const approvalId = tokens[2]
     if (!runId) return { type: 'text', value: usage('approve requires a run id.') }
+    if (tokens.length > 3) return { type: 'text', value: usage('approve accepts a run id and optional approval id.') }
     const run = store.approveRun(runId, approvalId)
     return {
       type: 'text',
@@ -188,6 +193,10 @@ export const call: LocalCommandCall = async (args: string) => {
       type: 'text',
       value: run ? `Run marked for recovery: ${runId}` : `Run not found: ${runId}`,
     }
+  }
+
+  if (tokens.length > 1) {
+    return { type: 'text', value: usage(`Unknown run command or extra arguments: ${tokens.join(' ')}`) }
   }
 
   return { type: 'text', value: renderRunDetail(store, tokens[0]) }
