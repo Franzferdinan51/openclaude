@@ -15,7 +15,7 @@ const inputSchema = lazySchema(() =>
     content: z.string().optional().describe('Panel body'),
     lines: z.array(z.string()).optional().describe('Table rows'),
     cols: z.array(z.string()).optional().describe('Table headers'),
-    votes: z.record(z.string()).optional().describe('Vote counts by option'),
+    votes: z.record(z.string(), z.string()).optional().describe('Vote counts by option'),
     height: z.number().optional().describe('Panel height'),
     width: z.number().optional().describe('Panel width'),
     color: z.enum(['blue','green','red','yellow','cyan','magenta','white']).optional().describe('Border color'),

@@ -33,7 +33,7 @@ const inputSchema = lazySchema(() =>
     name: z.string().optional().describe('Server name'),
     transport: z.enum(['stdio', 'http', 'sse']).optional().describe('Transport type'),
     url: z.string().optional().describe('Server URL or command'),
-    env: z.record(z.string()).optional().describe('Environment variables'),
+    env: z.record(z.string(), z.string()).optional().describe('Environment variables'),
   }),
 )
 type InputSchema = ReturnType<typeof inputSchema>

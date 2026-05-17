@@ -2,6 +2,7 @@ import { expect, test } from 'bun:test'
 import { z } from 'zod/v4'
 import { getEmptyToolPermissionContext, type Tool, type Tools } from '../Tool.js'
 import { SkillTool } from '../tools/SkillTool/SkillTool.js'
+import { getTools } from '../tools.js'
 import { toolToAPISchema } from './api.js'
 
 test('toolToAPISchema preserves provider-specific schema keywords in input_schema', async () => {
@@ -102,4 +103,19 @@ test('toolToAPISchema removes extra required keys not in properties (MCP schema 
 
   const inputSchema = (schema as { input_schema: { required?: string[] } }).input_schema
   expect(inputSchema.required).toEqual(['name'])
+})
+
+test('toolToAPISchema converts every built-in tool schema', async () => {
+  const toolPermissionContext = getEmptyToolPermissionContext()
+  const tools = getTools(toolPermissionContext)
+
+  for (const tool of tools) {
+    const schema = await toolToAPISchema(tool, {
+      getToolPermissionContext: async () => toolPermissionContext,
+      tools,
+      agents: [],
+    })
+
+    expect((schema as { input_schema?: unknown }).input_schema, tool.name).toBeTruthy()
+  }
 })

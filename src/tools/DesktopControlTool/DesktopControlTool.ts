@@ -119,10 +119,10 @@ const inputSchema = lazySchema(() =>
     script: z.string().optional().describe('AppleScript code to run'),
     url: z.string().optional().describe('URL for browser_navigate'),
     // ─── Workflow params ───────────────────────────────────────────────
-    task: z.record(z.unknown()).optional().describe('Task definition object'),
+    task: z.record(z.string(), z.unknown()).optional().describe('Task definition object'),
     task_file: z.string().optional().describe('Path to task file'),
     task_name: z.string().optional().describe('Task name for saving'),
-    steps: z.array(z.record(z.unknown())).optional().describe('Workflow steps'),
+    steps: z.array(z.record(z.string(), z.unknown())).optional().describe('Workflow steps'),
     checkpoint_label: z.string().optional().describe('Checkpoint label'),
     checkpoint_note: z.string().optional().describe('Checkpoint note'),
     evidence_prefix: z.string().optional().describe('Evidence capture prefix'),
@@ -174,15 +174,15 @@ const outputSchema = lazySchema(() =>
     // Workflow
     task_valid: z.boolean().optional(),
     task_preview: z.string().optional(),
-    workflow_summary: z.record(z.unknown()).optional(),
+    workflow_summary: z.record(z.string(), z.unknown()).optional(),
     task_id: z.string().optional(),
     checkpoint_id: z.string().optional(),
     // Evidence
     evidence_path: z.string().optional(),
     screenshot_path: z.string().optional(),
-    diff: z.record(z.unknown()).optional(),
+    diff: z.record(z.string(), z.unknown()).optional(),
     bundle_path: z.string().optional(),
-    action_log: z.array(z.record(z.unknown())).optional(),
+    action_log: z.array(z.record(z.string(), z.unknown())).optional(),
     // Approval
     approval_required: z.boolean().optional().describe('Whether this action needs user approval'),
     action_description: z.string().optional().describe('Human-readable description of the action that needs approval'),
@@ -190,11 +190,11 @@ const outputSchema = lazySchema(() =>
     is_safe: z.boolean().optional(),
     verification_passed: z.boolean().optional(),
     // Vision assist
-    vision_result: z.record(z.unknown()).optional(),
+    vision_result: z.record(z.string(), z.unknown()).optional(),
     // Monitor
-    monitors: z.array(z.record(z.unknown())).optional(),
+    monitors: z.array(z.record(z.string(), z.unknown())).optional(),
     // Generic
-    data: z.record(z.unknown()).optional(),
+    data: z.record(z.string(), z.unknown()).optional(),
     error: z.string().optional(),
   }),
 )
