@@ -717,9 +717,18 @@ Spawn a subagent teammate to handle a task in parallel (Hermes Agent style).
 ```bash
 /spawn "Implement a REST API"
 /spawn "Analyze this code" --label=reviewer
+/subagent spawn coding "Implement a REST API"
+
+duckhive spawn "Implement a REST API"
+duckhive subagent spawn coding "Audit router" --model qwen3.6-35b
 ```
 
 `--label` is now honored by the slash command itself and becomes the spawned teammate's display/name prefix instead of being ignored by the UI wrapper.
+Outside the REPL, `duckhive spawn`, `duckhive subagent`, and `duckhive deep-dive`
+register a queued AgentRun in the shared run store so terminal users can inspect
+and control subagent requests through `duckhive ps`, `duckhive attach`,
+`duckhive logs`, `duckhive kill`, `/run`, Telegram, and the WebUI. Use the REPL
+`/spawn` surface when you need immediate in-session teammate execution.
 
 ---
 

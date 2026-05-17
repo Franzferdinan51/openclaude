@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test'
 import React from 'react'
 import stripAnsi from 'strip-ansi'
 import { createRoot } from '../../ink.js'
-import { parseSpawnArgs } from './spawn.tsx'
+import { parseSpawnArgs } from './parseSpawnArgs.ts'
 
 const SYNC_START = '\x1B[?2026h'
 const SYNC_END = '\x1B[?2026l'

@@ -303,6 +303,26 @@ const cases: SmokeCase[] = [
     ],
   },
   {
+    name: 'top-level spawn help',
+    args: ['spawn', '--help'],
+    includes: [
+      'DuckHive spawn',
+      'duckhive spawn <task description>',
+      'duckhive subagent <task description>',
+    ],
+  },
+  {
+    name: 'top-level subagent queues AgentRun',
+    args: ['subagent', 'spawn', 'coding', 'Audit', 'router', '--model', 'qwen3.6-35b'],
+    env: createIsolatedConfigEnv,
+    includes: [
+      'Subagent AgentRun queued:',
+      'Task: Audit router',
+      'Agent: coding',
+      'Model: qwen3.6-35b',
+    ],
+  },
+  {
     name: 'top-level channel help',
     args: ['channel', '--help'],
     env: createIsolatedConfigEnv,

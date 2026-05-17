@@ -396,6 +396,20 @@ async function main(): Promise<void> {
     return;
   }
 
+  // Fast-path for Hermes-style subagent queuing outside the REPL.
+  if (cliCommand === 'spawn' || cliCommand === 'subagent' || cliCommand === 'deep-dive') {
+    profileCheckpoint('cli_spawn_path');
+    const {
+      enableConfigs
+    } = await import('../utils/config.js');
+    enableConfigs();
+    const {
+      spawnHandler
+    } = await import('../cli/spawn.js');
+    await spawnHandler(cliCommandArgs);
+    return;
+  }
+
   // Fast-path for terminal keyboard diagnostics outside provider/REPL startup.
   if (cliCommand === 'input-test') {
     profileCheckpoint('cli_input_test_path');
