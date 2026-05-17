@@ -66,6 +66,7 @@ import { jsonParse, writeFileSync_DEPRECATED } from './utils/slowOperations.js';
 import { computeInitialTeamContext } from './utils/swarm/reconnection.js';
 import { initializeWarningHandler } from './utils/warningHandler.js';
 import { isWorktreeModeEnabled } from './utils/worktreeModeEnabled.js';
+import { hasDangerousSkipPermissionFlag, removeDangerousSkipPermissionFlags } from './utils/dangerousModeArgs.js';
 
 // Lazy require to avoid circular dependency: teammate.ts -> AppState.tsx -> ... -> main.tsx
 /* eslint-disable @typescript-eslint/no-require-imports */
@@ -622,24 +623,18 @@ export async function main() {
         parseConnectUrl
       } = await import('./server/parseConnectUrl.js');
       const parsed = parseConnectUrl(ccUrl);
-      _pendingConnect.dangerouslySkipPermissions = rawCliArgs.includes('--dangerously-skip-permissions');
+      _pendingConnect.dangerouslySkipPermissions = hasDangerousSkipPermissionFlag(rawCliArgs);
       if (rawCliArgs.includes('-p') || rawCliArgs.includes('--print')) {
         // Headless: rewrite to internal `open` subcommand
         const stripped = rawCliArgs.filter((_, i) => i !== ccIdx);
-        const dspIdx = stripped.indexOf('--dangerously-skip-permissions');
-        if (dspIdx !== -1) {
-          stripped.splice(dspIdx, 1);
-        }
+        removeDangerousSkipPermissionFlags(stripped);
         process.argv = [process.argv[0]!, process.argv[1]!, 'open', ccUrl, ...stripped];
       } else {
         // Interactive: strip cc:// URL and flags, run main command
         _pendingConnect.url = parsed.serverUrl;
         _pendingConnect.authToken = parsed.authToken;
         const stripped = rawCliArgs.filter((_, i) => i !== ccIdx);
-        const dspIdx = stripped.indexOf('--dangerously-skip-permissions');
-        if (dspIdx !== -1) {
-          stripped.splice(dspIdx, 1);
-        }
+        removeDangerousSkipPermissionFlags(stripped);
         process.argv = [process.argv[0]!, process.argv[1]!, ...stripped];
       }
     }
@@ -721,10 +716,8 @@ export async function main() {
         _pendingSSH.local = true;
         rawCliArgs.splice(localIdx, 1);
       }
-      const dspIdx = rawCliArgs.indexOf('--dangerously-skip-permissions');
-      if (dspIdx !== -1) {
+      if (removeDangerousSkipPermissionFlags(rawCliArgs)) {
         _pendingSSH.dangerouslySkipPermissions = true;
-        rawCliArgs.splice(dspIdx, 1);
       }
       const pmIdx = rawCliArgs.indexOf('--permission-mode');
       if (pmIdx !== -1 && rawCliArgs[pmIdx + 1] && !rawCliArgs[pmIdx + 1]!.startsWith('-')) {
@@ -2502,7 +2495,7 @@ async function run(): Promise<CommanderCommand> {
       worktreeEnabled,
       skipWebFetchPreflight: getInitialSettings().skipWebFetchPreflight,
       githubActionInputs: process.env.GITHUB_ACTION_INPUTS,
-      dangerouslySkipPermissionsPassed: dangerouslySkipPermissions ?? false,
+      dangerouslySkipPermissionsPassed: Boolean(dangerouslySkipPermissions || yolo),
       permissionMode,
       modeIsBypass: permissionMode === 'bypassPermissions',
       allowDangerouslySkipPermissionsPassed: allowDangerouslySkipPermissions,
@@ -4057,7 +4050,7 @@ async function run(): Promise<CommanderCommand> {
   // this action it means the argv rewrite didn't fire (e.g. user ran
   // `claude ssh` with no host) — just print usage.
   if (feature('SSH_REMOTE')) {
-    program.command('ssh <host> [dir]').description(`Run ${PRODUCT_DISPLAY_NAME} on a remote host over SSH. Deploys the binary and tunnels API auth back through your local machine — no remote setup needed.`).option('--permission-mode <mode>', 'Permission mode for the remote session').option('--dangerously-skip-permissions', 'Skip all permission prompts on the remote (dangerous)').option('--local', 'e2e test mode — spawn the child CLI locally (skip ssh/deploy). ' + 'Exercises the auth proxy and unix-socket plumbing without a remote host.').action(async () => {
+    program.command('ssh <host> [dir]').description(`Run ${PRODUCT_DISPLAY_NAME} on a remote host over SSH. Deploys the binary and tunnels API auth back through your local machine — no remote setup needed.`).option('--permission-mode <mode>', 'Permission mode for the remote session').option('--dangerously-skip-permissions', 'Skip all permission prompts on the remote (dangerous)').option('--yolo', 'Alias for --dangerously-skip-permissions.').option('--local', 'e2e test mode — spawn the child CLI locally (skip ssh/deploy). ' + 'Exercises the auth proxy and unix-socket plumbing without a remote host.').action(async () => {
       // Argv rewriting in main() should have consumed `ssh <host>` before
       // commander runs. Reaching here means host was missing or the
       // rewrite predicate didn't match.

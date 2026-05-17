@@ -110,7 +110,9 @@ bun run build
 
 `--yolo` and `--dangerously-skip-permissions` are the same startup mode. Both
 are applied before the full CLI imports so permission-bypass startup is visible
-to early-loaded modules as well as the interactive REPL.
+to early-loaded modules as well as the interactive REPL. The same aliases are
+also honored by direct-connect URLs and `duckhive ssh`, so remote/bridged
+sessions do not lose bypass intent when using the shorter `--yolo` spelling.
 
 You can also use the packaged local launcher scripts from a source checkout:
 ```powershell
