@@ -831,7 +831,7 @@ func parseLocalTUICommand(text string) (localTUICommand, bool) {
 		return localTUICommandDeck, true
 	case "/status", "/doctor":
 		return localTUICommandStatus, true
-	case "/agents", "/agent", "/teams", "/super", "/super-agent":
+	case "/agent", "/teams", "/super", "/super-agent":
 		if hasArgs {
 			return "", false
 		}
@@ -885,6 +885,8 @@ func (m *MainModel) handleLocalTUICommand(text string) (bool, tea.Cmd) {
 
 func bridgeBackedLocalCommand(text string) (string, bool) {
 	switch strings.ToLower(strings.TrimSpace(text)) {
+	case "/agents":
+		return "/agents", true
 	case "/council":
 		return "/council", true
 	case "/run":
@@ -898,6 +900,8 @@ func bridgeBackedLocalCommand(text string) (string, bool) {
 
 func bridgeBackedLocalCommandStatus(command string) string {
 	switch command {
+	case "/agents":
+		return "opening agents"
 	case "/council":
 		return "opening council"
 	case "/run":
