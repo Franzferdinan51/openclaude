@@ -310,7 +310,9 @@ function parseAllowedChatIds(
     .map(item => Number(String(item).trim()))
     .filter(item => Number.isFinite(item))
 
-  return ids.length > 0 ? new Set(ids) : null
+  // A provided-but-malformed allowlist must fail closed. Returning null here
+  // would mean "no allowlist" and would accept every chat the bot can read.
+  return ids.length > 0 ? new Set(ids) : new Set()
 }
 
 function resolvePrimaryAllowedChatId(

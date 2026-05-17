@@ -133,6 +133,37 @@ describe('TelegramAdapter', () => {
     expect(message?.content).toBe('allowed from env')
   })
 
+  test('malformed DuckHive allowlist env fails closed instead of accepting every chat', async () => {
+    process.env.DUCKHIVE_TELEGRAM_ALLOWED_CHAT_ID = 'not-a-chat-id'
+    globalThis.fetch = mock(async () =>
+      telegramResponse({
+        ok: true,
+        result: [
+          {
+            update_id: 1,
+            message: {
+              message_id: 1,
+              chat: { id: 42, type: 'private', username: 'owner' },
+              from: { id: 42, is_bot: false, first_name: 'Owner' },
+              text: 'should be blocked',
+              date: 1,
+            },
+          },
+        ],
+      }),
+    ) as unknown as typeof fetch
+
+    const adapter = new TelegramAdapter({
+      botToken: '123:test-token',
+      longPollTimeout: 1000,
+    })
+
+    await expect(adapter.sendMessage('hello')).rejects.toThrow(
+      'DUCKHIVE_TELEGRAM_ALLOWED_CHAT_ID',
+    )
+    expect(await adapter.receiveMessage()).toBeNull()
+  })
+
   test('uses DuckHive allowlist env as the outbound chat target', async () => {
     process.env.DUCKHIVE_TELEGRAM_ALLOWED_CHAT_ID = '42, 77'
     const fetchMock = mock(async (_url: string | URL | Request, init?: RequestInit) => {

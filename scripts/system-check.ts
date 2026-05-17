@@ -983,10 +983,20 @@ export function checkTelegramChannelConfig(): CheckResult {
   const hasLegacyToken = Boolean(process.env.TELEGRAM_BOT_TOKEN?.trim())
   const hasToken = hasDuckHiveToken || hasLegacyToken
   const allowlist = process.env.DUCKHIVE_TELEGRAM_ALLOWED_CHAT_ID
+  const allowlistIds = (allowlist ?? '')
+    .split(',')
+    .map(item => Number(item.trim()))
+    .filter(Number.isFinite)
   if (!hasToken) {
     return pass(
       'Telegram channel',
       'Not configured. Set DUCKHIVE_TELEGRAM_BOT_TOKEN or TELEGRAM_BOT_TOKEN to enable remote run control.',
+    )
+  }
+  if (allowlist !== undefined && allowlist.trim() !== '' && allowlistIds.length === 0) {
+    return fail(
+      'Telegram channel',
+      'DUCKHIVE_TELEGRAM_ALLOWED_CHAT_ID is set but contains no numeric chat IDs. Fix the allowlist before enabling Telegram remote control.',
     )
   }
   return pass(

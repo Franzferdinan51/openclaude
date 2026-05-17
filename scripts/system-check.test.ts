@@ -393,4 +393,16 @@ describe('checkTelegramChannelConfig', () => {
     expect(result.detail).toContain('DUCKHIVE_TELEGRAM_BOT_TOKEN')
     expect(result.detail).toContain('chat allowlist')
   })
+
+  test('fails malformed Telegram allowlist instead of reporting remote control ready', () => {
+    clearProviderEnv()
+    process.env.DUCKHIVE_TELEGRAM_BOT_TOKEN =
+      '123456789:ABCDEFGHIJKLMNOPQRSTUVWX'
+    process.env.DUCKHIVE_TELEGRAM_ALLOWED_CHAT_ID = 'not-a-chat-id'
+
+    const result = checkTelegramChannelConfig()
+
+    expect(result.ok).toBe(false)
+    expect(result.detail).toContain('contains no numeric chat IDs')
+  })
 })
