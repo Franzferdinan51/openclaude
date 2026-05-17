@@ -199,11 +199,15 @@ export function getTelegramServiceHealth(): {
 }
 
 function getToken(): string | null {
-  const envToken = process.env.DUCKHIVE_TELEGRAM_BOT_TOKEN
+  const envToken = process.env.DUCKHIVE_TELEGRAM_BOT_TOKEN ?? process.env.TELEGRAM_BOT_TOKEN
   if (envToken) return envToken
 
   const data = getStorageData()
   return data?.botToken ?? null
+}
+
+function normalizeTelegramCommand(rawCommand: string): string {
+  return rawCommand.split('@', 1)[0]?.toLowerCase() ?? ''
 }
 
 // ============================================================================
@@ -246,7 +250,7 @@ async function pollLoop(): Promise<void> {
         // Handle commands
         if (text.startsWith('/')) {
           const parts = text.slice(1).split(' ')
-          const cmd = parts[0].toLowerCase()
+          const cmd = normalizeTelegramCommand(parts[0])
           const args = parts.slice(1).join(' ')
 
           const handler = commandHandlers.get(cmd)

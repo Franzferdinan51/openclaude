@@ -145,6 +145,38 @@ describe('TelegramService polling', () => {
     expect(getUpdatesCalls).toBeGreaterThanOrEqual(2)
   })
 
+  test('starts from TELEGRAM_BOT_TOKEN fallback when DuckHive token env is absent', async () => {
+    delete process.env.DUCKHIVE_TELEGRAM_BOT_TOKEN
+    process.env.TELEGRAM_BOT_TOKEN = '123:legacy-token'
+
+    let getMeCalls = 0
+    const fetchMock = mock(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes('/bot123:legacy-token/getMe')) {
+        getMeCalls += 1
+        return telegramResponse({
+          ok: true,
+          result: { id: 1, is_bot: true, username: 'duckhive_test_bot' },
+        })
+      }
+      if (url.includes('/bot123:legacy-token/setMyCommands')) {
+        return telegramResponse({ ok: true, result: true })
+      }
+      if (url.includes('/bot123:legacy-token/getUpdates')) {
+        return telegramResponse({ ok: true, result: [] })
+      }
+      return telegramResponse({ ok: true, result: true })
+    }) as unknown as typeof fetch
+    globalThis.fetch = fetchMock
+
+    const service = await importFreshService()
+    await service.startTelegramService()
+    await waitFor(() => getMeCalls > 0)
+    service.stopTelegramService()
+
+    expect(getMeCalls).toBeGreaterThanOrEqual(1)
+  })
+
   test('responds to /runs with AgentRun control-plane state', async () => {
     const sentMessages: string[] = []
     const { resetAgentRunStoreForTesting } = await import(
@@ -206,6 +238,69 @@ describe('TelegramService polling', () => {
     service.stopTelegramService()
 
     expect(sentMessages.join('\n')).toContain('Telegram visible run')
+  })
+
+  test('accepts Telegram group command suffixes like /runs@botname', async () => {
+    const sentMessages: string[] = []
+    const { resetAgentRunStoreForTesting } = await import(
+      '../../agent-runs/AgentRunStore.js'
+    )
+    const store = resetAgentRunStoreForTesting({ persist: false })
+    store.createRun({
+      id: 'run-group-command',
+      title: 'Group command visible run',
+      status: 'running',
+      channelSource: { type: 'telegram', id: '42' },
+    })
+
+    let deliveredCommand = false
+    const fetchMock = mock(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      if (url.endsWith('/getMe')) {
+        return telegramResponse({
+          ok: true,
+          result: { id: 1, is_bot: true, username: 'duckhive_test_bot' },
+        })
+      }
+      if (url.endsWith('/setMyCommands')) {
+        return telegramResponse({ ok: true, result: true })
+      }
+      if (url.endsWith('/sendMessage')) {
+        const body = JSON.parse(String(init?.body ?? '{}')) as { text?: string }
+        sentMessages.push(body.text ?? '')
+        return telegramResponse({ ok: true, result: true })
+      }
+      if (url.endsWith('/getUpdates')) {
+        if (deliveredCommand) {
+          return telegramResponse({ ok: true, result: [] })
+        }
+        deliveredCommand = true
+        return telegramResponse({
+          ok: true,
+          result: [
+            {
+              update_id: 35,
+              message: {
+                from: { id: 42, is_bot: false, first_name: 'Owner' },
+                chat: { id: 42, type: 'group' },
+                text: '/runs@duckhive_test_bot',
+                date: 1,
+              },
+            },
+          ],
+        })
+      }
+      return telegramResponse({ ok: true, result: true })
+    }) as unknown as typeof fetch
+    globalThis.fetch = fetchMock
+
+    const service = await importFreshService()
+    await service.startTelegramService()
+    await waitFor(() => sentMessages.some(text => text.includes('run-group-command')))
+    service.stopTelegramService()
+
+    expect(sentMessages.join('\n')).toContain('Group command visible run')
+    expect(sentMessages.join('\n')).not.toContain('Unknown command')
   })
 
   test('allows Telegram commands to pause, resume, and stop runs', async () => {
