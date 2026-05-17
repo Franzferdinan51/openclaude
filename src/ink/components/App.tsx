@@ -100,7 +100,14 @@ export function determineStdinMode(options?: {
   platform?: NodeJS.Platform;
 }): 'readable' | 'data' {
   const env = options?.env ?? process.env;
-  return env.DUCKHIVE_USE_DATA_STDIN === '1' || env.OPENCLAUDE_USE_DATA_STDIN === '1' || env.DUCKHIVE_USE_READABLE_STDIN === '0' || env.OPENCLAUDE_USE_READABLE_STDIN === '0' ? 'data' : 'readable';
+  const platform = options?.platform ?? process.platform;
+  if (env.DUCKHIVE_USE_DATA_STDIN === '1' || env.OPENCLAUDE_USE_DATA_STDIN === '1' || env.DUCKHIVE_USE_READABLE_STDIN === '0' || env.OPENCLAUDE_USE_READABLE_STDIN === '0') {
+    return 'data';
+  }
+  if (env.DUCKHIVE_USE_READABLE_STDIN === '1' || env.OPENCLAUDE_USE_READABLE_STDIN === '1') {
+    return 'readable';
+  }
+  return platform === 'win32' ? 'data' : 'readable';
 }
 
 // Root component for all Ink apps

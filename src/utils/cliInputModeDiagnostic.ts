@@ -15,10 +15,13 @@ export function detectCliInputModeWarnings(
 
   const warnings: CliInputModeWarning[] = []
 
-  if (isEnvTruthy(env.DUCKHIVE_USE_DATA_STDIN) || isEnvTruthy(env.OPENCLAUDE_USE_DATA_STDIN)) {
+  if (
+    env.DUCKHIVE_USE_READABLE_STDIN === '1' ||
+    env.OPENCLAUDE_USE_READABLE_STDIN === '1'
+  ) {
     warnings.push({
-      issue: 'Windows data stdin override is enabled',
-      fix: 'Remove DUCKHIVE_USE_DATA_STDIN/OPENCLAUDE_USE_DATA_STDIN if the UI starts but typing does not appear.',
+      issue: 'Windows readable stdin override is enabled',
+      fix: 'Remove DUCKHIVE_USE_READABLE_STDIN=1/OPENCLAUDE_USE_READABLE_STDIN=1 to restore the default data-event input path.',
     })
   }
 
@@ -26,16 +29,6 @@ export function detectCliInputModeWarnings(
     warnings.push({
       issue: 'Windows CONIN$ stdin override is enabled',
       fix: 'Remove DUCKHIVE_USE_CONIN_STDIN if the UI starts but typing does not appear.',
-    })
-  }
-
-  if (
-    env.DUCKHIVE_USE_READABLE_STDIN === '0' ||
-    env.OPENCLAUDE_USE_READABLE_STDIN === '0'
-  ) {
-    warnings.push({
-      issue: 'Windows readable stdin is explicitly disabled',
-      fix: 'Remove DUCKHIVE_USE_READABLE_STDIN=0/OPENCLAUDE_USE_READABLE_STDIN=0 to restore interactive typing.',
     })
   }
 

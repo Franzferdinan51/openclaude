@@ -2,30 +2,25 @@ import { describe, expect, test } from 'bun:test'
 import { detectCliInputModeWarnings } from './cliInputModeDiagnostic.js'
 
 describe('detectCliInputModeWarnings', () => {
-  test('does not warn for Windows readable stdin defaults', () => {
+  test('does not warn for Windows data stdin defaults', () => {
     expect(detectCliInputModeWarnings({}, 'win32')).toEqual([])
   })
 
-  test('warns when Windows data stdin is forced', () => {
-    const warnings = detectCliInputModeWarnings(
-      { DUCKHIVE_USE_DATA_STDIN: '1' },
-      'win32',
-    )
-
-    expect(warnings).toHaveLength(1)
-    expect(warnings[0]?.issue).toContain('data stdin')
-    expect(warnings[0]?.fix).toContain('typing does not appear')
+  test('does not warn when Windows data stdin is forced', () => {
+    expect(
+      detectCliInputModeWarnings({ DUCKHIVE_USE_DATA_STDIN: '1' }, 'win32'),
+    ).toEqual([])
   })
 
-  test('warns when Windows readable stdin is disabled', () => {
+  test('warns when Windows readable stdin is forced', () => {
     const warnings = detectCliInputModeWarnings(
-      { DUCKHIVE_USE_READABLE_STDIN: '0' },
+      { DUCKHIVE_USE_READABLE_STDIN: '1' },
       'win32',
     )
 
     expect(warnings).toHaveLength(1)
     expect(warnings[0]?.issue).toContain('readable stdin')
-    expect(warnings[0]?.fix).toContain('restore interactive typing')
+    expect(warnings[0]?.fix).toContain('data-event input path')
   })
 
   test('warns when Windows CONIN stdin diagnostics are forced', () => {

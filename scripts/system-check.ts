@@ -188,7 +188,7 @@ export function checkCliInputMode(
 
   return pass(
     'CLI input mode',
-    'Windows-safe readable stdin is active; early input capture remains disabled by default.',
+    'Windows-safe data stdin is active; early input capture remains disabled by default.',
   )
 }
 

@@ -140,17 +140,19 @@ with `DUCKHIVE_TUI_WINDOWS_EXPERIMENT=1`.
 
 ## 5. If the REPL Renders But Will Not Accept Typing
 
-If the classic REPL opens but the prompt will not accept keyboard input, force
-the Windows-safe stdin path and disable early key capture before launching:
+If the classic REPL opens but the prompt will not accept keyboard input, make
+sure the Windows-safe stdin defaults are active before launching:
 
 ```powershell
 $env:DUCKHIVE_DISABLE_EARLY_INPUT='1'
-$env:DUCKHIVE_USE_DATA_STDIN='1'
+Remove-Item Env:\DUCKHIVE_USE_READABLE_STDIN -ErrorAction SilentlyContinue
+Remove-Item Env:\OPENCLAUDE_USE_READABLE_STDIN -ErrorAction SilentlyContinue
 duckhive --dangerously-skip-permissions
 ```
 
-This keeps startup from touching `stdin` before Ink owns raw mode. Remove those
-environment variables after confirming your terminal works normally.
+This keeps startup from touching `stdin` before Ink owns raw mode and lets Ink
+use the default Windows data-event input path. Remove `DUCKHIVE_DISABLE_EARLY_INPUT`
+after confirming your terminal works normally.
 
 ## 6. If Your Provider Fails
 

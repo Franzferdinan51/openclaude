@@ -118,31 +118,31 @@ describe('formatReachabilityFailureDetail', () => {
 })
 
 describe('checkCliInputMode', () => {
-  test('passes on Windows when readable stdin remains the default', () => {
+  test('passes on Windows when data stdin remains the default', () => {
     const result = checkCliInputMode({}, { platform: 'win32' })
 
     expect(result.ok).toBe(true)
-    expect(result.detail).toContain('Windows-safe readable stdin')
+    expect(result.detail).toContain('Windows-safe data stdin')
   })
 
-  test('fails on Windows when data stdin is forced', () => {
+  test('passes on Windows when data stdin is forced', () => {
     const result = checkCliInputMode(
       { DUCKHIVE_USE_DATA_STDIN: '1' },
       { platform: 'win32' },
     )
 
-    expect(result.ok).toBe(false)
-    expect(result.detail).toContain('typing does not appear')
+    expect(result.ok).toBe(true)
+    expect(result.detail).toContain('Windows-safe data stdin')
   })
 
-  test('fails on Windows when readable stdin is disabled', () => {
+  test('fails on Windows when readable stdin is forced', () => {
     const result = checkCliInputMode(
-      { DUCKHIVE_USE_READABLE_STDIN: '0' },
+      { DUCKHIVE_USE_READABLE_STDIN: '1' },
       { platform: 'win32' },
     )
 
     expect(result.ok).toBe(false)
-    expect(result.detail).toContain('restore interactive typing')
+    expect(result.detail).toContain('data-event input path')
   })
 
   test('passes on non-Windows without Windows-specific warnings', () => {
