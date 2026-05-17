@@ -134,7 +134,8 @@ the installed `duckhive` launcher on `PATH`, and harness command registration
 without starting the chat UI. Add `--strict-interactive` when you want the
 doctor to fail unless stdin and stdout are attached to a real terminal. From a
 source checkout, `bun run doctor:runtime:strict` runs that same strict terminal
-readiness check.
+readiness check, and `bun run doctor:runtime:strict:json` emits the failing
+strict report as JSON for logs or issue reports.
 
 ---
 
@@ -1214,10 +1215,11 @@ bun run verify:privacy
 bun run smoke
 bun run doctor:runtime
 bun run doctor:runtime:strict
+bun run doctor:runtime:strict:json
 cd tui && go test ./...
 ```
 
-`bun run doctor:runtime` reports the CLI input mode, terminal stdio attachment, terminal TUI launch path, computer-use fallback readiness, ClawHub skill-hub registry, and the terminal-first harness command registry. Use `bun run doctor:runtime:strict` in the terminal where you plan to type into DuckHive when you need a failing exit code for redirected or non-interactive stdin/stdout. The command registry check verifies that the core `/goal`, `/computer-use`, `/channel`, `/connect`, `/skill`, `/spawn`, `/orchestrate`, `/team`, `/council`, `/senate`, `/tui`, and `/doctor` surfaces are registered together instead of only appearing in documentation. The skill-hub check reports the active ClawHub registry from `DUCKHIVE_CLAWHUB_REGISTRY`, `CLAWHUB_REGISTRY`, or the default `https://clawhub.ai`, and confirms that `/skill search`, `/skill inspect`, and `/skill install` are available. On Windows it warns if `DUCKHIVE_USE_DATA_STDIN=1`, `OPENCLAUDE_USE_DATA_STDIN=1`, readable-stdin opt-outs, or `DUCKHIVE_USE_CONIN_STDIN` are forcing a fragile stdin path that can make the UI render without accepting typing. On Windows without Go or `tui\duckhive-tui.exe`, the doctor and `duckhive tui` both point at the missing Go prerequisite while leaving the classic REPL as the safe default. On non-macOS hosts, the computer-use check confirms that the bundled `newest-desktop-control` gateway is available for desktop, Android, and `computer_use_*` compatibility aliases instead of requiring Codex.app.
+`bun run doctor:runtime` reports the CLI input mode, terminal stdio attachment, terminal TUI launch path, computer-use fallback readiness, ClawHub skill-hub registry, and the terminal-first harness command registry. Use `bun run doctor:runtime:strict` in the terminal where you plan to type into DuckHive when you need a failing exit code for redirected or non-interactive stdin/stdout, or `bun run doctor:runtime:strict:json` when you need that failure in machine-readable form. The command registry check verifies that the core `/goal`, `/computer-use`, `/channel`, `/connect`, `/skill`, `/spawn`, `/orchestrate`, `/team`, `/council`, `/senate`, `/tui`, and `/doctor` surfaces are registered together instead of only appearing in documentation. The skill-hub check reports the active ClawHub registry from `DUCKHIVE_CLAWHUB_REGISTRY`, `CLAWHUB_REGISTRY`, or the default `https://clawhub.ai`, and confirms that `/skill search`, `/skill inspect`, and `/skill install` are available. On Windows it warns if `DUCKHIVE_USE_DATA_STDIN=1`, `OPENCLAUDE_USE_DATA_STDIN=1`, readable-stdin opt-outs, or `DUCKHIVE_USE_CONIN_STDIN` are forcing a fragile stdin path that can make the UI render without accepting typing. On Windows without Go or `tui\duckhive-tui.exe`, the doctor and `duckhive tui` both point at the missing Go prerequisite while leaving the classic REPL as the safe default. On non-macOS hosts, the computer-use check confirms that the bundled `newest-desktop-control` gateway is available for desktop, Android, and `computer_use_*` compatibility aliases instead of requiring Codex.app.
 
 The Go TUI prompt and streaming markers use ASCII-safe `> ` and `|` indicators across the legacy and component input paths, avoiding mojibake in Windows terminals and plain log captures. Its standalone header now tracks the current DuckHive version and MiniMax M2.7 default model instead of stale OpenClaude/Claude-era labels. When `/tui` is run from the classic REPL, DuckHive now waits for the child TUI to survive a short startup window before exiting the parent REPL; if the TUI fails immediately, the classic REPL stays usable and reports that `duckhive tui` can be run directly for the full startup message.
 

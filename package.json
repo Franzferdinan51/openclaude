@@ -104,6 +104,7 @@
     "doctor:runtime": "bun run scripts/system-check.ts",
     "doctor:runtime:json": "bun run scripts/system-check.ts --json",
     "doctor:runtime:strict": "bun run scripts/system-check.ts --strict-interactive",
+    "doctor:runtime:strict:json": "bun run scripts/system-check.ts --json --strict-interactive",
     "doctor:report": "bun run scripts/system-check.ts --out reports/doctor-runtime.json",
     "council:serve": "node src/services/council-server/council-api-server.cjs",
     "hardening:check": "bun run smoke && bun run doctor:runtime",
