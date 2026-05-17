@@ -382,6 +382,25 @@ async function main(): Promise<void> {
     return;
   }
 
+  // Fast-path for Skill Workshop and ClawHub operations outside the REPL.
+  if (cliCommand === 'skill' || cliCommand === 'skill-workshop' || cliCommand === 'skills') {
+    profileCheckpoint('cli_skill_path');
+    const {
+      enableConfigs
+    } = await import('../utils/config.js');
+    enableConfigs();
+    const {
+      skillHandler,
+      skillsHandler
+    } = await import('../cli/skill.js');
+    if (cliCommand === 'skills') {
+      await skillsHandler(cliCommandArgs);
+    } else {
+      await skillHandler(cliCommandArgs);
+    }
+    return;
+  }
+
   // Fast-path for DuckHive AgentRun inspection/control.
   // These commands share the /run, Telegram, WebUI, and harness control plane.
   if (cliCommand === 'ps' || cliCommand === 'logs' || cliCommand === 'attach' || cliCommand === 'pause' || cliCommand === 'resume' || cliCommand === 'approve' || cliCommand === 'recover' || cliCommand === 'kill' || args.includes('--bg') || args.includes('--background')) {

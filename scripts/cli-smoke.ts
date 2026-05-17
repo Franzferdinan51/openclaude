@@ -251,6 +251,34 @@ const cases: SmokeCase[] = [
     ],
   },
   {
+    name: 'top-level skill help',
+    args: ['skill', '--help'],
+    env: createIsolatedConfigEnv,
+    includes: [
+      'Skill Workshop',
+      '/skill search <query>',
+      '/skill install <slug>',
+    ],
+  },
+  {
+    name: 'top-level skills list',
+    args: ['skills'],
+    env: createIsolatedConfigEnv,
+    includes: [
+      'No saved skills yet',
+      '/skill <name>',
+    ],
+  },
+  {
+    name: 'top-level skill help after stdin-mode option',
+    args: ['--stdin-mode', 'data', 'skill', '--help'],
+    env: createIsolatedConfigEnv,
+    includes: [
+      'Skill Workshop',
+      '/skill search <query>',
+    ],
+  },
+  {
     name: 'runtime doctor after stdin-mode option',
     args: ['--stdin-mode', 'data', 'runtime-doctor'],
     includes: [

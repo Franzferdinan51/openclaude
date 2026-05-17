@@ -817,6 +817,16 @@ Create and manage reusable skill scaffolds for future sessions through DuckHive'
 /curate run                  # Write a curation report and identify archive candidates
 ```
 
+The same Skill Workshop surface is available before full provider startup as top-level terminal commands:
+
+```bash
+duckhive skill --help
+duckhive skill search "calendar"
+duckhive skill inspect calendar
+duckhive skill install calendar
+duckhive skills              # List saved skills when running outside the REPL
+```
+
 ClawHub registry notes:
 - DuckHive searches ClawHub directly through its public skill APIs and requests ClawHub's non-suspicious result filter by default.
 - `/skill inspect <slug>` surfaces ClawHub moderation verdicts, summaries, and reason codes when the registry provides them.

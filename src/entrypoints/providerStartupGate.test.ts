@@ -32,6 +32,9 @@ test('skips provider startup for utility commands', () => {
   expect(shouldSkipProviderStartup(['doctor-runtime'])).toBe(true)
   expect(shouldSkipProviderStartup(['mcp', 'list'])).toBe(true)
   expect(shouldSkipProviderStartup(['plugin', 'list'])).toBe(true)
+  expect(shouldSkipProviderStartup(['skill', '--help'])).toBe(true)
+  expect(shouldSkipProviderStartup(['skill-workshop', 'list'])).toBe(true)
+  expect(shouldSkipProviderStartup(['skills'])).toBe(true)
   expect(shouldSkipProviderStartup(['goal', 'status'])).toBe(true)
   expect(shouldSkipProviderStartup(['g', 'list'])).toBe(true)
   expect(shouldSkipProviderStartup(['computer-use', 'status'])).toBe(true)
@@ -68,6 +71,9 @@ test('detects utility commands after global options with values', () => {
   ).toBe(true)
   expect(
     shouldSkipProviderStartup(['--model=MiniMax-M2.7', 'channel', 'status']),
+  ).toBe(true)
+  expect(
+    shouldSkipProviderStartup(['--stdin-mode', 'data', 'skill', '--help']),
   ).toBe(true)
 })
 

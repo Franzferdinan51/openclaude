@@ -1,0 +1,43 @@
+import { asSystemPrompt } from '../utils/systemPromptType.js'
+
+function hasHelpFlag(args: readonly string[]): boolean {
+  return args.includes('--help') || args.includes('-h')
+}
+
+function normalizeSkillArgs(args: readonly string[]): string {
+  if (hasHelpFlag(args)) {
+    return ''
+  }
+
+  return args.join(' ')
+}
+
+async function runSkillCommand(args: readonly string[]): Promise<void> {
+  const { call } = await import('../commands/skill/skill-impl.js')
+  const result = await call(normalizeSkillArgs(args), {
+    messages: [],
+    renderedSystemPrompt: asSystemPrompt([]),
+    options: {
+      querySource: 'cli',
+    },
+    setMessages: () => {},
+    onChangeAPIKey: () => {},
+  } as never)
+
+  if (result.type === 'text' && result.value.trim().length > 0) {
+    process.stdout.write(`${result.value}\n`)
+  }
+}
+
+export async function skillHandler(args: readonly string[]): Promise<void> {
+  await runSkillCommand(args)
+}
+
+export async function skillsHandler(args: readonly string[]): Promise<void> {
+  if (args.length === 0 || hasHelpFlag(args)) {
+    await runSkillCommand(['list'])
+    return
+  }
+
+  await runSkillCommand(args)
+}
