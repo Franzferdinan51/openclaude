@@ -30,6 +30,11 @@ DuckHive checks supported Codex integration points:
 4. `~/.codex/.tmp/bundled-marketplaces/openai-bundled/plugins/computer-use/`
 5. `~/.codex/plugins/computer-use/`
 
+For custom test bundles, set `DUCKHIVE_CODEX_COMPUTER_USE_PLUGIN_DIR` or
+`CODEX_COMPUTER_USE_PLUGIN_DIR` to a plugin root. To bypass plugin-root
+discovery and point directly at the native client, set
+`DUCKHIVE_CODEX_COMPUTER_USE_CLIENT` or `CODEX_COMPUTER_USE_CLIENT`.
+
 ## Wiring Behavior
 
 `/computer-use status` inspects plugin/config state without mutating MCP configuration. Use `/computer-use enable` only when the Codex plugin is present and this DuckHive build does not reserve the built-in `computer-use` runtime slot.

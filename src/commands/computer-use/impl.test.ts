@@ -17,6 +17,7 @@ let removeMcpConfig: ReturnType<typeof mock>
 let pluginAvailable = false
 let pluginLocation: 'bundled' | 'codex-app' = 'bundled'
 let currentPlatform: ReturnType<typeof import('os').platform> = 'darwin'
+let processEnv: NodeJS.ProcessEnv
 
 function expectTextResult(result: Awaited<ReturnType<typeof call>>) {
   expect(result.type).toBe('text')
@@ -70,12 +71,27 @@ describe('call', () => {
     pluginAvailable = false
     pluginLocation = 'bundled'
     currentPlatform = 'darwin'
+    processEnv = {}
     addMcpConfig = mock(async () => {})
     removeMcpConfig = mock(async () => {})
     setComputerUseTestDeps({
       addMcpConfig,
       cwd: () => 'C:\\repo',
       existsSync: (targetPath: PathLike) => {
+        if (
+          processEnv.DUCKHIVE_CODEX_COMPUTER_USE_PLUGIN_DIR &&
+          String(targetPath).startsWith(
+            processEnv.DUCKHIVE_CODEX_COMPUTER_USE_PLUGIN_DIR,
+          )
+        ) {
+          return true
+        }
+        if (
+          processEnv.DUCKHIVE_CODEX_COMPUTER_USE_CLIENT &&
+          String(targetPath) === processEnv.DUCKHIVE_CODEX_COMPUTER_USE_CLIENT
+        ) {
+          return true
+        }
         if (!pluginAvailable) return false
 
         const suffixes = pluginLocation === 'bundled'
@@ -149,6 +165,7 @@ describe('call', () => {
       getCurrentProjectConfig: () => configState as ProjectConfig,
       homedir: () => 'C:\\Users\\tester',
       platform: () => currentPlatform,
+      processEnv,
       removeMcpConfig,
     })
   })
@@ -340,6 +357,81 @@ describe('call', () => {
     expect(result.value).toContain('/desktop')
     expect(result.value).toContain('newest-desktop-control')
     expect(addMcpConfig).not.toHaveBeenCalled()
+  })
+
+  test('discovers an explicit plugin directory from environment overrides', async () => {
+    pluginAvailable = true
+    processEnv.DUCKHIVE_CODEX_COMPUTER_USE_PLUGIN_DIR =
+      'D:\\custom\\computer-use'
+
+    const result = expectTextResult(await call('status', {} as never))
+
+    expect(result.value).toContain('D:\\custom\\computer-use')
+    if (!hasBuiltinComputerUseRuntime()) {
+      expect(result.value).toContain(
+        'Run `/computer-use enable` to wire the plugin into DuckHive MCP.',
+      )
+    }
+    expect(addMcpConfig).not.toHaveBeenCalled()
+  })
+
+  test('discovers an explicit SkyComputerUseClient from environment overrides', async () => {
+    processEnv.DUCKHIVE_CODEX_COMPUTER_USE_CLIENT =
+      'D:\\custom\\SkyComputerUseClient'
+    setComputerUseTestDeps({
+      addMcpConfig,
+      cwd: () => 'C:\\repo',
+      existsSync: (targetPath: PathLike) =>
+        String(targetPath) === 'D:\\custom\\SkyComputerUseClient',
+      getCurrentProjectConfig: () => configState as ProjectConfig,
+      homedir: () => 'C:\\Users\\tester',
+      platform: () => currentPlatform,
+      processEnv,
+      removeMcpConfig,
+    })
+
+    const result = expectTextResult(await call('status', {} as never))
+
+    expect(result.value).toContain('D:\\custom')
+    expect(result.value).toContain('D:\\custom\\SkyComputerUseClient')
+    expect(addMcpConfig).not.toHaveBeenCalled()
+  })
+
+  test('enables using an explicit SkyComputerUseClient override', async () => {
+    processEnv.DUCKHIVE_CODEX_COMPUTER_USE_CLIENT =
+      'D:\\custom\\SkyComputerUseClient'
+    setComputerUseTestDeps({
+      addMcpConfig,
+      cwd: () => 'C:\\repo',
+      existsSync: (targetPath: PathLike) =>
+        String(targetPath) === 'D:\\custom\\SkyComputerUseClient',
+      getCurrentProjectConfig: () => configState as ProjectConfig,
+      homedir: () => 'C:\\Users\\tester',
+      platform: () => currentPlatform,
+      processEnv,
+      removeMcpConfig,
+    })
+
+    const result = expectTextResult(await call('enable', {} as never))
+
+    if (hasBuiltinComputerUseRuntime()) {
+      expect(result.value).toContain(
+        'already reserves `computer-use` for the built-in runtime',
+      )
+      expect(addMcpConfig).not.toHaveBeenCalled()
+    } else {
+      expect(result.value).toContain('computer-use enabled.')
+      expect(addMcpConfig).toHaveBeenCalledWith(
+        'computer-use',
+        {
+          type: 'stdio',
+          command: 'D:\\custom\\SkyComputerUseClient',
+          args: ['mcp'],
+          env: {},
+        },
+        'project',
+      )
+    }
   })
 
   test('rejects bad syntax before platform checks', async () => {

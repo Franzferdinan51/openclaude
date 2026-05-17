@@ -9,7 +9,7 @@ import type { LocalCommandCall } from '../../types/command.js'
 import { feature } from 'bun:bundle'
 import { existsSync } from 'fs'
 import { homedir, platform } from 'os'
-import { join } from 'path'
+import { dirname, join } from 'path'
 import { cwd } from 'process'
 import { addMcpConfig, removeMcpConfig } from '../../services/mcp/config.js'
 import { getCurrentProjectConfig } from '../../utils/config.js'
@@ -34,6 +34,7 @@ type ComputerUseDeps = {
   getCurrentProjectConfig: typeof import('../../utils/config.js').getCurrentProjectConfig
   homedir: typeof homedir
   platform: typeof platform
+  processEnv: NodeJS.ProcessEnv
   removeMcpConfig: typeof import('../../services/mcp/config.js').removeMcpConfig
 }
 
@@ -47,6 +48,7 @@ function getComputerUseDeps(): ComputerUseDeps {
     getCurrentProjectConfig,
     homedir,
     platform,
+    processEnv: process.env,
     removeMcpConfig,
     ...computerUseTestDeps,
   }
@@ -70,6 +72,22 @@ export function hasBuiltinComputerUseRuntime(): boolean {
   return BUILTIN_COMPUTER_USE_RESERVED
 }
 
+function configuredPluginDirsFromEnv(): string[] {
+  const { processEnv } = getComputerUseDeps()
+  return [
+    processEnv.DUCKHIVE_CODEX_COMPUTER_USE_PLUGIN_DIR,
+    processEnv.CODEX_COMPUTER_USE_PLUGIN_DIR,
+  ].filter((value): value is string => Boolean(value))
+}
+
+function configuredClientPathsFromEnv(): string[] {
+  const { processEnv } = getComputerUseDeps()
+  return [
+    processEnv.DUCKHIVE_CODEX_COMPUTER_USE_CLIENT,
+    processEnv.CODEX_COMPUTER_USE_CLIENT,
+  ].filter((value): value is string => Boolean(value))
+}
+
 /**
  * Find the computer-use plugin directory.
  * Tries DuckHive's bundled copy first, then falls back to system Codex paths.
@@ -78,8 +96,10 @@ export function findComputerUsePluginDir(): string | null {
   if (!isComputerUseSupportedPlatform()) return null
 
   const { cwd, homedir } = getComputerUseDeps()
+  const { existsSync } = getComputerUseDeps()
   const home = homedir()
   const candidates = [
+    ...configuredPluginDirsFromEnv(),
     join(cwd(), 'packages', 'computer-use-bundle', PLUGIN_NAME),
     join(
       '/Applications',
@@ -117,6 +137,9 @@ export function findComputerUsePluginDir(): string | null {
   for (const dir of candidates) {
     if (isValidPluginDir(dir)) return dir
   }
+  for (const clientPath of configuredClientPathsFromEnv()) {
+    if (existsSync(clientPath)) return dirname(clientPath)
+  }
   return null
 }
 
@@ -136,6 +159,7 @@ export function findComputeClientBin(pluginDir: string): string | null {
 
   const { existsSync } = getComputerUseDeps()
   const candidates = [
+    ...configuredClientPathsFromEnv(),
     join(
       pluginDir,
       CODEX_APP_BUNDLE,
