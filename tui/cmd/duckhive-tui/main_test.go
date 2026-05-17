@@ -163,6 +163,7 @@ func TestHandleLocalTUICommandUsesBackendForProviderCommands(t *testing.T) {
 				input:      components.NewInputArea(80, 3),
 				transcript: screens.NewTranscriptPanel(),
 			}
+			m.state.BridgeConnected = true
 
 			handled, cmd := m.handleLocalTUICommand(tt.input)
 			if !handled {
@@ -181,6 +182,82 @@ func TestHandleLocalTUICommandUsesBackendForProviderCommands(t *testing.T) {
 				t.Fatalf("expected no local snapshot message, got %d", len(m.state.Messages))
 			}
 		})
+	}
+}
+
+func TestHandleLocalTUICommandFallsBackLocallyWhenBridgeIsUnavailable(t *testing.T) {
+	tests := []struct {
+		name          string
+		input         string
+		wantStatus    string
+		wantSubstring string
+	}{
+		{name: "provider fallback", input: "/provider", wantStatus: "bridge unavailable; showing local provider card", wantSubstring: "Model providers"},
+		{name: "run fallback", input: "/run", wantStatus: "bridge unavailable; showing local run card", wantSubstring: "AgentRun control plane"},
+		{name: "agents fallback", input: "/agents", wantStatus: "bridge unavailable; showing local agents card", wantSubstring: "Super Agent"},
+		{name: "council fallback", input: "/council", wantStatus: "bridge unavailable; showing local council card", wantSubstring: "AI Council"},
+		{name: "search fallback", input: "/search-provider", wantStatus: "bridge unavailable; showing local search card", wantSubstring: "Search providers"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m := &MainModel{
+				state:      model.NewAppState(),
+				bridge:     bridge.NewSubprocessAdapter("duckhive"),
+				msgList:    components.NewMessageList(80, 20),
+				input:      components.NewInputArea(80, 3),
+				transcript: screens.NewTranscriptPanel(),
+			}
+
+			handled, cmd := m.handleLocalTUICommand(tt.input)
+			if !handled {
+				t.Fatal("expected command to be handled")
+			}
+			if cmd != nil {
+				t.Fatal("expected no backend dispatch command")
+			}
+			if m.state.StatusMsg != tt.wantStatus {
+				t.Fatalf("StatusMsg = %q, want %q", m.state.StatusMsg, tt.wantStatus)
+			}
+			if len(m.state.Messages) == 0 {
+				t.Fatal("expected local fallback message")
+			}
+			last := m.state.Messages[len(m.state.Messages)-1]
+			if !strings.Contains(last.Content, tt.wantSubstring) {
+				t.Fatalf("fallback content missing %q:\n%s", tt.wantSubstring, last.Content)
+			}
+		})
+	}
+}
+
+func TestHandleLocalTUICommandDoctorExplainsOfflineBridge(t *testing.T) {
+	m := &MainModel{
+		state:      model.NewAppState(),
+		bridge:     bridge.NewSubprocessAdapter("duckhive"),
+		msgList:    components.NewMessageList(80, 20),
+		input:      components.NewInputArea(80, 3),
+		transcript: screens.NewTranscriptPanel(),
+	}
+
+	handled, cmd := m.handleLocalTUICommand("/doctor")
+	if !handled {
+		t.Fatal("expected command to be handled")
+	}
+	if cmd != nil {
+		t.Fatal("expected no backend dispatch command")
+	}
+	if m.state.StatusMsg != "bridge unavailable; /doctor needs backend UI" {
+		t.Fatalf("StatusMsg = %q", m.state.StatusMsg)
+	}
+	if len(m.state.Messages) == 0 {
+		t.Fatal("expected offline guidance message")
+	}
+	last := m.state.Messages[len(m.state.Messages)-1]
+	if !last.IsError {
+		t.Fatal("expected offline doctor guidance to be marked as error")
+	}
+	if !strings.Contains(last.Content, "/status") || !strings.Contains(last.Content, "/repl") {
+		t.Fatalf("unexpected guidance:\n%s", last.Content)
 	}
 }
 

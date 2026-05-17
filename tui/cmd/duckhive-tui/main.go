@@ -862,9 +862,33 @@ func parseLocalTUICommand(text string) (localTUICommand, bool) {
 }
 
 func (m *MainModel) handleLocalTUICommand(text string) (bool, tea.Cmd) {
-	if cmdText, ok := bridgeBackedLocalCommand(text); ok && m.bridge != nil {
-		m.state.StatusMsg = bridgeBackedLocalCommandStatus(cmdText)
-		return true, bridge.SendUserMessageCmd(m.bridge, cmdText)
+	if cmdText, ok := bridgeBackedLocalCommand(text); ok {
+		if m.bridge != nil && m.state.BridgeConnected {
+			m.state.StatusMsg = bridgeBackedLocalCommandStatus(cmdText)
+			return true, bridge.SendUserMessageCmd(m.bridge, cmdText)
+		}
+
+		if fallbackCommand, ok := bridgeBackedLocalFallback(cmdText); ok {
+			content := m.localCommandContent(fallbackCommand)
+			m.appendMessage(model.Message{
+				ID:        messageID("system"),
+				Type:      model.MsgTypeSystem,
+				Content:   content,
+				Timestamp: time.Now(),
+			})
+			m.state.StatusMsg = bridgeBackedLocalFallbackStatus(cmdText)
+			return true, nil
+		}
+
+		m.appendMessage(model.Message{
+			ID:        messageID("system"),
+			Type:      model.MsgTypeSystem,
+			Content:   "Bridge unavailable. `/doctor` needs the backend diagnostic UI. Use `/status` for the local snapshot or `/repl` for the classic REPL.",
+			IsError:   true,
+			Timestamp: time.Now(),
+		})
+		m.state.StatusMsg = "bridge unavailable; /doctor needs backend UI"
+		return true, nil
 	}
 
 	command, handled := parseLocalTUICommand(text)
@@ -918,6 +942,40 @@ func bridgeBackedLocalCommandStatus(command string) string {
 		return "opening search-provider manager"
 	default:
 		return "dispatching command"
+	}
+}
+
+func bridgeBackedLocalFallback(command string) (localTUICommand, bool) {
+	switch command {
+	case "/agents":
+		return localTUICommandSuperAgent, true
+	case "/council":
+		return localTUICommandCouncil, true
+	case "/run":
+		return localTUICommandRuns, true
+	case "/provider", "/model":
+		return localTUICommandProvider, true
+	case "/search-provider":
+		return localTUICommandSearch, true
+	default:
+		return "", false
+	}
+}
+
+func bridgeBackedLocalFallbackStatus(command string) string {
+	switch command {
+	case "/agents":
+		return "bridge unavailable; showing local agents card"
+	case "/council":
+		return "bridge unavailable; showing local council card"
+	case "/run":
+		return "bridge unavailable; showing local run card"
+	case "/provider", "/model":
+		return "bridge unavailable; showing local provider card"
+	case "/search-provider":
+		return "bridge unavailable; showing local search card"
+	default:
+		return "bridge unavailable"
 	}
 }
 
