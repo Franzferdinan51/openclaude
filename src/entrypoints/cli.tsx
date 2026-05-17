@@ -355,6 +355,20 @@ async function main(): Promise<void> {
     return;
   }
 
+  // Fast-path for provider profile diagnostics outside the REPL.
+  if (cliCommand === 'provider') {
+    profileCheckpoint('cli_provider_path');
+    const {
+      enableConfigs
+    } = await import('../utils/config.js');
+    enableConfigs();
+    const {
+      providerHandler
+    } = await import('../cli/provider.js');
+    await providerHandler(cliCommandArgs);
+    return;
+  }
+
   // Fast-path for shared AgentRun inspection/control outside the REPL.
   if (cliCommand === 'run' || cliCommand === 'runs' || cliCommand === 'agent-run') {
     profileCheckpoint('cli_run_path');

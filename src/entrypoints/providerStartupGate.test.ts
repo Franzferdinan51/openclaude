@@ -42,6 +42,7 @@ test('skips provider startup for utility commands', () => {
   expect(shouldSkipProviderStartup(['cu', 'status'])).toBe(true)
   expect(shouldSkipProviderStartup(['mmx', '--help'])).toBe(true)
   expect(shouldSkipProviderStartup(['minimax', '--help'])).toBe(true)
+  expect(shouldSkipProviderStartup(['provider', 'status'])).toBe(true)
   expect(shouldSkipProviderStartup(['run', 'list'])).toBe(true)
   expect(shouldSkipProviderStartup(['runs', 'running'])).toBe(true)
   expect(shouldSkipProviderStartup(['agent-run', 'tail', 'run_123'])).toBe(true)

@@ -414,6 +414,7 @@ const REQUIRED_HARNESS_COMMANDS = [
   'run',
   'computer-use',
   'mmx',
+  'provider',
   'channel',
   'connect',
   'skill',

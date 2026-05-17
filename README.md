@@ -944,11 +944,12 @@ Add any OpenAI-compatible API without code changes through the interactive provi
 
 ```bash
 /provider                 # Open the provider manager UI
+duckhive provider status  # Inspect the active provider before starting the REPL
 ```
 
 Config: `~/.duckhive/custom-providers.json` · Auto health-checks endpoints on add.
 
-The current slash command opens the manager used to add, edit, delete, and activate provider profiles. Inline `/provider add|list|remove` subcommands are not currently implemented in the CLI.
+The current slash command opens the manager used to add, edit, delete, and activate provider profiles. Inline `/provider add|list|remove` subcommands are not currently implemented in the CLI. The top-level terminal `duckhive provider status` command is intentionally read-only and provider-free, so you can diagnose saved profile/model/endpoint routing before the chat UI starts.
 
 First-class OpenAI-compatible presets are available through `/provider` and `--provider`, including OpenRouter and NVIDIA NIM:
 

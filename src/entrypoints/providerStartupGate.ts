@@ -20,6 +20,7 @@ const PROVIDER_FREE_COMMANDS = new Set([
   'comput-use',
   'mmx',
   'minimax',
+  'provider',
   'run',
   'runs',
   'agent-run',

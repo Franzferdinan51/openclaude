@@ -264,6 +264,26 @@ const cases: SmokeCase[] = [
     ],
   },
   {
+    name: 'top-level provider help',
+    args: ['provider', '--help'],
+    includes: [
+      'DuckHive provider profiles',
+      'duckhive provider status',
+      '/provider',
+    ],
+  },
+  {
+    name: 'top-level provider status',
+    args: ['provider', 'status'],
+    env: createIsolatedConfigEnv,
+    includes: [
+      'DuckHive Provider Status',
+      'Provider:',
+      'Model:',
+      'Saved profile:',
+    ],
+  },
+  {
     name: 'top-level run help',
     args: ['run', '--help'],
     includes: [
