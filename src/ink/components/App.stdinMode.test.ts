@@ -129,4 +129,46 @@ describe('Ink stdin delivery', () => {
       await Bun.sleep(25)
     }
   })
+
+  test('forced data stdin mode delivers typed characters to useInput listeners', async () => {
+    const previous = process.env.DUCKHIVE_USE_DATA_STDIN
+    process.env.DUCKHIVE_USE_DATA_STDIN = '1'
+
+    const received: string[] = []
+    const { stdout, stdin } = createTestStreams()
+    const root = await createRoot({
+      stdout: stdout as unknown as NodeJS.WriteStream,
+      stdin: stdin as unknown as NodeJS.ReadStream,
+      patchConsole: false,
+    })
+
+    function InputProbe(): null {
+      useInput(input => {
+        received.push(input)
+      })
+      return null
+    }
+
+    root.render(React.createElement(InputProbe))
+    await Bun.sleep(25)
+    stdin.write('xyz')
+
+    try {
+      await waitForCondition(
+        () => received.join('') === 'xyz',
+        `Expected data stdin to deliver "xyz", received ${JSON.stringify(received)}`,
+      )
+      expect(received.join('')).toBe('xyz')
+    } finally {
+      if (previous === undefined) {
+        delete process.env.DUCKHIVE_USE_DATA_STDIN
+      } else {
+        process.env.DUCKHIVE_USE_DATA_STDIN = previous
+      }
+      root.unmount()
+      stdin.end()
+      stdout.end()
+      await Bun.sleep(25)
+    }
+  })
 })
