@@ -1013,6 +1013,15 @@ duckhive --provider nvidia-nim --model nvidia/llama-3.1-nemotron-70b-instruct
 
 Use `OPENROUTER_API_KEY` for OpenRouter and `NVIDIA_API_KEY` for NVIDIA NIM. DuckHive maps them onto the OpenAI-compatible runtime for the active session without requiring you to overwrite `OPENAI_API_KEY`.
 
+Gemini-compatible OpenGateway routes now preserve executable tool calls even when Gemini returns the fallback raw-text form:
+
+```text
+Tool calls requested:
+- Write({"file_path":"style.css","content":"..."}) [id: call...]
+```
+
+DuckHive converts that text back into `tool_use` blocks in both streaming and non-streaming responses, so Gemini/OpenGateway sessions can keep using Write, Agent, Bash, and other harness tools instead of showing inert tool-call text in chat.
+
 ### Channel Adapters — Unified Messaging
 
 DuckHive unifies messaging across channels through a shared interface — the agent loop doesn't know or care which channel it's talking to:
