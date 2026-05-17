@@ -46,6 +46,14 @@ function renderTemplates(includeRoles = false): string {
     .join(includeRoles ? '\n\n' : '\n')
 }
 
+function renderUnknownTemplateError(value: string): string {
+  return `Unknown team template: ${value}
+Available templates: ${Object.keys(TEAM_TEMPLATES).join(', ')}
+
+Usage: /team spawn <name> <type>
+   or: /team spawn <type> <name>`
+}
+
 function formatHiveOfflineError(error?: string): string {
   return `Failed: ${error ?? 'Hive Nation offline'}\nStart the local runtime with \`bun run council:serve\` or point DuckHive at a running service with \`DUCKHIVE_COUNCIL_URL\`.`
 }
@@ -86,12 +94,22 @@ export const call: LocalCommandCall = async (args: string) => {
   if (subcommand === 'spawn' || subcommand === 'create' || subcommand === 'new') {
     const templateFirstType = parts[1]
     const templateLastType = parts[parts.length - 1]
-    const type = isTemplateName(templateFirstType ?? '')
+    const hasTemplateFirst = isTemplateName(templateFirstType ?? '')
+    const hasTemplateLast = isTemplateName(templateLastType ?? '')
+
+    if (parts.length >= 4 && !hasTemplateFirst && !hasTemplateLast && templateLastType) {
+      return {
+        type: 'text',
+        value: renderUnknownTemplateError(templateLastType),
+      }
+    }
+
+    const type = hasTemplateFirst
       ? templateFirstType
-      : isTemplateName(templateLastType ?? '')
+      : hasTemplateLast
         ? templateLastType
         : 'research'
-    const name = isTemplateName(templateFirstType ?? '')
+    const name = hasTemplateFirst
       ? parts.slice(2).join(' ')
       : parts.slice(1, -1).join(' ') || parts.slice(1).join(' ')
 

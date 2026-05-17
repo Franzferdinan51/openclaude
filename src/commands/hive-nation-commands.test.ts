@@ -273,6 +273,18 @@ describe('Hive Nation commands', () => {
     expect(result.value).toContain('DUCKHIVE_COUNCIL_URL')
   })
 
+  test('/team spawn rejects unknown trailing templates instead of defaulting to research', async () => {
+    const bridge = makeHiveBridge()
+    setTeamTestDeps({ getHiveBridge: (() => bridge) as never })
+
+    const result = expectText(await teamCall('spawn api squad quantum', {} as never))
+
+    expect(result.value).toContain('Unknown team template: quantum')
+    expect(result.value).toContain('Available templates:')
+    expect(result.value).toContain('/team spawn <name> <type>')
+    expect(bridge.spawnTeam).not.toHaveBeenCalled()
+  })
+
   test('/team list points source checkouts to the local runtime command when the runtime is offline', async () => {
     const bridge = makeHiveBridge({
       isHealthy: mock(async () => false),
