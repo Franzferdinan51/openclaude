@@ -403,6 +403,17 @@ const cases: SmokeCase[] = [
     ],
   },
   {
+    name: 'top-level orchestrate help',
+    args: ['orchestrate', '--help'],
+    includes: [
+      'Orchestrate Command',
+      'duckhive orchestrate <complex task>',
+      '/orchestrate <complex task>',
+      '--council',
+      '--dry-run',
+    ],
+  },
+  {
     name: 'top-level spawn help',
     args: ['spawn', '--help'],
     includes: [

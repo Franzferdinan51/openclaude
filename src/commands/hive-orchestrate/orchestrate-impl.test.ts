@@ -52,7 +52,8 @@ describe('/orchestrate command', () => {
 
     expect(result.type).toBe('text')
     expect(result.value).toContain('Orchestrate Command')
-    expect(result.value).toContain('Usage: /orchestrate <complex task>')
+    expect(result.value).toContain('duckhive orchestrate <complex task>')
+    expect(result.value).toContain('/orchestrate <complex task>')
   })
 
   test('renders a dry-run execution plan from the hybrid orchestrator', async () => {

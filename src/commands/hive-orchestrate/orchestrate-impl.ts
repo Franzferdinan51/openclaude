@@ -66,14 +66,17 @@ export const call: LocalCommandCall = async (args: string) => {
       type: 'text',
       value: `Orchestrate Command
 ${'-'.repeat(50)}
-Usage: /orchestrate <complex task>
+Terminal usage: duckhive orchestrate <complex task>
+REPL usage:     /orchestrate <complex task>
+
 Flags:
   --council           Force AI Council consultation
   --mode=<mode>       Deliberation mode
   --team=<type>       Use team template
   --dry-run           Show plan without executing
 
-Example: /orchestrate Build a REST API --council --team=code`,
+Terminal example: duckhive orchestrate Build a REST API --council --team=code
+REPL example:     /orchestrate Build a REST API --council --team=code`,
     }
   }
 
