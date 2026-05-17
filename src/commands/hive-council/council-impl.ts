@@ -83,6 +83,11 @@ function renderStatus(session: DeliberationSession): string {
   return lines.join('\n')
 }
 
+function normalizeCouncilMode(value: string): string {
+  // Keep compatibility with the upstream AI-Bot-Council-Concensus spelling.
+  return value === 'concensus' ? 'consensus' : value
+}
+
 export const call: LocalCommandCall = async (args: string) => {
   const hive = getCouncilDeps().getHiveBridge()
   const parsedArgs = splitCommandArgs(args)
@@ -192,11 +197,23 @@ Available modes: ${modes.join(', ')}`,
     : availableModes.includes('balanced')
       ? 'balanced'
       : (availableModes[0] ?? 'balanced')
-  const mode = (flags.mode as DeliberationMode) ?? defaultMode
+  const requestedMode =
+    typeof flags.mode === 'string'
+      ? normalizeCouncilMode(flags.mode)
+      : flags.mode === true
+        ? ''
+        : undefined
+  if (requestedMode === '') {
+    return {
+      type: 'text',
+      value: `Missing council mode value.\n\nAvailable modes: ${availableModes.join(', ')}`,
+    }
+  }
+  const mode = (requestedMode ?? defaultMode) as DeliberationMode
   if (!availableModes.includes(mode)) {
     return {
       type: 'text',
-      value: `Unknown council mode: ${mode}
+      value: `Unknown council mode: ${requestedMode}
 
 Available modes: ${availableModes.join(', ')}`,
     }

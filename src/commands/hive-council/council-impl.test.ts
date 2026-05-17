@@ -88,6 +88,34 @@ describe('/council command', () => {
     expect(startDeliberation).not.toHaveBeenCalled()
   })
 
+  test('maps concensus spelling to consensus mode for upstream compatibility', async () => {
+    const startDeliberation = mock(async () => ({ success: true, sessionId: 'council-42' }))
+    setHive({ startDeliberation })
+
+    const result = expectTextResult(
+      await call('Should we ship? --mode=concensus', {} as never),
+    )
+
+    expect(startDeliberation).toHaveBeenCalledWith(
+      'Should we ship?',
+      'consensus',
+    )
+    expect(result.value).toContain('Mode: consensus')
+  })
+
+  test('rejects missing mode values before starting deliberation', async () => {
+    const startDeliberation = mock(async () => ({ success: true, sessionId: 'unused' }))
+    setHive({ startDeliberation })
+
+    const result = expectTextResult(
+      await call('Should we ship? --mode', {} as never),
+    )
+
+    expect(result.value).toContain('Missing council mode value')
+    expect(result.value).toContain('Available modes: deliberation, consensus')
+    expect(startDeliberation).not.toHaveBeenCalled()
+  })
+
   test('reports source-checkout runtime command when Hive is offline', async () => {
     setHive({
       isHealthy: mock(async () => false),
