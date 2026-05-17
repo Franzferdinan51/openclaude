@@ -13,6 +13,7 @@ covers the named requirement.
 | `duckhive` command must resolve and report the DuckHive version | `node dist\cli.mjs runtime-doctor` reports `duckhive` on PATH targeting this checkout and version `0.13.0 (DuckHive)`. | Verified |
 | Version metadata and README must match the release | `package.json` and README now report `0.13.0`; `npm pack --dry-run --json` publishes `duckhive@0.13.0`. | Verified |
 | Runtime diagnostics must not imply legacy OpenClaude/Anthropic defaults | `runtime-doctor` now mirrors DuckHive startup defaults by reporting MiniMax when no explicit provider env is active, while preserving Anthropic only for explicit DuckHive provider selection. | Verified |
+| Model routing command arguments must preserve user text safely | `/router` now preserves escaped quotes in task text, rejects unterminated quoted input before invoking model selection, and accepts separated option values such as `--complexity 8` and `--vision true`. | Verified |
 | `/goal` must be present as a Codex-style workflow feature | CLI smoke covers top-level `goal` and bare-print `/goal Build smoke goal`; README documents REPL and top-level forms. | Verified surface |
 | Background AgentRun controls must be inspectable from the terminal | `duckhive attach <run-id> [limit]` now prints run metadata, pending approvals, recent events, and exact control commands instead of a not-implemented placeholder; focused tests cover event tail and invalid limits. | Verified |
 | REPL `/run` controls must parse recovery text safely | `/run recover` now preserves escaped quotes inside quoted summaries and rejects unterminated quoted arguments before mutating run state; focused tests cover both paths. | Verified |
@@ -51,6 +52,7 @@ covers the named requirement.
 - `bun test src\integrations\compatibility.test.ts src\integrations\artifactGenerator.test.ts`
 - `bun test src\commands\channel\channel-impl.test.ts`
 - `bun test src\commands\skill\skill-impl.test.ts`
+- `bun test src\commands\router\router-impl.test.ts`
 - `bun test src\commands\hive-team\team-impl.test.ts src\commands\hive-council\council-impl.test.ts src\commands\hive-orchestrate\orchestrate-impl.test.ts`
 - `bun test src\commands\hive-swarm\swarm-impl.test.ts src\commands\hive-senate\senate-impl.test.ts src\commands\hive-decree\decree-impl.test.ts`
 - `bun test src\cli\bg.test.ts`

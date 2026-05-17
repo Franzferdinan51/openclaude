@@ -439,6 +439,8 @@ bun run council:serve
 
 DuckHive boots with **MiniMax M2.7** as the default model, shown right in the startup banner. MiniMax M2.7 is a powerful reasoning and coding model that handles complex agentic tasks efficiently. The Hybrid Orchestrator routes tasks intelligently:
 
+The `/router` command preserves escaped quotes in routed task text, rejects unterminated quoted input before invoking model selection, and accepts both `--complexity=7` and `--complexity 7` style options for terminal use.
+
 - **Complexity 1–3**: Fast path, direct execution
 - **Complexity 4–6**: Best model routing + optional council
 - **Complexity 7–10**: Full deliberation with AI Council

@@ -10,8 +10,13 @@ afterEach(() => {
 
 describe('/router command', () => {
   test('routes a task using documented key=value syntax', async () => {
+    let routedTask = ''
+    let routedComplexity = 0
     setRouterTestDeps({
-      routeTask: () => ({
+      routeTask: request => {
+        routedTask = request.task
+        routedComplexity = request.complexity
+        return {
         provider: 'openai',
         model: 'gpt-4o',
         reason: 'Best match for complex task with vision',
@@ -27,7 +32,8 @@ describe('/router command', () => {
           vision: true,
           functionCalling: true,
         },
-      }),
+      }
+      },
     })
 
     const result = await call(
@@ -40,6 +46,57 @@ describe('/router command', () => {
     expect(result.value).toContain('Task: build a Flutter app')
     expect(result.value).toContain('Primary: openai/gpt-4o')
     expect(result.value).toContain('Fallback: openai/gpt-4o-mini')
+    expect(routedTask).toBe('build a Flutter app')
+    expect(routedComplexity).toBe(7)
+  })
+
+  test('routes escaped quoted tasks and separated option values', async () => {
+    let routedTask = ''
+    let routedComplexity = 0
+    let routedVision = false
+    setRouterTestDeps({
+      routeTask: request => {
+        routedTask = request.task
+        routedComplexity = request.complexity
+        routedVision = request.vision
+        return {
+          provider: 'minimax',
+          model: 'MiniMax-M2.7',
+          reason: 'Best match for quoted task',
+          costEstimate: 0.12,
+        }
+      },
+    })
+
+    const result = await call(
+      'route "build the \\"fast\\" planner" --complexity 8 --vision true',
+      {} as never,
+    )
+
+    expect(result.type).toBe('text')
+    if (result.type !== 'text') throw new Error('unexpected result type')
+    expect(result.value).toContain('Task: build the "fast" planner')
+    expect(routedTask).toBe('build the "fast" planner')
+    expect(routedComplexity).toBe(8)
+    expect(routedVision).toBe(true)
+  })
+
+  test('rejects unterminated quoted tasks before routing', async () => {
+    let routed = false
+    setRouterTestDeps({
+      routeTask: () => {
+        routed = true
+        throw new Error('should not route')
+      },
+    })
+
+    const result = await call('route "build a Flutter app --complexity 7', {} as never)
+
+    expect(result.type).toBe('text')
+    if (result.type !== 'text') throw new Error('unexpected result type')
+    expect(result.value).toContain('Unterminated quoted string in /router arguments.')
+    expect(result.value).toContain('/router route')
+    expect(routed).toBe(false)
   })
 
   test('lists available models', async () => {
