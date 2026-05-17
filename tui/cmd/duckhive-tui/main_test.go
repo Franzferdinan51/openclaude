@@ -358,6 +358,9 @@ func TestBridgeDisconnectClearsLoadingThinkingAndTaskState(t *testing.T) {
 	m.state.BridgeConnected = true
 	m.state.IsLoading = true
 	m.state.IsThinking = true
+	m.state.DialogOpen = true
+	m.state.PendingPermission = &model.PermissionRequest{ID: "perm-1", ToolName: "shell"}
+	m.dialog = &components.DialogModel{}
 	m.state.ActiveTaskIDs = map[string]struct{}{
 		"task-1": {},
 		"task-2": {},
@@ -374,6 +377,15 @@ func TestBridgeDisconnectClearsLoadingThinkingAndTaskState(t *testing.T) {
 	}
 	if m.state.IsThinking {
 		t.Fatal("expected thinking to clear")
+	}
+	if m.state.DialogOpen {
+		t.Fatal("expected dialog to close")
+	}
+	if m.state.PendingPermission != nil {
+		t.Fatal("expected pending permission to clear")
+	}
+	if m.dialog != nil {
+		t.Fatal("expected dialog model to clear")
 	}
 	if m.state.ActiveTaskCount != 0 {
 		t.Fatalf("ActiveTaskCount = %d, want 0", m.state.ActiveTaskCount)

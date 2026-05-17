@@ -402,6 +402,9 @@ func (m *MainModel) handleBridgeMessage(msg model.InMsg) (tea.Model, tea.Cmd) {
 		m.state.BridgeConnected = false
 		m.state.IsLoading = false
 		m.state.IsThinking = false
+		m.state.DialogOpen = false
+		m.state.PendingPermission = nil
+		m.dialog = nil
 		m.clearTasks()
 		if msg.Err != nil {
 			m.appendMessage(model.Message{
