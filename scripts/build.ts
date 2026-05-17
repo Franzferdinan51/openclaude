@@ -919,3 +919,14 @@ if (result?.success && sdkResult?.success && harnessResult?.success) {
     process.exitCode = 1
   }
 }
+
+if (result?.success) {
+  console.log('\nApplying CLI runtime patches...')
+  const patch = Bun.spawnSync(['node', 'scripts/postbuild-patch.mjs'], {
+    stdout: 'inherit',
+    stderr: 'inherit',
+  })
+  if (patch.exitCode !== 0) {
+    process.exitCode = 1
+  }
+}

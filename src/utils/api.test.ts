@@ -4,6 +4,7 @@ import { getEmptyToolPermissionContext, type Tool, type Tools } from '../Tool.js
 import { SkillTool } from '../tools/SkillTool/SkillTool.js'
 import { getTools } from '../tools.js'
 import { toolToAPISchema } from './api.js'
+import { zodToJsonSchema } from './zodToJsonSchema.js'
 
 test('toolToAPISchema preserves provider-specific schema keywords in input_schema', async () => {
   const schema = await toolToAPISchema(
@@ -103,6 +104,48 @@ test('toolToAPISchema removes extra required keys not in properties (MCP schema 
 
   const inputSchema = (schema as { input_schema: { required?: string[] } }).input_schema
   expect(inputSchema.required).toEqual(['name'])
+})
+
+test('zodToJsonSchema tolerates missing and JSON-schema-shaped inputs', () => {
+  expect(zodToJsonSchema(undefined)).toEqual({
+    type: 'object',
+    properties: {},
+  })
+  expect(zodToJsonSchema({})).toEqual({
+    type: 'object',
+    properties: {},
+  })
+  expect(
+    zodToJsonSchema({
+      type: 'object',
+      properties: { name: { type: 'string' } },
+      required: ['name'],
+    }),
+  ).toEqual({
+    type: 'object',
+    properties: { name: { type: 'string' } },
+    required: ['name'],
+  })
+})
+
+test('toolToAPISchema does not crash on a non-Zod input schema', async () => {
+  const schema = await toolToAPISchema(
+    {
+      name: 'PlainObjectSchemaRegression',
+      inputSchema: {} as Tool['inputSchema'],
+      prompt: async () => 'Plain object schema regression',
+    } as unknown as Tool,
+    {
+      getToolPermissionContext: async () => getEmptyToolPermissionContext(),
+      tools: [] as unknown as Tools,
+      agents: [],
+    },
+  )
+
+  expect((schema as { input_schema?: unknown }).input_schema).toEqual({
+    type: 'object',
+    properties: {},
+  })
 })
 
 test('toolToAPISchema converts every built-in tool schema', async () => {
