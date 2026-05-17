@@ -189,15 +189,48 @@ describe('checkCliLauncherPath', () => {
     const result = checkCliLauncherPath({
       platform: 'win32',
       cwd: process.cwd(),
-      runCommand: () => ({
-        status: 0,
-        stdout: 'C:\\Users\\franz\\AppData\\Local\\DuckHive\\bin\\duckhive.cmd\r\n',
-      }),
+      expectedVersion: '0.11.0',
+      runCommand: (command, args) =>
+        command === 'cmd.exe' && args.join(' ').includes('duckhive --version')
+          ? {
+              status: 0,
+              stdout: '0.11.0 (DuckHive)\r\n',
+            }
+          : {
+              status: 0,
+              stdout:
+                'C:\\Users\\franz\\AppData\\Local\\DuckHive\\bin\\duckhive.cmd\r\n',
+            },
     })
 
     expect(result.ok).toBe(true)
     expect(result.detail).toContain('duckhive resolves on PATH')
     expect(result.detail).toContain('duckhive.cmd')
+    expect(result.detail).toContain('0.11.0 (DuckHive)')
+  })
+
+  test('fails when the PATH launcher resolves to a stale DuckHive version', () => {
+    const result = checkCliLauncherPath({
+      platform: 'win32',
+      cwd: process.cwd(),
+      expectedVersion: '0.11.0',
+      runCommand: (command, args) =>
+        command === 'cmd.exe' && args.join(' ').includes('duckhive --version')
+          ? {
+              status: 0,
+              stdout: '0.8.0 (OpenClaude)\r\n',
+            }
+          : {
+              status: 0,
+              stdout:
+                'C:\\Users\\franz\\AppData\\Roaming\\npm\\duckhive.cmd\r\n',
+            },
+    })
+
+    expect(result.ok).toBe(false)
+    expect(result.detail).toContain('duckhive resolves on PATH')
+    expect(result.detail).toContain('instead of 0.11.0')
+    expect(result.detail).toContain('Reinstall or relink')
   })
 
   test('reports the Windows install fix when duckhive is not on PATH', () => {

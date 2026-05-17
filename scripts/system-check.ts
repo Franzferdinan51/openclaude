@@ -134,6 +134,7 @@ function checkBuildArtifacts(): CheckResult {
 export function checkCliLauncherPath(options: {
   platform?: NodeJS.Platform
   cwd?: string
+  expectedVersion?: string
   runCommand?: (command: string, args: string[]) => {
     status: number | null
     stdout?: string | Buffer
@@ -142,6 +143,8 @@ export function checkCliLauncherPath(options: {
 } = {}): CheckResult {
   const platform = options.platform ?? process.platform
   const cwd = options.cwd ?? process.cwd()
+  const expectedVersion =
+    options.expectedVersion ?? readPackageVersion(resolve(cwd, 'package.json'))
   const runCommand =
     options.runCommand ??
     ((command: string, args: string[]) =>
@@ -162,9 +165,27 @@ export function checkCliLauncherPath(options: {
   const paths = output.split(/\r?\n/).map(line => line.trim()).filter(Boolean)
 
   if (result.status === 0 && paths.length > 0) {
+    const versionResult =
+      platform === 'win32'
+        ? runCommand('cmd.exe', ['/d', '/s', '/c', 'duckhive --version'])
+        : runCommand('duckhive', ['--version'])
+    const versionOutput = String(
+      versionResult.stdout ?? versionResult.stderr ?? '',
+    ).trim()
+    if (
+      expectedVersion &&
+      (versionResult.status !== 0 || !versionOutput.includes(expectedVersion))
+    ) {
+      return fail(
+        'CLI launcher',
+        `duckhive resolves on PATH: ${paths[0]}, but \`duckhive --version\` returned "${versionOutput || 'no output'}" instead of ${expectedVersion}. Reinstall or relink this checkout.`,
+      )
+    }
+
+    const versionSuffix = versionOutput ? ` Version: ${versionOutput}.` : ''
     return pass(
       'CLI launcher',
-      `duckhive resolves on PATH: ${paths[0]}.`,
+      `duckhive resolves on PATH: ${paths[0]}.${versionSuffix}`,
     )
   }
 
