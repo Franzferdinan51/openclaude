@@ -2,7 +2,7 @@
  * Swarm voting — collect teammate results, score them, return ranked response.
  *
  * Modes:
- *  - vote     : each agent rates the others (requires judge model)
+ *  - vote     : tally explicit teammate ballots, or proxy-vote by heuristic score
  *  - merge    : combine complementary parts into one super-answer
  *  - pick-best : score-only, rank by quality, return best + rankings
  *
@@ -338,10 +338,11 @@ export async function mergeResponses(
 // ─── vote ────────────────────────────────────────────────────────────────────
 
 /**
- * Each agent votes for the best response.
- * Requires an LLM to evaluate — returns placeholder tally for now.
- * For real vote mode, you'd have each agent send a DM to the leader voting
- * for the best peer. This function tallies those votes from the mailbox.
+ * Tally teammate votes for the best response.
+ * Explicit ballots are read from the team leader's mailbox when present.
+ * When no explicit ballots exist, each responding agent casts one proxy vote
+ * for the strongest peer by the same lightweight scoring heuristic used by
+ * pick-best mode.
  */
 export async function vote(
   responses: CollectedResponses,
