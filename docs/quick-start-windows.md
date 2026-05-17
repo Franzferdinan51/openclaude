@@ -166,10 +166,12 @@ becomes usable.
 
 By default, Windows startup stays on the classic REPL and DuckHive applies the
 safe stdin settings before the UI loads. The renderer uses DuckHive's
-OpenClaude-compatible readable stdin path by default instead of the alternate
-data-event diagnostic path. The Go TUI is
-available with `duckhive tui`, but automatic Windows TUI handoff remains opt-in
-with `DUCKHIVE_TUI_WINDOWS_EXPERIMENT=1`.
+data-event stdin path by default so typed characters reach the prompt after the
+UI paints through PowerShell and npm shim launches. Use
+`duckhive --stdin-mode readable` only when comparing the older
+OpenClaude-readable compatibility path. The Go TUI is available with
+`duckhive tui`, but automatic Windows TUI handoff remains opt-in with
+`DUCKHIVE_TUI_WINDOWS_EXPERIMENT=1`.
 
 ## 5. If the REPL Renders But Will Not Accept Typing
 
@@ -187,8 +189,10 @@ duckhive --dangerously-skip-permissions
 ```
 
 This keeps startup from touching `stdin` before Ink owns raw mode and restores
-the same readable input path used by OpenClaude. Remove the temporary env
-override after confirming your terminal works normally.
+DuckHive's supported Windows data-event input path. Remove the temporary env
+override after confirming your terminal works normally. If you need to compare
+the older readable reader, use `duckhive --stdin-mode readable` for that launch
+instead of making it the default environment.
 
 ## 6. If Your Provider Fails
 

@@ -1,6 +1,6 @@
 # Upstream Sync - May 2026
 
-DuckHive checked the live upstream repositories on May 7, 2026 and refreshed the live heads on May 9, 2026 before the hardening pass. A follow-up probe on May 17, 2026 refreshed the current heads/tags for the named harnesses before the context-collapse recovery fix. The safest high-value fixes from the earlier check were ported into `0.8.1` and the SDKv2 sync line.
+DuckHive checked the live upstream repositories on May 7, 2026 and refreshed the live heads on May 9, 2026 before the hardening pass. Follow-up probes on May 17, 2026 refreshed the current heads/tags for the named harnesses before the context-collapse recovery fix and again before the CLI/TUI completion audit. The safest high-value fixes from the earlier check were ported into `0.8.1` and the SDKv2 sync line.
 
 ## Repositories Checked
 
@@ -15,10 +15,10 @@ DuckHive checked the live upstream repositories on May 7, 2026 and refreshed the
 
 | Project | Current probe result | DuckHive follow-up |
 | --- | --- | --- |
-| OpenClaude | `main`/`HEAD` at `f102b601c52744e6766a00730285a6e9205f4132`; `fix/363-startup-input-freeze` at `af5bb8fed8f830280b0db2eaed26d46ec39ffe0b` | Confirmed DuckHive already carries the Windows early-input disable/data-stdin hardening direction and kept the DuckHive branding/default-provider tests in place. |
-| OpenAI Codex | `main`/`HEAD` at `4c897723142406baf3c5f6f8730f2844ef1aa436`; latest stable tag observed `rust-v0.130.0`; latest observed prerelease line `rust-v0.131.0-alpha.22` | Kept `/goal` as the current stable Codex-inspired slice; no alpha-only behavior imported. |
-| OpenClaw | `main`/`HEAD` at `84ec0c27bf755884cec43de9ef37fed9e3c13f9f`; latest observed stable `v2026.5.7`, beta `v2026.5.9-beta.1` | Existing channel/Telegram/ClawHub hardening remains the DuckHive-shaped slice; no gateway-only OpenClaw internals copied. |
-| Hermes Agent | `main`/`HEAD` at `32c3f06a5bf0867d11d309503122f59d0dba75d9`; latest observed tag `v2026.5.16` | Closed a local long-session harness gap by making context-collapse subscriptions real and preventing `/context` projection crashes when the collapse gate is enabled. |
+| OpenClaude | `main`/`HEAD` at `0fba1541a8647a805339811f6f2bac4b8d13b699`; `fix/363-startup-input-freeze` at `af5bb8fed8f830280b0db2eaed26d46ec39ffe0b`; latest observed tag `v0.13.0` | Confirmed DuckHive already carries the Windows early-input disable/data-stdin hardening direction and kept the DuckHive branding/default-provider tests in place. |
+| OpenAI Codex | `main`/`HEAD` at `e7bffc5a20e92cbc64d6c16a1b257d0b2e4cd5df`; latest stable tag observed `rust-v0.130.0`; latest observed prerelease line `rust-v0.131.0-alpha.22` | Kept `/goal` as the current stable Codex-inspired slice; no alpha-only behavior imported. |
+| OpenClaw | `main`/`HEAD` at `800a0d316636d426feb237476f3e006336f609db`; latest observed stable `v2026.5.7`, beta `v2026.5.9-beta.1` | Existing channel/Telegram/ClawHub hardening remains the DuckHive-shaped slice; no gateway-only OpenClaw internals copied. |
+| Hermes Agent | `main`/`HEAD` at `f36c89cd5798da0f313192555739975e57ffdef5`; latest observed tag `v2026.5.16` | Closed a local long-session harness gap by making context-collapse subscriptions real and preventing `/context` projection crashes when the collapse gate is enabled. |
 
 ## Ported In 0.8.1
 
@@ -121,13 +121,14 @@ Additional OpenClaude fixes ported in this sync:
 - interactive/plugin startup cycle fix by lazily initializing DuckHive orchestration
 - command ownership cleanup so DuckHive owns `duckhive` only and no longer ships an `openclaude` wrapper
 
-Verification highlights:
+Historical verification highlights from the SDKv2 sync:
 
 - `bun test tests/sdk` passes
 - focused provider, web search, token counter, hook, and OpenAI shim tests pass
 - full `bun test`, `bun run build`, `bun run smoke`, `bun run verify:privacy`, and `bun run doctor:runtime` pass
 - `cd tui && go test ./...` passes
 
-Known existing project-wide verification debt:
+Current project-wide verification status after the CLI/TUI completion audit:
 
-- `bun run typecheck` still reports broad pre-existing type errors unrelated to SDKv2 and the OpenClaw/Telegram hardening pass, including missing optional legacy modules and old strictness issues across UI/command/test surfaces.
+- `bun run typecheck`, `npm run smoke`, full `bun test`, `npm run integrations:check`, `npm run verify:privacy`, and `npm pack --dry-run --json` pass on the TypeScript/Node side.
+- `cd tui && go test ./...` remains blocked on the current Windows machine because Go is not installed; the runtime doctor reports that state and keeps the classic REPL as the Windows-safe default.
