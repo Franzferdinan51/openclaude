@@ -72,6 +72,13 @@ describe('ClawHub skill service', () => {
             metadata: {
               os: ['macos'],
             },
+            moderation: {
+              verdict: 'clean',
+              isSuspicious: false,
+              isMalwareBlocked: false,
+              reasonCodes: [],
+              summary: 'No issues detected',
+            },
           }),
         )) as typeof fetch,
     })
@@ -88,6 +95,13 @@ describe('ClawHub skill service', () => {
       ownerHandle: 'openclaw',
       ownerDisplayName: 'OpenClaw',
       metadata: { os: ['macos'] },
+      moderation: {
+        verdict: 'clean',
+        isSuspicious: false,
+        isMalwareBlocked: false,
+        reasonCodes: [],
+        summary: 'No issues detected',
+      },
     })
   })
 
@@ -167,5 +181,38 @@ describe('ClawHub skill service', () => {
     await expect(installClawHubSkill('calendar')).rejects.toThrow(
       /Unsafe skill archive path/,
     )
+  })
+
+  test('refuses to download a malware-blocked skill', async () => {
+    let callCount = 0
+    setClawHubSkillServiceTestDeps({
+      fetchImpl: (async () => {
+        callCount += 1
+        return new Response(
+          JSON.stringify({
+            skill: {
+              slug: 'malware',
+              displayName: 'Malware',
+              summary: 'Blocked skill',
+            },
+            latestVersion: {
+              version: '9.9.9',
+            },
+            moderation: {
+              verdict: 'malicious',
+              isSuspicious: true,
+              isMalwareBlocked: true,
+              reasonCodes: ['malware'],
+              summary: 'Blocked by registry moderation',
+            },
+          }),
+        )
+      }) as typeof fetch,
+    })
+
+    await expect(installClawHubSkill('malware')).rejects.toThrow(
+      /registry moderation verdict is malicious/,
+    )
+    expect(callCount).toBe(1)
   })
 })

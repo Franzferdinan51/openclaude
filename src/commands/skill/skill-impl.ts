@@ -207,6 +207,24 @@ function renderClawHubSkillDetail(
   }
   if (detail.latestVersion) lines.push(`Latest version: ${detail.latestVersion}`)
   if (detail.summary) lines.push(`Summary: ${detail.summary}`)
+  if (detail.moderation) {
+    const moderation = detail.moderation
+    const status =
+      moderation.verdict ??
+      (moderation.isMalwareBlocked
+        ? 'blocked'
+        : moderation.isSuspicious
+          ? 'suspicious'
+          : 'unknown')
+    lines.push(`Moderation: ${status}`)
+    if (moderation.isMalwareBlocked) lines.push('Blocked: yes')
+    if (moderation.summary) {
+      lines.push(`Moderation summary: ${moderation.summary}`)
+    }
+    if (moderation.reasonCodes?.length) {
+      lines.push(`Reason codes: ${moderation.reasonCodes.join(', ')}`)
+    }
+  }
   if (detail.changelog) {
     lines.push('Changelog:')
     lines.push(detail.changelog)

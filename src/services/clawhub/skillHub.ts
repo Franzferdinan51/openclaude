@@ -23,6 +23,17 @@ export type ClawHubSkillDetail = {
   ownerHandle?: string | null
   ownerDisplayName?: string | null
   metadata?: Record<string, unknown> | null
+  moderation?: ClawHubModeration | null
+}
+
+export type ClawHubModeration = {
+  isSuspicious: boolean
+  isMalwareBlocked: boolean
+  verdict?: 'clean' | 'suspicious' | 'malicious' | null
+  reasonCodes?: string[] | null
+  updatedAt?: number | null
+  engineVersion?: string | null
+  summary?: string | null
 }
 
 type SearchResponse = {
@@ -53,6 +64,7 @@ type DetailResponse = {
     displayName?: string | null
   }
   metadata?: Record<string, unknown> | null
+  moderation?: ClawHubModeration | null
 }
 
 type OriginMetadata = {
@@ -216,6 +228,7 @@ export async function inspectClawHubSkill(
     ownerHandle: response.owner?.handle ?? null,
     ownerDisplayName: response.owner?.displayName ?? null,
     metadata: response.metadata ?? null,
+    moderation: response.moderation ?? null,
   }
 }
 
@@ -223,6 +236,15 @@ export async function installClawHubSkill(
   slug: string,
 ): Promise<{ skillPath: string; version: string | null }> {
   const detail = await inspectClawHubSkill(slug)
+  const verdict = detail.moderation?.verdict
+  if (
+    detail.moderation?.isMalwareBlocked ||
+    verdict === 'malicious'
+  ) {
+    throw new Error(
+      `Refusing to install ClawHub skill "${slug}" because the registry moderation verdict is ${verdict ?? 'blocked'}.`,
+    )
+  }
   const response = await clawHubDeps.fetchImpl(
     `${getClawHubRegistryUrl()}/api/v1/download?slug=${encodeURIComponent(slug)}`,
   )

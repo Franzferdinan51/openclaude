@@ -83,6 +83,14 @@ describe('/skill command', () => {
         changelog: 'Initial release',
         ownerHandle: 'openclaw',
         ownerDisplayName: 'OpenClaw',
+        metadata: null,
+        moderation: {
+          verdict: 'suspicious',
+          isSuspicious: true,
+          isMalwareBlocked: false,
+          reasonCodes: ['network-access'],
+          summary: 'Uses network APIs',
+        },
       })) as never,
     })
 
@@ -92,6 +100,9 @@ describe('/skill command', () => {
     if (result.type !== 'text') throw new Error('unexpected result type')
     expect(result.value).toContain('ClawHub skill: calendar')
     expect(result.value).toContain('Latest version: 1.0.0')
+    expect(result.value).toContain('Moderation: suspicious')
+    expect(result.value).toContain('Moderation summary: Uses network APIs')
+    expect(result.value).toContain('Reason codes: network-access')
     expect(result.value).toContain('Initial release')
   })
 
