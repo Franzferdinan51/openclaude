@@ -3,6 +3,7 @@ import {
   builtInCommandNames,
   formatDescriptionWithSource,
 } from './commands.js'
+import mobile from './commands/mobile/index.js'
 import onboard from './commands/onboard/index.js'
 import { isCommand } from './types/command.js'
 
@@ -43,6 +44,12 @@ describe('builtInCommandNames', () => {
     expect(builtInCommandNames()).toContain('savepoint')
   })
 
+  test('includes the agent run command surface', () => {
+    expect(builtInCommandNames()).toContain('run')
+    expect(builtInCommandNames()).toContain('runs')
+    expect(builtInCommandNames()).toContain('agent-run')
+  })
+
   test('includes the connect command', () => {
     expect(builtInCommandNames()).toContain('connect')
     expect(builtInCommandNames()).toContain('telegram')
@@ -58,6 +65,20 @@ describe('builtInCommandNames', () => {
     expect(builtInCommandNames()).toContain('search-provider')
     expect(builtInCommandNames()).toContain('search')
     expect(builtInCommandNames()).toContain('web-search-provider')
+  })
+
+  test('includes the android and vision commands', () => {
+    expect(builtInCommandNames()).toContain('android')
+    expect(builtInCommandNames()).toContain('adb')
+    expect(builtInCommandNames()).toContain('vision')
+    expect(builtInCommandNames()).toContain('vision-assist')
+    expect(mobile.aliases).not.toContain('android')
+  })
+
+  test('includes the router command', () => {
+    expect(builtInCommandNames()).toContain('router')
+    expect(builtInCommandNames()).toContain('route-model')
+    expect(builtInCommandNames()).toContain('model-router')
   })
 
   test('includes the LM Studio setup command', () => {
@@ -78,6 +99,11 @@ describe('builtInCommandNames', () => {
 
   test('includes the channel command', () => {
     expect(builtInCommandNames()).toContain('channel')
+  })
+
+  test('includes the shadow command', () => {
+    expect(builtInCommandNames()).toContain('shadow')
+    expect(builtInCommandNames()).toContain('shadow-git')
   })
 
   test('includes the mcp-manage command', () => {
@@ -101,6 +127,10 @@ describe('builtInCommandNames', () => {
   test('includes QOL and harness helper commands that are implemented locally', () => {
     expect(builtInCommandNames()).toContain('acp')
     expect(builtInCommandNames()).toContain('acp-server')
+    expect(builtInCommandNames()).toContain('budget')
+    expect(builtInCommandNames()).toContain('spend')
+    expect(builtInCommandNames()).toContain('cache')
+    expect(builtInCommandNames()).toContain('provider-cache')
     expect(builtInCommandNames()).toContain('changelog')
     expect(builtInCommandNames()).toContain('curate')
     expect(builtInCommandNames()).toContain('instruct')
@@ -111,6 +141,8 @@ describe('builtInCommandNames', () => {
     expect(builtInCommandNames()).toContain('prompt-suggest')
     expect(builtInCommandNames()).toContain('shell-mode')
     expect(builtInCommandNames()).toContain('sh')
+    expect(builtInCommandNames()).toContain('skill')
+    expect(builtInCommandNames()).toContain('skill-workshop')
     expect(builtInCommandNames()).toContain('tui')
     expect(builtInCommandNames()).toContain('ui')
     expect(builtInCommandNames()).toContain('yolo')

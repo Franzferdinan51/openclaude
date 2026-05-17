@@ -1,6 +1,7 @@
 // biome-ignore-all assist/source/organizeImports: internal-only import markers must not be reordered
 import addDir from './commands/add-dir/index.js'
 import acp from './commands/acp/index.js'
+import android from './commands/android/index.js'
 import autofixPr from './commands/autofix-pr/index.js'
 import backfillSessions from './commands/backfill-sessions/index.js'
 import btw from './commands/btw/index.js'
@@ -69,10 +70,13 @@ import releaseNotes from './commands/release-notes/index.js'
 import rename from './commands/rename/index.js'
 import resume from './commands/resume/index.js'
 import review, { ultrareview } from './commands/review.js'
+import router from './commands/router/index.js'
 import searchProvider from './commands/search-provider/index.js'
 import session from './commands/session/index.js'
 import shellMode from './commands/shell-mode/index.js'
+import shadow from './commands/shadow/index.js'
 import share from './commands/share/index.js'
+import skill from './commands/skill/index.js'
 import skills from './commands/skills/index.js'
 import status from './commands/status/index.js'
 import tasks from './commands/tasks/index.js'
@@ -162,6 +166,7 @@ const buddy = isBuddyEnabled()
 /* eslint-enable @typescript-eslint/no-require-imports */
 import thinkback from './commands/thinkback/index.js'
 import thinkbackPlay from './commands/thinkback-play/index.js'
+import vision from './commands/vision/index.js'
 import permissions from './commands/permissions/index.js'
 import plan from './commands/plan/index.js'
 import fast from './commands/fast/index.js'
@@ -172,8 +177,10 @@ import repomap from './commands/repomap/index.js'
 import hooks from './commands/hooks/index.js'
 import files from './commands/files/index.js'
 import branch from './commands/branch/index.js'
+import budget from './commands/budget/index.js'
 import agents from './commands/agents/index.js'
 import autoFix from './commands/auto-fix.js'
+import cache from './commands/cache/index.js'
 import plugin from './commands/plugin/index.js'
 import reloadPlugins from './commands/reload-plugins/index.js'
 import rewind from './commands/rewind/index.js'
@@ -225,6 +232,7 @@ import {
   extraUsageNonInteractive,
 } from './commands/extra-usage/index.js'
 import rateLimitOptions from './commands/rate-limit-options/index.js'
+import run from './commands/run/index.js'
 import statusline from './commands/statusline.js'
 import effort from './commands/effort/index.js'
 import stats from './commands/stats/index.js'
@@ -304,9 +312,12 @@ const COMMANDS = memoize((): Command[] => [
   acp,
   advisor,
   agents,
+  android,
   autoFix,
   branch,
+  budget,
   btw,
+  cache,
   cacheProbe,
   cacheStats,
   channel,
@@ -372,6 +383,7 @@ const COMMANDS = memoize((): Command[] => [
   rename,
   resume,
   session,
+  skill,
   skills,
   spawn,
   stats,
@@ -384,11 +396,14 @@ const COMMANDS = memoize((): Command[] => [
   logo,
   feedback,
   review,
+  run,
   ultrareview,
   rewind,
   searchProvider,
+  router,
   securityReview,
   senate,
+  shadow,
   shellMode,
   terminalSetup,
   swarm,
@@ -401,6 +416,7 @@ const COMMANDS = memoize((): Command[] => [
   usage,
   usageReport,
   vim,
+  vision,
   wiki,
   yolo,
   ...(webCmd ? [webCmd] : []),
