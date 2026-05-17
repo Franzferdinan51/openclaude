@@ -303,6 +303,13 @@ export function checkCliInputMode(
   runtime = { platform: process.platform },
 ): CheckResult {
   const warnings = detectCliInputModeWarnings(env, runtime.platform)
+  if (runtime.platform === 'win32' && env.DUCKHIVE_STDIN_MODE === 'data') {
+    return pass(
+      'CLI input mode',
+      'Alternate data stdin mode is explicitly active for this launch via `--stdin-mode data`; remove the flag to return to the OpenClaude-compatible readable default.',
+    )
+  }
+
   if (warnings.length === 0 && runtime.platform !== 'win32') {
     return pass('CLI input mode', 'Readable stdin default active.')
   }
@@ -316,7 +323,7 @@ export function checkCliInputMode(
 
   return pass(
     'CLI input mode',
-    'OpenClaude-compatible readable stdin is active by default on Windows; early input capture remains disabled, no-args startup forces the classic REPL, inherited TUI handoff flags are ignored unless `duckhive tui` or DUCKHIVE_TUI_WINDOWS_EXPERIMENT=1 is used, and detached stdin falls back to CONIN$ only when stdout is still interactive.',
+    'OpenClaude-compatible readable stdin is active by default on Windows; use `duckhive --stdin-mode data` as a one-shot fallback if the REPL paints but typed characters do not appear. Early input capture remains disabled, no-args startup forces the classic REPL, inherited TUI handoff flags are ignored unless `duckhive tui` or DUCKHIVE_TUI_WINDOWS_EXPERIMENT=1 is used, and detached stdin falls back to CONIN$ only when stdout is still interactive.',
   )
 }
 

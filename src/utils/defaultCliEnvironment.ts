@@ -13,6 +13,20 @@ const WINDOWS_INHERITED_TUI_ENV = [
   'DUCKHIVE_TUI_DIRECT',
 ] as const
 
+function getExplicitStdinMode(argv: string[]): 'data' | 'readable' | undefined {
+  const equalsArg = argv.find(arg => arg.startsWith('--stdin-mode='))
+  const flagIndex = argv.indexOf('--stdin-mode')
+  const rawMode = equalsArg
+    ? equalsArg.slice('--stdin-mode='.length)
+    : flagIndex >= 0
+      ? argv[flagIndex + 1]
+      : undefined
+
+  return rawMode === 'data' || rawMode === 'readable'
+    ? rawMode
+    : undefined
+}
+
 function isExplicitTuiLaunch(argv: string[]): boolean {
   return argv.slice(2).includes('tui')
 }
@@ -24,6 +38,11 @@ export function applyDefaultCliEnvironment(
 ): NodeJS.ProcessEnv {
   if (runtime.platform !== 'win32') {
     return env
+  }
+
+  const explicitStdinMode = getExplicitStdinMode(argv)
+  if (explicitStdinMode) {
+    env.DUCKHIVE_STDIN_MODE = explicitStdinMode
   }
 
   if (!isEnvTruthy(env.DUCKHIVE_ALLOW_FRAGILE_STDIN)) {

@@ -46,7 +46,7 @@ const cases: SmokeCase[] = [
   {
     name: 'top-level help',
     args: ['--help'],
-    includes: ['Usage: duckhive', 'runtime-doctor', '--yolo'],
+    includes: ['Usage: duckhive', 'runtime-doctor', '--yolo', '--stdin-mode'],
   },
   {
     name: 'doctor help',

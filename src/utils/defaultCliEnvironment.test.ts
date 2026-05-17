@@ -68,6 +68,34 @@ test('Windows CLI can opt into fragile stdin diagnostics', () => {
   expect(env.DUCKHIVE_USE_CONIN_STDIN).toBe('1')
 })
 
+test('Windows CLI preserves explicit stdin mode flag through startup sanitizing', () => {
+  const env: NodeJS.ProcessEnv = {
+    DUCKHIVE_USE_DATA_STDIN: '1',
+    OPENCLAUDE_USE_DATA_STDIN: '1',
+  }
+  applyDefaultCliEnvironment(env, { platform: 'win32' }, [
+    'node',
+    'duckhive',
+    '--stdin-mode',
+    'data',
+  ])
+
+  expect(env.DUCKHIVE_USE_DATA_STDIN).toBeUndefined()
+  expect(env.OPENCLAUDE_USE_DATA_STDIN).toBeUndefined()
+  expect(env.DUCKHIVE_STDIN_MODE).toBe('data')
+})
+
+test('Windows CLI accepts equals-form explicit stdin mode flag', () => {
+  const env: NodeJS.ProcessEnv = {}
+  applyDefaultCliEnvironment(env, { platform: 'win32' }, [
+    'node',
+    'duckhive',
+    '--stdin-mode=readable',
+  ])
+
+  expect(env.DUCKHIVE_STDIN_MODE).toBe('readable')
+})
+
 test('Windows early-input experiment leaves stdin env untouched', () => {
   const env: NodeJS.ProcessEnv = {
     DUCKHIVE_WINDOWS_EARLY_INPUT_EXPERIMENT: '1',

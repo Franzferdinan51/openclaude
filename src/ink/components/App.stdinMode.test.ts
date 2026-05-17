@@ -63,6 +63,24 @@ describe('determineStdinMode', () => {
     ).toBe('readable')
   })
 
+  test('honors explicit DuckHive stdin mode override', () => {
+    expect(
+      determineStdinMode({
+        env: { DUCKHIVE_STDIN_MODE: 'data' },
+        platform: 'win32',
+      }),
+    ).toBe('data')
+    expect(
+      determineStdinMode({
+        env: {
+          DUCKHIVE_STDIN_MODE: 'readable',
+          DUCKHIVE_USE_DATA_STDIN: '1',
+        },
+        platform: 'win32',
+      }),
+    ).toBe('readable')
+  })
+
   test('keeps readable events on non-Windows by default', () => {
     expect(determineStdinMode({ env: {}, platform: 'linux' })).toBe('readable')
   })

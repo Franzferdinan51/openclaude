@@ -129,8 +129,20 @@ describe('checkCliInputMode', () => {
 
     expect(result.ok).toBe(true)
     expect(result.detail).toContain('OpenClaude-compatible readable stdin')
+    expect(result.detail).toContain('duckhive --stdin-mode data')
     expect(result.detail).toContain('classic REPL')
     expect(result.detail).toContain('inherited TUI handoff flags')
+  })
+
+  test('reports explicit data stdin mode as a supported one-shot fallback', () => {
+    const result = checkCliInputMode(
+      { DUCKHIVE_STDIN_MODE: 'data' },
+      { platform: 'win32' },
+    )
+
+    expect(result.ok).toBe(true)
+    expect(result.detail).toContain('Alternate data stdin mode')
+    expect(result.detail).toContain('--stdin-mode data')
   })
 
   test('fails on Windows when data stdin is forced', () => {
