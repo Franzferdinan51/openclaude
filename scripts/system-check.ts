@@ -467,6 +467,12 @@ const REQUIRED_TOP_LEVEL_HELP_TERMS = [
   'swarm',
 ] as const
 
+const REQUIRED_CONNECTOR_STATUS_COMMANDS = [
+  ['connect', 'status'],
+  ['telegram', 'status'],
+  ['channel', 'status', 'telegram'],
+] as const
+
 export function checkHarnessCommandSurfaces(): CheckResult {
   const commandNames = new Set(builtInCommandNames())
   const missing = REQUIRED_HARNESS_COMMANDS.filter(name => !commandNames.has(name))
@@ -649,6 +655,58 @@ export function checkSkillHubRegistry(): CheckResult {
   return pass(
     'Skill hub registry',
     `ClawHub registry configured at ${registry}; /skill search, inspect, and install are available.`,
+  )
+}
+
+export function checkConnectorCliControls(options: {
+  cliPath?: string
+  runCommand?: (command: string, args: string[]) => {
+    status: number | null
+    stdout?: string | Buffer
+    stderr?: string | Buffer
+  }
+} = {}): CheckResult {
+  const cliPath = options.cliPath ?? resolve(process.cwd(), 'dist', 'cli.mjs')
+  if (!existsSync(cliPath)) {
+    return fail('Connector CLI controls', `Missing ${cliPath}. Run: bun run build`)
+  }
+
+  const runCommand =
+    options.runCommand ??
+    ((command: string, args: string[]) =>
+      spawnSync(command, args, {
+        cwd: process.cwd(),
+        encoding: 'utf8',
+        timeout: 10_000,
+        env: {
+          ...process.env,
+          DUCKHIVE_DISABLE_STARTUP_SCREEN: '1',
+        },
+      }))
+
+  const missing: string[] = []
+  for (const args of REQUIRED_CONNECTOR_STATUS_COMMANDS) {
+    const result = runCommand(process.execPath, [cliPath, ...args])
+    const output = `${result.stdout ?? ''}${result.stderr ?? ''}`
+    if (
+      result.status !== 0 ||
+      !output.includes('Status:') ||
+      output.includes('Warning: ignoring saved provider profile')
+    ) {
+      missing.push(args.join(' '))
+    }
+  }
+
+  if (missing.length > 0) {
+    return fail(
+      'Connector CLI controls',
+      `Missing or provider-blocked connector status commands: ${missing.join(', ')}.`,
+    )
+  }
+
+  return pass(
+    'Connector CLI controls',
+    `Provider-free connector status commands available: ${REQUIRED_CONNECTOR_STATUS_COMMANDS.map(args => args.join(' ')).join(', ')}.`,
   )
 }
 
@@ -1310,6 +1368,7 @@ export async function runRuntimeDoctor(argv: string[] = process.argv.slice(2)): 
   results.push(checkAgentRunCliControls())
   results.push(checkInputTestCliControl())
   results.push(checkSkillHubRegistry())
+  results.push(checkConnectorCliControls())
   results.push(...checkOpenAIEnv())
   results.push(await checkBaseUrlReachability())
   results.push(await checkProviderGenerationReadiness())

@@ -7,6 +7,7 @@ import {
   checkCliLauncherPath,
   checkCliInputMode,
   checkAgentRunCliControls,
+  checkConnectorCliControls,
   checkHarnessCommandSurfaces,
   checkTopLevelCliHelpSurface,
   checkOpenAIEnv,
@@ -483,6 +484,49 @@ describe('checkSkillHubRegistry', () => {
     expect(result.detail).toContain('https://example.test/clawhub')
     expect(result.detail).toContain('/skill search')
     expect(result.detail).toContain('install')
+  })
+})
+
+describe('checkConnectorCliControls', () => {
+  test('verifies provider-free connector status commands are reachable', () => {
+    const seen: string[] = []
+    const result = checkConnectorCliControls({
+      cliPath: 'dist/cli.mjs',
+      runCommand: (_command, args) => {
+        seen.push(args.slice(1).join(' '))
+        return {
+          status: 0,
+          stdout: 'Telegram Connection Status\nStatus:   Not connected\n',
+        }
+      },
+    })
+
+    expect(result.ok).toBe(true)
+    expect(result.detail).toContain('connect status')
+    expect(result.detail).toContain('telegram status')
+    expect(result.detail).toContain('channel status telegram')
+    expect(seen).toEqual([
+      'connect status',
+      'telegram status',
+      'channel status telegram',
+    ])
+  })
+
+  test('fails if a connector status command hits provider startup', () => {
+    const result = checkConnectorCliControls({
+      cliPath: 'dist/cli.mjs',
+      runCommand: (_command, args) => ({
+        status: 0,
+        stdout: 'Status: Not connected\n',
+        stderr: args.includes('telegram')
+          ? 'Warning: ignoring saved provider profile. broken\n'
+          : '',
+      }),
+    })
+
+    expect(result.ok).toBe(false)
+    expect(result.detail).toContain('telegram status')
+    expect(result.detail).toContain('channel status telegram')
   })
 })
 
