@@ -53,8 +53,10 @@ describe('/connect command', () => {
     expect(result.type).toBe('text')
     expect(result.value).toContain('Connect Telegram to DuckHive')
     expect(result.value).toContain('duckhive connect <your-bot-token>')
+    expect(result.value).toContain('duckhive telegram <your-bot-token>')
     expect(result.value).toContain('/connect <your-bot-token>')
     expect(result.value).toContain('duckhive connect status')
+    expect(result.value).toContain('duckhive telegram status')
     expect(result.value).toContain('DUCKHIVE_TELEGRAM_ALLOWED_CHAT_ID')
   })
 
@@ -142,8 +144,10 @@ describe('/connect command', () => {
     const webhook = await call('webhook', {} as never)
     const email = await call('email', {} as never)
 
+    expect(webhook.value).toContain('duckhive channel connect webhook')
     expect(webhook.value).toContain('/channel connect webhook')
     expect(webhook.value).not.toContain('Invalid bot token format')
+    expect(email.value).toContain('duckhive channel connect email')
     expect(email.value).toContain('/channel connect email')
     expect(email.value).not.toContain('Invalid bot token format')
     expect(updateSpy).not.toHaveBeenCalled()
@@ -154,6 +158,7 @@ describe('/connect command', () => {
     const result = await call('console', {} as never)
 
     expect(result.value).toContain('console channel is built into the local REPL')
+    expect(result.value).toContain('duckhive channel status console')
     expect(result.value).toContain('/channel status console')
     expect(updateSpy).not.toHaveBeenCalled()
   })
@@ -178,7 +183,9 @@ describe('/connect command', () => {
 
     expect(result.value).toContain('Telegram connected successfully!')
     expect(result.value).toContain('duckhive connect status')
+    expect(result.value).toContain('duckhive telegram status')
     expect(result.value).toContain('duckhive connect disconnect')
+    expect(result.value).toContain('duckhive telegram disconnect')
     expect(result.value).toContain('/connect status')
     expect(result.value).toContain('/connect disconnect')
     expect(result.value).toContain('DUCKHIVE_TELEGRAM_ALLOWED_CHAT_ID=<chat-id>')

@@ -83,6 +83,9 @@ function getChannelConnectorHint(name: string): string | undefined {
     return `The /connect command manages Telegram bot setup.
 
 For ${channel}, use:
+  duckhive channel connect ${channel}
+  duckhive channel status ${channel}
+  duckhive channel disconnect ${channel}
   /channel connect ${channel}
   /channel status ${channel}
   /channel disconnect ${channel}`
@@ -91,6 +94,8 @@ For ${channel}, use:
     return `The console channel is built into the local REPL and does not need /connect setup.
 
 Use:
+  duckhive channel status console
+  duckhive channel send console <message>
   /channel status console
   /channel send console <message>`
   }
@@ -169,6 +174,7 @@ To connect Telegram, you need a bot token from @BotFather:
 
 Once you have your token, run:
   duckhive connect <your-bot-token>
+  duckhive telegram <your-bot-token>
   # or inside the REPL:
   /connect <your-bot-token>
 
@@ -177,7 +183,9 @@ after sending /start. This allowlist also becomes the default outbound reply tar
 
 After connecting, you can use these commands:
   duckhive connect status
+  duckhive telegram status
   duckhive connect disconnect
+  duckhive telegram disconnect
   /connect status        Show connection status
   /connect disconnect    Remove Telegram connection
 
@@ -254,7 +262,7 @@ Your bot is now connected. To complete setup:
 
 You can now interact with DuckHive through Telegram!
 
-Run duckhive connect status or /connect status to see connection details
-Run duckhive connect disconnect or /connect disconnect to remove the connection`,
+Run duckhive connect status, duckhive telegram status, or /connect status to see connection details
+Run duckhive connect disconnect, duckhive telegram disconnect, or /connect disconnect to remove the connection`,
   }
 }

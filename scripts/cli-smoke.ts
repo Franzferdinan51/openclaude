@@ -461,6 +461,8 @@ const cases: SmokeCase[] = [
     includes: [
       'Connect Telegram to DuckHive',
       'duckhive connect <your-bot-token>',
+      'duckhive telegram <your-bot-token>',
+      'duckhive telegram status',
       '/connect <your-bot-token>',
       'DUCKHIVE_TELEGRAM_ALLOWED_CHAT_ID',
     ],
