@@ -349,6 +349,43 @@ func TestTaskLifecycleClearsStaleTasksOnIdle(t *testing.T) {
 	}
 }
 
+func TestBridgeDisconnectClearsLoadingThinkingAndTaskState(t *testing.T) {
+	m := &MainModel{
+		state:      model.NewAppState(),
+		msgList:    components.NewMessageList(80, 20),
+		transcript: screens.NewTranscriptPanel(),
+	}
+	m.state.BridgeConnected = true
+	m.state.IsLoading = true
+	m.state.IsThinking = true
+	m.state.ActiveTaskIDs = map[string]struct{}{
+		"task-1": {},
+		"task-2": {},
+	}
+	m.state.ActiveTaskCount = 2
+
+	m.handleBridgeMessage(model.MsgBridgeDisconnected{Err: context.Canceled})
+
+	if m.state.BridgeConnected {
+		t.Fatal("expected bridge to be marked disconnected")
+	}
+	if m.state.IsLoading {
+		t.Fatal("expected loading to clear")
+	}
+	if m.state.IsThinking {
+		t.Fatal("expected thinking to clear")
+	}
+	if m.state.ActiveTaskCount != 0 {
+		t.Fatalf("ActiveTaskCount = %d, want 0", m.state.ActiveTaskCount)
+	}
+	if len(m.state.ActiveTaskIDs) != 0 {
+		t.Fatalf("ActiveTaskIDs = %d, want 0", len(m.state.ActiveTaskIDs))
+	}
+	if len(m.state.Messages) == 0 {
+		t.Fatal("expected disconnect message")
+	}
+}
+
 func TestCtrlCQuitsFromSettingsScreen(t *testing.T) {
 	m := &MainModel{
 		state:      model.NewAppState(),

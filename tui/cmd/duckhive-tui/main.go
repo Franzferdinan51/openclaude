@@ -401,6 +401,8 @@ func (m *MainModel) handleBridgeMessage(msg model.InMsg) (tea.Model, tea.Cmd) {
 	case model.MsgBridgeDisconnected:
 		m.state.BridgeConnected = false
 		m.state.IsLoading = false
+		m.state.IsThinking = false
+		m.clearTasks()
 		if msg.Err != nil {
 			m.appendMessage(model.Message{
 				ID:        messageID("bridge"),
