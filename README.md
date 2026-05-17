@@ -747,6 +747,8 @@ Create and manage reusable skill scaffolds for future sessions through DuckHive'
 
 ClawHub registry notes:
 - DuckHive searches ClawHub directly through its public skill APIs.
+- `/skill inspect <slug>` surfaces ClawHub moderation verdicts, summaries, and reason codes when the registry provides them.
+- `/skill install <slug>` refuses registry entries marked malware-blocked or `malicious` before downloading the archive.
 - Installed ClawHub skills are written under DuckHive's resolved `skills/` directory and get local provenance metadata at `.clawhub/origin.json`.
 - Override the registry base with `DUCKHIVE_CLAWHUB_REGISTRY` or `CLAWHUB_REGISTRY` if you need a different ClawHub-compatible endpoint.
 
@@ -921,7 +923,7 @@ DuckHive adds 40+ custom tools on top of the OpenClaude base:
 `/android` and `/vision` are now real slash commands too. `/android` exposes the documented ADB control flow (`devices`, `screenshot`, `battery`, `tap`, `swipe`, `text`, `shell`), and `/vision` exposes `phone_screenshot`, `analyze`, and `phone_tap` directly from the CLI instead of relying on unrelated mobile-app aliases or tool-only entrypoints.
 
 `/memory`, `/skill`, and `/skills` are the actual user-facing memory/skill commands today. `/skill` now provides a lightweight workshop surface for scaffold/list/read/delete workflows against DuckHive's shared `skills/` directory, while `/skills` still opens the richer interactive manager UI. The lessons, BM25, embed recall, KAIROS, mesh, and runtime skill-generation entries above are implemented subsystems or tool primitives, but they are not currently registered as standalone slash commands in the DuckHive CLI.
-| **SkillWorkshopTool** | `/skill` | Scaffold, inspect, and delete reusable workflow skills |
+| **SkillWorkshopTool** | `/skill` | Scaffold local skills, search/inspect/install ClawHub skills, and block malicious registry installs |
 | **SkillManageTool** | `/skills` | Interactive skill manager UI |
 | **SessionSearchTool** | — | Literal + keyword search across past sessions |
 | **CronRunTool** | — | Internal scheduled-job trigger surface |
