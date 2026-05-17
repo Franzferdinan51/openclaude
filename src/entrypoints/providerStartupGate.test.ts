@@ -17,5 +17,7 @@ test('skips provider startup for utility commands', () => {
 test('keeps provider startup for interactive and print prompts', () => {
   expect(shouldSkipProviderStartup([])).toBe(false)
   expect(shouldSkipProviderStartup(['--print', 'hello'])).toBe(false)
+  expect(shouldSkipProviderStartup(['--print', 'doctor'])).toBe(false)
+  expect(shouldSkipProviderStartup(['--add-dir', '.', 'tui'])).toBe(false)
   expect(shouldSkipProviderStartup(['Implement a feature'])).toBe(false)
 })

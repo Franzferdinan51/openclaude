@@ -18,6 +18,10 @@ export function shouldSkipProviderStartup(args: string[]): boolean {
     return true
   }
 
+  if (args.includes('--print') || args.includes('-p')) {
+    return false
+  }
+
   const command = args.find(arg => arg && !arg.startsWith('-'))
   return command !== undefined && PROVIDER_FREE_COMMANDS.has(command)
 }
