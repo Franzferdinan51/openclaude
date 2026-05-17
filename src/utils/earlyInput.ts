@@ -20,6 +20,35 @@ let isCapturing = false
 // Reference to the readable handler so we can remove it later
 let readableHandler: (() => void) | null = null
 
+function isTruthy(value: string | undefined): boolean {
+  return value !== undefined && ['1', 'true', 'yes', 'on'].includes(value.trim().toLowerCase())
+}
+
+export function shouldStartCapturingEarlyInput(options?: {
+  argv?: string[]
+  stdinIsTTY?: boolean
+  platform?: NodeJS.Platform
+  env?: NodeJS.ProcessEnv
+}): boolean {
+  const argv = options?.argv ?? process.argv
+  const stdinIsTTY = options?.stdinIsTTY ?? process.stdin.isTTY
+  const platform = options?.platform ?? process.platform
+  const env = options?.env ?? process.env
+
+  // Windows raw-mode handoff is more fragile than Unix terminals, and a bad
+  // transition here can leave the classic REPL looking alive but ignoring
+  // keystrokes. Keep the safer default there unless explicitly re-enabled.
+  if (platform === 'win32' && !isTruthy(env.DUCKHIVE_WINDOWS_EARLY_INPUT_EXPERIMENT)) {
+    return false
+  }
+
+  return (
+    stdinIsTTY === true &&
+    !argv.includes('-p') &&
+    !argv.includes('--print')
+  )
+}
+
 /**
  * Start capturing stdin data early, before the REPL is initialized.
  * Should be called as early as possible in the startup sequence.
@@ -30,12 +59,7 @@ export function startCapturingEarlyInput(): void {
   // Only capture in interactive mode: stdin must be a TTY, and we must not
   // be in print mode. Raw mode disables ISIG (terminal Ctrl+C → SIGINT),
   // which would make -p uninterruptible.
-  if (
-    !process.stdin.isTTY ||
-    isCapturing ||
-    process.argv.includes('-p') ||
-    process.argv.includes('--print')
-  ) {
+  if (isCapturing || !shouldStartCapturingEarlyInput()) {
     return
   }
 
