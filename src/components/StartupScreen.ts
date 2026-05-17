@@ -1,5 +1,5 @@
 /**
- * DuckHive startup screen — filled-block text logo with sunset gradient.
+ * DuckHive startup screen - filled-block text logo with sunset gradient.
  * Called once at CLI startup before the Ink UI renders.
  *
  * Addresses: https://github.com/Gitlawb/openclaude/issues/55
@@ -54,25 +54,7 @@ export function paintLine(text: string, stops: readonly RGB[], lineT: number): s
   return out + RESET
 }
 
-// ─── Filled Block Text Logo ───────────────────────────────────────────────────
-
-const LOGO_DUCK = [
-  `  ████████╗ ████████╗ ████████╗ ████████╗`,
-  `  ██╔═══██║ ██╔═══██║ ██╔═════╝ ██████╗ ██████╗ ████████║`,
-  `  ██║   ██║ ██║   ██║ ████████║ ██████╗   ████╗██║ ████████║ ██████╗`,
-  `  ██║   ██║ ██║   ██║ ██╔═════╝ ██╔═══╝   ██╔████║ ██╔═════╝ ██║`,
-  `  ████████║ ████████║ ████████║ ██║       ████████╗ ██║       ████████║ ██║`,
-  `  ╚═══════╝ ╚═══════╝ ╚═══════╝ ╚═╝       ╚═══════╝ ╚═╝       ╚═══════╝ ╚═╝`,
-]
-
-const LOGO_HIVE = [
-  `  ████████╗ ████████╗`,
-  `  ██╔═══██║ ██╔═══██║`,
-  `  ██║   ██║       ██║ ██████╗`,
-  `  ██║   ██║       ██║ ██╔═══╝`,
-  `  ████████║ ██║       ██████╗`,
-  `  ╚═══════╝ ╚═╝       ╚═════╝`,
-]
+// Filled Block Text Logo
 
 const LOGO_DUCKHIVE = [
   `   ____             __   __    __  ___            `,
@@ -82,7 +64,7 @@ const LOGO_DUCKHIVE = [
   `\\____/\\__,_/\\___/_/|_/_/ /_/_/ /_/_/ |___/\\___/   `,
 ]
 
-// ─── Provider detection ───────────────────────────────────────────────────────
+// Provider detection
 
 export function detectProvider(modelOverride?: string): { name: string; model: string; baseUrl: string; isLocal: boolean } {
   const useGemini = process.env.CLAUDE_CODE_USE_GEMINI === '1' || process.env.CLAUDE_CODE_USE_GEMINI === 'true'
@@ -127,7 +109,7 @@ export function detectProvider(modelOverride?: string): { name: string; model: s
       baseUrl.includes('chatgpt.com/backend-api/codex')
     )
       name = 'Codex'
-    // Base URL is authoritative — must precede rawModel checks so aggregators
+    // Base URL is authoritative - must precede rawModel checks so aggregators
     // (OpenRouter/Together/Groq) aren't mislabelled as DeepSeek/Kimi/etc.
     // when routed to models whose IDs contain a vendor prefix. See issue #855.
     else if (/openrouter/i.test(baseUrl)) name = 'OpenRouter'
@@ -142,7 +124,7 @@ export function detectProvider(modelOverride?: string): { name: string; model: s
     else if (/moonshot/i.test(baseUrl)) name = 'Moonshot AI - API'
     else if (/deepseek/i.test(baseUrl)) name = 'DeepSeek'
     else if (/mistral/i.test(baseUrl)) name = 'Mistral'
-    // rawModel fallback — fires only when base URL is generic/custom.
+    // rawModel fallback - fires only when base URL is generic/custom.
     else if (/nvidia/i.test(rawModel)) name = 'NVIDIA NIM'
     else if (/minimax/i.test(rawModel)) name = 'MiniMax'
     else if (/\bkimi-for-coding\b/i.test(rawModel))
@@ -200,14 +182,14 @@ export function detectProvider(modelOverride?: string): { name: string; model: s
   return { name: 'Anthropic', model: resolvedModel, baseUrl, isLocal }
 }
 
-// ─── Box drawing ──────────────────────────────────────────────────────────────
+// Box drawing
 
 function boxRow(content: string, width: number, rawLen: number, border: RGB): string {
   const pad = Math.max(0, width - 2 - rawLen)
   return `${ansiRgb(...border)}|${RESET}${content}${' '.repeat(pad)}${ansiRgb(...border)}|${RESET}`
 }
 
-// ─── Main ─────────────────────────────────────────────────────────────────────
+// Main
 
 export function printStartupScreen(modelOverride?: string): void {
   // Skip in non-interactive / CI / print mode
