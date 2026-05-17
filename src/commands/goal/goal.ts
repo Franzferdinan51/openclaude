@@ -331,7 +331,11 @@ async function listGoals(args: string[]): Promise<string> {
 
   const visibleGoals = showAll ? filtered : filtered.slice(0, 10)
   let output = `${bold('DuckHive Goals')}\n`
-  output += `Showing ${visibleGoals.length} of ${goals.length} total goals\n\n`
+  if (filter && filter !== 'all') {
+    output += `Showing ${visibleGoals.length} of ${filtered.length} ${filter} goals (${goals.length} total goals)\n\n`
+  } else {
+    output += `Showing ${visibleGoals.length} of ${goals.length} total goals\n\n`
+  }
 
   for (const goal of visibleGoals) {
     output += formatGoal(goal) + '\n'

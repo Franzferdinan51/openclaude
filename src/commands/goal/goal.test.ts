@@ -320,6 +320,24 @@ describe('/goal command', () => {
     expect(result).toContain('Failed goal')
     expect(result).not.toContain('Active goal')
     expect(result).toContain('FAILED')
+    expect(result).toContain('Showing 1 of 1 failed goals (2 total goals)')
+  })
+
+  test('filtered list count reports the filtered subset and total persisted goals', async () => {
+    const goalCommand = await importFreshGoalCommand()
+    await goalCommand(['create', 'First', 'active'])
+    sessionId = 'session-other'
+    await goalCommand(['create', 'Second', 'active'])
+    await goalCommand(['pause'])
+    sessionId = 'session-third'
+    await goalCommand(['create', 'Third', 'active'])
+
+    const result = await goalCommand(['list', 'active'])
+
+    expect(result).toContain('Showing 2 of 2 active goals (3 total goals)')
+    expect(result).toContain('First active')
+    expect(result).toContain('Third active')
+    expect(result).not.toContain('Second active')
   })
 
   test('create attaches the current session id to the new goal', async () => {
