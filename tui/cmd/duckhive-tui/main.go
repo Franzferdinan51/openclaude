@@ -353,7 +353,7 @@ func (m *MainModel) renderEmptyState(width int) string {
 	superAgent := []string{
 		"Agent platform: runs + teams + council + subagents.",
 		"/orchestrate <task> --dry-run previews routing.",
-		"/agents and /council show local operator cards.",
+		"/agents and /council open the live backend surfaces when the bridge is connected.",
 	}
 	system := []string{
 		fmt.Sprintf("Provider: %s / %s", m.displayProvider(), truncate(m.displayModel(), 28)),
@@ -962,22 +962,22 @@ func (m *MainModel) commandDeckText() string {
 		"DuckHive command deck",
 		"",
 		"Super Agent",
-		"  /agents - show the unified operator surface for meta agents, Agent Teams, subagents, and swarm routing.",
-		"  /runs - show the shared AgentRun lifecycle and remote-control commands.",
+		"  /agents - open the real backend agent surface; /agent, /teams, /super keep the local TUI Agent Teams card.",
+		"  /run - open the real AgentRun command surface; /runs and /tasks keep the local TUI card.",
 		"  /orchestrate <task> --dry-run - analyze complexity, council need, and team plan in the JS backend.",
 		"  /team templates - list Agent Team templates; /team spawn <name> <type> starts one when Hive Nation is online.",
 		"",
 		"AI Council",
-		"  /council - local capability card.",
+		"  /council - open the real backend council surface when the bridge is connected.",
 		"  /council <question> - starts backend deliberation when the bridge is connected.",
 		"  Shift+Tab cycles composer modes; council mode prefixes prompts for deliberation.",
 		"",
 		"Search providers",
-		"  /search-provider - show the active web search provider and required env keys.",
+		"  /search-provider - open the real backend search-provider manager when the bridge is connected.",
 		"  /search-provider <mode> - in the classic REPL, persist auto/native/ddg/searxng/tavily/exa/you/jina/bing/mojeek/linkup/custom.",
 		"",
 		"Session controls",
-		"  /status - status snapshot. /runs - AgentRun control plane. /repl - return to the classic REPL.",
+		"  /status - status snapshot. /doctor - backend diagnostic UI in the classic REPL. /repl - return to the classic REPL.",
 		"  Ctrl+T toggles the side deck. Ctrl+O toggles transcript. Ctrl+X toggles local shell mode.",
 	}, "\n")
 }
