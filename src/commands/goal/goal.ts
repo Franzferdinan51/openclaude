@@ -402,14 +402,7 @@ async function pauseGoal(args: string[]): Promise<string> {
 
 async function resumeGoal(args: string[]): Promise<string> {
   const goals = getGoals()
-  const { goal, error } = args[0]?.trim()
-    ? findGoalByReference(goals, args[0])
-    : getSingleGoalByStatus(goals, 'paused', {
-      missing:
-        'No paused goal found. Pause a goal first or specify a goal ID explicitly.',
-      ambiguous:
-        'Multiple paused goals found. Specify a goal ID explicitly with `/goal resume <goal-id>`.',
-    })
+  const { goal, error } = resolveGoalTarget(goals, args[0], ['paused'])
 
   if (!goal) {
     return error ?? `Usage: /goal resume [goal-id]\nTip: Use /goal list paused to find paused goals`
@@ -595,7 +588,7 @@ ${bold('DuckHive /goal - Persisted Workflow Goals')}
 ${bold('Commands:')}
   /goal <description>          Create a new goal (Codex-style shorthand)
   /goal create <description>   Create a new goal
-  /goal list [filter]          List goals (filter: all|active|paused|completed)
+  /goal list [filter]          List goals (filter: all|active|paused|completed|failed)
   /goal status [id]            Show goal status or summary
   /goal pause [id]             Pause a goal
   /goal resume [id]            Resume a paused goal

@@ -245,6 +245,27 @@ describe('/goal command', () => {
     expect(resumed).toContain('Goal resumed!')
   })
 
+  test('resume without an id prefers the current session paused goal', async () => {
+    const goalCommand = await importFreshGoalCommand()
+
+    await goalCommand(['create', 'Current', 'goal'])
+    await goalCommand(['pause'])
+    sessionId = 'session-other'
+    await goalCommand(['create', 'Other', 'goal'])
+    await goalCommand(['pause'])
+    sessionId = 'session-current'
+
+    const result = await goalCommand(['resume'])
+
+    expect(result).toContain('Goal resumed!')
+    expect(getStoredGoals().find(goal => goal.sessionId === 'session-current')?.status).toBe(
+      'active',
+    )
+    expect(getStoredGoals().find(goal => goal.sessionId === 'session-other')?.status).toBe(
+      'paused',
+    )
+  })
+
   test('fail marks the current goal and active step failed', async () => {
     const goalCommand = await importFreshGoalCommand()
     await goalCommand(['create', 'Investigate', 'regression'])
