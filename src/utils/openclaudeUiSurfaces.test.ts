@@ -161,6 +161,9 @@ describe('DuckHive CLI help surfaces', () => {
     expect(source).toContain(
       'Set up a long-lived subscription authentication token for compatible hosted accounts',
     )
+    expect(source).toContain('runtime-doctor')
+    expect(source).toContain('doctor-runtime')
+    expect(source).toContain('runtime checks without starting the REPL')
     expect(source).toContain('Sign in to a DuckHive-compatible hosted account')
     expect(source).toContain('Log out from your hosted auth account')
     expect(source).toContain(
