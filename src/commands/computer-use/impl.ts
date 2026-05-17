@@ -413,6 +413,23 @@ export const call: LocalCommandCall = async (
     }
   }
 
+  if (subcommand === 'disable') {
+    const configured = await isInDuckHiveMCPConfig()
+    if (!configured) {
+      return {
+        type: 'text',
+        value: 'computer-use is not in DuckHive MCP config.',
+      }
+    }
+    const result = await removeFromDuckHiveMCP()
+    return {
+      type: 'text',
+      value: result.ok
+        ? 'computer-use removed from DuckHive MCP.\nRestart DuckHive or run `/mcp reload` to deactivate tools.'
+        : `Failed: ${result.error}`,
+    }
+  }
+
   if (!isComputerUseSupportedPlatform()) {
     return {
       type: 'text',
@@ -501,22 +518,6 @@ export const call: LocalCommandCall = async (
       type: 'text',
       value: result.ok
         ? 'computer-use enabled.\nRestart DuckHive or run `/mcp reload` to activate tools.'
-        : `Failed: ${result.error}`,
-    }
-  }
-
-  if (subcommand === 'disable') {
-    if (!configured) {
-      return {
-        type: 'text',
-        value: 'computer-use is not in DuckHive MCP config.',
-      }
-    }
-    const result = await removeFromDuckHiveMCP()
-    return {
-      type: 'text',
-      value: result.ok
-        ? 'computer-use removed from DuckHive MCP.\nRestart DuckHive or run `/mcp reload` to deactivate tools.'
         : `Failed: ${result.error}`,
     }
   }

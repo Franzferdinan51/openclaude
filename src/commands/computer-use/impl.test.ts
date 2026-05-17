@@ -359,6 +359,26 @@ describe('call', () => {
     expect(addMcpConfig).not.toHaveBeenCalled()
   })
 
+  test('disable removes stale MCP config even on non-macOS platforms', async () => {
+    currentPlatform = 'win32'
+    configState = {
+      mcpServers: {
+        'computer-use': {
+          type: 'stdio',
+          command: 'SkyComputerUseClient',
+          args: ['mcp'],
+        },
+      },
+    }
+
+    const result = expectTextResult(await call('disable', {} as never))
+
+    expect(result.value).toContain('computer-use removed from DuckHive MCP.')
+    expect(removeMcpConfig).toHaveBeenCalledTimes(1)
+    expect(removeMcpConfig).toHaveBeenCalledWith('computer-use', 'project')
+    expect(addMcpConfig).not.toHaveBeenCalled()
+  })
+
   test('discovers an explicit plugin directory from environment overrides', async () => {
     pluginAvailable = true
     processEnv.DUCKHIVE_CODEX_COMPUTER_USE_PLUGIN_DIR =
