@@ -17,7 +17,10 @@ const cliPath = resolve(process.cwd(), 'dist', 'cli.mjs')
 const windowsLauncherPath = resolve(process.cwd(), 'bin', 'duckhive.cmd')
 const tempDirs: string[] = []
 const bgControlConfigDir = mkdtempSync(join(tmpdir(), 'duckhive-cli-smoke-bg-'))
+const exportConfigDir = mkdtempSync(join(tmpdir(), 'duckhive-cli-smoke-export-config-'))
+const exportOutputDir = mkdtempSync(join(tmpdir(), 'duckhive-cli-smoke-export-output-'))
 tempDirs.push(bgControlConfigDir)
+tempDirs.push(exportConfigDir, exportOutputDir)
 
 function createIsolatedConfigEnv(): Record<string, string> {
   const configDir = mkdtempSync(join(tmpdir(), 'duckhive-cli-smoke-'))
@@ -333,6 +336,77 @@ const cases: SmokeCase[] = [
       'No checkpoints yet',
     ],
     excludes: ['Warning: ignoring saved provider profile'],
+  },
+  {
+    name: 'headless checkpoint list',
+    args: ['--bare', '-p', '/checkpoint list'],
+    env: createIsolatedConfigEnv,
+    timeoutMs: 30000,
+    includes: [
+      'No saved checkpoints.',
+      '/checkpoint save [name]',
+    ],
+    excludes: ['Warning: ignoring saved provider profile'],
+  },
+  {
+    name: 'headless router list',
+    args: ['--bare', '-p', '/router list'],
+    timeoutMs: 30000,
+    includes: [
+      'Available models',
+      'MiniMax-M2.7',
+    ],
+    excludes: ['Warning: ignoring saved provider profile'],
+  },
+  {
+    name: 'headless budget status',
+    args: ['--bare', '-p', '/budget'],
+    env: createIsolatedConfigEnv,
+    timeoutMs: 30000,
+    includes: [
+      'Budget tracker',
+      'Global remaining:',
+    ],
+    excludes: ['Warning: ignoring saved provider profile'],
+  },
+  {
+    name: 'headless provider cache stats',
+    args: ['--bare', '-p', '/cache stats'],
+    env: createIsolatedConfigEnv,
+    timeoutMs: 30000,
+    includes: [
+      'Provider cache',
+      'Entries:',
+    ],
+    excludes: ['Warning: ignoring saved provider profile'],
+  },
+  {
+    name: 'headless export help',
+    args: ['--bare', '-p', '/export --help'],
+    timeoutMs: 30000,
+    includes: [
+      'DuckHive /export - Conversation Export',
+      '/export --format <text|markdown|json> <filename>',
+    ],
+    excludes: ['Warning: ignoring saved provider profile', 'Unknown skill: export'],
+  },
+  {
+    name: 'headless export json file',
+    args: [
+      '--bare',
+      '-p',
+      `/export --format json "${join(exportOutputDir, 'smoke-session.json')}"`,
+    ],
+    env: () => ({
+      CLAUDE_CONFIG_DIR: exportConfigDir,
+      CLAUDE_CODE_SYNC_PLUGIN_INSTALL_TIMEOUT_MS: '1',
+    }),
+    timeoutMs: 30000,
+    includes: [
+      'Conversation exported to:',
+      'smoke-session.json',
+    ],
+    excludes: ['Warning: ignoring saved provider profile', 'Unknown skill: export'],
   },
   {
     name: 'top-level mmx help',

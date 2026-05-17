@@ -603,6 +603,7 @@ async function getMessagesForSlashCommand(commandName: string, args: string, set
                 }), ...metaMessages],
                 shouldQuery: options?.shouldQuery ?? false,
                 command,
+                resultText: result,
                 nextInput: options?.nextInput,
                 submitNextInput: options?.submitNextInput
               });

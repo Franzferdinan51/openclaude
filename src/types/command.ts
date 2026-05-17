@@ -144,6 +144,11 @@ export type LocalJSXCommandModule = {
 type LocalJSXCommand = {
   type: 'local-jsx'
   /**
+   * Allows a JSX command to stay available in print/headless mode when its
+   * implementation can complete via onDone without rendering an interactive UI.
+   */
+  supportsNonInteractive?: boolean
+  /**
    * Lazy-load the command implementation.
    * Returns a module with a call() function.
    * This defers loading heavy dependencies until the command is invoked.

@@ -8,6 +8,22 @@ import type { ExportFormat } from '../../utils/exportFormats.js';
 import { ensureExportFilenameExtension, inferExportFormatFromFilename, parseExportArgs, resolveExportFilepath } from '../../utils/exportFormats.js';
 import { renderMessagesForExport } from '../../utils/exportRenderer.js';
 import { writeFileSync_DEPRECATED } from '../../utils/slowOperations.js';
+
+const EXPORT_USAGE = `DuckHive /export - Conversation Export
+
+Usage:
+  /export
+  /export <filename>
+  /export --format <text|markdown|json> <filename>
+
+Examples:
+  /export chat.md
+  /export --format json session.json
+  /export -f markdown "daily notes.md"
+
+Interactive sessions open the export dialog when no filename is provided.
+Headless print mode requires a filename or --help.`;
+
 function formatTimestamp(date: Date): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -49,9 +65,20 @@ export function sanitizeFilename(text: string): string {
 }
 export async function call(onDone: LocalJSXCommandOnDone, context: ToolUseContext, args: string): Promise<React.ReactNode> {
   const tools = context.options.tools || [];
+  const trimmedArgs = args.trim();
+  if (trimmedArgs === '--help' || trimmedArgs === '-h' || trimmedArgs === 'help') {
+    onDone(EXPORT_USAGE, { display: 'system' });
+    return null;
+  }
+
   const parsed = parseExportArgs(args);
   if (parsed.error) {
     onDone(parsed.error);
+    return null;
+  }
+
+  if (context.options.isNonInteractiveSession && !parsed.filename) {
+    onDone(EXPORT_USAGE, { display: 'system' });
     return null;
   }
 

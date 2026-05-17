@@ -133,6 +133,7 @@ describe('builtInCommandNames', () => {
     expect(builtInCommandNames()).toContain('spend')
     expect(builtInCommandNames()).toContain('cache')
     expect(builtInCommandNames()).toContain('provider-cache')
+    expect(builtInCommandNames()).toContain('export')
     expect(builtInCommandNames()).toContain('changelog')
     expect(builtInCommandNames()).toContain('curate')
     expect(builtInCommandNames()).toContain('instruct')
