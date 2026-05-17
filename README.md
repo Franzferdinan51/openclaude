@@ -167,8 +167,8 @@ Useful endpoints:
 | --- | --- |
 | `GET /health` | DuckHive WebUI API health/version |
 | `GET /api/status` | provider, Telegram, search-provider, desktop/Android, OpenClaw optional status resolved from the active DuckHive runtime/config home |
-| `GET /api/runs` | AgentRun list and root run tree |
-| `GET /api/runs/:id/events` | compact run event tail |
+| `GET /api/runs?status=running&parentRunId=...` | AgentRun list and root run tree with validated optional filters |
+| `GET /api/runs/:id/events?limit=50` | compact run event tail, clamped to 1-200 events |
 | `POST /api/runs/:id/pause` | pause a run |
 | `POST /api/runs/:id/resume` | resume a run |
 | `POST /api/runs/:id/stop` | cancel a run |

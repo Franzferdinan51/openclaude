@@ -8,9 +8,9 @@ import {
   getAgentRunStore,
   type AgentRun,
   type AgentRunEvent,
-  type AgentRunStatus,
 } from '../../agent-runs/index.js'
 import type { DuckHiveSearchProvider } from '../../utils/duckhiveSearch.js'
+import { parseRunEventLimit, parseRunStatusFilter } from './runApiUtils.js'
 import { getSearchProviderStatus } from './searchProviderStatus.js'
 import { getTelegramWebUiStatus } from './telegramStatus.js'
 
@@ -206,10 +206,14 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
   }
 
   if (method === 'GET' && url.pathname === '/api/runs') {
-    const status = url.searchParams.get('status') as AgentRunStatus | null
+    const statusFilter = parseRunStatusFilter(url.searchParams.get('status'))
+    if (!statusFilter.ok) {
+      sendJson(res, 400, { error: 'invalid_status', message: statusFilter.message })
+      return
+    }
     const parentRunId = url.searchParams.get('parentRunId') ?? undefined
     const runs = getAgentRunStore().listRuns({
-      status: status ?? undefined,
+      status: statusFilter.status,
       parentRunId,
     })
     sendJson(res, 200, { runs, tree: buildRunTree(runs) })
@@ -219,7 +223,7 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
   const runEventsMatch = url.pathname.match(/^\/api\/runs\/([^/]+)\/events$/)
   if (method === 'GET' && runEventsMatch) {
     const runId = decodeURIComponent(runEventsMatch[1])
-    const limit = Number(url.searchParams.get('limit') ?? 50)
+    const limit = parseRunEventLimit(url.searchParams.get('limit'))
     sendJson(res, 200, { events: getAgentRunStore().tailEvents(runId, limit) })
     return
   }
