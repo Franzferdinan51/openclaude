@@ -2,7 +2,7 @@
 
 /**
  * DuckHive launcher - configures the terminal/provider environment and starts
- * the bundled CLI. Keep default startup aligned with OpenClaude's classic REPL;
+ * the bundled CLI. Keep default startup aligned with DuckHive's classic REPL;
  * optional daemons must not block stdin ownership before the UI is live.
  */
 

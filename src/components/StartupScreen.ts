@@ -2,7 +2,7 @@
  * DuckHive startup screen - filled-block text logo with sunset gradient.
  * Called once at CLI startup before the Ink UI renders.
  *
- * Addresses: https://github.com/Gitlawb/openclaude/issues/55
+ * Keeps the first visible terminal frame DuckHive-branded.
  */
 
 import { isLocalProviderUrl, resolveProviderRequest } from '../services/api/providerConfig.js'

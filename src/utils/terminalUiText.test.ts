@@ -8,6 +8,7 @@ const terminalUiFiles = [
   'src/components/LogoV2/LogoV2.tsx',
   'src/components/LogoV2/ChannelsNotice.tsx',
   'src/components/StartupScreen.ts',
+  'bin/duckhive',
   'src/utils/logoV2Utils.ts',
   'src/utils/statusNoticeDefinitions.tsx',
   'src/commands/plugin/BrowseMarketplace.tsx',
@@ -35,6 +36,7 @@ describe('terminal UI text hygiene', () => {
       expect(source, relativePath).not.toContain('claude /logout')
       expect(source, relativePath).not.toContain('claude.ai authentication')
       expect(source, relativePath).not.toContain('openclaude /logout')
+      expect(source, relativePath).not.toContain('OpenClaude')
       expect(source, relativePath).not.toContain('tmux new-session -s claude')
       expect(source, relativePath).not.toContain('claude-opus-4.6')
       expect(source, relativePath).not.toContain('v0.9.1')
