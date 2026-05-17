@@ -428,7 +428,7 @@ DuckHive automatically finds and loads the nearest `DUCK.md` up the directory tr
 
 ### Desktop And Android Control
 
-DuckHive ships the bundled `newest-desktop-control` MCP gateway in `skills/newest-desktop-control`. It consolidates cross-platform desktop automation, Android ADB control, and Codex Computer Use detection behind one MCP surface. The older `desktop_control` tool and `/desktop` command remain available for the legacy Python/OpenClaw workflow, but new agent integrations should prefer the MCP gateway because it exposes stable tool names and compatibility aliases.
+DuckHive ships the bundled `newest-desktop-control` MCP gateway in `skills/newest-desktop-control`. It consolidates cross-platform desktop automation, Android ADB control, and Codex Computer Use detection behind one MCP surface. The older `desktop_control` tool and `/desktop` command remain available for the legacy Python/OpenClaw workflow, but new agent integrations should prefer the MCP gateway because it exposes stable tool names and compatibility aliases. The `/desktop` help and command description use ASCII-safe terminal text so Windows shells and log captures do not render broken approval or action markers.
 
 **Setup (one-time):**
 ```bash
