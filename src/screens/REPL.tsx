@@ -2071,6 +2071,11 @@ export function REPL({
     // High priority dialogs (always show regardless of typing)
     if (isMessageSelectorVisible) return 'message-selector';
 
+    // Before the first user submission, keep PromptInput mounted even if
+    // startup-era hooks or checks enqueue dialogs. Otherwise the REPL can paint
+    // successfully while the active input has already been unmounted.
+    if (!allowPromptStealingStartupDialogs) return undefined;
+
     // Suppress interrupt dialogs while user is actively typing
     if (promptTypingSuppressionActive) return undefined;
     if (sandboxPermissionRequestQueue[0]) return 'sandbox-permission';
@@ -2088,7 +2093,7 @@ export function REPL({
     if (feature('ULTRAPLAN') && allowDialogsWithAnimation && !isLoading && ultraplanLaunchPending) return 'ultraplan-launch';
 
     // Onboarding dialogs (special conditions)
-    if (allowDialogsWithAnimation && showIdeOnboarding && allowPromptStealingStartupDialogs) return 'ide-onboarding';
+    if (allowDialogsWithAnimation && showIdeOnboarding) return 'ide-onboarding';
 
     // Model switch callout (internal-only, eliminated from external builds)
     if (false && allowDialogsWithAnimation && showModelSwitchCallout) return 'model-switch';
@@ -2097,10 +2102,10 @@ export function REPL({
     if (false && allowDialogsWithAnimation && showUndercoverCallout) return 'undercover-callout';
 
     // Effort callout (shown once for Opus 4.6 users when effort is enabled)
-    if (allowDialogsWithAnimation && showEffortCallout && allowPromptStealingStartupDialogs) return 'effort-callout';
+    if (allowDialogsWithAnimation && showEffortCallout) return 'effort-callout';
 
     // Remote callout (shown once before first bridge enable)
-    if (allowDialogsWithAnimation && showRemoteCallout && allowPromptStealingStartupDialogs) return 'remote-callout';
+    if (allowDialogsWithAnimation && showRemoteCallout) return 'remote-callout';
 
     // LSP plugin recommendation (lowest priority - non-blocking suggestion)
     // Suppress during startup window to prevent stealing focus from the prompt (issue #363)
