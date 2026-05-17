@@ -11,6 +11,7 @@ import {
   getLocalOpenAICompatibleProviderLabel,
   probeOllamaGenerationReadiness,
 } from '../src/utils/providerDiscovery.js'
+import { detectCliInputModeWarnings } from '../src/utils/cliInputModeDiagnostic.js'
 import { DEFAULT_GEMINI_MODEL } from '../src/utils/providerProfile.js'
 import { redactUrlForDisplay } from '../src/utils/urlRedaction.js'
 
@@ -162,21 +163,15 @@ export function checkCliInputMode(
   env: NodeJS.ProcessEnv = process.env,
   runtime = { platform: process.platform },
 ): CheckResult {
-  if (runtime.platform !== 'win32') {
+  const warnings = detectCliInputModeWarnings(env, runtime.platform)
+  if (warnings.length === 0 && runtime.platform !== 'win32') {
     return pass('CLI input mode', 'Readable stdin default active.')
   }
 
-  if (isTruthy(env.DUCKHIVE_USE_DATA_STDIN) || isTruthy(env.OPENCLAUDE_USE_DATA_STDIN)) {
+  if (warnings.length > 0) {
     return fail(
       'CLI input mode',
-      'Windows data-stdin override is enabled. Remove DUCKHIVE_USE_DATA_STDIN/OPENCLAUDE_USE_DATA_STDIN if the UI starts but typing does not appear.',
-    )
-  }
-
-  if (env.DUCKHIVE_USE_READABLE_STDIN === '0' || env.OPENCLAUDE_USE_READABLE_STDIN === '0') {
-    return fail(
-      'CLI input mode',
-      'Readable stdin is explicitly disabled. Remove DUCKHIVE_USE_READABLE_STDIN=0/OPENCLAUDE_USE_READABLE_STDIN=0 to restore interactive typing.',
+      `${warnings[0]?.issue}. ${warnings[0]?.fix}`,
     )
   }
 

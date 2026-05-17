@@ -4,6 +4,7 @@ import { homedir } from 'os'
 import { delimiter, join, posix, win32 } from 'path'
 import { checkGlobalInstallPermissions } from './autoUpdater.js'
 import { isInBundledMode } from './bundledMode.js'
+import { detectCliInputModeWarnings } from './cliInputModeDiagnostic.js'
 import {
   formatAutoUpdaterDisabledReason,
   getAutoUpdaterDisabledReason,
@@ -541,6 +542,7 @@ export async function getDoctorDiagnostic(): Promise<DiagnosticInfo> {
   const invokedBinary = getInvokedBinary()
   const multipleInstallations = await detectMultipleInstallations()
   const warnings = await detectConfigurationIssues(installationType)
+  warnings.push(...detectCliInputModeWarnings())
 
   // Add glob pattern warnings for Linux sandboxing
   warnings.push(...detectLinuxGlobPatternWarnings())
