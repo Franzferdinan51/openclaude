@@ -81,6 +81,14 @@ const LOGO_CLAUDE = [
   `  \u255a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u255d \u255a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u255d\u255a\u2550\u255d   \u255a\u2550\u255d  \u255a\u2550\u2550\u2550\u2550\u2550\u255d  \u255a\u2550\u2550\u2550\u2550\u2550\u2550\u255d  \u255a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u255d`,
 ]
 
+const LOGO_DUCKHIVE = [
+  `   ____             __   __    __  ___            `,
+  `  / __ \\__  _______/ /__/ /_  / / / (_)   _____   `,
+  ` / / / / / / / ___/ //_/ __ \\/ /_/ / / | / / _ \\  `,
+  `/ /_/ / /_/ / /__/ ,< / / / / __  / /| |/ /  __/  `,
+  `\\____/\\__,_/\\___/_/|_/_/ /_/_/ /_/_/ |___/\\___/   `,
+]
+
 // ─── Provider detection ───────────────────────────────────────────────────────
 
 export function detectProvider(modelOverride?: string): { name: string; model: string; baseUrl: string; isLocal: boolean } {
@@ -200,7 +208,7 @@ export function printStartupScreen(modelOverride?: string): void {
   out.push('')
 
   // Gradient logo
-  const allLogo = [...LOGO_DUCK, '', ...LOGO_HIVE, '', ...LOGO_CLAUDE]
+  const allLogo = LOGO_DUCKHIVE
   const total = allLogo.length
   for (let i = 0; i < total; i++) {
     const t = total > 1 ? i / (total - 1) : 0

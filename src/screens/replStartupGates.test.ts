@@ -1,6 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
-import { shouldRunStartupChecks } from './replStartupGates.js'
+import {
+  shouldAllowPromptStealingStartupDialogs,
+  shouldRunStartupChecks,
+} from './replStartupGates.js'
 
 describe('shouldRunStartupChecks', () => {
   test('runs checks after first message submission', () => {
@@ -49,5 +52,23 @@ describe('shouldRunStartupChecks', () => {
       hasStarted: false,
       hasHadFirstSubmission: false,
     })).toBe(false)
+  })
+})
+
+describe('shouldAllowPromptStealingStartupDialogs', () => {
+  test('blocks prompt-stealing startup dialogs before first submission', () => {
+    expect(
+      shouldAllowPromptStealingStartupDialogs({
+        hasHadFirstSubmission: false,
+      }),
+    ).toBe(false)
+  })
+
+  test('allows startup dialogs after first submission', () => {
+    expect(
+      shouldAllowPromptStealingStartupDialogs({
+        hasHadFirstSubmission: true,
+      }),
+    ).toBe(true)
   })
 })

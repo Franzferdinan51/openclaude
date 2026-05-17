@@ -33,3 +33,15 @@ export function shouldRunStartupChecks(options: {
   if (!options.hasHadFirstSubmission) return false;
   return true;
 }
+
+/**
+ * Determines whether startup-era dialogs are allowed to steal the prompt.
+ *
+ * The classic REPL should always let the user type their first message before
+ * showing onboarding/callout UI that unmounts PromptInput.
+ */
+export function shouldAllowPromptStealingStartupDialogs(options: {
+  hasHadFirstSubmission: boolean;
+}): boolean {
+  return options.hasHadFirstSubmission;
+}

@@ -1012,6 +1012,37 @@ test('buildStartupEnvFromProfile leaves explicit provider selections untouched',
   assert.equal(env.OPENAI_API_KEY, undefined)
 })
 
+test('buildStartupEnvFromProfile defaults first-run startup to MiniMax when no profile exists', async () => {
+  const env = await buildStartupEnvFromProfile({
+    persisted: null,
+    processEnv: {},
+  })
+
+  assert.equal(env.CLAUDE_CODE_USE_OPENAI, '1')
+  assert.equal(env.OPENAI_MODEL, 'MiniMax-M2.7')
+  assert.equal(env.MINIMAX_MODEL, 'MiniMax-M2.7')
+  assert.equal(env.OPENAI_BASE_URL?.includes('minimax'), true)
+  assert.equal(env.MINIMAX_BASE_URL?.includes('minimax'), true)
+  assert.equal(env.CODEX_API_KEY, undefined)
+  assert.equal(env.CHATGPT_ACCOUNT_ID, undefined)
+})
+
+test('buildStartupEnvFromProfile reuses MiniMax credentials on first-run startup when available', async () => {
+  const env = await buildStartupEnvFromProfile({
+    persisted: null,
+    processEnv: {
+      MINIMAX_API_KEY: 'minimax-live',
+    },
+  })
+
+  assert.equal(env.CLAUDE_CODE_USE_OPENAI, '1')
+  assert.equal(env.OPENAI_MODEL, 'MiniMax-M2.7')
+  assert.equal(env.MINIMAX_MODEL, 'MiniMax-M2.7')
+  assert.equal(env.OPENAI_API_KEY, 'minimax-live')
+  assert.equal(env.MINIMAX_API_KEY, 'minimax-live')
+  assert.equal(env.OPENAI_BASE_URL?.includes('minimax'), true)
+})
+
 test('legacy openai saved profiles still deserialize and rebuild startup env', async () => {
   const tempDir = mkdtempSync(join(tmpdir(), 'openclaude-provider-'))
 

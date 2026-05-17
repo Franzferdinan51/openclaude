@@ -1627,20 +1627,35 @@ export async function buildStartupEnvFromProfile(options?: {
     // If Codex credentials are available (OAuth or existing), use Codex.
     // Otherwise inject the Codex env defaults so the provider picker
     // shows GPT 5.5 as the default model when the user lands on it.
-    const codexEnv = buildCodexProfileEnv({})
-    if (codexEnv) {
+    const miniMaxEnv = buildMiniMaxProfileEnv({ processEnv })
+    if (miniMaxEnv) {
       return buildCompatibilityProcessEnv({
         processEnv,
         compatibilityMode: 'openai',
-        profileEnv: codexEnv,
+        profileEnv: miniMaxEnv,
+      })
+    }
+    const defaultMiniMaxBaseUrl = getRouteDefaultBaseUrl('minimax')
+    const defaultMiniMaxModel =
+      getRouteDefaultModel('minimax') ?? 'MiniMax-M2.7'
+    if (defaultMiniMaxBaseUrl) {
+      return buildCompatibilityProcessEnv({
+        processEnv,
+        compatibilityMode: 'openai',
+        profileEnv: {
+          OPENAI_BASE_URL: defaultMiniMaxBaseUrl,
+          OPENAI_MODEL: defaultMiniMaxModel,
+          MINIMAX_BASE_URL: defaultMiniMaxBaseUrl,
+          MINIMAX_MODEL: defaultMiniMaxModel,
+        },
       })
     }
     return buildCompatibilityProcessEnv({
       processEnv,
       compatibilityMode: 'openai',
       profileEnv: {
-        OPENAI_BASE_URL: DEFAULT_CODEX_BASE_URL,
-        OPENAI_MODEL: 'codexplan',
+        OPENAI_MODEL: defaultMiniMaxModel,
+        MINIMAX_MODEL: defaultMiniMaxModel,
       },
     })
   }

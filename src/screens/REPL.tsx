@@ -244,7 +244,10 @@ import { usePromptsFromClaudeInChrome } from 'src/hooks/usePromptsFromClaudeInCh
 import { getTipToShowOnSpinner, recordShownTip } from 'src/services/tips/tipScheduler.js';
 import type { Theme } from 'src/utils/theme.js';
 import { isPromptTypingSuppressionActive } from './replInputSuppression.js';
-import { shouldRunStartupChecks } from './replStartupGates.js';
+import {
+  shouldAllowPromptStealingStartupDialogs,
+  shouldRunStartupChecks,
+} from './replStartupGates.js';
 import { checkAndDisableBypassPermissionsIfNeeded, checkAndDisableAutoModeIfNeeded, useKickOffCheckAndDisableBypassPermissionsIfNeeded, useKickOffCheckAndDisableAutoModeIfNeeded } from 'src/utils/permissions/bypassPermissionsKillswitch.js';
 import { SandboxManager } from 'src/utils/sandbox/sandbox-adapter.js';
 import { SANDBOX_NETWORK_ACCESS_TOOL_NAME } from 'src/cli/structuredIO.js';
@@ -1447,6 +1450,10 @@ export function REPL({
   // the first thing they interacted with.
   const startupChecksStartedRef = React.useRef(false);
   const hasHadFirstSubmission = (submitCount ?? 0) > 0;
+  const allowPromptStealingStartupDialogs =
+    shouldAllowPromptStealingStartupDialogs({
+      hasHadFirstSubmission,
+    });
   useEffect(() => {
     if (isRemoteSession) return;
     if (startupChecksStartedRef.current) return;
@@ -2081,7 +2088,7 @@ export function REPL({
     if (feature('ULTRAPLAN') && allowDialogsWithAnimation && !isLoading && ultraplanLaunchPending) return 'ultraplan-launch';
 
     // Onboarding dialogs (special conditions)
-    if (allowDialogsWithAnimation && showIdeOnboarding) return 'ide-onboarding';
+    if (allowDialogsWithAnimation && showIdeOnboarding && allowPromptStealingStartupDialogs) return 'ide-onboarding';
 
     // Model switch callout (internal-only, eliminated from external builds)
     if (false && allowDialogsWithAnimation && showModelSwitchCallout) return 'model-switch';
@@ -2090,10 +2097,10 @@ export function REPL({
     if (false && allowDialogsWithAnimation && showUndercoverCallout) return 'undercover-callout';
 
     // Effort callout (shown once for Opus 4.6 users when effort is enabled)
-    if (allowDialogsWithAnimation && showEffortCallout) return 'effort-callout';
+    if (allowDialogsWithAnimation && showEffortCallout && allowPromptStealingStartupDialogs) return 'effort-callout';
 
     // Remote callout (shown once before first bridge enable)
-    if (allowDialogsWithAnimation && showRemoteCallout) return 'remote-callout';
+    if (allowDialogsWithAnimation && showRemoteCallout && allowPromptStealingStartupDialogs) return 'remote-callout';
 
     // LSP plugin recommendation (lowest priority - non-blocking suggestion)
     // Suppress during startup window to prevent stealing focus from the prompt (issue #363)
