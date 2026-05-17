@@ -1,6 +1,6 @@
 import { mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { dirname, join, normalize, resolve, sep } from 'node:path'
-import { unzipSync } from 'fflate'
+import { unzip } from 'fflate'
 import { getClaudeConfigHomeDir } from '../../utils/envUtils.js'
 
 export type ClawHubSearchResult = {
@@ -152,7 +152,12 @@ async function writeZipArchiveIntoSkillDir(
   await mkdir(skillDir, { recursive: true })
 
   try {
-    const archive = unzipSync(zipBytes)
+    const archive = await new Promise<Record<string, Uint8Array>>((resolve, reject) => {
+      unzip(zipBytes, (err, data) => {
+        if (err) reject(err)
+        else resolve(data)
+      })
+    })
     for (const [relativePath, content] of Object.entries(archive)) {
       const safePath = assertSafeZipRelativePath(relativePath)
       const destination = resolve(skillDir, safePath)

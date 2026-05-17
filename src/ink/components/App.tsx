@@ -95,6 +95,15 @@ type State = {
   readonly error?: Error;
 };
 
+export function determineStdinMode(options?: {
+  env?: NodeJS.ProcessEnv;
+  platform?: NodeJS.Platform;
+}): 'readable' | 'data' {
+  const env = options?.env ?? process.env;
+  const platform = options?.platform ?? process.platform;
+  return env.DUCKHIVE_USE_DATA_STDIN === '1' || env.OPENCLAUDE_USE_DATA_STDIN === '1' || env.DUCKHIVE_USE_READABLE_STDIN === '0' || env.OPENCLAUDE_USE_READABLE_STDIN === '0' || platform === 'win32' ? 'data' : 'readable';
+}
+
 // Root component for all Ink apps
 // It renders stdin and stdout contexts, so that children can access them if needed
 // It also handles Ctrl+C exiting and cursor visibility
@@ -116,10 +125,10 @@ export default class App extends PureComponent<Props, State> {
   keyParseState = INITIAL_STATE;
   // Timer for flushing incomplete escape sequences
   incompleteEscapeTimer: NodeJS.Timeout | null = null;
-  // Default to readable-mode stdin (legacy Ink behavior). The data-mode path
-  // is kept as an explicit opt-in because some terminals can enter a state
-  // where startup input appears frozen when data mode is the default.
-  stdinMode: 'readable' | 'data' = process.env.OPENCLAUDE_USE_DATA_STDIN === '1' || process.env.OPENCLAUDE_USE_READABLE_STDIN === '0' ? 'data' : 'readable';
+  // Default to readable-mode stdin (legacy Ink behavior), except on Windows
+  // where readable events can stall during startup and make typing appear
+  // frozen. Env flags can force either path for diagnostics.
+  stdinMode: 'readable' | 'data' = determineStdinMode();
   // Timeout durations for incomplete sequences (ms)
   readonly NORMAL_TIMEOUT = 50; // Short timeout for regular esc sequences
   readonly PASTE_TIMEOUT = 500; // Longer timeout for paste operations

@@ -60,6 +60,19 @@ export function startCapturingEarlyInput(): void {
   // be in print mode. Raw mode disables ISIG (terminal Ctrl+C → SIGINT),
   // which would make -p uninterruptible.
   if (isCapturing || !shouldStartCapturingEarlyInput()) {
+    // On Windows, early input capture is disabled by default. Ensure stdin
+    // is in a clean state before Ink takes over. Some Windows terminals
+    // leave stdin in a semi-paused or unref'd state that causes the
+    // 'readable' event to never fire, silently dropping keystrokes.
+    if (process.platform === 'win32' && process.stdin.isTTY) {
+      try {
+        process.stdin.setEncoding('utf8')
+        process.stdin.ref()
+        process.stdin.resume()
+      } catch {
+        // Ignore -- if stdin can't be configured, Ink will handle the error
+      }
+    }
     return
   }
 
