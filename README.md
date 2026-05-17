@@ -795,7 +795,7 @@ Create and manage reusable skill scaffolds for future sessions through DuckHive'
 ```
 
 ClawHub registry notes:
-- DuckHive searches ClawHub directly through its public skill APIs.
+- DuckHive searches ClawHub directly through its public skill APIs and requests ClawHub's non-suspicious result filter by default.
 - `/skill inspect <slug>` surfaces ClawHub moderation verdicts, summaries, and reason codes when the registry provides them.
 - `/skill install <slug>` refuses registry entries marked malware-blocked or `malicious` before downloading the archive.
 - `/skill install <slug>` also validates the downloaded archive contains a root `SKILL.md`; invalid archives are removed instead of leaving an unloadable skill directory behind.

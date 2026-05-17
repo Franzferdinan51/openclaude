@@ -223,6 +223,7 @@ export async function searchClawHubSkills(
   const params = new URLSearchParams({
     q: trimmed,
     limit: String(limit),
+    nonSuspiciousOnly: 'true',
   })
   const response = await getJson<SearchResponse>(`/api/v1/search?${params}`)
   return (response.results ?? []).map(result => ({

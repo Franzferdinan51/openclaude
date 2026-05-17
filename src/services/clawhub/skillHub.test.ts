@@ -65,7 +65,11 @@ describe('ClawHub skill service', () => {
 
     const results = await searchClawHubSkills('calendar', 3)
 
-    expect(calls[0]).toContain('/api/v1/search?q=calendar&limit=3')
+    const searchUrl = new URL(calls[0]!)
+    expect(searchUrl.pathname).toBe('/api/v1/search')
+    expect(searchUrl.searchParams.get('q')).toBe('calendar')
+    expect(searchUrl.searchParams.get('limit')).toBe('3')
+    expect(searchUrl.searchParams.get('nonSuspiciousOnly')).toBe('true')
     expect(results).toEqual([
       expect.objectContaining({
         slug: 'calendar',
