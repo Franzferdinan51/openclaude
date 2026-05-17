@@ -53,6 +53,7 @@ describe('/connect command', () => {
     expect(result.type).toBe('text')
     expect(result.value).toContain('Connect Telegram to DuckHive')
     expect(result.value).toContain('/connect <your-bot-token>')
+    expect(result.value).toContain('DUCKHIVE_TELEGRAM_ALLOWED_CHAT_ID')
   })
 
   test('shows status from secure storage', async () => {
@@ -141,6 +142,7 @@ describe('/connect command', () => {
     expect(result.value).toContain('Telegram connected successfully!')
     expect(result.value).toContain('/connect status')
     expect(result.value).toContain('/connect disconnect')
+    expect(result.value).toContain('DUCKHIVE_TELEGRAM_ALLOWED_CHAT_ID=<chat-id>')
     expect(result.value).not.toContain('/connect --status')
     expect(storageState.pluginSecrets?.telegram?.botToken).toBe(token)
     expect(process.env.DUCKHIVE_TELEGRAM_BOT_TOKEN).toBe(token)

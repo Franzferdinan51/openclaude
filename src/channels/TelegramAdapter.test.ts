@@ -27,7 +27,16 @@ describe('TelegramAdapter', () => {
 
     const adapter = new TelegramAdapter({ allowedChatId: 42 })
 
-    expect(adapter.getChannelName()).toBe('telegram:123…')
+    expect(adapter.getChannelName()).toBe('telegram:123...')
+  })
+
+  test('reports DuckHive env names in setup errors', async () => {
+    expect(() => new TelegramAdapter()).toThrow('DUCKHIVE_TELEGRAM_BOT_TOKEN')
+
+    const adapter = new TelegramAdapter({ botToken: '123:test-token' })
+    await expect(adapter.sendMessage('hello')).rejects.toThrow(
+      'DUCKHIVE_TELEGRAM_ALLOWED_CHAT_ID',
+    )
   })
 
   test('does not drop filtered or buffered updates before returning the next allowed message', async () => {

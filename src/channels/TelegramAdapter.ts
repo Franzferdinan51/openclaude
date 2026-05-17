@@ -1,14 +1,14 @@
 /**
- * TelegramAdapter.ts — Telegram channel adapter for DuckHive
+ * TelegramAdapter.ts - Telegram channel adapter for DuckHive
  *
  * Wraps the Telegram Bot API (either long-polling via getUpdates or webhook mode)
  * and normalizes messages to DuckHive's Message type.
  *
- * The Telegram Bot API is HTTP-based — no extra npm dependencies required.
- * Set TELEGRAM_BOT_TOKEN env var or pass botToken in config.
+ * The Telegram Bot API is HTTP-based - no extra npm dependencies required.
+ * Set DUCKHIVE_TELEGRAM_BOT_TOKEN or TELEGRAM_BOT_TOKEN, or pass botToken in config.
  *
- * Inbound:  user message → Telegram API → receiveMessage() → Message
- * Outbound:  sendMessage() → Telegram API → user
+ * Inbound:  user message -> Telegram API -> receiveMessage() -> Message
+ * Outbound:  sendMessage() -> Telegram API -> user
  *
  * Supports:
  *   - Long-polling (default, no server required)
@@ -25,7 +25,7 @@ import { normalizeMessage } from './ChannelAdapter.js'
 import type { Message } from '../utils/mailbox.js'
 import { createCombinedAbortSignal } from '../utils/combinedAbortSignal.js'
 
-// ─── Telegram Bot API types ───────────────────────────────────────────────────
+// Telegram Bot API types
 
 interface TelegramUpdate {
   update_id: number
@@ -50,10 +50,10 @@ interface TelegramSendMessageParams {
   disable_web_page_preview?: boolean
 }
 
-// ─── Config ─────────────────────────────────────────────────────────────────
+// Config
 
 export interface TelegramAdapterConfig extends ChannelAdapterConfig {
-  /** Telegram bot token (from @BotFather). Falls back to TELEGRAM_BOT_TOKEN env. */
+  /** Telegram bot token (from @BotFather). Falls back to DuckHive Telegram env vars. */
   botToken?: string
   /**
    * Telegram chat ID to receive messages from and send replies to.
@@ -91,7 +91,7 @@ export interface TelegramAdapterConfig extends ChannelAdapterConfig {
 const DEFAULT_LONG_POLL_TIMEOUT_MS = 55_000
 const DEFAULT_API_BASE = 'https://api.telegram.org'
 
-// ─── Adapter ────────────────────────────────────────────────────────────────
+// Adapter
 
 export class TelegramAdapter implements ChannelAdapter {
   private readonly botToken: string
@@ -121,7 +121,7 @@ export class TelegramAdapter implements ChannelAdapter {
     if (!token) {
       throw new Error(
         '[TelegramAdapter] botToken is required. ' +
-          'Pass it in config or set the TELEGRAM_BOT_TOKEN env var.',
+          'Pass it in config or set DUCKHIVE_TELEGRAM_BOT_TOKEN or TELEGRAM_BOT_TOKEN.',
       )
     }
     this.botToken = token
@@ -142,7 +142,7 @@ export class TelegramAdapter implements ChannelAdapter {
   }
 
   getChannelName(): string {
-    return `telegram:${this.botToken.split(':')[0]}…`
+    return `telegram:${this.botToken.split(':')[0]}...`
   }
 
   isConnected(): boolean {
@@ -173,7 +173,7 @@ export class TelegramAdapter implements ChannelAdapter {
     if (!this.allowedChatId) {
       throw new Error(
         '[TelegramAdapter] sendMessage requires allowedChatId to be set. ' +
-          'Either pass it in the constructor or update the adapter to track chat context.',
+          'Either pass allowedChatId/allowedChatIds in the constructor or set DUCKHIVE_TELEGRAM_ALLOWED_CHAT_ID.',
       )
     }
     const params: TelegramSendMessageParams = {
@@ -220,7 +220,7 @@ export class TelegramAdapter implements ChannelAdapter {
     this.connected = false
   }
 
-  // ─── Internal helpers ──────────────────────────────────────────────────────
+  // Internal helpers
 
   private async fetchUpdates(): Promise<TelegramUpdate[]> {
     try {

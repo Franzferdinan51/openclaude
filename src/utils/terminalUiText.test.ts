@@ -9,6 +9,7 @@ const terminalUiFiles = [
   'src/utils/logoV2Utils.ts',
   'src/utils/statusNoticeDefinitions.tsx',
   'src/commands/plugin/BrowseMarketplace.tsx',
+  'src/channels/TelegramAdapter.ts',
   'tui/model.go',
   'tui/model/state.go',
   'tui/view.go',
@@ -21,6 +22,10 @@ describe('terminal UI text hygiene', () => {
 
       expect(source, relativePath).not.toContain('Â')
       expect(source, relativePath).not.toContain('â')
+      expect(source, relativePath).not.toContain(String.fromCharCode(0x00e2))
+      if (relativePath === 'src/channels/TelegramAdapter.ts') {
+        expect(source, relativePath).not.toContain(String.fromCharCode(0x2026))
+      }
       expect(source, relativePath).not.toContain('claude /logout')
       expect(source, relativePath).not.toContain('openclaude /logout')
       expect(source, relativePath).not.toContain('claude-opus-4.6')
