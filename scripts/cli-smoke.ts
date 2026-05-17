@@ -277,6 +277,16 @@ const cases: SmokeCase[] = [
     ],
   },
   {
+    name: 'top-level computer-use tools',
+    args: ['computer-use', 'tools'],
+    includes: [
+      'DuckHive Computer Use Tools',
+      'Native Codex computer-use MCP tools',
+      'Bundled newest-desktop-control fallback tools',
+      'computer_use_keyboard',
+    ],
+  },
+  {
     name: 'top-level mmx help',
     args: ['mmx', '--help'],
     includes: [

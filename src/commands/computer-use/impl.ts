@@ -21,17 +21,54 @@ const SKY_CLIENT_BIN = 'SkyComputerUseClient'
 const BUILTIN_COMPUTER_USE_RESERVED = feature('CHICAGO_MCP') ? true : false
 const COMPUTER_USE_USAGE = {
   status: 'Usage: duckhive computer-use status\n   or: /computer-use status',
+  tools: 'Usage: duckhive computer-use tools\n   or: /computer-use tools',
   enable: 'Usage: duckhive computer-use enable\n   or: /computer-use enable',
   disable: 'Usage: duckhive computer-use disable\n   or: /computer-use disable',
 }
+const CODEX_COMPUTER_USE_TOOLS = [
+  'screenshot',
+  'cursor_position',
+  'click',
+  'left_click',
+  'right_click',
+  'double_click',
+  'type_text',
+  'press_key',
+  'scroll',
+  'drag',
+  'open_application',
+  'list_apps',
+  'read_clipboard',
+  'write_clipboard',
+  'wait',
+  'computer_batch',
+] as const
+const FALLBACK_COMPUTER_USE_TOOLS = [
+  'desktop_screenshot',
+  'desktop_mouse_move',
+  'desktop_mouse_click',
+  'desktop_keyboard_type',
+  'desktop_keyboard_press',
+  'desktop_launch_app',
+  'android_screenshot',
+  'android_tap',
+  'android_text',
+  'backend_status',
+  'codex_mcp_config',
+  'computer_use_screenshot',
+  'computer_use_mouse_click',
+  'computer_use_keyboard',
+] as const
 const COMPUTER_USE_HELP =
   `Computer Use\n${'-'.repeat(50)}\n` +
   'Terminal:\n' +
   '  duckhive computer-use status   - Check plugin and config status\n' +
+  '  duckhive computer-use tools    - List native and fallback tool names\n' +
   '  duckhive computer-use enable   - Wire into DuckHive MCP\n' +
   '  duckhive computer-use disable  - Remove from DuckHive MCP\n\n' +
   'REPL:\n' +
   '  /computer-use status           - Check plugin and config status\n' +
+  '  /computer-use tools            - List native and fallback tool names\n' +
   '  /computer-use enable           - Wire into DuckHive MCP\n' +
   '  /computer-use disable          - Remove from DuckHive MCP\n\n' +
   '32 tools: screenshot, click, type, scroll, drag, open_app, and more.\n' +
@@ -395,7 +432,7 @@ export const call: LocalCommandCall = async (
     return { type: 'text', value: COMPUTER_USE_HELP }
   }
 
-  if (!['status', 'enable', 'disable'].includes(subcommand)) {
+  if (!['status', 'tools', 'list-tools', 'enable', 'disable'].includes(subcommand)) {
     return {
       type: 'text',
       value: `Unknown computer-use action: ${subcommand}\n\n${COMPUTER_USE_HELP}`,
@@ -406,6 +443,13 @@ export const call: LocalCommandCall = async (
     return {
       type: 'text',
       value: COMPUTER_USE_USAGE.status,
+    }
+  }
+
+  if ((subcommand === 'tools' || subcommand === 'list-tools') && parts.length > 1) {
+    return {
+      type: 'text',
+      value: COMPUTER_USE_USAGE.tools,
     }
   }
 
@@ -437,6 +481,19 @@ export const call: LocalCommandCall = async (
       value: result.ok
         ? 'computer-use removed from DuckHive MCP.\nRestart DuckHive or run `duckhive mcp reload` / `/mcp reload` to deactivate tools.'
         : `Failed: ${result.error}`,
+    }
+  }
+
+  if (subcommand === 'tools' || subcommand === 'list-tools') {
+    return {
+      type: 'text',
+      value:
+        `DuckHive Computer Use Tools\n${'-'.repeat(50)}\n` +
+        'Native Codex computer-use MCP tools (when available):\n' +
+        `  ${CODEX_COMPUTER_USE_TOOLS.join(', ')}\n\n` +
+        'Bundled newest-desktop-control fallback tools:\n' +
+        `  ${FALLBACK_COMPUTER_USE_TOOLS.join(', ')}\n\n` +
+        'Use `duckhive computer-use status` or `/computer-use status` to check which backend is available.',
     }
   }
 

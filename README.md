@@ -579,6 +579,9 @@ The same inspection/control surface is available outside the REPL as
 `duckhive computer-use ...`, `duckhive cu ...`, or `duckhive comput-use ...`.
 That keeps Codex computer-use status and stale MCP cleanup reachable while
 debugging terminal input, startup, or provider configuration.
+Use `duckhive computer-use tools` or `/computer-use tools` to list the native
+Codex MCP tool names alongside the bundled `newest-desktop-control` fallback
+tools without opening the README.
 
 The plugin marketplace details view now inspects local-source plugins before installation. When a marketplace entry points at a checked-out plugin directory, DuckHive shows discovered `commands/`, `agents/`, `skills/`, `output-styles/`, `hooks/hooks.json`, and `.mcp.json` components instead of a generic placeholder, so Codex-style plugin browsing is less guessy for local harness development.
 

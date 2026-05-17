@@ -494,6 +494,28 @@ describe('call', () => {
     expect(addMcpConfig).not.toHaveBeenCalled()
   })
 
+  test('lists native and bundled fallback tool names', async () => {
+    const result = expectTextResult(await call('tools', {} as never))
+
+    expect(result.value).toContain('DuckHive Computer Use Tools')
+    expect(result.value).toContain('Native Codex computer-use MCP tools')
+    expect(result.value).toContain('screenshot')
+    expect(result.value).toContain('computer_batch')
+    expect(result.value).toContain('Bundled newest-desktop-control fallback tools')
+    expect(result.value).toContain('desktop_screenshot')
+    expect(result.value).toContain('android_screenshot')
+    expect(result.value).toContain('computer_use_keyboard')
+    expect(addMcpConfig).not.toHaveBeenCalled()
+  })
+
+  test('rejects extra args for tools', async () => {
+    const result = expectTextResult(await call('tools extra', {} as never))
+
+    expect(result.value).toContain('Usage: duckhive computer-use tools')
+    expect(result.value).toContain('or: /computer-use tools')
+    expect(addMcpConfig).not.toHaveBeenCalled()
+  })
+
   test('rejects extra args for status', async () => {
     const result = expectTextResult(await call('status extra', {} as never))
 
