@@ -317,6 +317,57 @@ func TestLocalShellCommandUsesPlatformAppropriateFallback(t *testing.T) {
 	}
 }
 
+func TestShellArgsForExecutableUsesPlatformSpecificFlags(t *testing.T) {
+	tests := []struct {
+		name      string
+		shellPath string
+		wantArgs  []string
+	}{
+		{
+			name:      "pwsh uses powershell flags",
+			shellPath: `C:\Program Files\PowerShell\7\pwsh.exe`,
+			wantArgs:  []string{"-NoLogo", "-NoProfile", "-Command", "echo hi"},
+		},
+		{
+			name:      "powershell uses powershell flags",
+			shellPath: `powershell.exe`,
+			wantArgs:  []string{"-NoLogo", "-NoProfile", "-Command", "echo hi"},
+		},
+		{
+			name:      "cmd uses cmd flags",
+			shellPath: `C:\Windows\System32\cmd.exe`,
+			wantArgs:  []string{"/d", "/s", "/c", "echo hi"},
+		},
+		{
+			name:      "unix shell uses lc",
+			shellPath: `/bin/zsh`,
+			wantArgs:  []string{"-lc", "echo hi"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			args := shellArgsForExecutable(tt.shellPath, "echo hi")
+			if strings.Join(args, "\x00") != strings.Join(tt.wantArgs, "\x00") {
+				t.Fatalf("args = %#v, want %#v", args, tt.wantArgs)
+			}
+		})
+	}
+}
+
+func TestLocalShellCommandForOSRespectsWindowsShellEnv(t *testing.T) {
+	t.Setenv("SHELL", `C:\Program Files\PowerShell\7\pwsh.exe`)
+
+	shell, args := localShellCommandForOS("windows", "echo hi")
+	if shell != `C:\Program Files\PowerShell\7\pwsh.exe` {
+		t.Fatalf("shell = %q", shell)
+	}
+	wantArgs := []string{"-NoLogo", "-NoProfile", "-Command", "echo hi"}
+	if strings.Join(args, "\x00") != strings.Join(wantArgs, "\x00") {
+		t.Fatalf("args = %#v, want %#v", args, wantArgs)
+	}
+}
+
 func envSliceToMap(entries []string) map[string]string {
 	out := make(map[string]string, len(entries))
 	for _, entry := range entries {

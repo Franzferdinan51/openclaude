@@ -1106,26 +1106,42 @@ func (m *MainModel) handleShellResult(msg shellCommandResultMsg) {
 }
 
 func localShellCommand(command string) (string, []string) {
-	if runtime.GOOS == "windows" {
+	return localShellCommandForOS(runtime.GOOS, command)
+}
+
+func localShellCommandForOS(goos, command string) (string, []string) {
+	if goos == "windows" {
 		if shell := strings.TrimSpace(os.Getenv("SHELL")); shell != "" {
-			return shell, []string{"-lc", command}
+			return shell, shellArgsForExecutable(shell, command)
 		}
 		for _, candidate := range []string{"pwsh.exe", "powershell.exe"} {
 			if resolved, err := exec.LookPath(candidate); err == nil {
-				return resolved, []string{"-NoLogo", "-NoProfile", "-Command", command}
+				return resolved, shellArgsForExecutable(resolved, command)
 			}
 		}
 		if comspec := strings.TrimSpace(os.Getenv("COMSPEC")); comspec != "" {
-			return comspec, []string{"/d", "/s", "/c", command}
+			return comspec, shellArgsForExecutable(comspec, command)
 		}
-		return "cmd.exe", []string{"/d", "/s", "/c", command}
+		return "cmd.exe", shellArgsForExecutable("cmd.exe", command)
 	}
 
 	shell := strings.TrimSpace(os.Getenv("SHELL"))
 	if shell == "" {
 		shell = "/bin/zsh"
 	}
-	return shell, []string{"-lc", command}
+	return shell, shellArgsForExecutable(shell, command)
+}
+
+func shellArgsForExecutable(shellPath, command string) []string {
+	name := strings.ToLower(filepath.Base(strings.TrimSpace(shellPath)))
+	switch name {
+	case "pwsh", "pwsh.exe", "powershell", "powershell.exe":
+		return []string{"-NoLogo", "-NoProfile", "-Command", command}
+	case "cmd", "cmd.exe":
+		return []string{"/d", "/s", "/c", command}
+	default:
+		return []string{"-lc", command}
+	}
 }
 
 func (m *MainModel) waitForBridgeMsg() tea.Cmd {
