@@ -116,6 +116,18 @@ describe('/goal command', () => {
     expect(result).toContain('Active: 0 | Paused: 0 | Total: 0')
   })
 
+  test('help shows terminal and REPL goal commands', async () => {
+    const goalCommand = await importFreshGoalCommand()
+
+    const result = await goalCommand(['help'])
+
+    expect(result).toContain('DuckHive /goal - Persisted Workflow Goals')
+    expect(result).toContain('duckhive goal <description>')
+    expect(result).toContain('duckhive goal step add [id] <desc>')
+    expect(result).toContain('/goal <description>')
+    expect(result).toContain('/goal step add [id] <desc>')
+  })
+
   test('adding a new step completes the previous current step', async () => {
     const goalCommand = await importFreshGoalCommand()
     await goalCommand(['create', 'Ship', 'the', 'release'])

@@ -56,7 +56,18 @@ function usage(error?: string): string {
   const lines = [
     'Skill Workshop',
     '',
-    'Usage:',
+    'Terminal usage:',
+    '  duckhive skill <name>',
+    '  duckhive skill create <name>',
+    '  duckhive skill search <query>',
+    '  duckhive skill inspect <slug>',
+    '  duckhive skill install <slug>',
+    '  duckhive skill capture',
+    '  duckhive skills',
+    '  duckhive skill read <name>',
+    '  duckhive skill delete <name>',
+    '',
+    'REPL usage:',
     '  /skill <name>',
     '  /skill create <name>',
     '  /skill search <query>',
@@ -67,7 +78,13 @@ function usage(error?: string): string {
     '  /skill read <name>',
     '  /skill delete <name>',
     '',
-    'Examples:',
+    'Terminal examples:',
+    '  duckhive skill "release readiness"',
+    '  duckhive skill search "calendar"',
+    '  duckhive skill inspect calendar',
+    '  duckhive skill install calendar',
+    '',
+    'REPL examples:',
     '  /skill "release readiness"',
     '  /skill create api-rollout-checklist',
     '  /skill search "calendar"',
@@ -163,7 +180,7 @@ function renderAutoCaptureSummary(summary: SkillCaptureSummary): string {
 
 function renderSkillList(skills: string[]): string {
   if (skills.length === 0) {
-    return 'Skill Workshop\n\nNo saved skills yet. Create one with `/skill <name>`.'
+    return 'Skill Workshop\n\nNo saved skills yet. Create one with `duckhive skill <name>` or `/skill <name>`.'
   }
 
   return `Skill Workshop\n\nSaved skills:\n${skills.map(skill => `- ${skill}`).join('\n')}`

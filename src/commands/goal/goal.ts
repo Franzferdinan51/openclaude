@@ -599,7 +599,20 @@ function showHelp(): string {
   return `
 ${bold('DuckHive /goal - Persisted Workflow Goals')}
 
-${bold('Commands:')}
+${bold('Terminal commands:')}
+  duckhive goal <description>          Create a new goal (Codex-style shorthand)
+  duckhive goal create <description>   Create a new goal
+  duckhive goal list [filter]          List goals (filter: all|active|paused|completed|failed)
+  duckhive goal status [id]            Show goal status or summary
+  duckhive goal pause [id]             Pause a goal
+  duckhive goal resume [id]            Resume a paused goal
+  duckhive goal complete [id]          Mark goal as completed
+  duckhive goal fail [id]              Mark goal as failed
+  duckhive goal clear [id]             Delete a goal
+  duckhive goal attach [id]            Attach current session to goal
+  duckhive goal step add [id] <desc>   Add a step to a goal
+
+${bold('REPL commands:')}
   /goal <description>          Create a new goal (Codex-style shorthand)
   /goal create <description>   Create a new goal
   /goal list [filter]          List goals (filter: all|active|paused|completed|failed)
@@ -613,6 +626,9 @@ ${bold('Commands:')}
   /goal step add [id] <desc>   Add a step to a goal
 
 ${bold('Examples:')}
+  duckhive goal Build the user authentication system
+  duckhive goal list active
+  duckhive goal status goal_123
   /goal Build the user authentication system
   /goal create Build the user authentication system
   /goal list active

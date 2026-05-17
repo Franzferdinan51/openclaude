@@ -227,6 +227,8 @@ const cases: SmokeCase[] = [
     args: ['goal', '--help'],
     includes: [
       'DuckHive /goal - Persisted Workflow Goals',
+      'duckhive goal <description>',
+      'duckhive goal step add [id] <desc>',
       '/goal <description>',
       '/goal step add',
     ],
@@ -236,6 +238,7 @@ const cases: SmokeCase[] = [
     args: ['--stdin-mode', 'data', 'goal', '--help'],
     includes: [
       'DuckHive /goal - Persisted Workflow Goals',
+      'duckhive goal <description>',
       '/goal <description>',
     ],
   },
@@ -466,6 +469,8 @@ const cases: SmokeCase[] = [
     env: createIsolatedConfigEnv,
     includes: [
       'Skill Workshop',
+      'duckhive skill search <query>',
+      'duckhive skill install <slug>',
       '/skill search <query>',
       '/skill install <slug>',
     ],
@@ -485,6 +490,7 @@ const cases: SmokeCase[] = [
     env: createIsolatedConfigEnv,
     includes: [
       'Skill Workshop',
+      'duckhive skill search <query>',
       '/skill search <query>',
       '/skill install <slug>',
     ],
@@ -495,6 +501,7 @@ const cases: SmokeCase[] = [
     env: createIsolatedConfigEnv,
     includes: [
       'Skill Workshop',
+      'duckhive skill search <query>',
       '/skill search <query>',
     ],
   },

@@ -6,6 +6,17 @@ afterEach(() => {
 })
 
 describe('/skill command', () => {
+  test('shows terminal and REPL usage in help output', async () => {
+    const result = await call('', {} as never)
+
+    expect(result.type).toBe('text')
+    if (result.type !== 'text') throw new Error('unexpected result type')
+    expect(result.value).toContain('Skill Workshop')
+    expect(result.value).toContain('duckhive skill search <query>')
+    expect(result.value).toContain('duckhive skill install <slug>')
+    expect(result.value).toContain('/skill search <query>')
+  })
+
   test('creates a scaffold skill from bare skill name input', async () => {
     const runSkillWorkshop = mock(async (input: any) => ({
       data: {
