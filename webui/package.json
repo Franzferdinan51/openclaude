@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "node ../node_modules/typescript/lib/tsc.js -p tsconfig.json && vite build",
     "preview": "vite preview",
     "tauri:dev": "cd ../src-tauri && cargo run",
     "tauri:build": "cd ../src-tauri && cargo build --release"

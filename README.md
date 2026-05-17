@@ -152,8 +152,7 @@ DuckHive ships a dedicated WebUI for a Codex-style workbench with OpenClaw-style
 DUCKHIVE_WEBUI_API_PORT=3017 bun run webui:api
 
 # Terminal 2: React WebUI
-cd webui
-VITE_DUCKHIVE_API_BASE=http://localhost:3017 npm run dev
+VITE_DUCKHIVE_API_BASE=http://localhost:3017 bun run webui:dev
 ```
 
 The WebUI API exposes health, status, agents, tools, MCP servers, sessions, AgentRun inspection, and run controls. It also streams run lifecycle events over Server-Sent Events at `/api/events`.
