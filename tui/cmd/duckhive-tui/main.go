@@ -1172,7 +1172,7 @@ func (m *MainModel) providerSnapshot() string {
 		fmt.Sprintf("Active: %s", m.displayProvider()),
 		fmt.Sprintf("Model: %s", m.displayModel()),
 		fmt.Sprintf("Configured keys: %s", configured),
-		"First-class DuckHive presets: MiniMax, LM Studio, ChatGPT/OpenAI.",
+		"First-class DuckHive presets: MiniMax, OpenRouter, NVIDIA NIM, LM Studio, Ollama, Kimi, Gemini, and Codex.",
 		"",
 		"Use /provider in a bridged session for the full provider manager.",
 		"Use --provider <provider> for one session or ~/.duckhive/config.json for defaults.",

@@ -316,6 +316,32 @@ func TestGoalSnapshotSurfacesCodexGoalWorkflow(t *testing.T) {
 	}
 }
 
+func TestProviderSnapshotUsesDuckHiveProviderSet(t *testing.T) {
+	m := &MainModel{
+		state: model.NewAppState(),
+		cap: workspaceCapabilities{
+			activeProvider:      "minimax",
+			configuredProviders: []string{"minimax", "openrouter"},
+		},
+	}
+
+	content := m.localCommandContent(localTUICommandProvider)
+	for _, want := range []string{
+		"Model providers",
+		"MiniMax",
+		"OpenRouter",
+		"NVIDIA NIM",
+		"Codex",
+	} {
+		if !strings.Contains(content, want) {
+			t.Fatalf("provider snapshot missing %q:\n%s", want, content)
+		}
+	}
+	if strings.Contains(content, "ChatGPT/OpenAI") {
+		t.Fatalf("provider snapshot still advertises ChatGPT/OpenAI as the fallback preset:\n%s", content)
+	}
+}
+
 func TestRunsSnapshotSurfacesAgentRunLifecycle(t *testing.T) {
 	m := &MainModel{
 		state: model.NewAppState(),
