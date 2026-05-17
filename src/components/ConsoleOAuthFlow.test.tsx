@@ -100,7 +100,12 @@ test('login picker shows the third-party platform option', async () => {
   const output = await renderFrame(<ConsoleOAuthFlow onDone={() => {}} />)
 
   expect(output).toContain('Select login method:')
+  expect(output).toContain('hosted subscription auth')
+  expect(output).toContain('Hosted account with subscription')
+  expect(output).toContain('API billing account')
   expect(output).toContain('3rd-party platform')
+  expect(output).not.toContain('Claude subscription')
+  expect(output).not.toContain('Anthropic Console account')
 })
 
 test('third-party provider branch opens the first-run provider manager', async () => {

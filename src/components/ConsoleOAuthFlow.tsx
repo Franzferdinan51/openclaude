@@ -72,7 +72,7 @@ export function ConsoleOAuthFlow({
   const settings = getSettings_DEPRECATED() || {};
   const forceLoginMethod = forceLoginMethodProp ?? settings.forceLoginMethod;
   const orgUUID = settings.forceLoginOrgUUID;
-  const forcedMethodMessage = forceLoginMethod === 'claudeai' ? 'Login method pre-selected: Subscription Plan (Claude Pro/Max)' : forceLoginMethod === 'console' ? 'Login method pre-selected: API Usage Billing (Anthropic Console)' : null;
+  const forcedMethodMessage = forceLoginMethod === 'claudeai' ? 'Login method pre-selected: Subscription Plan (hosted auth)' : forceLoginMethod === 'console' ? 'Login method pre-selected: API Usage Billing' : null;
   const terminal = useTerminalNotification();
   const [oauthStatus, setOAuthStatus] = useState<OAuthStatus>(() => {
     if (initialStatus) {
@@ -384,14 +384,14 @@ function OAuthStatusMessage({
     case 'idle': {
       const promptText =
         startingMessage ||
-        'DuckHive can be used with your Claude subscription or billed based on API usage through your Console account.'
+        'DuckHive can be used with hosted subscription auth or billed based on API usage through a compatible console account.'
 
       const loginOptions = [
         {
           label: (
             <Text>
-              Claude account with subscription ·{' '}
-              <Text dimColor>Pro, Max, Team, or Enterprise</Text>
+              Hosted account with subscription -{' '}
+              <Text dimColor>Pro, Max, Team, Enterprise, or compatible plan</Text>
               {'\n'}
             </Text>
           ),
@@ -400,7 +400,7 @@ function OAuthStatusMessage({
         {
           label: (
             <Text>
-              Anthropic Console account ·{' '}
+              API billing account -{' '}
               <Text dimColor>API usage billing</Text>
               {'\n'}
             </Text>
@@ -410,7 +410,7 @@ function OAuthStatusMessage({
         {
           label: (
             <Text>
-              3rd-party platform ·{' '}
+              3rd-party platform -{' '}
               <Text dimColor>OpenAI, Gemini, Bedrock, Ollama, and more</Text>
               {'\n'}
             </Text>
