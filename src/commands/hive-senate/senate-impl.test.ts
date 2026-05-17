@@ -74,6 +74,33 @@ describe('/senate command', () => {
     expect(result.value).toContain('Decree issued: "No Destructive Commands"')
   })
 
+  test('preserves escaped quotes in issued decrees', async () => {
+    const issueDecree = mock(async () => ({ success: true, decreeId: 'DECREE-2' }))
+    setHive({ issueDecree })
+
+    const result = expectTextResult(
+      await call('issue "No \\"rm -rf\\"" | "Agents SHALL ask before destructive commands"', {} as never),
+    )
+
+    expect(issueDecree).toHaveBeenCalledWith(
+      'No "rm -rf"',
+      'Agents SHALL ask before destructive commands',
+    )
+    expect(result.value).toContain('Decree issued: "No "rm -rf""')
+  })
+
+  test('rejects unterminated decree issue text before issuing', async () => {
+    const issueDecree = mock(async () => ({ success: true, decreeId: 'DECREE-2' }))
+    setHive({ issueDecree })
+
+    const result = expectTextResult(
+      await call('issue "No Destructive Commands | Agents SHALL ask', {} as never),
+    )
+
+    expect(result.value).toContain('Unterminated quoted string in /senate arguments.')
+    expect(issueDecree).not.toHaveBeenCalled()
+  })
+
   test('shows decree details by id', async () => {
     setHive({
       getDecree: mock(async () => ({

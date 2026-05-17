@@ -30,6 +30,42 @@ describe('/swarm command', () => {
     expect(ASCII_ONLY.test(`${usage.value}\n${dryRun.value}`)).toBe(true)
   })
 
+  test('accepts separated domain and count flag values', async () => {
+    const result = expectTextResult(
+      await call('Build API --domain coding --count 2 --dry-run', {} as never),
+    )
+
+    expect(result.value).toContain('Swarm Execution (DRY RUN)')
+    expect(result.value).toContain('Domain: build')
+    expect(result.value).toContain('Agents (2):')
+  })
+
+  test('preserves escaped quotes in swarm tasks', async () => {
+    const result = expectTextResult(
+      await call('"Build the \\"fast\\" API" --domain coding --count 1 --dry-run', {} as never),
+    )
+
+    expect(result.value).toContain('Task: Build the "fast" API')
+    expect(result.value).toContain('Agents (1):')
+  })
+
+  test('rejects unterminated swarm tasks before spawning agents', async () => {
+    let spawned = false
+    setSwarmTestDeps({
+      spawnTeammate: async () => {
+        spawned = true
+        throw new Error('should not spawn')
+      },
+    })
+
+    const result = expectTextResult(
+      await call('"Build API --domain coding', {} as never),
+    )
+
+    expect(result.value).toContain('Unterminated quoted string in /swarm arguments.')
+    expect(spawned).toBe(false)
+  })
+
   test('renders execution phases and vote summary with ASCII-safe terminal output', async () => {
     setSwarmTestDeps({
       spawnTeammate: async input => ({

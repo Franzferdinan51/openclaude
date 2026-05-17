@@ -22,7 +22,64 @@ export function setDecreeTestDeps(overrides: Partial<DecreeDeps> | null): void {
 }
 
 function trimOuterQuotes(value: string): string {
-  return value.replace(/^["']|["']$/g, '').trim()
+  const trimmed = value.trim()
+  const first = trimmed[0]
+  const last = trimmed[trimmed.length - 1]
+  if ((first === '"' || first === "'") && first === last) {
+    return trimmed.slice(1, -1).trim()
+  }
+  return trimmed
+}
+
+function parseDecreeIssue(args: string): { title?: string; content?: string; error?: string } {
+  let title = ''
+  let content = ''
+  let target: 'title' | 'content' = 'title'
+  let quote: '"' | "'" | null = null
+
+  for (let i = 0; i < args.length; i++) {
+    const ch = args[i]!
+
+    if (quote) {
+      if (ch === quote) {
+        quote = null
+        continue
+      }
+      if (ch === '\\' && i + 1 < args.length) {
+        const next = args[i + 1]!
+        if (next === quote || next === '\\') {
+          if (target === 'title') title += next
+          else content += next
+          i += 1
+          continue
+        }
+      }
+      if (target === 'title') title += ch
+      else content += ch
+      continue
+    }
+
+    if (ch === '"' || ch === "'") {
+      quote = ch
+      continue
+    }
+
+    if (ch === '|' && target === 'title') {
+      target = 'content'
+      continue
+    }
+
+    if (target === 'title') title += ch
+    else content += ch
+  }
+
+  if (quote) {
+    return { error: 'Unterminated quoted string in /decree arguments.' }
+  }
+
+  const cleanTitle = trimOuterQuotes(title)
+  const cleanContent = trimOuterQuotes(content) || cleanTitle
+  return { title: cleanTitle, content: cleanContent }
 }
 
 function formatHiveOfflineError(error?: string): string {
@@ -73,9 +130,12 @@ export const call: LocalCommandCall = async (args: string) => {
     }
   }
 
-  const parts = rest.split('|').map(part => part.trim())
-  const title = trimOuterQuotes(parts[0] ?? '')
-  const content = trimOuterQuotes(parts[1] ?? title)
+  const parsedIssue = parseDecreeIssue(rest)
+  if (parsedIssue.error) {
+    return { type: 'text', value: parsedIssue.error }
+  }
+  const title = parsedIssue.title ?? ''
+  const content = parsedIssue.content ?? title
 
   if (!title) {
     return {

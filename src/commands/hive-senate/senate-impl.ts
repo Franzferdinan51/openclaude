@@ -22,12 +22,67 @@ export function setSenateTestDeps(overrides: Partial<SenateDeps> | null): void {
   senateTestDeps = overrides
 }
 
-function splitCommandArgs(args: string): string[] {
-  return args.match(/"[^"]*"|'[^']*'|\S+/g)?.map(arg => arg.replace(/^["']|["']$/g, '')) ?? []
+function splitCommandArgs(args: string): { args: string[]; error?: string } {
+  const tokens: string[] = []
+  let current = ''
+  let quote: '"' | "'" | null = null
+  let tokenStarted = false
+
+  for (let i = 0; i < args.length; i++) {
+    const ch = args[i]!
+
+    if (quote) {
+      if (ch === quote) {
+        quote = null
+        continue
+      }
+      if (ch === '\\' && i + 1 < args.length) {
+        const next = args[i + 1]!
+        if (next === quote || next === '\\') {
+          current += next
+          i += 1
+          continue
+        }
+      }
+      current += ch
+      continue
+    }
+
+    if (ch === '"' || ch === "'") {
+      quote = ch
+      tokenStarted = true
+      continue
+    }
+
+    if (/\s/.test(ch)) {
+      if (tokenStarted) {
+        tokens.push(current)
+        current = ''
+        tokenStarted = false
+      }
+      continue
+    }
+
+    current += ch
+    tokenStarted = true
+  }
+
+  if (quote) {
+    return { args: tokens, error: 'Unterminated quoted string in /senate arguments.' }
+  }
+
+  if (tokenStarted) tokens.push(current)
+  return { args: tokens }
 }
 
 function trimOuterQuotes(value: string): string {
-  return value.replace(/^["']|["']$/g, '').trim()
+  const trimmed = value.trim()
+  const first = trimmed[0]
+  const last = trimmed[trimmed.length - 1]
+  if ((first === '"' || first === "'") && first === last) {
+    return trimmed.slice(1, -1).trim()
+  }
+  return trimmed
 }
 
 function renderDecree(decree: Decree): string {
@@ -65,7 +120,11 @@ REPL:
 
 export const call: LocalCommandCall = async (args: string) => {
   const hive = getSenateDeps().getHiveBridge()
-  const parts = splitCommandArgs(args)
+  const parsed = splitCommandArgs(args)
+  if (parsed.error) {
+    return { type: 'text', value: parsed.error }
+  }
+  const parts = parsed.args
   const subcommand = parts[0]?.toLowerCase() ?? ''
   const rest = parts.slice(1).join(' ').trim()
 

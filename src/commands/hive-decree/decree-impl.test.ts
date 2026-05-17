@@ -75,6 +75,33 @@ describe('/decree command', () => {
     expect(result.value).toContain('Decree enacted: "No Destructive Commands"')
   })
 
+  test('preserves escaped quotes in decree title and content', async () => {
+    const issueDecree = mock(async () => ({ success: true, decreeId: 'DECREE-2' }))
+    setHive({ issueDecree })
+
+    const result = expectTextResult(
+      await call('"No \\"rm -rf\\"" | "Agents SHALL ask before \\"destructive\\" commands"', {} as never),
+    )
+
+    expect(issueDecree).toHaveBeenCalledWith(
+      'No "rm -rf"',
+      'Agents SHALL ask before "destructive" commands',
+    )
+    expect(result.value).toContain('Decree enacted: "No "rm -rf""')
+  })
+
+  test('rejects unterminated decree text before issuing', async () => {
+    const issueDecree = mock(async () => ({ success: true, decreeId: 'DECREE-2' }))
+    setHive({ issueDecree })
+
+    const result = expectTextResult(
+      await call('"No Destructive Commands | Agents SHALL ask', {} as never),
+    )
+
+    expect(result.value).toContain('Unterminated quoted string in /decree arguments.')
+    expect(issueDecree).not.toHaveBeenCalled()
+  })
+
   test('reports source-checkout runtime command when Hive is offline', async () => {
     setHive({
       getActiveDecrees: mock(async () => []),

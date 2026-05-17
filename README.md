@@ -656,7 +656,7 @@ mcporter call browseros.click element=42
 
 ### Agent Teams
 
-Spawn multi-agent crews that work in parallel on complex tasks. DuckHive integrates Agent Teams for structured delegation. `/team`, `/council`, and `/orchestrate` now share hardened terminal argument behavior: escaped quotes survive inside names/questions/tasks, unterminated quoted input fails before spawning teams or starting deliberation, and orchestration accepts both `--mode=value` / `--team=value` and the separated `--mode value` / `--team value` forms.
+Spawn multi-agent crews that work in parallel on complex tasks. DuckHive integrates Agent Teams for structured delegation. `/team`, `/council`, `/orchestrate`, `/swarm`, `/senate`, and `/decree` now share hardened terminal argument behavior: escaped quotes survive inside names/questions/tasks/decrees, unterminated quoted input fails before spawning teams, starting deliberation, launching swarms, or issuing decrees, and orchestration/swarm flags accept both `--mode=value` / `--team=value` / `--domain=value` / `--count=value` and the separated `--mode value` / `--team value` / `--domain value` / `--count value` forms.
 
 ```bash
 # Terminal

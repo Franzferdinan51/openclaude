@@ -287,8 +287,57 @@ export function setSwarmTestDeps(overrides: Partial<SwarmDeps> | null): void {
   swarmTestDeps = overrides
 }
 
-function splitCommandArgs(args: string): string[] {
-  return args.match(/"[^"]*"|'[^']*'|\S+/g)?.map(arg => arg.replace(/^["']|["']$/g, '')) ?? []
+function splitCommandArgs(args: string): { args: string[]; error?: string } {
+  const tokens: string[] = []
+  let current = ''
+  let quote: '"' | "'" | null = null
+  let tokenStarted = false
+
+  for (let i = 0; i < args.length; i++) {
+    const ch = args[i]!
+
+    if (quote) {
+      if (ch === quote) {
+        quote = null
+        continue
+      }
+      if (ch === '\\' && i + 1 < args.length) {
+        const next = args[i + 1]!
+        if (next === quote || next === '\\') {
+          current += next
+          i += 1
+          continue
+        }
+      }
+      current += ch
+      continue
+    }
+
+    if (ch === '"' || ch === "'") {
+      quote = ch
+      tokenStarted = true
+      continue
+    }
+
+    if (/\s/.test(ch)) {
+      if (tokenStarted) {
+        tokens.push(current)
+        current = ''
+        tokenStarted = false
+      }
+      continue
+    }
+
+    current += ch
+    tokenStarted = true
+  }
+
+  if (quote) {
+    return { args: tokens, error: 'Unterminated quoted string in /swarm arguments.' }
+  }
+
+  if (tokenStarted) tokens.push(current)
+  return { args: tokens }
 }
 
 function trimOuterQuotes(value: string): string {
@@ -443,7 +492,11 @@ Provide your analysis and implementation.`
 
 export const call: LocalCommandCall = async (args: string, context: ToolUseContext) => {
   const { spawnTeammate, collectResponses, runSwarmVoting, sleep } = getSwarmDeps()
-  const parsedArgs = splitCommandArgs(args)
+  const parsed = splitCommandArgs(args)
+  if (parsed.error) {
+    return { type: 'text', value: parsed.error }
+  }
+  const parsedArgs = parsed.args
   const votingMode = parsedArgs[0]
   if (votingMode === 'vote' || votingMode === 'merge' || votingMode === 'pick-best') {
     return handleVotingMode(votingMode, parsedArgs.slice(1).join(' ').trim())
@@ -452,10 +505,21 @@ export const call: LocalCommandCall = async (args: string, context: ToolUseConte
   const flags: Record<string, string | boolean> = {}
   const positional: string[] = []
 
-  for (const arg of parsedArgs) {
+  for (let i = 0; i < parsedArgs.length; i++) {
+    const arg = parsedArgs[i]!
     if (arg.startsWith('--')) {
-      const [k, v] = arg.slice(2).split('=')
-      flags[k] = v ?? true
+      const [k, v] = arg.slice(2).split(/=(.*)/s, 2)
+      if ((k === 'domain' || k === 'count') && v === undefined) {
+        const next = parsedArgs[i + 1]
+        if (next && !next.startsWith('--')) {
+          flags[k] = next
+          i += 1
+        } else {
+          flags[k] = true
+        }
+      } else {
+        flags[k] = v ?? true
+      }
     } else {
       positional.push(arg)
     }
