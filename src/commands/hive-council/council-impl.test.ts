@@ -41,6 +41,19 @@ describe('/council command', () => {
     expect(result.value).toContain('- vision')
   })
 
+  test('shows terminal and REPL usage when no question is provided', async () => {
+    setHive({
+      getModes: mock(async () => ['deliberation', 'vision']),
+    })
+
+    const result = expectTextResult(await call('', {} as never))
+
+    expect(result.value).toContain('AI Council')
+    expect(result.value).toContain('duckhive council --modes')
+    expect(result.value).toContain('/council --modes')
+    expect(result.value).toContain('Available modes: deliberation, vision')
+  })
+
   test('lists live councilors from Hive Nation', async () => {
     setHive({
       getCouncilors: mock(async () => [

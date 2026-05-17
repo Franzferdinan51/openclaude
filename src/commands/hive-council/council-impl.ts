@@ -122,10 +122,10 @@ export const call: LocalCommandCall = async (args: string) => {
   if (flags.status !== undefined) {
     const session = await hive.getCurrentSession()
     if (!session || session.phase === 'idle') {
-      return {
-        type: 'text',
-        value:
-          'No active council deliberation. Start one with `/council <question>`.\n' +
+    return {
+      type: 'text',
+      value:
+          'No active council deliberation. Start one with `duckhive council <question>` or `/council <question>`.\n' +
           'If Hive Nation is not running in this checkout, launch it with `bun run council:serve`.',
       }
     }
@@ -179,6 +179,14 @@ export const call: LocalCommandCall = async (args: string) => {
       value: `AI Council
 
 No question provided. Usage:
+  duckhive council Should I refactor this service?
+  duckhive council --mode=adversarial What are the security risks?
+  duckhive council --status
+  duckhive council --stop
+  duckhive council --modes
+  duckhive council --councilors
+
+REPL usage:
   /council Should I refactor this service?
   /council --mode=adversarial What are the security risks?
   /council "Should we use microservices?" mode=adversarial
@@ -226,7 +234,7 @@ Available modes: ${availableModes.join(', ')}`,
       return {
         type: 'text',
         value:
-          'AI Council is offline. Start Hive Nation and retry `/council`.\n' +
+          'AI Council is offline. Start Hive Nation and retry `duckhive council` or `/council`.\n' +
           'For this source checkout, use `bun run council:serve`.',
       }
     }
@@ -239,6 +247,7 @@ Available modes: ${availableModes.join(', ')}`,
 Mode: ${mode}
 Session: ${result.sessionId ?? 'unknown'}
 
-Monitor: /council --status`,
+Monitor: duckhive council --status
+REPL: /council --status`,
   }
 }

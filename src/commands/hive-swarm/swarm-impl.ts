@@ -490,11 +490,18 @@ export const call: LocalCommandCall = async (args: string, context: ToolUseConte
       type: 'text',
       value: `Swarm Command - Parallel Agent Execution
 
-Usage: /swarm <task description>
-Example: /swarm build a REST API for task management
-Example: /swarm make a roguelike platformer --count=8
-Example: /swarm audit my codebase for security --domain=security
-Example: /swarm pick-best "response A" | "response B"
+Terminal usage: duckhive swarm <task description>
+REPL usage:     /swarm <task description>
+
+Terminal examples:
+  duckhive swarm build a REST API for task management
+  duckhive swarm make a roguelike platformer --count=8
+  duckhive swarm audit my codebase for security --domain=security
+  duckhive swarm pick-best "response A" | "response B"
+
+REPL examples:
+  /swarm build a REST API for task management
+  /swarm make a roguelike platformer --count=8
 
 Flags:
   --domain=<type>   Force domain (build|audit|research|data|mobile|game)
@@ -507,6 +514,9 @@ Flags:
   --list-domain     List agents by domain
 
 Voting modes:
+  duckhive swarm vote "<response A>" | "<response B>"
+  duckhive swarm merge "<response A>" | "<response B>"
+  duckhive swarm pick-best "<response A>" | "<response B>"
   /swarm vote "<response A>" | "<response B>"
   /swarm merge "<response A>" | "<response B>"
   /swarm pick-best "<response A>" | "<response B>"`,
@@ -528,7 +538,8 @@ Accepted aliases: coding, security, code-review, debugging, architecture, testin
       type: 'text',
       value: `${countResult.error}
 
-Usage: /swarm <task description> --count=<N>
+Usage: duckhive swarm <task description> --count=<N>
+REPL: /swarm <task description> --count=<N>
 Allowed range: 1-8`,
     }
   }

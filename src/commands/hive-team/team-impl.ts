@@ -50,8 +50,10 @@ function renderUnknownTemplateError(value: string): string {
   return `Unknown team template: ${value}
 Available templates: ${Object.keys(TEAM_TEMPLATES).join(', ')}
 
-Usage: /team spawn <name> <type>
-   or: /team spawn <type> <name>`
+Terminal usage: duckhive team spawn <name> <type>
+          or: duckhive team spawn <type> <name>
+REPL usage:     /team spawn <name> <type>
+          or: /team spawn <type> <name>`
 }
 
 function formatHiveOfflineError(error?: string): string {
@@ -76,7 +78,8 @@ export const call: LocalCommandCall = async (args: string) => {
 
       return {
         type: 'text',
-        value: 'No active teams.\nSpawn one with: /team spawn <name> <type>',
+        value:
+          'No active teams.\nSpawn one with: duckhive team spawn <name> <type>\nREPL: /team spawn <name> <type>',
       }
     }
 
@@ -128,9 +131,12 @@ export const call: LocalCommandCall = async (args: string) => {
         type: 'text',
         value: `Spawn team
 ${'-'.repeat(50)}
-Usage: /team spawn <name> <type>
-   or: /team spawn <type> <name>
-   or: /team <type> <name>
+Terminal usage: duckhive team spawn <name> <type>
+          or: duckhive team spawn <type> <name>
+          or: duckhive team <type> <name>
+REPL usage:     /team spawn <name> <type>
+          or: /team spawn <type> <name>
+          or: /team <type> <name>
 
 Templates:
 ${renderTemplates()}`,
@@ -160,7 +166,8 @@ Roles: ${TEAM_TEMPLATES[type]?.roles.join(', ') ?? 'unknown'}`,
         type: 'text',
         value: `Spawn team
 ${'-'.repeat(50)}
-Usage: /team ${type} <name>
+Terminal usage: duckhive team ${type} <name>
+REPL usage:     /team ${type} <name>
 
 Templates:
 ${renderTemplates()}`,
@@ -195,9 +202,16 @@ ${renderTemplates(true)}`,
     type: 'text',
     value: `Team command
 ${'-'.repeat(50)}
-/team list                - List active teams
-/team spawn <name> <type> - Spawn a new team
-/team <type> <name>       - Spawn using shorthand template form
-/team templates           - Show available templates`,
+Terminal:
+duckhive team list                - List active teams
+duckhive team spawn <name> <type> - Spawn a new team
+duckhive team <type> <name>       - Spawn using shorthand template form
+duckhive team templates           - Show available templates
+
+REPL:
+/team list
+/team spawn <name> <type>
+/team <type> <name>
+/team templates`,
   }
 }

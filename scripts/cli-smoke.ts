@@ -340,6 +340,8 @@ const cases: SmokeCase[] = [
     args: ['team', '--help'],
     includes: [
       'Team command',
+      'duckhive team list',
+      'duckhive team templates',
       '/team list',
       '/team templates',
     ],
@@ -359,6 +361,7 @@ const cases: SmokeCase[] = [
     args: ['council', '--help'],
     includes: [
       'AI Council',
+      'duckhive council --modes',
       '/council --modes',
       'Available modes:',
     ],
@@ -387,6 +390,7 @@ const cases: SmokeCase[] = [
     args: ['swarm', '--help'],
     includes: [
       'Swarm Command',
+      'duckhive swarm <task description>',
       '/swarm <task description>',
       '--dry-run',
     ],

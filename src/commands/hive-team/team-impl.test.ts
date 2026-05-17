@@ -81,6 +81,18 @@ describe('/team command', () => {
 
     expect(result.value).toContain('Unknown team template: mystery')
     expect(result.value).toContain('Available templates:')
+    expect(result.value).toContain('duckhive team spawn <name> <type>')
     expect(spawnTeam).not.toHaveBeenCalled()
+  })
+
+  test('shows terminal and REPL usage in help output', async () => {
+    setHive({})
+
+    const result = expectTextResult(await call('help', {} as never))
+
+    expect(result.value).toContain('Team command')
+    expect(result.value).toContain('duckhive team list')
+    expect(result.value).toContain('duckhive team templates')
+    expect(result.value).toContain('/team list')
   })
 })

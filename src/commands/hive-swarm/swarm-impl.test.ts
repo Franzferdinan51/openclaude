@@ -13,6 +13,8 @@ describe('/swarm command', () => {
     const dryRun = await call('Build API --domain=coding --count=2 --dry-run', {} as never)
 
     expect(usage.value).toContain('Swarm Command - Parallel Agent Execution')
+    expect(usage.value).toContain('duckhive swarm <task description>')
+    expect(usage.value).toContain('/swarm <task description>')
     expect(dryRun.value).toContain('Swarm Execution (DRY RUN)')
     expect(dryRun.value).toContain('Agent Tasks:')
     expect(ASCII_ONLY.test(`${usage.value}\n${dryRun.value}`)).toBe(true)
