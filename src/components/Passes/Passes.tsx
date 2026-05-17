@@ -139,14 +139,14 @@ export function Passes({
       // Grayed out redeemed ticket with slashes
       return <Box key={pass.passNumber} flexDirection="column" marginRight={1}>
           <Text dimColor>{'┌─────────╱'}</Text>
-          <Text dimColor>{` ) CC ${TEARDROP_ASTERISK} ┊╱`}</Text>
+          <Text dimColor>{` ) DH ${TEARDROP_ASTERISK} ┊╱`}</Text>
           <Text dimColor>{'└───────╱'}</Text>
         </Box>;
     }
     return <Box key={pass.passNumber} flexDirection="column" marginRight={1}>
         <Text>{'┌──────────┐'}</Text>
         <Text>
-          {' ) CC '}
+          {' ) DH '}
           <Text color="claude">{TEARDROP_ASTERISK}</Text>
           {' ┊ ( '}
         </Text>
@@ -167,7 +167,7 @@ export function Passes({
 
         <Box flexDirection="column" marginLeft={2}>
           <Text dimColor>
-            {referrerReward ? `Share a free week of Claude Code with friends. If they love it and subscribe, you'll get ${formatCreditAmount(referrerReward)} of extra usage to keep building. ` : 'Share a free week of Claude Code with friends. '}
+            {referrerReward ? `Share a free week of DuckHive with friends. If they love it and subscribe, you'll get ${formatCreditAmount(referrerReward)} of extra usage to keep building. ` : 'Share a free week of DuckHive with friends. '}
             <Link url={referrerReward ? 'https://support.claude.com/en/articles/13456702-claude-code-guest-passes' : 'https://support.claude.com/en/articles/12875061-claude-code-guest-passes'}>
               Terms apply.
             </Link>

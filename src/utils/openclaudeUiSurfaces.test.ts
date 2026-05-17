@@ -253,3 +253,29 @@ describe('DuckHive provider and GitHub setup surfaces', () => {
     expect(apiKeyStep).not.toContain('Create a long-lived token with your Claude subscription')
   })
 })
+
+describe('DuckHive active terminal UI copy', () => {
+  test('visible startup and prompt-adjacent surfaces use DuckHive wording', () => {
+    const passes = readFileSync(join(repoRoot, 'src', 'components', 'Passes', 'Passes.tsx'), 'utf8')
+    const ideOnboarding = readFileSync(
+      join(repoRoot, 'src', 'components', 'IdeOnboardingDialog.tsx'),
+      'utf8',
+    )
+    const repl = readFileSync(join(repoRoot, 'src', 'screens', 'REPL.tsx'), 'utf8')
+    const transcriptShare = readFileSync(
+      join(repoRoot, 'src', 'components', 'FeedbackSurvey', 'TranscriptSharePrompt.tsx'),
+      'utf8',
+    )
+    const combined = [passes, ideOnboarding, repl, transcriptShare].join('\n')
+
+    expect(passes).toContain(' ) DH ')
+    expect(combined).toContain('Share a free week of DuckHive')
+    expect(combined).toContain("Review DuckHive's changes")
+    expect(combined).toContain('DuckHive is waiting for your input')
+    expect(combined).toContain('help us improve DuckHive')
+    expect(combined).not.toContain('Share a free week of Claude Code')
+    expect(combined).not.toContain("Review Claude Code's changes")
+    expect(combined).not.toContain('Claude is waiting for your input')
+    expect(combined).not.toContain('help us improve Claude Code')
+  })
+})
