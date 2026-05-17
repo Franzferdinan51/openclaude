@@ -4,8 +4,10 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { zipSync } from 'fflate'
 import {
+  assertValidClawHubSkillSlug,
   inspectClawHubSkill,
   installClawHubSkill,
+  readInstalledClawHubOrigin,
   searchClawHubSkills,
   setClawHubSkillServiceTestDeps,
 } from './skillHub.js'
@@ -17,6 +19,29 @@ afterEach(() => {
 })
 
 describe('ClawHub skill service', () => {
+  test('validates skill slugs before registry lookup or local install paths', async () => {
+    const calls: string[] = []
+    setClawHubSkillServiceTestDeps({
+      fetchImpl: (async (input: string | URL) => {
+        calls.push(String(input))
+        return new Response('{}')
+      }) as typeof fetch,
+    })
+
+    expect(() => assertValidClawHubSkillSlug('calendar-helper_1.2')).not.toThrow()
+    expect(() => assertValidClawHubSkillSlug('../escape')).toThrow(/Invalid ClawHub skill slug/)
+    await expect(inspectClawHubSkill('../escape')).rejects.toThrow(
+      /Invalid ClawHub skill slug/,
+    )
+    await expect(installClawHubSkill('calendar/../../escape')).rejects.toThrow(
+      /Invalid ClawHub skill slug/,
+    )
+    await expect(readInstalledClawHubOrigin('C:/escape')).rejects.toThrow(
+      /Invalid ClawHub skill slug/,
+    )
+    expect(calls).toHaveLength(0)
+  })
+
   test('searches skills through the ClawHub search API', async () => {
     const calls: string[] = []
     setClawHubSkillServiceTestDeps({

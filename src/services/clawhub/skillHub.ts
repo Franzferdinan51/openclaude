@@ -76,6 +76,7 @@ type OriginMetadata = {
 }
 
 const DEFAULT_CLAWHUB_REGISTRY = 'https://clawhub.ai'
+const CLAWHUB_SKILL_SLUG_PATTERN = /^[a-z0-9][a-z0-9._-]{0,127}$/i
 
 type ClawHubDeps = {
   fetchImpl: typeof fetch
@@ -110,7 +111,16 @@ function getInstalledSkillsRoot(): string {
 }
 
 function getInstalledSkillDir(slug: string): string {
+  assertValidClawHubSkillSlug(slug)
   return join(getInstalledSkillsRoot(), slug)
+}
+
+export function assertValidClawHubSkillSlug(slug: string): void {
+  if (!CLAWHUB_SKILL_SLUG_PATTERN.test(slug)) {
+    throw new Error(
+      `Invalid ClawHub skill slug: ${slug}. Use letters, numbers, dots, underscores, and hyphens only.`,
+    )
+  }
 }
 
 function assertSafeZipRelativePath(relativePath: string): string {
@@ -217,6 +227,7 @@ export async function searchClawHubSkills(
 export async function inspectClawHubSkill(
   slug: string,
 ): Promise<ClawHubSkillDetail> {
+  assertValidClawHubSkillSlug(slug)
   const response = await getJson<DetailResponse>(
     `/api/v1/skills/${encodeURIComponent(slug)}`,
   )
@@ -240,6 +251,7 @@ export async function inspectClawHubSkill(
 export async function installClawHubSkill(
   slug: string,
 ): Promise<{ skillPath: string; version: string | null }> {
+  assertValidClawHubSkillSlug(slug)
   const detail = await inspectClawHubSkill(slug)
   const verdict = detail.moderation?.verdict
   if (
@@ -270,6 +282,7 @@ export async function installClawHubSkill(
 export async function readInstalledClawHubOrigin(
   slug: string,
 ): Promise<OriginMetadata | null> {
+  assertValidClawHubSkillSlug(slug)
   const originPath = join(getInstalledSkillDir(slug), '.clawhub', 'origin.json')
   try {
     const raw = await readFile(originPath, 'utf8')
