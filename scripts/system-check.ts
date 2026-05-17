@@ -323,7 +323,7 @@ export function checkCliInputMode(
 
   return pass(
     'CLI input mode',
-    'OpenClaude-compatible readable stdin is active by default on Windows; use `duckhive --stdin-mode data` as a one-shot fallback if the REPL paints but typed characters do not appear. Early input capture remains disabled, no-args startup forces the classic REPL, inherited TUI handoff flags are ignored unless `duckhive tui` or DUCKHIVE_TUI_WINDOWS_EXPERIMENT=1 is used, and detached stdin falls back to CONIN$ only when stdout is still interactive.',
+    'OpenClaude-compatible readable stdin is active by default on Windows; use `duckhive --stdin-mode data` as a one-shot fallback if the REPL paints but typed characters do not appear. Early input capture remains disabled, no-args startup forces the classic REPL, inherited TUI handoff flags are ignored unless `duckhive tui` or DUCKHIVE_TUI_WINDOWS_EXPERIMENT=1 is used, startup-era dialogs cannot unmount the prompt before the first submission, and detached stdin falls back to CONIN$ only when stdout is still interactive.',
   )
 }
 

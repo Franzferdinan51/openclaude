@@ -132,6 +132,7 @@ describe('checkCliInputMode', () => {
     expect(result.detail).toContain('duckhive --stdin-mode data')
     expect(result.detail).toContain('classic REPL')
     expect(result.detail).toContain('inherited TUI handoff flags')
+    expect(result.detail).toContain('cannot unmount the prompt before the first submission')
   })
 
   test('reports explicit data stdin mode as a supported one-shot fallback', () => {
