@@ -141,6 +141,17 @@ duckhive --yolo
 Both flags are applied during the earliest launcher phase, before the full CLI
 imports, so they work consistently for startup and the interactive REPL.
 
+If the REPL opens but will not accept typing, run the non-interactive runtime
+doctor from the same PowerShell window:
+
+```powershell
+duckhive runtime-doctor
+```
+
+This checks the Windows stdin mode, TUI fallback, provider routing, ClawHub
+skill hub, computer-use fallback, Telegram connector config, and harness command
+registry without starting the chat UI.
+
 By default, Windows startup stays on the classic OpenClaude-style REPL and
 DuckHive applies the safe stdin settings before the UI loads. The Go TUI is
 available with `duckhive tui`, but automatic Windows TUI handoff remains opt-in

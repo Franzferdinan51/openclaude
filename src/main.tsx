@@ -4350,6 +4350,24 @@ async function run(): Promise<CommanderCommand> {
   }
 
   // Doctor command - check installation health
+  program.command('runtime-doctor').alias('doctor-runtime').description(`Run ${PRODUCT_DISPLAY_NAME} runtime checks without starting the REPL`).option('--json', 'Print JSON results').option('--out <path>', 'Write a redacted diagnostic report to a file').action(async (options: {
+    json?: boolean;
+    out?: string;
+  }) => {
+    const {
+      runRuntimeDoctor
+    } = await import('../scripts/system-check.js');
+    const args: string[] = [];
+    if (options.json) {
+      args.push('--json');
+    }
+    if (options.out) {
+      args.push('--out', options.out);
+    }
+    await runRuntimeDoctor(args);
+    process.exit(process.exitCode ?? 0);
+  });
+
   program.command('doctor').description(`Check the health of your ${PRODUCT_DISPLAY_NAME} auto-updater. Note: The workspace trust dialog is skipped and stdio servers from .mcp.json are spawned for health checks. Only use this command in directories you trust.`).action(async () => {
     const [{
       doctorHandler

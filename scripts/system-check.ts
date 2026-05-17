@@ -108,8 +108,8 @@ function checkNodeVersion(): CheckResult {
     return fail('Node.js version', `Could not parse version: ${raw}`)
   }
 
-  if (major < 20) {
-    return fail('Node.js version', `Detected ${raw}. Require >= 20.`)
+  if (major < 22) {
+    return fail('Node.js version', `Detected ${raw}. Require >= 22.`)
   }
 
   return pass('Node.js version', raw)
@@ -153,7 +153,6 @@ function checkTuiLaunchPath(): CheckResult {
   const goVersion = spawnSync('go', ['version'], {
     cwd: process.cwd(),
     encoding: 'utf8',
-    shell: true,
   })
   if (goVersion.status === 0) {
     return pass(
@@ -791,7 +790,6 @@ function checkOllamaProcessorMode(): CheckResult {
   const result = spawnSync('ollama', ['ps'], {
     cwd: process.cwd(),
     encoding: 'utf8',
-    shell: true,
   })
 
   if (result.status !== 0) {
@@ -949,8 +947,8 @@ function writeJsonReport(
   }
 }
 
-async function main(): Promise<void> {
-  const options = parseOptions(process.argv.slice(2))
+export async function runRuntimeDoctor(argv: string[] = process.argv.slice(2)): Promise<void> {
+  const options = parseOptions(argv)
   const results: CheckResult[] = []
 
   const { enableConfigs } = await import('../src/utils/config.js')
@@ -993,7 +991,7 @@ async function main(): Promise<void> {
 }
 
 if (import.meta.main) {
-  await main()
+  await runRuntimeDoctor()
 }
 
 export {}

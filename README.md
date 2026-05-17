@@ -127,6 +127,11 @@ settings stay authoritative.
 
 If `duckhive` is not recognized in PowerShell, the package is not installed on your `PATH` yet. From a source checkout, run `.\install.ps1`; it creates `$env:LOCALAPPDATA\DuckHive\bin\duckhive.cmd` and updates both your user PATH and the current PowerShell session. You can also use `.\bin\duckhive.cmd` directly, install globally with `npm i -g github:Franzferdinan51/DuckHive`, run `npm link`, or use the published `duckhive` package when available.
 
+If the REPL renders but will not accept typing, run `duckhive runtime-doctor`
+from the same terminal. It checks Windows stdin mode, TUI fallback, provider
+routing, ClawHub skill hub, computer-use fallback, Telegram connector config,
+and harness command registration without starting the chat UI.
+
 ---
 
 ### Distribution
