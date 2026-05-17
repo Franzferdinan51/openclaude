@@ -177,6 +177,63 @@ describe('TelegramService polling', () => {
     expect(getMeCalls).toBeGreaterThanOrEqual(1)
   })
 
+  test('uses ASCII-safe built-in command responses', async () => {
+    const sentMessages: string[] = []
+    const commands = ['/start', '/help', '/status']
+    let updateId = 200
+    const fetchMock = mock(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      if (url.endsWith('/getMe')) {
+        return telegramResponse({
+          ok: true,
+          result: { id: 1, is_bot: true, username: 'duckhive_test_bot' },
+        })
+      }
+      if (url.endsWith('/setMyCommands')) {
+        return telegramResponse({ ok: true, result: true })
+      }
+      if (url.endsWith('/sendMessage')) {
+        const body = JSON.parse(String(init?.body ?? '{}')) as { text?: string }
+        sentMessages.push(body.text ?? '')
+        return telegramResponse({ ok: true, result: true })
+      }
+      if (url.endsWith('/getUpdates')) {
+        const text = commands.shift()
+        return telegramResponse({
+          ok: true,
+          result: text
+            ? [
+                {
+                  update_id: updateId++,
+                  message: {
+                    from: { id: 42, is_bot: false, first_name: 'Owner' },
+                    chat: { id: 42, type: 'private' },
+                    text,
+                    date: 1,
+                  },
+                },
+              ]
+            : [],
+        })
+      }
+      return telegramResponse({ ok: true, result: true })
+    }) as unknown as typeof fetch
+    globalThis.fetch = fetchMock
+
+    const service = await importFreshService()
+    await service.startTelegramService()
+    await waitFor(() => sentMessages.some(text => text.includes('*DuckHive Status*')))
+    service.stopTelegramService()
+
+    const allText = sentMessages.join('\n')
+    expect(allText).toContain('[ok] *DuckHive connected!*')
+    expect(allText).toContain('/start')
+    expect(allText).toContain('Session: [connected]')
+    expect(allText).not.toContain('✅')
+    expect(allText).not.toContain('🟢')
+    expect(allText).not.toContain('🔴')
+  })
+
   test('responds to /runs with AgentRun control-plane state', async () => {
     const sentMessages: string[] = []
     const { resetAgentRunStoreForTesting } = await import(

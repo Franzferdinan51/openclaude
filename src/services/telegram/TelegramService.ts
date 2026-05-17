@@ -433,7 +433,7 @@ export function queueTelegramMessageForRepl(chatId: number, text: string): void 
 registerCommand('start', (chatId) => {
   registeredChatId = chatId
   saveChatId(chatId)
-  api?.sendMarkdown(chatId, '✅ *DuckHive connected!*\n\nSend me a message and I\'ll forward it to your DuckHive session.\n\nUse /help for commands.').catch(() => {})
+  api?.sendMarkdown(chatId, '[ok] *DuckHive connected!*\n\nSend me a message and I\'ll forward it to your DuckHive session.\n\nUse /help for commands.').catch(() => {})
 })
 
 registerCommand('help', (chatId) => {
@@ -460,7 +460,7 @@ registerCommand('status', async (chatId) => {
   const activeRuns = store.listRuns().filter(run => !isTerminalRunStatus(run.status))
   api?.sendMarkdown(chatId, `*DuckHive Status*
 
-Session: ${isConnected ? '🟢 Connected' : '🔴 Disconnected'}
+Session: ${isConnected ? '[connected]' : '[disconnected]'}
 Model: ${process.env.DUCKHIVE_MODEL_NAME ?? 'default'}
 Provider: ${process.env.DUCKHIVE_PROVIDER ?? 'default'}
 Telegram chat: ${chatIdOk ?? 'not registered'}
