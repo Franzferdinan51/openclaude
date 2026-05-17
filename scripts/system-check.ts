@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { spawnSync } from 'node:child_process'
 import {
@@ -155,6 +155,80 @@ function checkTuiLaunchPath(): CheckResult {
     isWindows
       ? 'Binary missing and Go is not installed. `duckhive tui` will explain this and the classic REPL remains the Windows-safe default.'
       : 'Binary missing and Go is not installed. Run `scripts/install.sh` after installing Go, or use the classic REPL.',
+  )
+}
+
+function readPackageVersion(packageJsonPath: string): string | undefined {
+  try {
+    const parsed = JSON.parse(readFileSync(packageJsonPath, 'utf8')) as { version?: unknown }
+    return typeof parsed.version === 'string' ? parsed.version : undefined
+  } catch {
+    return undefined
+  }
+}
+
+function existingOverridePaths(keys: string[]): string[] {
+  const paths: string[] = []
+  for (const key of keys) {
+    const value = process.env[key]?.trim()
+    if (value && existsSync(resolve(value))) {
+      paths.push(`${key}=${value}`)
+    }
+  }
+  return paths
+}
+
+function checkComputerUseReadiness(): CheckResult {
+  const gatewayPackageJson = resolve(
+    process.cwd(),
+    'skills',
+    'newest-desktop-control',
+    'package.json',
+  )
+
+  if (!existsSync(gatewayPackageJson)) {
+    return fail(
+      'Computer use',
+      'Missing bundled skills/newest-desktop-control gateway. Restore the skill before using desktop, Android, or computer_use_* aliases.',
+    )
+  }
+
+  const gatewayVersion = readPackageVersion(gatewayPackageJson)
+  const gatewayDetail = gatewayVersion
+    ? `bundled newest-desktop-control v${gatewayVersion}`
+    : 'bundled newest-desktop-control present'
+  const overridePaths = existingOverridePaths([
+    'DUCKHIVE_CODEX_COMPUTER_USE_PLUGIN_DIR',
+    'CODEX_COMPUTER_USE_PLUGIN_DIR',
+    'DUCKHIVE_CODEX_COMPUTER_USE_CLIENT',
+    'CODEX_COMPUTER_USE_CLIENT',
+  ])
+
+  if (process.platform !== 'darwin') {
+    return pass(
+      'Computer use',
+      `Native Codex computer-use is macOS-only; ${gatewayDetail} is available for desktop, Android, and compatibility aliases.`,
+    )
+  }
+
+  if (overridePaths.length > 0) {
+    return pass(
+      'Computer use',
+      `${gatewayDetail}; native Codex override configured: ${overridePaths.join(', ')}.`,
+    )
+  }
+
+  const codexBundle = '/Applications/Codex.app/Contents/Resources/plugins/openai-bundled/plugins/computer-use'
+  if (existsSync(codexBundle)) {
+    return pass(
+      'Computer use',
+      `${gatewayDetail}; Codex.app computer-use bundle detected for /computer-use inspection.`,
+    )
+  }
+
+  return pass(
+    'Computer use',
+    `${gatewayDetail}; native Codex computer-use bundle not detected, so use newest-desktop-control unless a Codex plugin override is configured.`,
   )
 }
 
@@ -736,6 +810,7 @@ async function main(): Promise<void> {
   results.push(checkBunRuntime())
   results.push(checkBuildArtifacts())
   results.push(checkTuiLaunchPath())
+  results.push(checkComputerUseReadiness())
   results.push(...checkOpenAIEnv())
   results.push(await checkBaseUrlReachability())
   results.push(await checkProviderGenerationReadiness())

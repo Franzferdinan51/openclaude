@@ -259,7 +259,7 @@ DuckHive's CLI surface for that same lifecycle is the consolidated `/run` comman
 
 The terminal `/run` surface validates status filters against the real AgentRun lifecycle and clamps event tails to 200 rows, so mistyped statuses and unbounded tails do not silently hide runs or flood the CLI.
 
-Long Telegram responses are chunked, Markdown delivery falls back to plain text, `/approve` uses the same AgentRun approval path as the CLI/WebUI and can acknowledge one pending approval ID without clearing the rest, and `bun run doctor:runtime` reports the Agent Harness and Telegram configuration state.
+Long Telegram responses are chunked, Markdown delivery falls back to plain text, `/approve` uses the same AgentRun approval path as the CLI/WebUI and can acknowledge one pending approval ID without clearing the rest, and `bun run doctor:runtime` reports the Agent Harness, Telegram, and computer-use readiness state.
 
 ### /init — Project Setup
 
@@ -1201,7 +1201,7 @@ bun run doctor:runtime
 cd tui && go test ./...
 ```
 
-`bun run doctor:runtime` reports the terminal TUI launch path too. On Windows without Go or `tui\duckhive-tui.exe`, the doctor and `duckhive tui` both point at the missing Go prerequisite while leaving the classic REPL as the safe default.
+`bun run doctor:runtime` reports the terminal TUI launch path and computer-use fallback readiness too. On Windows without Go or `tui\duckhive-tui.exe`, the doctor and `duckhive tui` both point at the missing Go prerequisite while leaving the classic REPL as the safe default. On non-macOS hosts, the computer-use check confirms that the bundled `newest-desktop-control` gateway is available for desktop, Android, and `computer_use_*` compatibility aliases instead of requiring Codex.app.
 
 Recent verification snapshot:
 
