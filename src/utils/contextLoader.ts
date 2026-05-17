@@ -52,7 +52,7 @@ function isExcludedByDuckignore(filePath: string, cwd: string): boolean {
   let dir = dirname(filePath)
   const home = process.env.HOME ?? '~'
   
-  while (dir && dir !== home && dir !== '/') {
+  while (dir && dir !== home) {
     const duckignorePath = join(dir, '.duckignore')
     if (existsSync(duckignorePath)) {
       try {
@@ -78,7 +78,9 @@ function isExcludedByDuckignore(filePath: string, cwd: string): boolean {
         // Can't read .duckignore, skip
       }
     }
-    dir = dirname(dir)
+    const parent = dirname(dir)
+    if (parent === dir) break
+    dir = parent
   }
   return false
 }
@@ -116,13 +118,15 @@ export function scanDuckContextFiles(projectPath?: string): ContextFileInfo[] {
 
   // 4. Per-directory: traverse from CWD up to home or filesystem root
   let current = dirname(cwd)
-  while (current && current !== home && current !== '/') {
+  while (current && current !== home) {
     const perDirDuckMd = resolve(current, DUCKHIVE_DIR, DUCK_MD_FILENAME)
     addFile(perDirDuckMd, 'per-directory')
     for (const altName of ALTERNATIVE_CONTEXT_FILES) {
       addFile(resolve(current, altName), 'per-directory')
     }
-    current = dirname(current)
+    const parent = dirname(current)
+    if (parent === current) break
+    current = parent
   }
 
   return results

@@ -1,15 +1,29 @@
 import { spawnSync } from 'node:child_process'
-import { resolve } from 'node:path'
+import { mkdtempSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join, resolve } from 'node:path'
 
 type SmokeCase = {
   name: string
   args: string[]
   includes: string[]
   expectedStatus?: number
+  env?: () => Record<string, string>
+  timeoutMs?: number
 }
 
 const cliPath = resolve(process.cwd(), 'dist', 'cli.mjs')
 const windowsLauncherPath = resolve(process.cwd(), 'bin', 'duckhive.cmd')
+const tempDirs: string[] = []
+
+function createIsolatedConfigEnv(): Record<string, string> {
+  const configDir = mkdtempSync(join(tmpdir(), 'duckhive-cli-smoke-'))
+  tempDirs.push(configDir)
+  return {
+    CLAUDE_CONFIG_DIR: configDir,
+    CLAUDE_CODE_SYNC_PLUGIN_INSTALL_TIMEOUT_MS: '1',
+  }
+}
 
 const cases: SmokeCase[] = [
   {
@@ -103,6 +117,17 @@ const cases: SmokeCase[] = [
       'duckhive runtime-doctor',
     ],
   },
+  {
+    name: 'headless goal command',
+    args: ['--bare', '-p', '/goal Build smoke goal'],
+    env: createIsolatedConfigEnv,
+    timeoutMs: 30000,
+    includes: [
+      'Goal created successfully!',
+      'Build smoke goal',
+      'Attached Session:',
+    ],
+  },
 ]
 
 const failures: string[] = []
@@ -136,9 +161,11 @@ for (const smokeCase of cases) {
   checkSmokeCase(smokeCase, () => spawnSync(process.execPath, [cliPath, ...smokeCase.args], {
     cwd: process.cwd(),
     encoding: 'utf8',
+    timeout: smokeCase.timeoutMs,
     env: {
       ...process.env,
       DUCKHIVE_DISABLE_STARTUP_SCREEN: '1',
+      ...smokeCase.env?.(),
     },
   }))
 }
@@ -192,12 +219,18 @@ if (process.platform === 'win32') {
     checkSmokeCase(smokeCase, () => spawnSync(windowsLauncherPath, smokeCase.args, {
       cwd: process.cwd(),
       encoding: 'utf8',
+      timeout: smokeCase.timeoutMs,
       env: {
         ...process.env,
         DUCKHIVE_DISABLE_STARTUP_SCREEN: '1',
+        ...smokeCase.env?.(),
       },
     }))
   }
+}
+
+for (const tempDir of tempDirs) {
+  rmSync(tempDir, { recursive: true, force: true })
 }
 
 if (failures.length > 0) {
