@@ -1002,7 +1002,7 @@ Hermes-style autonomous skill creation and `SkillManageTool` now use the same sh
 ## Architecture
 
 ```
-DuckHive v0.9.2
+DuckHive v0.11.0
 ├── MiniMax M2.7 (default model)
 ├── DuckHive mmx (MiniMax CLI integration)
 │   ├── Image generation
@@ -1213,7 +1213,7 @@ duckhive config path
 ./bin/duckhive --version
 
 # Command ownership check
-duckhive --version      # 0.9.2 (DuckHive)
+duckhive --version      # 0.11.0 (DuckHive)
 openclaude --version    # upstream OpenClaude, if installed separately
 ```
 
@@ -1234,7 +1234,7 @@ bun run doctor:runtime:strict:json
 cd tui && go test ./...
 ```
 
-`bun run doctor:runtime` reports the CLI input mode, terminal stdio attachment, terminal TUI launch path, computer-use fallback readiness, ClawHub skill-hub registry, and the terminal-first harness command registry. Use `bun run doctor:runtime:strict` in the terminal where you plan to type into DuckHive when you need a failing exit code for redirected or non-interactive stdin/stdout, or `bun run doctor:runtime:strict:json` when you need that failure in machine-readable form. The command registry check verifies that the core `/goal`, `/run`, `/computer-use`, `/channel`, `/connect`, `/skill`, `/spawn`, `/orchestrate`, `/team`, `/council`, `/senate`, `/decree`, `/swarm`, `/tui`, and `/doctor` surfaces are registered together instead of only appearing in documentation. The skill-hub check reports the active ClawHub registry from `DUCKHIVE_CLAWHUB_REGISTRY`, `CLAWHUB_REGISTRY`, or the default `https://clawhub.ai`, and confirms that `/skill search`, `/skill inspect`, and `/skill install` are available. On Windows the launcher clears `DUCKHIVE_USE_DATA_STDIN=1`, `OPENCLAUDE_USE_DATA_STDIN=1`, readable-stdin opt-outs, and `DUCKHIVE_USE_CONIN_STDIN` by default because those fragile modes can make the UI render without accepting typing; set `DUCKHIVE_ALLOW_FRAGILE_STDIN=1` only when you intentionally want the doctor to report or test those modes. On Windows without Go or `tui\duckhive-tui.exe`, the doctor and `duckhive tui` both point at the missing Go prerequisite while leaving the classic REPL as the safe default. On non-macOS hosts, the computer-use check confirms that the bundled `newest-desktop-control` gateway is available for desktop, Android, and `computer_use_*` compatibility aliases instead of requiring Codex.app.
+`bun run doctor:runtime` reports the CLI input mode, terminal stdio attachment, terminal TUI launch path, computer-use fallback readiness, ClawHub skill-hub registry, and the terminal-first harness command registry. Use `bun run doctor:runtime:strict` in the terminal where you plan to type into DuckHive when you need a failing exit code for redirected or non-interactive stdin/stdout, or `bun run doctor:runtime:strict:json` when you need that failure in machine-readable form. The command registry check verifies that the core `/goal`, `/run`, `/computer-use`, `/channel`, `/connect`, `/skill`, `/spawn`, `/orchestrate`, `/team`, `/council`, `/senate`, `/decree`, `/swarm`, `/tui`, and `/doctor` surfaces are registered together instead of only appearing in documentation. The skill-hub check reports the active ClawHub registry from `DUCKHIVE_CLAWHUB_REGISTRY`, `CLAWHUB_REGISTRY`, or the default `https://clawhub.ai`, and confirms that `/skill search`, `/skill inspect`, and `/skill install` are available. On Windows the launcher keeps the PowerShell-safe data-stdin path as the default and only clears the fragile `DUCKHIVE_USE_CONIN_STDIN` path unless `DUCKHIVE_ALLOW_FRAGILE_STDIN=1` is set; use `DUCKHIVE_USE_READABLE_STDIN=1` only when you intentionally want to compare the older readable-event input path. On Windows without Go or `tui\duckhive-tui.exe`, the doctor and `duckhive tui` both point at the missing Go prerequisite while leaving the classic REPL as the safe default. On non-macOS hosts, the computer-use check confirms that the bundled `newest-desktop-control` gateway is available for desktop, Android, and `computer_use_*` compatibility aliases instead of requiring Codex.app.
 
 The Go TUI prompt and streaming markers use ASCII-safe `> ` and `|` indicators across the legacy and component input paths, avoiding mojibake in Windows terminals and plain log captures. Its standalone header now tracks the current DuckHive version and MiniMax M2.7 default model instead of stale OpenClaude/Claude-era labels. When `/tui` is run from the classic REPL, DuckHive now waits for the child TUI to survive a short startup window before exiting the parent REPL; if the TUI fails immediately, the classic REPL stays usable and reports that `duckhive tui` can be run directly for the full startup message.
 
