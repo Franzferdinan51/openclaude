@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -654,6 +655,58 @@ func TestComposerRefocusesBeforeTyping(t *testing.T) {
 	}
 	if !m.input.Focused() {
 		t.Fatal("expected composer to remain focused")
+	}
+}
+
+func TestTeaProgramInputStreamTypesIntoComposer(t *testing.T) {
+	r, w := io.Pipe()
+	defer r.Close()
+	defer w.Close()
+
+	m := &MainModel{
+		state:      model.NewAppState(),
+		msgList:    components.NewMessageList(80, 20),
+		input:      components.NewInputArea(80, 3),
+		keys:       tui.DefaultKeyMap(),
+		welcome:    screens.NewWelcomeModel(),
+		transcript: screens.NewTranscriptPanel(),
+		width:      80,
+		height:     24,
+	}
+	m.settings = screens.NewSettingsScreen(&m.state)
+
+	p := tea.NewProgram(
+		m,
+		tea.WithInput(r),
+		tea.WithOutput(io.Discard),
+		tea.WithoutRenderer(),
+	)
+
+	errs := make(chan error, 1)
+	go func() {
+		_, err := p.Run()
+		errs <- err
+	}()
+
+	if _, err := w.Write([]byte("typed through tea input")); err != nil {
+		t.Fatalf("write input: %v", err)
+	}
+	if _, err := w.Write([]byte{0x03}); err != nil {
+		t.Fatalf("write ctrl-c: %v", err)
+	}
+
+	select {
+	case err := <-errs:
+		if err != nil {
+			t.Fatalf("program returned error: %v", err)
+		}
+	case <-time.After(2 * time.Second):
+		p.Kill()
+		t.Fatal("program did not exit after ctrl-c")
+	}
+
+	if got := m.input.Value(); got != "typed through tea input" {
+		t.Fatalf("input value = %q", got)
 	}
 }
 

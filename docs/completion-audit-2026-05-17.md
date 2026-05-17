@@ -38,7 +38,7 @@ covers the named requirement.
 | OpenGateway partner model catalog must be current | The `gitlawb-opengateway` preset now routes through `https://opengateway.gitlawb.com/v1`, maps to the OpenAI-compatible vendor, and exposes Gemini 3.1 Flash Lite Preview plus GLM 5.1 FP8 catalog entries. | Verified |
 | Other harnesses must be tracked for feature pulls | Live `git ls-remote` confirms Codex `main` at `e7bffc5a20e92cbc64d6c16a1b257d0b2e4cd5df`, OpenClaw `main` at `c93d6d8daa37fadbbd98611f08c7489b3dc14097`, and Hermes Agent `main` at `4c46c35ed0d3864f1cec55d87ab6d0f838ec7a2e`. | Tracked |
 | Windows TUI must be runnable | A local verified Go 1.26.3 toolchain built `tui\duckhive-tui.exe`; `node dist\cli.mjs runtime-doctor` now reports `Terminal TUI - Ready`; CLI smoke covers `duckhive tui --help` and provider-free `duckhive tui --snapshot` through both Node and Windows wrapper launch paths. | Verified binary readiness |
-| TUI tests must be verified | Local Go 1.26.3 ran `cd tui && go test ./...` successfully after fixing the stale header version, header wrap, and ASCII-safe empty-state/footer markers. | Verified |
+| TUI tests must be verified | Local Go 1.26.3 ran `cd tui && go test ./...` successfully after fixing the stale header version, header wrap, ASCII-safe empty-state/footer markers, and adding a Bubble Tea program-loop input regression that types through the configured input stream. | Verified |
 | Full repository test suite must be rerun after the latest packaging/TUI audit changes | `bun test` now reports `3226 pass`, `0 fail`, `8002 expect()` calls across 368 files. | Verified |
 
 ## Current Green Gates
@@ -74,6 +74,6 @@ covers the named requirement.
 
 ## Open Work
 
-- Test full `duckhive tui` keyboard interaction manually from a real interactive PowerShell terminal. Non-interactive `duckhive tui --snapshot` now renders one TUI frame and exits for CI/log verification, while `runtime-doctor` verifies binary readiness.
+- Test full `duckhive tui` keyboard interaction manually from a real interactive PowerShell terminal. Non-interactive `duckhive tui --snapshot` now renders one TUI frame and exits for CI/log verification, `runtime-doctor` verifies binary readiness, and `cd tui && go test ./...` covers both direct key-message input and Bubble Tea input-stream delivery.
 - Continue feature-by-feature upstream imports rather than merging upstream harnesses wholesale. DuckHive and OpenClaude histories are divergent, so release commits, branding changes, and unrelated upstream removals must be reviewed selectively.
 - Keep importing upstream features as independent, verified slices. The current tested state is green, but the product goal remains open-ended until each new upstream slice has its own impact analysis, implementation, and verification.
