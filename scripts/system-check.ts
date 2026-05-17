@@ -833,20 +833,22 @@ function checkAgentHarnessRuntime(): CheckResult {
   )
 }
 
-function checkTelegramChannelConfig(): CheckResult {
-  const hasToken = Boolean(process.env.DUCKHIVE_TELEGRAM_BOT_TOKEN?.trim())
+export function checkTelegramChannelConfig(): CheckResult {
+  const hasDuckHiveToken = Boolean(process.env.DUCKHIVE_TELEGRAM_BOT_TOKEN?.trim())
+  const hasLegacyToken = Boolean(process.env.TELEGRAM_BOT_TOKEN?.trim())
+  const hasToken = hasDuckHiveToken || hasLegacyToken
   const allowlist = process.env.DUCKHIVE_TELEGRAM_ALLOWED_CHAT_ID
   if (!hasToken) {
     return pass(
       'Telegram channel',
-      'Not configured. Set DUCKHIVE_TELEGRAM_BOT_TOKEN to enable remote run control.',
+      'Not configured. Set DUCKHIVE_TELEGRAM_BOT_TOKEN or TELEGRAM_BOT_TOKEN to enable remote run control.',
     )
   }
   return pass(
     'Telegram channel',
     allowlist
-      ? 'Configured with chat allowlist for AgentRun commands.'
-      : 'Configured without DUCKHIVE_TELEGRAM_ALLOWED_CHAT_ID; any chat the bot can read may register.',
+      ? `Configured with chat allowlist for AgentRun commands (${hasDuckHiveToken ? 'DUCKHIVE_TELEGRAM_BOT_TOKEN' : 'TELEGRAM_BOT_TOKEN'}).`
+      : `Configured without DUCKHIVE_TELEGRAM_ALLOWED_CHAT_ID; any chat the bot can read may register (${hasDuckHiveToken ? 'DUCKHIVE_TELEGRAM_BOT_TOKEN' : 'TELEGRAM_BOT_TOKEN'}).`,
   )
 }
 

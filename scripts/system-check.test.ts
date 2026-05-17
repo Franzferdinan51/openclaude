@@ -5,6 +5,7 @@ import {
   checkHarnessCommandSurfaces,
   checkOpenAIEnv,
   checkSkillHubRegistry,
+  checkTelegramChannelConfig,
   formatReachabilityFailureDetail,
 } from './system-check.ts'
 
@@ -21,6 +22,10 @@ const originalEnv = {
   MMX_API_KEY: process.env.MMX_API_KEY,
   DUCKHIVE_CLAWHUB_REGISTRY: process.env.DUCKHIVE_CLAWHUB_REGISTRY,
   CLAWHUB_REGISTRY: process.env.CLAWHUB_REGISTRY,
+  DUCKHIVE_TELEGRAM_BOT_TOKEN: process.env.DUCKHIVE_TELEGRAM_BOT_TOKEN,
+  TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN,
+  DUCKHIVE_TELEGRAM_ALLOWED_CHAT_ID:
+    process.env.DUCKHIVE_TELEGRAM_ALLOWED_CHAT_ID,
 }
 
 function restoreEnv(name: keyof typeof originalEnv): void {
@@ -45,6 +50,9 @@ function clearProviderEnv(): void {
   delete process.env.MMX_API_KEY
   delete process.env.DUCKHIVE_CLAWHUB_REGISTRY
   delete process.env.CLAWHUB_REGISTRY
+  delete process.env.DUCKHIVE_TELEGRAM_BOT_TOKEN
+  delete process.env.TELEGRAM_BOT_TOKEN
+  delete process.env.DUCKHIVE_TELEGRAM_ALLOWED_CHAT_ID
 }
 
 afterEach(() => {
@@ -199,5 +207,41 @@ describe('checkSkillHubRegistry', () => {
     expect(result.detail).toContain('https://example.test/clawhub')
     expect(result.detail).toContain('/skill search')
     expect(result.detail).toContain('install')
+  })
+})
+
+describe('checkTelegramChannelConfig', () => {
+  test('reports missing Telegram token with both supported env names', () => {
+    clearProviderEnv()
+
+    const result = checkTelegramChannelConfig()
+
+    expect(result.ok).toBe(true)
+    expect(result.detail).toContain('DUCKHIVE_TELEGRAM_BOT_TOKEN')
+    expect(result.detail).toContain('TELEGRAM_BOT_TOKEN')
+  })
+
+  test('accepts legacy TELEGRAM_BOT_TOKEN fallback used by the adapter', () => {
+    clearProviderEnv()
+    process.env.TELEGRAM_BOT_TOKEN = '123456789:ABCDEFGHIJKLMNOPQRSTUVWX'
+
+    const result = checkTelegramChannelConfig()
+
+    expect(result.ok).toBe(true)
+    expect(result.detail).toContain('TELEGRAM_BOT_TOKEN')
+    expect(result.detail).toContain('Configured without')
+  })
+
+  test('reports DuckHive Telegram token with allowlist', () => {
+    clearProviderEnv()
+    process.env.DUCKHIVE_TELEGRAM_BOT_TOKEN =
+      '123456789:ABCDEFGHIJKLMNOPQRSTUVWX'
+    process.env.DUCKHIVE_TELEGRAM_ALLOWED_CHAT_ID = '424242'
+
+    const result = checkTelegramChannelConfig()
+
+    expect(result.ok).toBe(true)
+    expect(result.detail).toContain('DUCKHIVE_TELEGRAM_BOT_TOKEN')
+    expect(result.detail).toContain('chat allowlist')
   })
 })
