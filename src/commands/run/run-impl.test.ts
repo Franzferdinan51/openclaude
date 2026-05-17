@@ -26,6 +26,8 @@ describe('/run command', () => {
     expect(result.type).toBe('text')
     if (result.type !== 'text') throw new Error('unexpected result type')
     expect(result.value).toContain('Agent Runs')
+    expect(result.value).toContain('duckhive run list [status]')
+    expect(result.value).toContain('duckhive run recover <id> [summary]')
     expect(result.value).toContain('/run list [status]')
     expect(result.value).toContain('/run recover <id> [summary]')
     expect(result.value).not.toContain('Run not found: help')

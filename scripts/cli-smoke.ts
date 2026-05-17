@@ -317,6 +317,8 @@ const cases: SmokeCase[] = [
     args: ['run', '--help'],
     includes: [
       'Agent Runs',
+      'duckhive run list [status]',
+      'duckhive run recover <id> [summary]',
       '/run list [status]',
       '/run recover <id> [summary]',
     ],
