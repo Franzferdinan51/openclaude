@@ -50,8 +50,8 @@ async function waitForCondition(
 }
 
 describe('determineStdinMode', () => {
-  test('uses readable events on Windows by default to match OpenClaude input', () => {
-    expect(determineStdinMode({ env: {}, platform: 'win32' })).toBe('readable')
+  test('uses data events on Windows by default so PowerShell typing reaches the REPL', () => {
+    expect(determineStdinMode({ env: {}, platform: 'win32' })).toBe('data')
   })
 
   test('keeps readable events on Windows with explicit opt-in', () => {

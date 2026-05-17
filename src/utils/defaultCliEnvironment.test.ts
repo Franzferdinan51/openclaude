@@ -6,6 +6,7 @@ test('Windows CLI defaults to safe REPL stdin ownership', () => {
   applyDefaultCliEnvironment(env, { platform: 'win32' }, ['node', 'duckhive'])
 
   expect(env.DUCKHIVE_DISABLE_EARLY_INPUT).toBe('1')
+  expect(env.DUCKHIVE_STDIN_MODE).toBe('data')
   expect(env.DUCKHIVE_USE_DATA_STDIN).toBeUndefined()
   expect(env.DUCKHIVE_DEFAULT_UI_SURFACE).toBe('legacy')
   expect(env.DUCKHIVE_NO_AUTO_TUI).toBe('1')
@@ -92,6 +93,15 @@ test('Windows CLI accepts equals-form explicit stdin mode flag', () => {
     'duckhive',
     '--stdin-mode=readable',
   ])
+
+  expect(env.DUCKHIVE_STDIN_MODE).toBe('readable')
+})
+
+test('Windows CLI preserves explicit stdin mode env override', () => {
+  const env: NodeJS.ProcessEnv = {
+    DUCKHIVE_STDIN_MODE: 'readable',
+  }
+  applyDefaultCliEnvironment(env, { platform: 'win32' }, ['node', 'duckhive'])
 
   expect(env.DUCKHIVE_STDIN_MODE).toBe('readable')
 })

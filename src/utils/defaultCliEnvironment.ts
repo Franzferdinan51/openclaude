@@ -43,6 +43,8 @@ export function applyDefaultCliEnvironment(
   const explicitStdinMode = getExplicitStdinMode(argv)
   if (explicitStdinMode) {
     env.DUCKHIVE_STDIN_MODE = explicitStdinMode
+  } else {
+    env.DUCKHIVE_STDIN_MODE ??= 'data'
   }
 
   if (!isEnvTruthy(env.DUCKHIVE_ALLOW_FRAGILE_STDIN)) {

@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import { detectCliInputModeWarnings } from './cliInputModeDiagnostic.js'
 
 describe('detectCliInputModeWarnings', () => {
-  test('does not warn for Windows readable stdin defaults', () => {
+  test('does not warn for Windows managed stdin defaults', () => {
     expect(detectCliInputModeWarnings({}, 'win32')).toEqual([])
   })
 

@@ -88,7 +88,7 @@ const cases: SmokeCase[] = [
     includes: [
       '[PASS] CLI input mode',
       process.platform === 'win32'
-        ? 'OpenClaude-compatible readable stdin is active by default'
+        ? 'Windows data-event stdin is active'
         : 'Readable stdin default active',
     ],
   },
@@ -122,7 +122,7 @@ const cases: SmokeCase[] = [
     includes: [
       '[PASS] CLI input mode',
       process.platform === 'win32'
-        ? 'OpenClaude-compatible readable stdin is active by default'
+        ? 'Windows data-event stdin is active'
         : 'Readable stdin default active',
     ],
   },
@@ -151,7 +151,7 @@ const cases: SmokeCase[] = [
     includes: [
       'DuckHive input-test',
       'without starting providers',
-      '--stdin-mode data input-test',
+      '--stdin-mode readable input-test',
     ],
   },
   {
@@ -519,11 +519,11 @@ const cases: SmokeCase[] = [
     ],
   },
   {
-    name: 'runtime doctor after stdin-mode option',
-    args: ['--stdin-mode', 'data', 'runtime-doctor'],
+    name: 'runtime doctor after readable stdin-mode option',
+    args: ['--stdin-mode', 'readable', 'runtime-doctor'],
     includes: [
       '[PASS] CLI input mode',
-      'Alternate data stdin mode is explicitly active',
+      'OpenClaude-readable compatibility stdin is explicitly active',
     ],
   },
 ]

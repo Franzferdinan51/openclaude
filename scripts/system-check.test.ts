@@ -126,26 +126,37 @@ describe('formatReachabilityFailureDetail', () => {
 })
 
 describe('checkCliInputMode', () => {
-  test('passes on Windows when readable stdin remains the default', () => {
+  test('passes on Windows when data-event stdin remains the default', () => {
     const result = checkCliInputMode({}, { platform: 'win32' })
 
     expect(result.ok).toBe(true)
-    expect(result.detail).toContain('OpenClaude-compatible readable stdin')
-    expect(result.detail).toContain('duckhive --stdin-mode data')
+    expect(result.detail).toContain('Windows data-event stdin')
+    expect(result.detail).toContain('duckhive --stdin-mode readable')
     expect(result.detail).toContain('classic REPL')
     expect(result.detail).toContain('inherited TUI handoff flags')
     expect(result.detail).toContain('cannot unmount the prompt before the first submission')
   })
 
-  test('reports explicit data stdin mode as a supported one-shot fallback', () => {
+  test('reports explicit data stdin mode as supported', () => {
     const result = checkCliInputMode(
       { DUCKHIVE_STDIN_MODE: 'data' },
       { platform: 'win32' },
     )
 
     expect(result.ok).toBe(true)
-    expect(result.detail).toContain('Alternate data stdin mode')
-    expect(result.detail).toContain('--stdin-mode data')
+    expect(result.detail).toContain('Windows data-event stdin')
+    expect(result.detail).toContain('--stdin-mode readable')
+  })
+
+  test('reports explicit readable stdin mode as compatibility mode', () => {
+    const result = checkCliInputMode(
+      { DUCKHIVE_STDIN_MODE: 'readable' },
+      { platform: 'win32' },
+    )
+
+    expect(result.ok).toBe(true)
+    expect(result.detail).toContain('OpenClaude-readable compatibility stdin')
+    expect(result.detail).toContain('Windows data-event default')
   })
 
   test('fails on Windows when data stdin is forced', () => {
@@ -155,7 +166,7 @@ describe('checkCliInputMode', () => {
     )
 
     expect(result.ok).toBe(false)
-    expect(result.detail).toContain('readable input path')
+    expect(result.detail).toContain('DUCKHIVE_USE_DATA_STDIN')
   })
 
   test('passes on non-Windows without Windows-specific warnings', () => {

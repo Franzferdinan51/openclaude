@@ -306,7 +306,14 @@ export function checkCliInputMode(
   if (runtime.platform === 'win32' && env.DUCKHIVE_STDIN_MODE === 'data') {
     return pass(
       'CLI input mode',
-      'Alternate data stdin mode is explicitly active for this launch via `--stdin-mode data`; remove the flag to return to the OpenClaude-compatible readable default.',
+      'Windows data-event stdin is active for this launch; use `duckhive --stdin-mode readable` only if you need to compare the OpenClaude-readable compatibility path.',
+    )
+  }
+
+  if (runtime.platform === 'win32' && env.DUCKHIVE_STDIN_MODE === 'readable') {
+    return pass(
+      'CLI input mode',
+      'OpenClaude-readable compatibility stdin is explicitly active for this launch; remove `--stdin-mode readable` to return to the Windows data-event default.',
     )
   }
 
@@ -323,7 +330,7 @@ export function checkCliInputMode(
 
   return pass(
     'CLI input mode',
-    'OpenClaude-compatible readable stdin is active by default on Windows; use `duckhive --stdin-mode data` as a one-shot fallback if the REPL paints but typed characters do not appear. Early input capture remains disabled, no-args startup forces the classic REPL, inherited TUI handoff flags are ignored unless `duckhive tui` or DUCKHIVE_TUI_WINDOWS_EXPERIMENT=1 is used, startup-era dialogs cannot unmount the prompt before the first submission, and detached stdin falls back to CONIN$ only when stdout is still interactive.',
+    'Windows data-event stdin is active by default so the REPL accepts typed characters after the UI paints. Use `duckhive --stdin-mode readable` to compare the OpenClaude-readable compatibility path. Early input capture remains disabled, no-args startup forces the classic REPL, inherited TUI handoff flags are ignored unless `duckhive tui` or DUCKHIVE_TUI_WINDOWS_EXPERIMENT=1 is used, startup-era dialogs cannot unmount the prompt before the first submission, and detached stdin falls back to CONIN$ only when stdout is still interactive.',
   )
 }
 
