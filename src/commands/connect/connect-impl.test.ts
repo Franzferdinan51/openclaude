@@ -147,6 +147,24 @@ describe('/connect command', () => {
     expect(updateSpy).toHaveBeenCalledTimes(1)
   })
 
+  test('renders Telegram setup, status, errors, and success as ASCII-safe terminal text', async () => {
+    const token = '123456789:ABCDEFGHIJKLMNOPQRSTUVWX'
+    const { call } = await importFreshConnectModule()
+
+    const outputs = [
+      await call('', {} as never),
+      await call('status', {} as never),
+      await call('not-a-real-token', {} as never),
+      await call(token, {} as never),
+    ]
+      .map(result => result.value)
+      .join('\n')
+
+    expect(/[^\x00-\x7F]/.test(outputs)).toBe(false)
+    expect(outputs).toContain('Telegram Connection Status')
+    expect(outputs).toContain('Telegram connected successfully!')
+  })
+
   test('disconnect clears secure storage, clears runtime env, and stops the Telegram service', async () => {
     process.env.DUCKHIVE_TELEGRAM_BOT_TOKEN = '123456789:ABCDEFGHIJKLMNOPQRSTUVWX'
     process.env.TELEGRAM_BOT_TOKEN = '123456789:ABCDEFGHIJKLMNOPQRSTUVWX'

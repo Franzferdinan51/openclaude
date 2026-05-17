@@ -51,11 +51,11 @@ function getEffectiveTelegramConfig(
 function formatStatus(config: TelegramConnectionConfig): string {
   const lines: string[] = []
   lines.push('')
-  lines.push('📱 Telegram Connection Status')
-  lines.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+  lines.push('Telegram Connection Status')
+  lines.push('-'.repeat(40))
 
   if (config.botToken) {
-    lines.push('Status:   ✅ Connected')
+    lines.push('Status:   Connected')
     if (config.connectedAt) {
       const date = new Date(config.connectedAt)
       lines.push(`Since:    ${date.toLocaleDateString()} ${date.toLocaleTimeString()}`)
@@ -70,7 +70,7 @@ function formatStatus(config: TelegramConnectionConfig): string {
       lines.push(`Source:   ${config.source}`)
     }
   } else {
-    lines.push('Status:   ⚪ Not connected')
+    lines.push('Status:   Not connected')
   }
 
   lines.push('')
@@ -115,7 +115,7 @@ export const call: LocalCommandCall = async (args: string) => {
       .catch(() => {})
     return {
       type: 'text',
-      value: '🔌 Telegram disconnected. Your bot token has been removed.',
+      value: 'Telegram disconnected. Your bot token has been removed.',
     }
   }
 
@@ -123,9 +123,9 @@ export const call: LocalCommandCall = async (args: string) => {
   if (positional.length === 0 && Object.keys(flags).length === 0) {
     return {
       type: 'text',
-      value: `📱 Connect Telegram to DuckHive
+      value: `Connect Telegram to DuckHive
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${'-'.repeat(40)}
 
 To connect Telegram, you need a bot token from @BotFather:
 
@@ -151,7 +151,7 @@ Your bot token is stored securely in your system's keychain/credentials store.`,
   if (!token) {
     return {
       type: 'text',
-      value: '❌ No bot token provided. Run /connect to see instructions.',
+      value: 'No bot token provided. Run /connect to see instructions.',
     }
   }
 
@@ -161,7 +161,7 @@ Your bot token is stored securely in your system's keychain/credentials store.`,
   if (!tokenPattern.test(token)) {
     return {
       type: 'text',
-      value: `❌ Invalid bot token format.
+      value: `Invalid bot token format.
 
 Telegram bot tokens look like: 123456789:ABCdefGhIJKlmNoPQRstuVWxyZ
 
@@ -197,9 +197,9 @@ Make sure you copied the complete token from @BotFather.`,
 
   return {
     type: 'text',
-    value: `✅ Telegram connected successfully!
+    value: `Telegram connected successfully!
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${'-'.repeat(40)}
 
 Your bot is now connected. To complete setup:
 
