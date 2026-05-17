@@ -316,15 +316,15 @@ export async function executeDuckCustodianOperation(
       const checks: string[] = [];
       if (deps.checkMmx) {
         const r = await deps.checkMmx();
-        checks.push(`mmx: ${r.found ? `✅ ${r.version ?? 'found'}` : '❌ not found'}`);
+        checks.push(`mmx: ${r.found ? `[ok] ${r.version ?? 'found'}` : '[fail] not found'}`);
       }
       if (deps.checkLmStudio) {
         const r = await deps.checkLmStudio();
-        checks.push(`LM Studio: ${r.found ? `✅ ${r.models.length} models loaded` : '❌ not reachable'}`);
+        checks.push(`LM Studio: ${r.found ? `[ok] ${r.models.length} models loaded` : '[fail] not reachable'}`);
       }
       if (deps.checkOpenClaw) {
         const r = await deps.checkOpenClaw();
-        checks.push(`OpenClaw: ${r.reachable ? `✅ ${r.version ?? 'reachable'}` : '❌ not reachable'}`);
+        checks.push(`OpenClaw: ${r.reachable ? `[ok] ${r.version ?? 'reachable'}` : '[fail] not reachable'}`);
       }
       return { applied: false, message: checks.join('\n') || 'No health checks configured.' };
     }
@@ -355,8 +355,8 @@ export async function executeDuckCustodianOperation(
         return {
           applied: false,
           message: r.valid
-            ? '✅ Config is valid'
-            : `❌ Config has ${r.errors.length} error(s):\n${r.errors.join('\n')}`,
+            ? '[ok] Config is valid'
+            : `[fail] Config has ${r.errors.length} error(s):\n${r.errors.join('\n')}`,
         };
       }
       return { applied: false, message: 'Config validation not configured.' };
@@ -378,8 +378,8 @@ export async function executeDuckCustodianOperation(
       return {
         applied: false,
         message: r.found
-          ? `✅ mmx found: ${r.version ?? 'unknown version'}\n${r.error ? `⚠️ ${r.error}` : ''}`
-          : `❌ mmx not found: ${r.error ?? 'unknown error'}`,
+          ? `[ok] mmx found: ${r.version ?? 'unknown version'}\n${r.error ? `[warn] ${r.error}` : ''}`
+          : `[fail] mmx not found: ${r.error ?? 'unknown error'}`,
       };
     }
 
@@ -389,8 +389,8 @@ export async function executeDuckCustodianOperation(
       return {
         applied: false,
         message: r.found
-          ? `✅ LM Studio reachable: ${r.models.length} models\n${r.models.slice(0, 5).join(', ')}${r.models.length > 5 ? '...' : ''}`
-          : `❌ LM Studio not reachable: ${r.error ?? 'unknown error'}`,
+          ? `[ok] LM Studio reachable: ${r.models.length} models\n${r.models.slice(0, 5).join(', ')}${r.models.length > 5 ? '...' : ''}`
+          : `[fail] LM Studio not reachable: ${r.error ?? 'unknown error'}`,
       };
     }
 
@@ -400,8 +400,8 @@ export async function executeDuckCustodianOperation(
       return {
         applied: false,
         message: r.reachable
-          ? `✅ OpenClaw reachable: ${r.version ?? 'unknown version'}`
-          : `❌ OpenClaw not reachable: ${r.error ?? 'gateway down'}`,
+          ? `[ok] OpenClaw reachable: ${r.version ?? 'unknown version'}`
+          : `[fail] OpenClaw not reachable: ${r.error ?? 'gateway down'}`,
       };
     }
 
@@ -412,7 +412,7 @@ export async function executeDuckCustodianOperation(
         operation: 'openclaw-restart',
         summary: 'Restarted OpenClaw gateway',
       });
-      return { applied: true, message: '✅ OpenClaw gateway restarted.' };
+      return { applied: true, message: '[ok] OpenClaw gateway restarted.' };
     }
 
     case 'gateway-status': {
@@ -421,8 +421,8 @@ export async function executeDuckCustodianOperation(
       return {
         applied: false,
         message: r.reachable
-          ? `✅ DuckHive gateway reachable: ${r.version ?? 'unknown version'}`
-          : `❌ DuckHive gateway not reachable: ${r.error ?? 'gateway may be stopped'}`,
+          ? `[ok] DuckHive gateway reachable: ${r.version ?? 'unknown version'}`
+          : `[fail] DuckHive gateway not reachable: ${r.error ?? 'gateway may be stopped'}`,
       };
     }
 
@@ -433,7 +433,7 @@ export async function executeDuckCustodianOperation(
         operation: 'gateway-restart',
         summary: 'Restarted DuckHive gateway',
       });
-      return { applied: true, message: '✅ DuckHive gateway restarted.' };
+      return { applied: true, message: '[ok] DuckHive gateway restarted.' };
     }
 
     case 'models': {
@@ -442,11 +442,11 @@ export async function executeDuckCustodianOperation(
         const checks: string[] = [];
         if (deps.checkMmx) {
           const r = await deps.checkMmx();
-          checks.push(`mmx: ${r.found ? '✅ available' : '❌ not found'}`);
+          checks.push(`mmx: ${r.found ? '[ok] available' : '[fail] not found'}`);
         }
         if (deps.checkLmStudio) {
           const r = await deps.checkLmStudio();
-          checks.push(`LM Studio: ${r.found ? `✅ ${r.models.length} models` : '❌ not reachable'}`);
+          checks.push(`LM Studio: ${r.found ? `[ok] ${r.models.length} models` : '[fail] not reachable'}`);
         }
         return { applied: false, message: checks.join('\n') || 'No model providers configured.' };
       }
@@ -462,12 +462,12 @@ export async function executeDuckCustodianOperation(
     case 'set-default-model': {
       if (!deps.setDefaultModel) return { applied: false, message: 'set-default-model not configured.' };
       const r = await deps.setDefaultModel(op.model);
-      if (!r.ok) return { applied: false, message: `❌ ${r.error ?? 'Failed to set default model'}` };
+      if (!r.ok) return { applied: false, message: `[fail] ${r.error ?? 'Failed to set default model'}` };
       await appendDuckCustodianAuditEntry({
         operation: 'set-default-model',
         summary: `Set default model to: ${op.model}`,
       });
-      return { applied: true, message: `✅ Default model set to: ${op.model}` };
+      return { applied: true, message: `[ok] Default model set to: ${op.model}` };
     }
 
     case 'setup-workspace': {
@@ -526,7 +526,7 @@ export async function executeDuckCustodianOperation(
         operation: 'inject-memory',
         summary: `Injected memory: ${op.content.slice(0, 80)}`,
       });
-      return { applied: true, message: '✅ Memory injected.' };
+      return { applied: true, message: '[ok] Memory injected.' };
     }
   }
 }

@@ -98,37 +98,36 @@ export async function loadDuckCustodianOverview(): Promise<DuckCustodianOverview
 }
 
 export function formatDuckCustodianOverview(o: DuckCustodianOverview): string {
-  const status = (cond: boolean, ok: string, fail: string) => (cond ? `✅ ${ok}` : `❌ ${fail}`);
+  const status = (cond: boolean, ok: string, fail: string) => (cond ? `[ok] ${ok}` : `[fail] ${fail}`);
 
   const lines = [
-    '┌──────────────────────────────────────────────',
-    '│  🦆 DuckCustodian — DuckHive System Status',
-    '├──────────────────────────────────────────────',
-    `│  Config: ${status(o.duckhive.configValid, 'valid', 'INVALID')}`,
+    'DuckCustodian - DuckHive System Status',
+    '-'.repeat(46),
+    `Config: ${status(o.duckhive.configValid, 'valid', 'INVALID')}`,
     o.duckhive.configErrors.length > 0
-      ? `│  Errors: ${o.duckhive.configErrors.join(', ')}`
+      ? `Errors: ${o.duckhive.configErrors.join(', ')}`
       : null,
-    `│  Config: ${o.duckhive.configPath}`,
-    '├──────────────────────────────────────────────',
-    '│  Tools',
-    `│    mmx:         ${status(o.tools.mmx.found, o.tools.mmx.version ?? 'found', 'not found')}`,
-    `│    LM Studio:    ${status(o.tools.lmStudio.found, `${o.tools.lmStudio.modelCount} models`, 'not reachable')}`,
+    `Config: ${o.duckhive.configPath}`,
+    '',
+    'Tools',
+    `  mmx:         ${status(o.tools.mmx.found, o.tools.mmx.version ?? 'found', 'not found')}`,
+    `  LM Studio:    ${status(o.tools.lmStudio.found, `${o.tools.lmStudio.modelCount} models`, 'not reachable')}`,
     o.tools.lmStudio.found
-      ? `│      → ${o.tools.lmStudio.models.join(', ')}${o.tools.lmStudio.modelCount > 5 ? '...' : ''}`
+      ? `    models: ${o.tools.lmStudio.models.join(', ')}${o.tools.lmStudio.modelCount > 5 ? '...' : ''}`
       : null,
-    `│    OpenClaw CLI: ${status(o.tools.openClaw.found, o.tools.openClaw.version ?? 'found', 'not found')}`,
-    `│    OpenClaw GW:  ${status(o.tools.openClawGateway.reachable, o.tools.openClawGateway.version ?? 'reachable', 'not reachable')}`,
-    '├──────────────────────────────────────────────',
-    '│  Memory',
-    `│    Memory:   ${o.memory.memoryDir}`,
-    `│    Lessons:   ${o.memory.lessonsPath}`,
-    '├──────────────────────────────────────────────',
-    '│  Workspace',
-    `│    CWD:      ${o.workspace.cwd}`,
-    '├──────────────────────────────────────────────',
-    '│  Audit',
-    `│    Log:      ${o.audit.path}`,
-    '└──────────────────────────────────────────────',
+    `  OpenClaw CLI: ${status(o.tools.openClaw.found, o.tools.openClaw.version ?? 'found', 'not found')}`,
+    `  OpenClaw GW:  ${status(o.tools.openClawGateway.reachable, o.tools.openClawGateway.version ?? 'reachable', 'not reachable')}`,
+    '',
+    'Memory',
+    `  Memory:  ${o.memory.memoryDir}`,
+    `  Lessons: ${o.memory.lessonsPath}`,
+    '',
+    'Workspace',
+    `  CWD:     ${o.workspace.cwd}`,
+    '',
+    'Audit',
+    `  Log:     ${o.audit.path}`,
+    '-'.repeat(46),
     '',
     'Commands: status | health | doctor | doctor fix | mmx-status | lmstudio-status',
     '          memory-stats | lessons | audit | inject-memory <text>',
