@@ -314,7 +314,7 @@ The terminal `/run` surface validates status filters against the real AgentRun l
 ```bash
 duckhive ps [status]          # List AgentRuns
 duckhive logs <id> [limit]    # Show recent AgentRun events
-duckhive attach <id>          # Inspect an AgentRun and show attach guidance
+duckhive attach <id> [limit]  # Inspect an AgentRun with recent events and controls
 duckhive pause <id>           # Pause a run
 duckhive resume <id>          # Resume a paused run
 duckhive approve <id> [appr]  # Approve a pending run action
@@ -323,7 +323,7 @@ duckhive kill <id>            # Cancel an AgentRun
 duckhive --bg "long task"     # Register a queued AgentRun for shared controls
 ```
 
-The old upstream `--bg`/`--background` spawning path no longer silently no-ops in DuckHive. It now registers a queued AgentRun in the shared store so `ps`, `logs`, `attach`, `kill`, `/run`, Telegram, WebUI, and harness consumers can see and control the request through the same lifecycle. Provider-backed detached execution is still a separate executor layer; this change makes background requests durable and inspectable instead of failing before they reach the control plane.
+The old upstream `--bg`/`--background` spawning path no longer silently no-ops in DuckHive. It now registers a queued AgentRun in the shared store so `ps`, `logs`, `attach`, `kill`, `/run`, Telegram, WebUI, and harness consumers can see and control the request through the same lifecycle. `duckhive attach <id> [limit]` now prints run metadata, pending approvals, a bounded recent event tail, and the exact pause/resume/kill/log commands for that run. Provider-backed detached execution is still a separate executor layer; this change makes background requests durable and inspectable instead of failing before they reach the control plane.
 
 Long Telegram responses are chunked, Markdown delivery falls back to plain text, `/approve` uses the same AgentRun approval path as the CLI/WebUI and can acknowledge one pending approval ID without clearing the rest, and `bun run doctor:runtime` reports the Agent Harness, Telegram, and computer-use readiness state.
 

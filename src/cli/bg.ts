@@ -40,7 +40,7 @@ function usage(error?: string): string {
     '  duckhive --background <prompt>',
     '  duckhive ps [status]',
     '  duckhive logs <run-id> [limit]',
-    '  duckhive attach <run-id>',
+    '  duckhive attach <run-id> [event-limit]',
     '  duckhive pause <run-id>',
     '  duckhive resume <run-id>',
     '  duckhive approve <run-id> [approval-id]',
@@ -95,6 +95,13 @@ function formatRunLine(run: AgentRun): string {
   return `${run.id} [${run.status}] ${run.title}${agent}${model}`
 }
 
+function formatRunEventLine(
+  event: ReturnType<AgentRunStore['tailEvents']>[number],
+): string {
+  const payload = event.payload ? ` ${JSON.stringify(event.payload)}` : ''
+  return `${new Date(event.timestamp).toLocaleTimeString()} ${event.type}${payload}`
+}
+
 function renderRunList(store: AgentRunStore, status?: AgentRunStatus): string {
   const runs = store.listRuns(status ? { status } : {})
   if (runs.length === 0) {
@@ -105,7 +112,7 @@ function renderRunList(store: AgentRunStore, status?: AgentRunStatus): string {
   return ['DuckHive background runs', '-'.repeat(40), ...runs.map(formatRunLine)].join('\n')
 }
 
-function renderRunDetail(store: AgentRunStore, runId: string): string {
+function renderRunDetail(store: AgentRunStore, runId: string, tailLimit = 20): string {
   const run = store.getRun(runId)
   if (!run) return `Run not found: ${runId}`
   const lines = [
@@ -125,7 +132,21 @@ function renderRunDetail(store: AgentRunStore, runId: string): string {
     lines.push(`Pending approvals: ${run.permissionState.pendingApprovalIds.join(', ')}`)
   }
   if (run.childRunIds.length) lines.push(`Children: ${run.childRunIds.join(', ')}`)
-  lines.push('', 'Live terminal attach is not implemented yet; use `duckhive logs <run-id>` for the event tail.')
+  const events = store.tailEvents(runId, tailLimit)
+  lines.push('', `Recent events (${events.length}/${tailLimit}):`)
+  if (events.length === 0) {
+    lines.push('  No events recorded yet.')
+  } else {
+    lines.push(...events.map(event => `  ${formatRunEventLine(event)}`))
+  }
+  lines.push(
+    '',
+    'Controls:',
+    `  duckhive logs ${runId} ${tailLimit}`,
+    `  duckhive pause ${runId}`,
+    `  duckhive resume ${runId}`,
+    `  duckhive kill ${runId}`,
+  )
   return lines.join('\n')
 }
 
@@ -136,8 +157,7 @@ function renderRunLogs(store: AgentRunStore, runId: string, limit: number): stri
   if (events.length === 0) return `Run logs: ${runId}\n\nNo events recorded yet.`
   const lines = [`Run logs: ${runId}`, '-'.repeat(40)]
   for (const event of events) {
-    const payload = event.payload ? ` ${JSON.stringify(event.payload)}` : ''
-    lines.push(`${new Date(event.timestamp).toLocaleTimeString()} ${event.type}${payload}`)
+    lines.push(formatRunEventLine(event))
   }
   return lines.join('\n')
 }
@@ -201,7 +221,7 @@ export async function logsHandler(args: string[] = []): Promise<void> {
 
 export async function attachHandler(args: string[] = []): Promise<void> {
   const { stdout, stderr } = deps()
-  const [runId, extra] = args
+  const [runId, rawLimit, extra] = args
   if (runId === '--help' || runId === '-h') {
     writeLine(stdout, usage())
     return
@@ -212,7 +232,13 @@ export async function attachHandler(args: string[] = []): Promise<void> {
     return
   }
   if (extra) {
-    writeLine(stderr, usage('attach accepts exactly one run id.'))
+    writeLine(stderr, usage('attach accepts a run id and optional event limit.'))
+    process.exitCode = 1
+    return
+  }
+  const parsedLimit = parseTailLimit(rawLimit)
+  if (parsedLimit.error) {
+    writeLine(stderr, usage(parsedLimit.error.replace('log limit', 'attach event limit')))
     process.exitCode = 1
     return
   }
@@ -222,7 +248,7 @@ export async function attachHandler(args: string[] = []): Promise<void> {
     process.exitCode = 1
     return
   }
-  writeLine(stdout, renderRunDetail(store, runId))
+  writeLine(stdout, renderRunDetail(store, runId, parsedLimit.limit ?? 20))
 }
 
 export async function killHandler(args: string[] = []): Promise<void> {

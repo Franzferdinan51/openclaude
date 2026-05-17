@@ -13,6 +13,7 @@ covers the named requirement.
 | `duckhive` command must resolve and report the DuckHive version | `node dist\cli.mjs runtime-doctor` reports `duckhive` on PATH targeting this checkout and version `0.13.0 (DuckHive)`. | Verified |
 | Version metadata and README must match the release | `package.json` and README now report `0.13.0`; `npm pack --dry-run --json` publishes `duckhive@0.13.0`. | Verified |
 | `/goal` must be present as a Codex-style workflow feature | CLI smoke covers top-level `goal` and bare-print `/goal Build smoke goal`; README documents REPL and top-level forms. | Verified surface |
+| Background AgentRun controls must be inspectable from the terminal | `duckhive attach <run-id> [limit]` now prints run metadata, pending approvals, recent events, and exact control commands instead of a not-implemented placeholder; focused tests cover event tail and invalid limits. | Verified |
 | Computer-use must be reachable without blocking on Codex.app | Runtime doctor reports bundled `newest-desktop-control` available for desktop, Android, and compatibility aliases; package dry-run includes the skill files. | Verified fallback |
 | ClawHub skill hub must be connected | Runtime doctor reports ClawHub registry default `https://clawhub.ai` and `/skill search`, `/skill inspect`, `/skill install` availability. | Verified surface |
 | Telegram/channel connectors must be provider-free and inspectable | Runtime doctor reports connector CLI status commands for `connect status`, `telegram status`, and `channel status telegram`; README documents Telegram env and AgentRun controls. | Verified surface |
@@ -43,6 +44,7 @@ covers the named requirement.
 - `bun test src\test\sharedMutationLock.test.ts`
 - `bun test src\integrations\compatibility.test.ts src\integrations\artifactGenerator.test.ts`
 - `bun test src\commands\channel\channel-impl.test.ts`
+- `bun test src\cli\bg.test.ts`
 
 ## Open Work
 

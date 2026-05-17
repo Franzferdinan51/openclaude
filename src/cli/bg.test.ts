@@ -78,7 +78,7 @@ describe('background AgentRun CLI handlers', () => {
     expect(stderr.text()).toBe('')
   })
 
-  test('attach shows run detail without pretending live attach exists', async () => {
+  test('attach shows run detail with recent event tail and controls', async () => {
     const store = makeStore()
     store.createRun({
       title: 'Review terminal startup',
@@ -86,16 +86,39 @@ describe('background AgentRun CLI handlers', () => {
       permissionState: { pendingApprovalIds: ['approval-1'] },
       progress: { summary: 'Waiting for approval' },
     })
+    store.emitEvent('message_delta', {
+      runId: 'run_bg',
+      role: 'assistant',
+      delta: 'Checking stdin',
+    })
     const stdout = makeWriter()
     const stderr = makeWriter()
     setBgTestDeps({ getAgentRunStore: () => store, stdout: stdout.stream, stderr: stderr.stream })
 
-    await attachHandler(['run_bg'])
+    await attachHandler(['run_bg', '2'])
 
     expect(stdout.text()).toContain('Run: run_bg')
     expect(stdout.text()).toContain('Pending approvals: approval-1')
-    expect(stdout.text()).toContain('Live terminal attach is not implemented yet')
+    expect(stdout.text()).toContain('Recent events (2/2):')
+    expect(stdout.text()).toContain('run_started')
+    expect(stdout.text()).toContain('message_delta')
+    expect(stdout.text()).toContain('duckhive logs run_bg 2')
+    expect(stdout.text()).toContain('duckhive pause run_bg')
     expect(stderr.text()).toBe('')
+  })
+
+  test('attach rejects invalid event limits', async () => {
+    const store = makeStore()
+    store.createRun({ title: 'Review terminal startup', status: 'running' })
+    const stdout = makeWriter()
+    const stderr = makeWriter()
+    setBgTestDeps({ getAgentRunStore: () => store, stdout: stdout.stream, stderr: stderr.stream })
+
+    await attachHandler(['run_bg', 'nope'])
+
+    expect(stderr.text()).toContain('Invalid attach event limit: nope')
+    expect(process.exitCode).toBe(1)
+    expect(stdout.text()).toBe('')
   })
 
   test('kill cancels an AgentRun instead of no-oping', async () => {
