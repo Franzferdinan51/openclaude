@@ -159,6 +159,10 @@ describe('DuckHive CLI help surfaces', () => {
     expect(source).toContain(
       'Set up a long-lived subscription authentication token for compatible hosted accounts',
     )
+    expect(source).toContain('Sign in to a DuckHive-compatible hosted account')
+    expect(source).toContain('Log out from your hosted auth account')
     expect(source).not.toContain('requires Claude subscription')
+    expect(source).not.toContain('Sign in to your Anthropic account')
+    expect(source).not.toContain('Log out from your Anthropic account')
   })
 })
