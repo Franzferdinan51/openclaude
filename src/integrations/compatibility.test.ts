@@ -82,4 +82,17 @@ describe('compatibility mappings', () => {
       routeId: 'vertex',
     })
   })
+
+  test('Gitlawb Opengateway exposes partner models through the shared gateway route', () => {
+    const gateway = getGateway('gitlawb-opengateway')
+
+    expect(vendorIdForPreset('gitlawb-opengateway')).toBe('openai')
+    expect(gateway?.defaultBaseUrl).toBe('https://opengateway.gitlawb.com/v1')
+    expect(gateway?.catalog?.models?.map(model => model.id)).toEqual(
+      expect.arrayContaining([
+        'opengateway-gemini-3.1-flash-lite-preview',
+        'opengateway-glm-5.1-fp8',
+      ]),
+    )
+  })
 })
