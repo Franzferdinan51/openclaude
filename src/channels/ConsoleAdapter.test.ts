@@ -2,6 +2,8 @@ import { describe, expect, test } from 'bun:test'
 import { Writable } from 'node:stream'
 import { ConsoleAdapter } from './ConsoleAdapter.js'
 
+const ASCII_ONLY = /^[\x00-\x7F]*$/
+
 class CaptureStream extends Writable {
   chunks: string[] = []
 
@@ -37,8 +39,9 @@ describe('ConsoleAdapter built-ins', () => {
     const result = runBuiltIn(adapter, 'help')
 
     expect(result).toBeNull()
-    expect(output.text()).toContain('model <id> — Forward /model <id> to DuckHive')
+    expect(output.text()).toContain('model <id> - Forward /model <id> to DuckHive')
     expect(output.text()).not.toContain('stub')
+    expect(ASCII_ONLY.test(output.text())).toBe(true)
   })
 
   test('model command forwards to the DuckHive slash command path', () => {
@@ -55,5 +58,35 @@ describe('ConsoleAdapter built-ins', () => {
       source: 'user',
       content: '/model minimax-m2.7',
     })
+  })
+
+  test('sendMessage renders an ASCII-safe agent label', async () => {
+    const output = new CaptureStream()
+    const adapter = new ConsoleAdapter({
+      prompt: '',
+      colorize: false,
+      outputStream: output,
+    })
+
+    await adapter.sendMessage('hello')
+
+    expect(output.text()).toContain('DuckHive Agent:')
+    expect(output.text()).toContain('  hello')
+    expect(ASCII_ONLY.test(output.text())).toBe(true)
+  })
+
+  test('status built-in renders ASCII-safe terminal text', () => {
+    const output = new CaptureStream()
+    const adapter = new ConsoleAdapter({
+      prompt: '',
+      colorize: false,
+      outputStream: output,
+    })
+
+    const result = runBuiltIn(adapter, 'status')
+
+    expect(result).toBeNull()
+    expect(output.text()).toContain('Connected - channel: console')
+    expect(ASCII_ONLY.test(output.text())).toBe(true)
   })
 })
