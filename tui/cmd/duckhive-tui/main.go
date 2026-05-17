@@ -862,6 +862,11 @@ func parseLocalTUICommand(text string) (localTUICommand, bool) {
 }
 
 func (m *MainModel) handleLocalTUICommand(text string) (bool, tea.Cmd) {
+	if cmdText, ok := bridgeBackedLocalCommand(text); ok && m.bridge != nil {
+		m.state.StatusMsg = bridgeBackedLocalCommandStatus(cmdText)
+		return true, bridge.SendUserMessageCmd(m.bridge, cmdText)
+	}
+
 	command, handled := parseLocalTUICommand(text)
 	if !handled {
 		return false, nil
@@ -876,6 +881,28 @@ func (m *MainModel) handleLocalTUICommand(text string) (bool, tea.Cmd) {
 	})
 	m.state.StatusMsg = localCommandStatus(command)
 	return true, nil
+}
+
+func bridgeBackedLocalCommand(text string) (string, bool) {
+	switch strings.ToLower(strings.TrimSpace(text)) {
+	case "/provider", "/model", "/search-provider":
+		return strings.ToLower(strings.TrimSpace(text)), true
+	default:
+		return "", false
+	}
+}
+
+func bridgeBackedLocalCommandStatus(command string) string {
+	switch command {
+	case "/provider":
+		return "opening provider manager"
+	case "/model":
+		return "opening model manager"
+	case "/search-provider":
+		return "opening search-provider manager"
+	default:
+		return "dispatching command"
+	}
 }
 
 func localCommandStatus(command localTUICommand) string {

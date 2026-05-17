@@ -120,8 +120,10 @@ func TestParseLocalTUICommand(t *testing.T) {
 		{name: "runs opens agent run surface", input: "/runs", wantCommand: localTUICommandRuns, wantHandled: true},
 		{name: "tasks opens agent run surface", input: "/tasks", wantCommand: localTUICommandRuns, wantHandled: true},
 		{name: "council opens council", input: "/council", wantCommand: localTUICommandCouncil, wantHandled: true},
-		{name: "provider opens provider card", input: "/provider", wantCommand: localTUICommandProvider, wantHandled: true},
-		{name: "search opens search provider card", input: "/search-provider", wantCommand: localTUICommandSearch, wantHandled: true},
+		{name: "providers alias opens provider card", input: "/providers", wantCommand: localTUICommandProvider, wantHandled: true},
+		{name: "models alias opens provider card", input: "/models", wantCommand: localTUICommandProvider, wantHandled: true},
+		{name: "search alias opens search provider card", input: "/search", wantCommand: localTUICommandSearch, wantHandled: true},
+		{name: "search-providers alias opens search provider card", input: "/search-providers", wantCommand: localTUICommandSearch, wantHandled: true},
 		{name: "normal input passes through", input: "fix the bug"},
 	}
 
@@ -133,6 +135,47 @@ func TestParseLocalTUICommand(t *testing.T) {
 			}
 			if command != tt.wantCommand {
 				t.Fatalf("command = %q, want %q", command, tt.wantCommand)
+			}
+		})
+	}
+}
+
+func TestHandleLocalTUICommandUsesBackendForProviderCommands(t *testing.T) {
+	tests := []struct {
+		name       string
+		input      string
+		wantStatus string
+	}{
+		{name: "provider manager", input: "/provider", wantStatus: "opening provider manager"},
+		{name: "model manager", input: "/model", wantStatus: "opening model manager"},
+		{name: "search manager", input: "/search-provider", wantStatus: "opening search-provider manager"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m := &MainModel{
+				state:      model.NewAppState(),
+				bridge:     bridge.NewSubprocessAdapter("duckhive"),
+				msgList:    components.NewMessageList(80, 20),
+				input:      components.NewInputArea(80, 3),
+				transcript: screens.NewTranscriptPanel(),
+			}
+
+			handled, cmd := m.handleLocalTUICommand(tt.input)
+			if !handled {
+				t.Fatal("expected command to be handled")
+			}
+			if cmd == nil {
+				t.Fatal("expected backend dispatch command")
+			}
+			if msg := cmd(); msg != nil {
+				t.Fatalf("expected nil bridge send result, got %#v", msg)
+			}
+			if m.state.StatusMsg != tt.wantStatus {
+				t.Fatalf("StatusMsg = %q, want %q", m.state.StatusMsg, tt.wantStatus)
+			}
+			if len(m.state.Messages) != 0 {
+				t.Fatalf("expected no local snapshot message, got %d", len(m.state.Messages))
 			}
 		})
 	}
