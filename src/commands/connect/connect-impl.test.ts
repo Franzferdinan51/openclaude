@@ -52,7 +52,9 @@ describe('/connect command', () => {
 
     expect(result.type).toBe('text')
     expect(result.value).toContain('Connect Telegram to DuckHive')
+    expect(result.value).toContain('duckhive connect <your-bot-token>')
     expect(result.value).toContain('/connect <your-bot-token>')
+    expect(result.value).toContain('duckhive connect status')
     expect(result.value).toContain('DUCKHIVE_TELEGRAM_ALLOWED_CHAT_ID')
   })
 
@@ -175,6 +177,8 @@ describe('/connect command', () => {
     const result = await call(token, {} as never)
 
     expect(result.value).toContain('Telegram connected successfully!')
+    expect(result.value).toContain('duckhive connect status')
+    expect(result.value).toContain('duckhive connect disconnect')
     expect(result.value).toContain('/connect status')
     expect(result.value).toContain('/connect disconnect')
     expect(result.value).toContain('DUCKHIVE_TELEGRAM_ALLOWED_CHAT_ID=<chat-id>')

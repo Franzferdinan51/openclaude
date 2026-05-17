@@ -286,6 +286,7 @@ const cases: SmokeCase[] = [
     env: createIsolatedConfigEnv,
     includes: [
       'Connect Telegram to DuckHive',
+      'duckhive connect <your-bot-token>',
       '/connect <your-bot-token>',
       'DUCKHIVE_TELEGRAM_ALLOWED_CHAT_ID',
     ],

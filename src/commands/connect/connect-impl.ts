@@ -168,12 +168,16 @@ To connect Telegram, you need a bot token from @BotFather:
 4. Copy the token it gives you (looks like: 123456789:ABCdefGhIJKlmNoPQRstuVWxyZ)
 
 Once you have your token, run:
+  duckhive connect <your-bot-token>
+  # or inside the REPL:
   /connect <your-bot-token>
 
 For safety, set DUCKHIVE_TELEGRAM_ALLOWED_CHAT_ID to your Telegram chat ID
 after sending /start. This allowlist also becomes the default outbound reply target.
 
 After connecting, you can use these commands:
+  duckhive connect status
+  duckhive connect disconnect
   /connect status        Show connection status
   /connect disconnect    Remove Telegram connection
 
@@ -250,7 +254,7 @@ Your bot is now connected. To complete setup:
 
 You can now interact with DuckHive through Telegram!
 
-Run /connect status to see connection details
-Run /connect disconnect to remove the connection`,
+Run duckhive connect status or /connect status to see connection details
+Run duckhive connect disconnect or /connect disconnect to remove the connection`,
   }
 }
