@@ -360,6 +360,16 @@ Zip up a DuckHive session for sharing or archival. Includes workspace context fi
 Track multi-step tasks across sessions with persisted goals. Inspired by Codex `/goal` (r0.128.0). Goals survive restarts and can be resumed later.
 
 ```bash
+# Terminal
+duckhive goal Build user authentication system
+duckhive goal create Build user authentication system
+duckhive goal list
+duckhive goal list all
+duckhive goal list active
+duckhive goal status goal_abc123
+duckhive goal step add goal_abc123 Implement login API
+
+# Inside the REPL
 /goal Build user authentication system              # Codex-style shorthand create
 /goal create Build user authentication system    # Create a new goal
 /goal list                                          # List all goals
@@ -646,7 +656,16 @@ mcporter call browseros.click element=42
 Spawn multi-agent crews that work in parallel on complex tasks. DuckHive integrates Agent Teams for structured delegation.
 
 ```bash
-# Inside duckhive
+# Terminal
+duckhive council "Should we use microservices here?" mode=deliberation
+duckhive council --status
+duckhive team research "Research Redis caching"
+duckhive team spawn analysis "Research Redis caching"
+duckhive senate "Proposal: switch to Bun runtime"
+duckhive decree "DECREE-007: Use Bun for all new APIs"
+duckhive orchestrate "Build a REST API" --mode=deliberation
+
+# Inside the REPL
 /council "Should we use microservices here?" mode=deliberation
 /council --status                                  # Inspect the active session
 /council --stop                                    # Stop the active session via Hive Nation
@@ -683,6 +702,15 @@ This is intentionally best-effort and asynchronous. It should not block the main
 Code swarming launches parallel sub-agents across DuckHive's current runtime routing buckets to tackle complex tasks from multiple angles simultaneously.
 
 ```bash
+# Terminal
+duckhive swarm "Build a REST API" --domain=coding --count=4
+duckhive swarm "Audit this security vulnerability" --domain=security
+duckhive swarm "Research new ML techniques" --domain=research
+duckhive swarm --list          # Show all available swarm agents
+duckhive swarm --list-domain   # List domain agent capabilities
+duckhive swarm --dry-run       # Preview what would spawn
+
+# Inside the REPL
 /swarm "Build a REST API" --domain=coding --count=4
 /swarm "Audit this security vulnerability" --domain=security
 /swarm "Research new ML techniques" --domain=research
@@ -698,6 +726,12 @@ Code swarming launches parallel sub-agents across DuckHive's current runtime rou
 When multiple agents respond, DuckHive routes the best response through three strategies:
 
 ```bash
+# Terminal
+duckhive swarm 'vote "response A" | "response B"'
+duckhive swarm 'merge "response A" | "response B"'
+duckhive swarm 'pick-best "response A" | "response B"'
+
+# Inside the REPL
 /swarm vote "response A" | "response B"           # Proxy peer tally
 /swarm merge "response A" | "response B"          # Combine complementary responses
 /swarm pick-best "response A" | "response B"      # Heuristic ranking
