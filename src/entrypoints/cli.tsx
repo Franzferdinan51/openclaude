@@ -322,6 +322,20 @@ async function main(): Promise<void> {
     return;
   }
 
+  // Fast-path for Codex computer-use inspection/control outside the REPL.
+  if (args[0] === 'computer-use' || args[0] === 'cu' || args[0] === 'comput-use') {
+    profileCheckpoint('cli_computer_use_path');
+    const {
+      enableConfigs
+    } = await import('../utils/config.js');
+    enableConfigs();
+    const {
+      computerUseHandler
+    } = await import('../cli/computerUse.js');
+    await computerUseHandler(args.slice(1));
+    return;
+  }
+
   // Fast-path for DuckHive AgentRun inspection/control.
   // These commands share the /run, Telegram, WebUI, and harness control plane.
   if (args[0] === 'ps' || args[0] === 'logs' || args[0] === 'attach' || args[0] === 'pause' || args[0] === 'resume' || args[0] === 'approve' || args[0] === 'recover' || args[0] === 'kill' || args.includes('--bg') || args.includes('--background')) {

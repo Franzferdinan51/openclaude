@@ -164,6 +164,25 @@ const cases: SmokeCase[] = [
       'Attached Session:',
     ],
   },
+  {
+    name: 'top-level computer-use help',
+    args: ['computer-use', '--help'],
+    includes: [
+      'Computer Use',
+      '/computer-use status',
+      'newest-desktop-control',
+    ],
+  },
+  {
+    name: 'top-level computer-use status',
+    args: ['cu', 'status'],
+    includes: [
+      'DuckHive Computer Use',
+      process.platform === 'darwin'
+        ? 'Fallback gateway: `newest-desktop-control`'
+        : 'Native OpenAI Codex computer-use requires macOS',
+    ],
+  },
 ]
 
 const failures: string[] = []

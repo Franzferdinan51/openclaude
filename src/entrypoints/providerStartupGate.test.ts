@@ -33,6 +33,8 @@ test('skips provider startup for utility commands', () => {
   expect(shouldSkipProviderStartup(['plugin', 'list'])).toBe(true)
   expect(shouldSkipProviderStartup(['goal', 'status'])).toBe(true)
   expect(shouldSkipProviderStartup(['g', 'list'])).toBe(true)
+  expect(shouldSkipProviderStartup(['computer-use', 'status'])).toBe(true)
+  expect(shouldSkipProviderStartup(['cu', 'status'])).toBe(true)
   expect(shouldSkipProviderStartup(['ps'])).toBe(true)
   expect(shouldSkipProviderStartup(['logs', 'run_123'])).toBe(true)
   expect(shouldSkipProviderStartup(['attach', 'run_123'])).toBe(true)
