@@ -757,6 +757,8 @@ Create and manage reusable skill scaffolds for future sessions through DuckHive'
 /skill read my-new-skill     # Inspect a saved skill
 /skill delete my-old-skill   # Delete a saved skill
 /skills                      # Open the skills manager UI
+/curate status               # Hermes-style skill library grading
+/curate run                  # Write a curation report and identify archive candidates
 ```
 
 ClawHub registry notes:
@@ -765,6 +767,7 @@ ClawHub registry notes:
 - `/skill install <slug>` refuses registry entries marked malware-blocked or `malicious` before downloading the archive.
 - Installed ClawHub skills are written under DuckHive's resolved `skills/` directory and get local provenance metadata at `.clawhub/origin.json`.
 - Override the registry base with `DUCKHIVE_CLAWHUB_REGISTRY` or `CLAWHUB_REGISTRY` if you need a different ClawHub-compatible endpoint.
+- `/curate` output uses ASCII-safe grades like `[A]` and plain separators so skill-library reports stay readable in Windows shells and log captures.
 
 ---
 

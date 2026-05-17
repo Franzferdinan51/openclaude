@@ -1,5 +1,5 @@
 /**
- * /curate command — Hermes v0.12.0 Curator-inspired skill librarian for DuckHive.
+ * /curate command - Hermes v0.12.0 Curator-inspired skill librarian for DuckHive.
  *
  * Runs on-demand (not automatic). Use `duckhive curate status` to see skill rankings,
  * or `duckhive curate run` to perform a full curation cycle.
@@ -11,13 +11,12 @@
  * are never mutated or archived.
  */
 
-import { readdir, readFile, stat, writeFile, mkdir, rm } from 'fs/promises'
-import { join, basename } from 'path'
+import { readdir, readFile, stat, writeFile, mkdir } from 'fs/promises'
+import { join } from 'path'
 import { existsSync } from 'fs'
 import { getClaudeConfigHomeDir } from '../../utils/envUtils.js'
 import type { LocalCommandCall } from '../../types/command.js'
 
-// Bundled skills that Curator must never touch
 const BUNDLED_SKILLS = new Set([
   'computer-use',
   'duckcustodian-agent',
@@ -48,8 +47,6 @@ interface CurationReport {
   summary: string
 }
 
-// ─── Grading ─────────────────────────────────────────────────────────────────
-
 function gradeSkill(entry: {
   description: string
   size: number
@@ -60,23 +57,19 @@ function gradeSkill(entry: {
   const ageMs = Date.now() - lastModified
   const ageDays = ageMs / (1000 * 60 * 60 * 24)
 
-  // Description quality
   if (description && description.length > 20) score += 30
   else if (description && description.length > 5) score += 15
 
-  // Content richness (size in bytes)
   if (size > 2000) score += 25
   else if (size > 500) score += 15
   else if (size > 100) score += 5
 
-  // Recency bonus/penalty
   if (ageDays < 30) score += 25
   else if (ageDays < 90) score += 15
   else if (ageDays < 180) score += 5
   else if (ageDays > 365) score -= 15
   else if (ageDays > 730) score -= 30
 
-  // Determine grade
   let grade: SkillEntry['grade']
   let reason: string
   if (score >= 70) {
@@ -87,10 +80,10 @@ function gradeSkill(entry: {
     reason = 'Good skill with room for improvement'
   } else if (score >= 30) {
     grade = 'C'
-    reason = 'Basic or outdated — consider updating or archiving'
+    reason = 'Basic or outdated - consider updating or archiving'
   } else if (score >= 15) {
     grade = 'D'
-    reason = 'Minimal content or very old — archive candidate'
+    reason = 'Minimal content or very old - archive candidate'
   } else {
     grade = 'F'
     reason = 'Failed to meet quality thresholds'
@@ -98,8 +91,6 @@ function gradeSkill(entry: {
 
   return { grade, score: Math.max(0, score), reason }
 }
-
-// ─── Skill scanning ───────────────────────────────────────────────────────────
 
 async function scanSkills(): Promise<SkillEntry[]> {
   const entries: SkillEntry[] = []
@@ -137,15 +128,12 @@ async function scanSkills(): Promise<SkillEntry[]> {
     if (existsSync(skillMdPath)) {
       try {
         const content = await readFile(skillMdPath, 'utf-8')
-        // Extract description from frontmatter
         const match = content.match(/description:\s*["']?([^"'\n]+)["']?/i)
         if (match) description = match[1].trim()
-        // Get last modified from file
         const mdStat = await stat(skillMdPath)
         lastModified = mdStat.mtimeMs
         size = content.length
       } catch {
-        // Use directory mtime
         const dirStat = await stat(skillPath)
         lastModified = dirStat.mtimeMs
       }
@@ -168,78 +156,60 @@ async function scanSkills(): Promise<SkillEntry[]> {
   return entries.sort((a, b) => b.score - a.score)
 }
 
-// ─── Archive low-rated skills ─────────────────────────────────────────────────
-
 async function archiveLowRated(entries: SkillEntry[], threshold = 15): Promise<string[]> {
   const archived: string[] = []
 
   try {
     await mkdir(ARCHIVE_DIR, { recursive: true })
   } catch {
-    // Ignore
+    // Ignore.
   }
 
   for (const entry of entries) {
     if (entry.score < threshold) {
-      const archivePath = join(ARCHIVE_DIR, `${entry.name}-${Date.now()}`)
-      try {
-        // Simple rename-to-archive — just prepend timestamp to avoid conflict
-        // In production you'd move to ARCHIVE_DIR, but this preserves the skill
-        // while effectively hiding it from normal scanning
-        archived.push(entry.name)
-      } catch {
-        // Archive failed — skip
-      }
+      archived.push(entry.name)
     }
   }
 
   return archived
 }
 
-// ─── Write report ─────────────────────────────────────────────────────────────
-
 async function writeReport(report: CurationReport): Promise<void> {
   try {
     await mkdir(LOG_DIR, { recursive: true })
     await writeFile(REPORT_PATH, JSON.stringify(report, null, 2))
   } catch {
-    // Ignore — non-critical
+    // Non-critical.
   }
 }
 
-// ─── Format output ─────────────────────────────────────────────────────────────
-
 function formatGradeEntry(entry: SkillEntry): string {
   const ageDays = Math.round((Date.now() - entry.lastModified) / (1000 * 60 * 60 * 24))
-  const gradeColor = { A: '🟢', B: '🟡', C: '🟠', D: '🔴', F: '⚫' }[entry.grade]
-  return `${gradeColor} ${entry.grade}  ${entry.name.padEnd(40)} score:${entry.score}  age:${ageDays}d  — ${entry.reason}`
+  return `[${entry.grade}] ${entry.name.padEnd(40)} score:${entry.score}  age:${ageDays}d  - ${entry.reason}`
 }
 
-// ─── Main command ──────────────────────────────────────────────────────────────
-
 export const call: LocalCommandCall = async (
-  args: string
+  args: string,
 ): Promise<{ type: 'text'; value: string }> => {
   const parts = args.trim().split(/\s+/)
   const subcommand = parts[0] || 'status'
 
   if (subcommand === 'status') {
-    // Just show rankings without archiving
     const entries = await scanSkills()
 
     if (entries.length === 0) {
       return {
         type: 'text',
-        value: `🦆 DuckHive Curator — No user skills found (bundled skills not shown)\n\nRun \`duckhive curate run\` to perform a full curation cycle.`,
+        value: `DuckHive Curator - No user skills found (bundled skills not shown)\n\nRun \`duckhive curate run\` to perform a full curation cycle.`,
       }
     }
 
     const lines = [
-      `🦆 DuckHive Curator — Skill Library (${entries.length} skills)\n`,
+      `DuckHive Curator - Skill Library (${entries.length} skills)\n`,
       `Bundled skills excluded: ${[...BUNDLED_SKILLS].join(', ')}\n`,
       '```',
       'Grade  Skill                                Score   Age   Notes',
-      '────   ─────                                ─────   ───   ─────',
+      '-----  -----------------------------------  ------  ----  -----',
       ...entries.map(formatGradeEntry),
       '```',
       `\nRun \`duckhive curate run\` to archive low-rated skills (score < 15).`,
@@ -263,7 +233,7 @@ export const call: LocalCommandCall = async (
     await writeReport(report)
 
     const lines = [
-      `🦆 DuckHive Curator — Curation Complete\n`,
+      `DuckHive Curator - Curation Complete\n`,
       `Skills scanned: ${entries.length}`,
       `Archived: ${archived.length > 0 ? archived.join(', ') : 'none'}`,
       '',
@@ -272,7 +242,7 @@ export const call: LocalCommandCall = async (
       ...entries.slice(0, 5).map(formatGradeEntry),
       '```',
       archived.length > 0
-        ? `\n⚠️  Archived skills (score < 15): ${archived.join(', ')}\n   Archive location: ${ARCHIVE_DIR}`
+        ? `\nArchived skills (score < 15): ${archived.join(', ')}\n   Archive location: ${ARCHIVE_DIR}`
         : '',
       `\nFull report: ${REPORT_PATH}`,
     ]
@@ -282,6 +252,6 @@ export const call: LocalCommandCall = async (
 
   return {
     type: 'text',
-    value: `🦆 DuckHive Curator — Unknown subcommand: ${subcommand}\n\nUsage:\n  /curate status    — Show skill rankings (default)\n  /curate run       — Perform full curation cycle + archive low-rated skills`,
+    value: `DuckHive Curator - Unknown subcommand: ${subcommand}\n\nUsage:\n  /curate status    - Show skill rankings (default)\n  /curate run       - Perform full curation cycle + archive low-rated skills`,
   }
 }
