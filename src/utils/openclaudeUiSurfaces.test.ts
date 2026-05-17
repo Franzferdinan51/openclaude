@@ -163,6 +163,7 @@ describe('DuckHive CLI help surfaces', () => {
     )
     expect(source).toContain('runtime-doctor')
     expect(source).toContain('doctor-runtime')
+    expect(source).toContain('doctor:runtime')
     expect(source).toContain('runtime checks without starting the REPL')
     expect(source).toContain('terminal input is not usable')
     expect(source).toContain('terminal-safe checks without starting the chat UI')

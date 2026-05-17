@@ -1623,10 +1623,8 @@ export async function buildStartupEnvFromProfile(options?: {
   }
 
   if (!persisted) {
-    // No saved profile — default to Codex OAuth / GPT 5.5.
-    // If Codex credentials are available (OAuth or existing), use Codex.
-    // Otherwise inject the Codex env defaults so the provider picker
-    // shows GPT 5.5 as the default model when the user lands on it.
+    // No saved profile: default to DuckHive's MiniMax route instead of
+    // falling back to legacy ChatGPT/OpenAI/Codex startup defaults.
     const miniMaxEnv = buildMiniMaxProfileEnv({ processEnv })
     if (miniMaxEnv) {
       return buildCompatibilityProcessEnv({
