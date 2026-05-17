@@ -106,6 +106,23 @@ test('resolveActiveRouteIdFromEnv treats MMX_API_KEY env as MiniMax', () => {
   ).toBe('minimax')
 })
 
+test('resolveActiveRouteIdFromEnv honors DuckHive provider preference', () => {
+  expect(
+    resolveActiveRouteIdFromEnv({
+      DUCKHIVE_PROVIDER: 'minimax',
+    }),
+  ).toBe('minimax')
+})
+
+test('resolveActiveRouteIdFromEnv lets explicit provider flags override DuckHive provider preference', () => {
+  expect(
+    resolveActiveRouteIdFromEnv({
+      DUCKHIVE_PROVIDER: 'minimax',
+      CLAUDE_CODE_USE_GITHUB: '1',
+    }),
+  ).toBe('github')
+})
+
 test('resolveActiveRouteIdFromEnv treats Venice credential-only env as Venice', () => {
   expect(
     resolveActiveRouteIdFromEnv({

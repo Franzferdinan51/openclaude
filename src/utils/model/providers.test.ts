@@ -13,6 +13,8 @@ const originalEnv = {
   OPENAI_API_BASE: process.env.OPENAI_API_BASE,
   OPENAI_MODEL: process.env.OPENAI_MODEL,
   XAI_API_KEY: process.env.XAI_API_KEY,
+  DUCKHIVE_PROVIDER: process.env.DUCKHIVE_PROVIDER,
+  DUCKHIVE_DEFAULT_PROVIDER: process.env.DUCKHIVE_DEFAULT_PROVIDER,
 }
 
 afterEach(() => {
@@ -28,6 +30,8 @@ afterEach(() => {
   process.env.OPENAI_API_BASE = originalEnv.OPENAI_API_BASE
   process.env.OPENAI_MODEL = originalEnv.OPENAI_MODEL
   process.env.XAI_API_KEY = originalEnv.XAI_API_KEY
+  process.env.DUCKHIVE_PROVIDER = originalEnv.DUCKHIVE_PROVIDER
+  process.env.DUCKHIVE_DEFAULT_PROVIDER = originalEnv.DUCKHIVE_DEFAULT_PROVIDER
 })
 
 async function importFreshProvidersModule() {
@@ -50,6 +54,8 @@ function clearProviderEnv(): void {
   delete process.env.VENICE_API_KEY
   delete process.env.MIMO_API_KEY
   delete process.env.OPENAI_API_KEY
+  delete process.env.DUCKHIVE_PROVIDER
+  delete process.env.DUCKHIVE_DEFAULT_PROVIDER
 }
 
 test('first-party provider keeps Anthropic account setup flow enabled', () => {
@@ -202,6 +208,16 @@ test('env-only MiniMax API key resolves to the minimax provider', async () => {
 
   const { getAPIProvider } = await importFreshProvidersModule()
   expect(getAPIProvider()).toBe('minimax')
+})
+
+test('DuckHive provider preference resolves to the minimax provider', async () => {
+  clearProviderEnv()
+  process.env.DUCKHIVE_PROVIDER = 'minimax'
+
+  const { getAPIProvider, usesAnthropicAccountFlow } =
+    await importFreshProvidersModule()
+  expect(getAPIProvider()).toBe('minimax')
+  expect(usesAnthropicAccountFlow()).toBe(false)
 })
 
 test('conflicting OpenAI base prevents env-only MiniMax provider label', async () => {

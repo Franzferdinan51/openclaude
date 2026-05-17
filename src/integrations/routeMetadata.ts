@@ -646,6 +646,19 @@ export function resolveActiveRouteIdFromEnv(
   const envOnlyRouteId = resolveEnvOnlyProviderRouteId(processEnv)
   if (envOnlyRouteId) return envOnlyRouteId
 
+  const duckHiveProvider =
+    processEnv.DUCKHIVE_PROVIDER ?? processEnv.DUCKHIVE_DEFAULT_PROVIDER
+  if (duckHiveProvider?.trim()) {
+    const route = resolveProfileRoute(duckHiveProvider)
+    if (
+      route.routeId !== 'unknown-fallback' &&
+      route.routeId !== 'openai' &&
+      route.routeId !== 'custom'
+    ) {
+      return route.routeId
+    }
+  }
+
   return 'anthropic'
 }
 
