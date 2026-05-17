@@ -19,6 +19,13 @@ const CODEX_DESKTOP_APP_BUNDLE = 'Codex.app'
 const CODEX_APP_BUNDLE = 'Codex Computer Use.app'
 const SKY_CLIENT_BIN = 'SkyComputerUseClient'
 const BUILTIN_COMPUTER_USE_RESERVED = feature('CHICAGO_MCP') ? true : false
+const COMPUTER_USE_HELP =
+  `Computer Use\n${'-'.repeat(50)}\n` +
+  '/computer-use status  - Check plugin and config status\n' +
+  '/computer-use enable  - Wire into DuckHive MCP\n' +
+  '/computer-use disable - Remove from DuckHive MCP\n\n' +
+  '32 tools: screenshot, click, type, scroll, drag, open_app, and more.\n' +
+  'If the Codex plugin is unavailable, use `newest-desktop-control` for desktop, Android, and computer_use_* compatibility aliases.'
 
 type ComputerUseDeps = {
   addMcpConfig: typeof import('../../services/mcp/config.js').addMcpConfig
@@ -350,6 +357,38 @@ export const call: LocalCommandCall = async (
   const parts = args.trim().split(/\s+/).filter(Boolean)
   const subcommand = parts[0]?.toLowerCase() ?? 'status'
 
+  if (subcommand === 'help' || subcommand === '--help' || subcommand === '-h') {
+    return { type: 'text', value: COMPUTER_USE_HELP }
+  }
+
+  if (!['status', 'enable', 'disable'].includes(subcommand)) {
+    return {
+      type: 'text',
+      value: `Unknown computer-use action: ${subcommand}\n\n${COMPUTER_USE_HELP}`,
+    }
+  }
+
+  if (subcommand === 'status' && parts.length > 1) {
+    return {
+      type: 'text',
+      value: 'Usage: /computer-use status',
+    }
+  }
+
+  if (subcommand === 'enable' && parts.length > 1) {
+    return {
+      type: 'text',
+      value: 'Usage: /computer-use enable',
+    }
+  }
+
+  if (subcommand === 'disable' && parts.length > 1) {
+    return {
+      type: 'text',
+      value: 'Usage: /computer-use disable',
+    }
+  }
+
   if (!isComputerUseSupportedPlatform()) {
     return {
       type: 'text',
@@ -361,13 +400,6 @@ export const call: LocalCommandCall = async (
   }
 
   if (subcommand === 'status') {
-    if (parts.length > 1) {
-      return {
-        type: 'text',
-        value: 'Usage: /computer-use status',
-      }
-    }
-
     const { configured, pluginDir, binPath } = await inspectComputerUse()
     const src = pluginDir ?? 'not found'
     const bin = binPath ?? 'not found'
@@ -407,13 +439,6 @@ export const call: LocalCommandCall = async (
   const binPath = pluginDir ? findComputeClientBin(pluginDir) : null
 
   if (subcommand === 'enable') {
-    if (parts.length > 1) {
-      return {
-        type: 'text',
-        value: 'Usage: /computer-use enable',
-      }
-    }
-
     if (isBuiltinComputerUseReserved()) {
       return {
         type: 'text',
@@ -457,13 +482,6 @@ export const call: LocalCommandCall = async (
   }
 
   if (subcommand === 'disable') {
-    if (parts.length > 1) {
-      return {
-        type: 'text',
-        value: 'Usage: /computer-use disable',
-      }
-    }
-
     if (!configured) {
       return {
         type: 'text',
@@ -481,12 +499,6 @@ export const call: LocalCommandCall = async (
 
   return {
     type: 'text',
-    value:
-      `Computer Use\n${'-'.repeat(50)}\n` +
-      '/computer-use status  - Check plugin and config status\n' +
-      '/computer-use enable  - Wire into DuckHive MCP\n' +
-      '/computer-use disable - Remove from DuckHive MCP\n\n' +
-      '32 tools: screenshot, click, type, scroll, drag, open_app, and more.\n' +
-      'If the Codex plugin is unavailable, use `newest-desktop-control` for desktop, Android, and computer_use_* compatibility aliases.',
+    value: COMPUTER_USE_HELP,
   }
 }

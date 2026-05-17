@@ -342,6 +342,19 @@ describe('call', () => {
     expect(addMcpConfig).not.toHaveBeenCalled()
   })
 
+  test('rejects bad syntax before platform checks', async () => {
+    currentPlatform = 'win32'
+
+    const enableResult = expectTextResult(await call('enable extra', {} as never))
+    const unknownResult = expectTextResult(await call('wat', {} as never))
+
+    expect(enableResult.value).toBe('Usage: /computer-use enable')
+    expect(unknownResult.value).toContain('Unknown computer-use action: wat')
+    expect(unknownResult.value).toContain('/computer-use status')
+    expect(unknownResult.value).toContain('newest-desktop-control')
+    expect(addMcpConfig).not.toHaveBeenCalled()
+  })
+
   test('rejects extra args for status', async () => {
     const result = expectTextResult(await call('status extra', {} as never))
 
