@@ -67,6 +67,7 @@ New-Item -ItemType Directory -Force -Path $BinDir | Out-Null
 $LauncherContent = @"
 @echo off
 node "$Root\bin\duckhive" %*
+exit /b %ERRORLEVEL%
 "@
 Set-Content -Path $Launcher -Value $LauncherContent -Encoding ASCII
 

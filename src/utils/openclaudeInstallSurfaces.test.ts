@@ -2,7 +2,7 @@ import { afterEach, expect, mock, test } from 'bun:test'
 import { mkdir, rm } from 'fs/promises'
 import { homedir } from 'os'
 import { join } from 'path'
-import { mkdtempSync } from 'fs'
+import { mkdtempSync, readFileSync } from 'fs'
 import { tmpdir } from 'os'
 
 const originalEnv = { ...process.env }
@@ -37,6 +37,13 @@ test('install command displays duckhive.exe path on Windows', async () => {
   expect(getInstallationPath('win32')).toBe(
     join(homedir(), '.local', 'bin', 'duckhive.exe').replace(/\//g, '\\'),
   )
+})
+
+test('PowerShell installer launcher preserves DuckHive exit codes', () => {
+  const source = readFileSync(join(process.cwd(), 'scripts', 'install.ps1'), 'utf8')
+
+  expect(source).toContain('node "$Root\\bin\\duckhive" %*')
+  expect(source).toContain('exit /b %ERRORLEVEL%')
 })
 
 test('cleanupNpmInstallations removes both duckhive and legacy claude local install dirs', async () => {
