@@ -13,7 +13,7 @@ func TestNewInputAreaUsesAsciiPrompt(t *testing.T) {
 	if !strings.Contains(input.ta.Prompt, inputPrompt) {
 		t.Fatalf("prompt missing ascii input marker: %q", input.ta.Prompt)
 	}
-	if strings.Contains(input.ta.Prompt, "â€º") {
+	if strings.Contains(input.ta.Prompt, "\u00e2\u20ac\u00ba") {
 		t.Fatalf("prompt still contains mojibake: %q", input.ta.Prompt)
 	}
 }

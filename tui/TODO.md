@@ -47,3 +47,4 @@ This file started with the Go TUI work, but it now tracks harness-wide integrati
 - Added composer undo for typed input, canceled input, history replacement, and external-editor apply.
 - Wired `ctrl+p` to the real backend `/model` command when a bridge is live, with an honest local settings fallback when offline.
 - Surfaced Codex-style `/goal` status in the Bubble Tea command deck, command rail, and bridged/local fallback cards.
+- Hardened legacy Go TUI prompt and streaming markers to ASCII-safe output so Windows terminals and log captures do not show mojibake.

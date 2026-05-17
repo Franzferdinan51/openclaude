@@ -1203,6 +1203,8 @@ cd tui && go test ./...
 
 `bun run doctor:runtime` reports the terminal TUI launch path and computer-use fallback readiness too. On Windows without Go or `tui\duckhive-tui.exe`, the doctor and `duckhive tui` both point at the missing Go prerequisite while leaving the classic REPL as the safe default. On non-macOS hosts, the computer-use check confirms that the bundled `newest-desktop-control` gateway is available for desktop, Android, and `computer_use_*` compatibility aliases instead of requiring Codex.app.
 
+The Go TUI prompt and streaming markers use ASCII-safe `> ` and `|` indicators across the legacy and component input paths, avoiding mojibake in Windows terminals and plain log captures.
+
 Recent verification snapshot:
 
 - `bun test`: `2415 pass`, `0 fail`

@@ -95,7 +95,7 @@ func (m *Model) inputView() string {
 		inputBorder = inputBorder.BorderForeground(lipgloss.Color("#FF5370"))
 	}
 
-	prompt := Styles.ModeIndicator.Render("› ")
+	prompt := Styles.ModeIndicator.Render("> ")
 	input := m.input.View()
 	return Styles.InputArea.Width(m.width).Render(prompt + input) + "\n"
 }
@@ -113,7 +113,7 @@ func renderMessage(msg Message) string {
 		label := Styles.HeaderSubtitle.Render("duck")
 		content := msg.Content
 		if msg.IsStreaming {
-			content += "▌"
+			content += "|"
 		}
 		bubble = Styles.AssistantBubble.Render(label + "\n" + content)
 
