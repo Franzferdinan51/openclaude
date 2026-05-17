@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process'
-import { mkdtempSync, rmSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 
@@ -15,6 +15,8 @@ type SmokeCase = {
 
 const cliPath = resolve(process.cwd(), 'dist', 'cli.mjs')
 const windowsLauncherPath = resolve(process.cwd(), 'bin', 'duckhive.cmd')
+const packageVersion = JSON.parse(readFileSync('package.json', 'utf8')).version as string
+const expectedVersionOutput = `${packageVersion} (DuckHive)`
 const tempDirs: string[] = []
 const bgControlConfigDir = mkdtempSync(join(tmpdir(), 'duckhive-cli-smoke-bg-'))
 const exportConfigDir = mkdtempSync(join(tmpdir(), 'duckhive-cli-smoke-export-config-'))
@@ -35,17 +37,17 @@ const cases: SmokeCase[] = [
   {
     name: 'version',
     args: ['--version'],
-    includes: ['DuckHive'],
+    includes: [expectedVersionOutput],
   },
   {
     name: 'yolo version alias',
     args: ['--yolo', '--version'],
-    includes: ['DuckHive'],
+    includes: [expectedVersionOutput],
   },
   {
     name: 'dangerously skip permissions version',
     args: ['--dangerously-skip-permissions', '--version'],
-    includes: ['DuckHive'],
+    includes: [expectedVersionOutput],
   },
   {
     name: 'top-level help',
@@ -769,17 +771,17 @@ if (process.platform === 'win32') {
     {
       name: 'windows wrapper version',
       args: ['--version'],
-      includes: ['DuckHive'],
+      includes: [expectedVersionOutput],
     },
     {
       name: 'windows wrapper yolo version alias',
       args: ['--yolo', '--version'],
-      includes: ['DuckHive'],
+      includes: [expectedVersionOutput],
     },
     {
       name: 'windows wrapper dangerously skip permissions version',
       args: ['--dangerously-skip-permissions', '--version'],
-      includes: ['DuckHive'],
+      includes: [expectedVersionOutput],
     },
     {
       name: 'windows wrapper tui help',

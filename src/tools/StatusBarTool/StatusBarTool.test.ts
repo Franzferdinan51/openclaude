@@ -1,4 +1,5 @@
 import { test, expect } from 'bun:test'
+import { readFileSync } from 'fs'
 import { StatusBarTool } from './StatusBarTool.js'
 
 test('status bar session reports current DuckHive version', async () => {
@@ -8,8 +9,9 @@ test('status bar session reports current DuckHive version', async () => {
     undefined as never,
     undefined as never,
   )
+  const pkg = JSON.parse(readFileSync('package.json', 'utf8')) as { version: string }
 
-  expect(result.data.output).toContain('DuckHive v0.13.1')
+  expect(result.data.output).toContain(`DuckHive v${pkg.version}`)
   expect(result.data.output).not.toContain('v0.8.0')
 })
 

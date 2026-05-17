@@ -2,8 +2,9 @@
 import { z } from 'zod/v4'
 import { buildTool, type ToolDef } from '../../Tool.js'
 import { lazySchema } from '../../utils/lazySchema.js'
+import { publicBuildVersion } from '../../utils/version.js'
 
-const DUCKHIVE_VERSION = 'v0.13.1'
+const DUCKHIVE_VERSION = `v${publicBuildVersion}`
 
 const inputSchema = lazySchema(() =>
   z.strictObject({
