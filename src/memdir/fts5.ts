@@ -12,16 +12,35 @@
 
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, dirname } from 'node:path'
-import { homedir } from 'os'
 import Database from 'better-sqlite3'
+import { getMemoryBaseDir } from './paths.js'
+import { getClaudeConfigHomeDir } from '../utils/envUtils.js'
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
-const DB_PATH = join(homedir(), '.duckhive', 'fts5.db')
-const MEMORY_DIR = join(homedir(), '.claude', 'memory')
-const SESSIONS_DIR = join(homedir(), '.duckhive', 'sessions')
+export function getFts5DbPath(
+  configHomeDir = getClaudeConfigHomeDir(),
+): string {
+  return join(configHomeDir, 'fts5.db')
+}
+
+export function getFts5MemoryDir(
+  memoryBaseDir = getMemoryBaseDir(),
+): string {
+  return join(memoryBaseDir, 'memory')
+}
+
+export function getFts5SessionsDir(
+  configHomeDir = getClaudeConfigHomeDir(),
+): string {
+  return join(configHomeDir, 'sessions')
+}
+
+const DB_PATH = getFts5DbPath()
+const MEMORY_DIR = getFts5MemoryDir()
+const SESSIONS_DIR = getFts5SessionsDir()
 
 // ---------------------------------------------------------------------------
 // Types
@@ -162,7 +181,7 @@ export function searchMemoriesFts5(query: string, limit = 10): Fts5Result[] {
 }
 
 /**
- * Index all memory files from ~/.claude/memory/
+ * Index all memory files from DuckHive's shared memory base.
  * Call this on startup to bootstrap the FTS5 index.
  */
 export function indexAllMemoryFiles(): void {
@@ -180,7 +199,7 @@ export function indexAllMemoryFiles(): void {
 }
 
 /**
- * Index session files from ~/.duckhive/sessions/*.jsonl
+ * Index session files from DuckHive's resolved sessions directory.
  * Indexes the first non-system line as the session summary.
  */
 export function indexAllSessionFiles(): void {

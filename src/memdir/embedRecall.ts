@@ -9,7 +9,7 @@
  * Architecture:
  *   - Primary: TF-IDF cosine similarity (no external API calls needed)
  *   - Enhancement: LM Studio /v1/embeddings if LM_STUDIO_URL is set and reachable
- *   - Index stored at ~/.duckhive/embed-index.json
+ *   - Index stored in DuckHive's resolved config home as embed-index.json
  *
  * Public API:
  *   indexDocument(id, text)  — add/update a document in the embedding index
@@ -20,14 +20,32 @@
  */
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
-import { homedir } from 'os'
 import { join } from 'path'
 import { createCombinedAbortSignal } from '../utils/combinedAbortSignal.js'
+import { getClaudeConfigHomeDir } from '../utils/envUtils.js'
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
-const INDEX_DIR = join(homedir(), '.duckhive')
-const INDEX_PATH = join(INDEX_DIR, 'embed-index.json')
+export function getEmbedRecallIndexDir(
+  configHomeDir = getClaudeConfigHomeDir(),
+): string {
+  return configHomeDir
+}
+
+export function getEmbedRecallIndexPath(
+  configHomeDir = getClaudeConfigHomeDir(),
+): string {
+  return join(getEmbedRecallIndexDir(configHomeDir), 'embed-index.json')
+}
+
+export function getEmbedRecallSessionsDir(
+  configHomeDir = getClaudeConfigHomeDir(),
+): string {
+  return join(configHomeDir, 'sessions')
+}
+
+const INDEX_DIR = getEmbedRecallIndexDir()
+const INDEX_PATH = getEmbedRecallIndexPath()
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -302,11 +320,11 @@ export function clearIndex(): void {
 }
 
 /**
- * Auto-index all session content from ~/.duckhive/sessions/
+ * Auto-index all session content from DuckHive's resolved sessions directory.
  * Called on startup to bootstrap the semantic layer.
  */
 export async function indexSessionContent(): Promise<void> {
-  const sessionsDir = join(INDEX_DIR, 'sessions')
+  const sessionsDir = getEmbedRecallSessionsDir()
   if (!existsSync(sessionsDir)) return
 
   try {

@@ -4,6 +4,8 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import {
   extractTopicFromFilename,
+  getAutonomousMemoryDir,
+  getAutonomousSkillsDir,
   scanMemoryTopicsAtPath,
 } from './autonomousSkillCreation.js'
 
@@ -55,5 +57,14 @@ describe('autonomous skill creation topic detection', () => {
     expect(topics.get('fix-search-provider-config')).toBe(2)
     expect(topics.get('goal-command-workflow')).toBe(1)
     expect(topics.has('notes')).toBe(false)
+  })
+
+  it('uses DuckHive config home and shared memory base for default roots', () => {
+    expect(getAutonomousSkillsDir('C:/DuckHive')).toBe(
+      join('C:/DuckHive', 'skills'),
+    )
+    expect(getAutonomousMemoryDir('C:/DuckHive')).toBe(
+      join('C:/DuckHive', 'memory'),
+    )
   })
 })

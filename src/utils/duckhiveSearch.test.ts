@@ -2,9 +2,11 @@ import { afterEach, expect, test } from 'bun:test'
 import { mkdtempSync, rmSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
+import { setClaudeConfigHomeDirForTesting } from './envUtils.js'
 import {
   applyDuckHiveSearchPreferenceToEnv,
   getConfiguredDuckHiveSearchProvider,
+  getDuckHiveSearchConfigPath,
   normalizeDuckHiveSearchProvider,
   readDuckHiveSearchSettingsSync,
   setDuckHiveSearchPreferenceSync,
@@ -13,6 +15,7 @@ import {
 let tempDir: string | undefined
 
 afterEach(() => {
+  setClaudeConfigHomeDirForTesting(undefined)
   if (tempDir) {
     rmSync(tempDir, { recursive: true, force: true })
     tempDir = undefined
@@ -29,6 +32,11 @@ test('normalizes supported search provider aliases', () => {
 
 test('defaults search provider to auto', () => {
   expect(getConfiguredDuckHiveSearchProvider({})).toBe('auto')
+})
+
+test('uses DuckHive config home for the default search settings path', () => {
+  setClaudeConfigHomeDirForTesting('C:/DuckHive')
+  expect(getDuckHiveSearchConfigPath()).toBe(join('C:/DuckHive', 'config.json'))
 })
 
 test('persists search preference without discarding other config', () => {

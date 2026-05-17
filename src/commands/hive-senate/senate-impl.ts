@@ -22,6 +22,14 @@ export function setSenateTestDeps(overrides: Partial<SenateDeps> | null): void {
   senateTestDeps = overrides
 }
 
+function splitCommandArgs(args: string): string[] {
+  return args.match(/"[^"]*"|'[^']*'|\S+/g)?.map(arg => arg.replace(/^["']|["']$/g, '')) ?? []
+}
+
+function trimOuterQuotes(value: string): string {
+  return value.replace(/^["']|["']$/g, '').trim()
+}
+
 function renderDecree(decree: Decree): string {
   const lines: string[] = []
   lines.push(decree.title)
@@ -37,14 +45,70 @@ function renderDecree(decree: Decree): string {
   return lines.join('\n')
 }
 
+function formatHiveOfflineError(error?: string): string {
+  return `Failed: ${error ?? 'Hive Nation offline'}\nStart the local runtime with \`bun run council:serve\` or point DuckHive at a running service with \`DUCKHIVE_COUNCIL_URL\`.`
+}
+
 export const call: LocalCommandCall = async (args: string) => {
   const hive = getSenateDeps().getHiveBridge()
-  const subcommand = args.trim().split(/\s+/)[0]?.toLowerCase() ?? ''
-  const rest = args.trim().substring(subcommand.length).trim()
+  const parts = splitCommandArgs(args)
+  const subcommand = parts[0]?.toLowerCase() ?? ''
+  const rest = parts.slice(1).join(' ').trim()
+
+  function issueUsage() {
+    return {
+      type: 'text' as const,
+      value: `Senate decree
+
+Usage: /senate issue <title> | <content>
+
+Examples:
+  /senate issue Privacy Protection | All agents MUST encrypt sensitive data
+  /senate issue No Destructive Commands | Agents SHALL NOT execute rm -rf`,
+    }
+  }
+
+  async function issueDecreeText(rawIssue: string) {
+    const issueParts = rawIssue.split('|').map(s => s.trim())
+    const title = trimOuterQuotes(issueParts[0] ?? '')
+    const content = trimOuterQuotes(issueParts[1] ?? title)
+
+    if (!title && !content) {
+      return issueUsage()
+    }
+
+    const result = await hive.issueDecree(title, content)
+    if (result.success) {
+      return {
+        type: 'text' as const,
+        value: `Decree issued: "${title}"
+${renderDecree({
+  id: result.decreeId ?? 'unknown',
+  title,
+  content,
+  status: 'active',
+  authority: 'duckhive',
+  scope: 'agent',
+  priority: 'medium',
+  createdAt: Date.now(),
+})}`,
+      }
+    }
+
+    return { type: 'text' as const, value: formatHiveOfflineError(result.error) }
+  }
 
   if (!subcommand || subcommand === 'list' || subcommand === 'ls') {
     const decrees = await hive.getActiveDecrees()
     if (decrees.length === 0) {
+      const healthy = await hive.isHealthy()
+      if (!healthy) {
+        return {
+          type: 'text',
+          value: formatHiveOfflineError(),
+        }
+      }
+
       return {
         type: 'text',
         value: 'Senate\n\nNo active decrees. Issue one with:\n/senate issue <title> | <content>',
@@ -61,42 +125,7 @@ export const call: LocalCommandCall = async (args: string) => {
   }
 
   if (subcommand === 'issue' || subcommand === 'add' || subcommand === 'new') {
-    const parts = rest.split('|').map(s => s.trim())
-    const title = parts[0] ?? ''
-    const content = parts[1] ?? title
-
-    if (!title && !content) {
-      return {
-        type: 'text',
-        value: `Senate decree
-
-Usage: /senate issue <title> | <content>
-
-Examples:
-  /senate issue Privacy Protection | All agents MUST encrypt sensitive data
-  /senate issue No Destructive Commands | Agents SHALL NOT execute rm -rf`,
-      }
-    }
-
-    const result = await hive.issueDecree(title, content)
-    if (result.success) {
-      return {
-        type: 'text',
-        value: `Decree issued: "${title}"
-${renderDecree({
-  id: result.decreeId ?? 'unknown',
-  title,
-  content,
-  status: 'active',
-  authority: 'duckhive',
-  scope: 'agent',
-  priority: 'medium',
-  createdAt: Date.now(),
-})}`,
-      }
-    }
-
-    return { type: 'text', value: `Failed: ${result.error ?? 'Hive Nation offline'}` }
+    return issueDecreeText(rest)
   }
 
   if (subcommand === 'show' || subcommand === 'view') {
@@ -106,6 +135,11 @@ ${renderDecree({
     const decree = await hive.getDecree(id)
     if (!decree) return { type: 'text', value: `Decree not found: ${id}` }
     return { type: 'text', value: renderDecree(decree) }
+  }
+
+  const implicitIssue = parts.join(' ').trim()
+  if (implicitIssue) {
+    return issueDecreeText(implicitIssue)
   }
 
   return {

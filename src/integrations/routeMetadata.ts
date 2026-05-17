@@ -13,6 +13,7 @@ import {
   resolveProfileRoute,
 } from './index.js'
 import { isEnvTruthy } from '../utils/envUtils.js'
+import { readMiniMaxCredential } from '../utils/minimaxCredentials.js'
 
 export type RouteDescriptor = GatewayDescriptor | VendorDescriptor
 
@@ -345,8 +346,9 @@ export function hasXaiEnvOnlyProviderIntent(
 export function hasMiniMaxEnvOnlyProviderIntent(
   processEnv: NodeJS.ProcessEnv = process.env,
 ): boolean {
+  const minimaxCredential = readMiniMaxCredential(processEnv)
   return (
-    hasNonEmptyEnvValue(processEnv.MINIMAX_API_KEY) &&
+    Boolean(minimaxCredential) &&
     !hasNonEmptyEnvValue(processEnv.OPENAI_API_KEY) &&
     !hasNonEmptyEnvValue(processEnv.XAI_API_KEY) &&
     !hasConflictingOpenAIBaseUrlForRoute(processEnv, isMiniMaxBaseUrl) &&
@@ -357,11 +359,12 @@ export function hasMiniMaxEnvOnlyProviderIntent(
 export function hasVeniceEnvOnlyProviderIntent(
   processEnv: NodeJS.ProcessEnv = process.env,
 ): boolean {
+  const minimaxCredential = readMiniMaxCredential(processEnv)
   return (
     hasNonEmptyEnvValue(processEnv.VENICE_API_KEY) &&
     !hasNonEmptyEnvValue(processEnv.OPENAI_API_KEY) &&
     !hasNonEmptyEnvValue(processEnv.XAI_API_KEY) &&
-    !hasNonEmptyEnvValue(processEnv.MINIMAX_API_KEY) &&
+    !Boolean(minimaxCredential) &&
     !hasConflictingOpenAIBaseUrlForRoute(processEnv, isVeniceBaseUrl) &&
     hasNoExplicitNonOpenAICompatibleProvider(processEnv)
   )
@@ -370,11 +373,12 @@ export function hasVeniceEnvOnlyProviderIntent(
 export function hasXiaomiMimoEnvOnlyProviderIntent(
   processEnv: NodeJS.ProcessEnv = process.env,
 ): boolean {
+  const minimaxCredential = readMiniMaxCredential(processEnv)
   return (
     hasNonEmptyEnvValue(processEnv.MIMO_API_KEY) &&
     !hasNonEmptyEnvValue(processEnv.OPENAI_API_KEY) &&
     !hasNonEmptyEnvValue(processEnv.XAI_API_KEY) &&
-    !hasNonEmptyEnvValue(processEnv.MINIMAX_API_KEY) &&
+    !Boolean(minimaxCredential) &&
     !hasNonEmptyEnvValue(processEnv.VENICE_API_KEY) &&
     !hasConflictingOpenAIBaseUrlForRoute(processEnv, isXiaomiMimoBaseUrl) &&
     hasNoExplicitNonOpenAICompatibleProvider(processEnv)

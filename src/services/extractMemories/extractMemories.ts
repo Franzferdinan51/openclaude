@@ -63,6 +63,7 @@ import {
   buildExtractCombinedPrompt,
 } from './prompts.js'
 import { checkAndCreateSkills } from '../autonomousSkillCreation.js'
+import { checkAndReviewSelfImprovement } from '../selfImprovementReview.js'
 
 /* eslint-disable @typescript-eslint/no-require-imports */
 const teamMemPaths = feature('TEAMMEM')
@@ -552,6 +553,9 @@ export function initExtractMemories(): void {
       // Autonomous skill creation: check for repeated patterns after extraction
       void checkAndCreateSkills(context).catch(err =>
         logForDebugging(`[skillCreation] error: ${err}`),
+      )
+      void checkAndReviewSelfImprovement(context).catch(err =>
+        logForDebugging(`[selfImprovement] error: ${err}`),
       )
 
       logForDebugging(

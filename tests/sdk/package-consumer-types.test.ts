@@ -17,7 +17,8 @@ import { randomUUID } from 'crypto'
 
 const ROOT = join(import.meta.dir, '..', '..')
 const SDK_DTS = join(ROOT, 'src', 'entrypoints', 'sdk.d.ts')
-const CORE_TYPES_TS = join(ROOT, 'src', 'entrypoints', 'sdk', 'coreTypes.generated.ts')
+const CORE_TYPES_DTS = join(ROOT, 'src', 'entrypoints', 'sdk', 'coreTypes.generated.d.ts')
+const HARNESS_DTS = join(ROOT, 'src', 'entrypoints', 'harness.d.ts')
 const TSC_BIN = join(ROOT, 'node_modules', 'typescript', 'bin', 'tsc')
 
 /** All temp dirs created during tests — cleaned up in afterAll */
@@ -57,7 +58,6 @@ function setupConsumerProject(name: string): string {
   const pkgDir = join(tmpDir, 'node_modules', '@gitlawb', 'openclaude')
   mkdirSync(pkgDir, { recursive: true })
   mkdirSync(join(pkgDir, 'src', 'entrypoints', 'sdk'), { recursive: true })
-  mkdirSync(join(pkgDir, 'src', 'agent-runs'), { recursive: true })
   mkdirSync(join(pkgDir, 'dist'), { recursive: true })
 
   // Package.json with "exports" mapping (matches real package)
@@ -76,7 +76,7 @@ function setupConsumerProject(name: string): string {
             import: './dist/sdk.mjs',
           },
           './harness': {
-            types: './src/entrypoints/harness.ts',
+            types: './src/entrypoints/harness.d.ts',
             import: './dist/harness.mjs',
           },
         },
@@ -88,9 +88,8 @@ function setupConsumerProject(name: string): string {
 
   // Copy type files
   cpSync(SDK_DTS, join(pkgDir, 'src', 'entrypoints', 'sdk.d.ts'))
-  cpSync(CORE_TYPES_TS, join(pkgDir, 'src', 'entrypoints', 'sdk', 'coreTypes.generated.ts'))
-  cpSync(join(ROOT, 'src', 'entrypoints', 'harness.ts'), join(pkgDir, 'src', 'entrypoints', 'harness.ts'))
-  cpSync(join(ROOT, 'src', 'agent-runs'), join(pkgDir, 'src', 'agent-runs'), { recursive: true })
+  cpSync(CORE_TYPES_DTS, join(pkgDir, 'src', 'entrypoints', 'sdk', 'coreTypes.generated.d.ts'))
+  cpSync(HARNESS_DTS, join(pkgDir, 'src', 'entrypoints', 'harness.d.ts'))
 
   // Dummy dist file so module resolution doesn't fail
   writeFileSync(join(pkgDir, 'dist', 'sdk.mjs'), 'export {}')
@@ -252,7 +251,7 @@ describe('package exports resolution', () => {
     expect(pkgJson.exports['./sdk'].types).toBe('./src/entrypoints/sdk.d.ts')
     expect(pkgJson.exports['./harness']).toBeDefined()
     expect(pkgJson.exports['./harness'].import).toBe('./dist/harness.mjs')
-    expect(pkgJson.exports['./harness'].types).toBe('./src/entrypoints/harness.ts')
+    expect(pkgJson.exports['./harness'].types).toBe('./src/entrypoints/harness.d.ts')
   })
 
   test('root export is not defined (intentionally blocked)', () => {
@@ -272,6 +271,7 @@ describe('package exports resolution', () => {
     expect(existsSync(join(ROOT, 'dist', 'sdk.mjs'))).toBe(true)
     expect(existsSync(join(ROOT, 'dist', 'harness.mjs'))).toBe(true)
     expect(existsSync(join(ROOT, 'src', 'entrypoints', 'sdk.d.ts'))).toBe(true)
-    expect(existsSync(join(ROOT, 'src', 'entrypoints', 'harness.ts'))).toBe(true)
+    expect(existsSync(join(ROOT, 'src', 'entrypoints', 'sdk', 'coreTypes.generated.d.ts'))).toBe(true)
+    expect(existsSync(join(ROOT, 'src', 'entrypoints', 'harness.d.ts'))).toBe(true)
   })
 })

@@ -6,9 +6,14 @@
 import type { ModelOption } from './modelOptions.js'
 import { getAPIProvider } from './providers.js'
 import { isEnvTruthy } from '../envUtils.js'
+import { readMiniMaxCredential } from '../minimaxCredentials.js'
 
 export function isMiniMaxProvider(): boolean {
-  if (isEnvTruthy(process.env.MINIMAX_API_KEY)) {
+  if (
+    isEnvTruthy(process.env.MINIMAX_API_KEY) ||
+    isEnvTruthy(process.env.MMX_API_KEY) ||
+    readMiniMaxCredential(process.env)
+  ) {
     return true
   }
   const baseUrl = process.env.OPENAI_BASE_URL ?? ''

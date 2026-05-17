@@ -6,11 +6,11 @@ export default defineVendor({
   classification: 'openai-compatible',
   defaultBaseUrl: 'https://api.minimax.io/v1',
   defaultModel: 'MiniMax-M2.7',
-  requiredEnvVars: ['MINIMAX_API_KEY'],
+  requiredEnvVars: ['MINIMAX_API_KEY', 'MMX_API_KEY'],
   setup: {
     requiresAuth: true,
     authMode: 'api-key',
-    credentialEnvVars: ['MINIMAX_API_KEY'],
+    credentialEnvVars: ['MINIMAX_API_KEY', 'MMX_API_KEY'],
   },
   transportConfig: {
     kind: 'openai-compatible',
@@ -22,7 +22,7 @@ export default defineVendor({
   preset: {
     id: 'minimax',
     description: 'MiniMax API endpoint',
-    apiKeyEnvVars: ['MINIMAX_API_KEY'],
+    apiKeyEnvVars: ['MINIMAX_API_KEY', 'MMX_API_KEY'],
   },
   validation: {
     kind: 'credential-env',
@@ -30,9 +30,9 @@ export default defineVendor({
       matchDefaultBaseUrl: true,
       matchBaseUrlHosts: ['api.minimax.io', 'api.minimax.chat'],
     },
-    credentialEnvVars: ['MINIMAX_API_KEY', 'OPENAI_API_KEY'],
+    credentialEnvVars: ['MINIMAX_API_KEY', 'MMX_API_KEY', 'OPENAI_API_KEY'],
     missingCredentialMessage:
-      'MiniMax auth is required. Set MINIMAX_API_KEY or OPENAI_API_KEY.',
+      'MiniMax auth is required. Set MINIMAX_API_KEY, MMX_API_KEY, sign in with mmx auth login, or set OPENAI_API_KEY.',
   },
   catalog: {
     source: 'static',

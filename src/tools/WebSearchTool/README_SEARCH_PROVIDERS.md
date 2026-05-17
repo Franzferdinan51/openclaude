@@ -7,7 +7,7 @@ OpenClaude supports multiple search backends through a provider adapter system.
 | Provider | Env Var | Auth Header | Method |
 |---|---|---|---|
 | Custom API | `WEB_SEARCH_API` | Configurable | GET/POST |
-| MiniMax CLI | `WEB_SEARCH_PROVIDER=minimax` | `MINIMAX_API_KEY` or `mmx auth login` | CLI |
+| MiniMax CLI | `WEB_SEARCH_PROVIDER=minimax` | `MINIMAX_API_KEY`, `MMX_API_KEY`, or `mmx auth login` | CLI |
 | SearXNG | `WEB_SEARCH_PROVIDER=searxng`, `WEB_PROVIDER=searxng` | — | GET |
 | Google | `WEB_PROVIDER=google` | `Authorization: Bearer` | GET |
 | Brave | `WEB_PROVIDER=brave` | `X-Subscription-Token` | GET |

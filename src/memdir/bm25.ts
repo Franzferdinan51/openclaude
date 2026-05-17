@@ -15,14 +15,21 @@
 
 import { readdir, readFile, stat, writeFile, mkdir } from 'fs/promises'
 import { basename, join, dirname } from 'path'
-import { homedir } from 'os'
+import { getMemoryBaseDir } from './paths.js'
+import { getClaudeConfigHomeDir } from '../utils/envUtils.js'
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
 /** Default index file path in DuckHive's data directory. */
-export const DEFAULT_INDEX_PATH = join(homedir(), '.duckhive', 'bm25-index.json')
+export function getBm25IndexPath(
+  configHomeDir = getClaudeConfigHomeDir(),
+): string {
+  return join(configHomeDir, 'bm25-index.json')
+}
+
+export const DEFAULT_INDEX_PATH = getBm25IndexPath()
 
 /** BM25 parameters */
 const BM25_K1 = 1.5
@@ -331,14 +338,16 @@ async function discoverDocs(
  * Get all directories to index (the sources for BM25).
  * Returns array of {dir, label} tuples.
  */
-function getIndexSources(): { dir: string; label: string }[] {
-  const base = join(homedir(), '.duckhive')
+export function getBm25IndexSources(
+  configHomeDir = getClaudeConfigHomeDir(),
+  memoryBaseDir = getMemoryBaseDir(),
+): { dir: string; label: string }[] {
   return [
-    { dir: join(base, 'memory', 'memories'), label: 'memory' },
-    { dir: join(base, 'memory'), label: 'memory-root' },
-    { dir: join(base, 'exports'), label: 'exports' },
-    { dir: join(base, 'imports'), label: 'imports' },
-    { dir: join(base, 'mempalace'), label: 'mempalace' },
+    { dir: join(memoryBaseDir, 'memory', 'memories'), label: 'memory' },
+    { dir: join(memoryBaseDir, 'memory'), label: 'memory-root' },
+    { dir: join(configHomeDir, 'exports'), label: 'exports' },
+    { dir: join(configHomeDir, 'imports'), label: 'imports' },
+    { dir: join(configHomeDir, 'mempalace'), label: 'mempalace' },
   ]
 }
 
@@ -364,7 +373,7 @@ export class Bm25Service {
     if (!loaded) return false
 
     // Check if any source is newer than the index
-    const sources = getIndexSources()
+    const sources = getBm25IndexSources()
     for (const { dir } of sources) {
       try {
         const entries = await readdir(dir, { recursive: true })
@@ -401,7 +410,7 @@ export class Bm25Service {
       }
     }
 
-    const sources = getIndexSources()
+    const sources = getBm25IndexSources()
     const allDocs: DiscoveredDoc[] = []
     const docMap: Record<string, IndexFile> = {}
 

@@ -15,6 +15,7 @@ import { existsSync, readdirSync, readFileSync, writeFileSync, mkdirSync } from 
 import { dirname, join } from 'node:path'
 import { createAbortController } from '../utils/abortController.js'
 import { logForDebugging } from '../utils/debug.js'
+import { getClaudeConfigHomeDir } from '../utils/envUtils.js'
 import {
   createCacheSafeParams,
   runForkedAgent,
@@ -31,13 +32,24 @@ import { GLOB_TOOL_NAME } from '../tools/GlobTool/prompt.js'
 import { GREP_TOOL_NAME } from '../tools/GrepTool/prompt.js'
 import { REPL_TOOL_NAME } from '../tools/REPLTool/constants.js'
 import type { Tool } from '../Tool.js'
+import { getMemoryBaseDir } from '../memdir/paths.js'
 
 // ─── Config ────────────────────────────────────────────────────────────────────
 
-const SKILLS_DIR = join(process.env.HOME ?? '', '.duckhive', 'skills')
-const MEMORY_DIR = join(process.env.HOME ?? '', '.claude', 'memory')
 const PATTERN_THRESHOLD = 3 // sessions before skill is created
 const SKILL_TURN_BUDGET = 6
+
+export function getAutonomousSkillsDir(
+  configHomeDir = getClaudeConfigHomeDir(),
+): string {
+  return join(configHomeDir, 'skills')
+}
+
+export function getAutonomousMemoryDir(
+  memoryBaseDir = getMemoryBaseDir(),
+): string {
+  return join(memoryBaseDir, 'memory')
+}
 
 // ─── Topic Extraction ─────────────────────────────────────────────────────────
 
@@ -89,7 +101,7 @@ export function scanMemoryTopicsAtPath(memoryDir: string): Map<string, number> {
 }
 
 function scanMemoryTopics(): Map<string, number> {
-  return scanMemoryTopicsAtPath(MEMORY_DIR)
+  return scanMemoryTopicsAtPath(getAutonomousMemoryDir())
 }
 
 // ─── Skill Authoring ──────────────────────────────────────────────────────────
@@ -98,16 +110,17 @@ function scanMemoryTopics(): Map<string, number> {
  * Returns true if a skill already exists for the given slug.
  */
 function skillExists(slug: string): boolean {
-  return existsSync(join(SKILLS_DIR, slug, 'SKILL.md'))
+  return existsSync(join(getAutonomousSkillsDir(), slug, 'SKILL.md'))
 }
 
 /**
  * Build the prompt that instructs the forked agent to write a SKILL.md.
  */
 function buildSkillAuthorPrompt(topic: string, slug: string): string {
+  const skillsDir = getAutonomousSkillsDir()
   return `You are the autonomous skill authoring subagent. Your job is to write a SKILL.md file for the topic: "${topic}".
 
-Write the skill file at: ${SKILLS_DIR}/${slug}/SKILL.md
+Write the skill file at: ${skillsDir}/${slug}/SKILL.md
 
 First, create the directory and write the file using ${FILE_WRITE_TOOL_NAME}.
 
@@ -159,6 +172,7 @@ function denySkillTool(tool: Tool, reason: string) {
 }
 
 function createSkillAuthorCanUseTool(): CanUseToolFn {
+  const skillsDir = getAutonomousSkillsDir()
   return async (tool: Tool, input: Record<string, unknown>) => {
     if (tool.name === REPL_TOOL_NAME) {
       return { behavior: 'allow' as const, updatedInput: input }
@@ -183,13 +197,13 @@ function createSkillAuthorCanUseTool(): CanUseToolFn {
       'file_path' in input
     ) {
       const filePath = input.file_path
-      if (typeof filePath === 'string' && filePath.startsWith(SKILLS_DIR)) {
+      if (typeof filePath === 'string' && filePath.startsWith(skillsDir)) {
         return { behavior: 'allow' as const, updatedInput: input }
       }
     }
     return denySkillTool(
       tool,
-      `only ${FILE_READ_TOOL_NAME}, ${GREP_TOOL_NAME}, ${GLOB_TOOL_NAME}, read-only ${BASH_TOOL_NAME}, and ${FILE_WRITE_TOOL_NAME} within ${SKILLS_DIR} are allowed`,
+      `only ${FILE_READ_TOOL_NAME}, ${GREP_TOOL_NAME}, ${GLOB_TOOL_NAME}, read-only ${BASH_TOOL_NAME}, and ${FILE_WRITE_TOOL_NAME} within ${skillsDir} are allowed`,
     )
   }
 }
@@ -250,7 +264,7 @@ async function authorSkill(
   context: REPLHookContext,
 ): Promise<void> {
   // Ensure skills directory exists
-  const skillDir = join(SKILLS_DIR, slug)
+  const skillDir = join(getAutonomousSkillsDir(), slug)
   mkdirSync(skillDir, { recursive: true })
 
   const canUseTool = createSkillAuthorCanUseTool()

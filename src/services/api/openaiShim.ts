@@ -35,6 +35,7 @@ import { isBareMode, isEnvTruthy } from '../../utils/envUtils.js'
 import { resolveGeminiCredential } from '../../utils/geminiAuth.js'
 import { hydrateGeminiAccessTokenFromSecureStorage } from '../../utils/geminiCredentials.js'
 import { hydrateGithubModelsTokenFromSecureStorage } from '../../utils/githubModelsCredentials.js'
+import { resolveMiniMaxCredentialWithRefresh } from '../../utils/minimaxCredentials.js'
 import { resolveOpenAIShimRuntimeContext } from '../../integrations/runtimeMetadata.js'
 import { resolveRouteCredentialValue } from '../../integrations/routeMetadata.js'
 import {
@@ -1799,8 +1800,13 @@ class OpenAIShimMessages {
       baseUrl: request.baseUrl,
       processEnv: process.env,
     })
+    const minimaxCredential =
+      runtimeShimContext.routeId === 'minimax' && !this.providerOverride?.apiKey
+        ? await resolveMiniMaxCredentialWithRefresh(process.env)
+        : null
     const apiKey =
       this.providerOverride?.apiKey ??
+      minimaxCredential?.credential ??
       routeCredential ??
       process.env.OPENAI_API_KEY ??
       ''

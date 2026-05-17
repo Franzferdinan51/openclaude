@@ -71,15 +71,19 @@ The deeper OpenClaw Codex OAuth doctor route-repair and guarded Undici dispatche
 
 ### Hermes Agent
 
-Hermes `v2026.4.30` adds autonomous curator, self-improvement review-loop hardening, MiniMax OAuth, remote model catalog manifests, and model-capability-driven image routing. DuckHive already has `duckcustodian`, skills, memory, MiniMax, and provider discovery.
+Hermes `v2026.4.30` adds autonomous curator, self-improvement review-loop hardening, MiniMax OAuth, remote model catalog manifests, and model-capability-driven image routing. DuckHive already has `duckcustodian`, skills, memory, MiniMax, provider discovery, and now route-aware vision overrides for multimodal prompt submissions.
 
 **✅ Implemented in v0.9.0:** DuckHive Curator — `duckhive curate status` grades and ranks all skills by quality, recency, and content richness. `duckhive curate run` performs a full curation cycle with archiving of low-rated skills. Defense-in-depth protects bundled skills from mutation.
 
-**Remaining slices:**
-- MiniMax OAuth credential refresh alongside existing mmx/API-key support
-- remote model catalog refresh for providers that support live catalogs
-- vision-capability routing for multimodal messages
-- Self-improvement loop: after-turn background fork reviewing skill/memory usefulness
+**Already present in DuckHive:** route-owned dynamic model discovery and `/model refresh` for providers/gateways that expose live catalogs, with cache partitioning, stale-cache fallback, startup/background refresh modes, and privacy gating.
+
+**Implemented in v0.9.x:** multimodal prompt routing now checks the active main-loop model's capability metadata. If a prompt includes image blocks and the current model lacks vision support, DuckHive applies a route-aware override to a known vision-capable model on the active provider when one exists.
+
+**Implemented in v0.9.x:** after memory extraction, DuckHive now launches a best-effort self-improvement background fork that reviews recent turns for memory gaps, reusable skill/process improvements, and harness friction, then writes actionable markdown reviews under `~/.duckhive/self-improvement/reviews/` when it finds something worth keeping.
+
+**Implemented in v0.9.x:** MiniMax auth now reuses `MINIMAX_API_KEY`, `MMX_API_KEY`, `~/.mmx/config.json`, and `~/.mmx/credentials.json`, and MiniMax request paths now attempt a best-effort `mmx auth refresh` before using file-backed OAuth access tokens. Validation and env-only bootstrap paths accept the same shared credential sources instead of assuming MiniMax is API-key-only.
+
+**Remaining slices:** no explicit Hermes-specific follow-up slice is still open from this audit, although broader whole-product verification debt still remains.
 
 ## GitNexus Impact Notes
 

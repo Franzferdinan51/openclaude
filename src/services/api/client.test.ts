@@ -1,4 +1,7 @@
 // @ts-nocheck
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { afterEach, beforeEach, expect, test } from 'bun:test'
 import { acquireSharedMutationLock, releaseSharedMutationLock } from '../../test/sharedMutationLock.js'
 import { getAnthropicClient } from './client.js'
@@ -15,6 +18,7 @@ type ShimClient = {
 
 const originalFetch = globalThis.fetch
 const originalMacro = (globalThis as Record<string, unknown>).MACRO
+const tempDirs: string[] = []
 const originalEnv = {
   CLAUDE_CODE_USE_OPENAI: process.env.CLAUDE_CODE_USE_OPENAI,
   CLAUDE_CODE_USE_BEDROCK: process.env.CLAUDE_CODE_USE_BEDROCK,
@@ -35,12 +39,20 @@ const originalEnv = {
   OPENAI_API_FORMAT: process.env.OPENAI_API_FORMAT,
   OPENAI_MODEL: process.env.OPENAI_MODEL,
   MINIMAX_API_KEY: process.env.MINIMAX_API_KEY,
+  MMX_API_KEY: process.env.MMX_API_KEY,
+  MMX_HOME: process.env.MMX_HOME,
   XAI_API_KEY: process.env.XAI_API_KEY,
   NVIDIA_NIM: process.env.NVIDIA_NIM,
   ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
   ANTHROPIC_AUTH_TOKEN: process.env.ANTHROPIC_AUTH_TOKEN,
   ANTHROPIC_BASE_URL: process.env.ANTHROPIC_BASE_URL,
   ANTHROPIC_CUSTOM_HEADERS: process.env.ANTHROPIC_CUSTOM_HEADERS,
+}
+
+function makeMmxHome(): string {
+  const dir = mkdtempSync(join(tmpdir(), 'duckhive-client-mmx-'))
+  tempDirs.push(dir)
+  return dir
 }
 
 function restoreEnv(key: string, value: string | undefined): void {
@@ -74,6 +86,8 @@ beforeEach(async () => {
   delete process.env.OPENAI_API_FORMAT
   delete process.env.OPENAI_MODEL
   delete process.env.MINIMAX_API_KEY
+  delete process.env.MMX_API_KEY
+  delete process.env.MMX_HOME
   delete process.env.XAI_API_KEY
   delete process.env.NVIDIA_NIM
   delete process.env.ANTHROPIC_API_KEY
@@ -106,6 +120,8 @@ afterEach(() => {
     restoreEnv('OPENAI_API_FORMAT', originalEnv.OPENAI_API_FORMAT)
     restoreEnv('OPENAI_MODEL', originalEnv.OPENAI_MODEL)
     restoreEnv('MINIMAX_API_KEY', originalEnv.MINIMAX_API_KEY)
+    restoreEnv('MMX_API_KEY', originalEnv.MMX_API_KEY)
+    restoreEnv('MMX_HOME', originalEnv.MMX_HOME)
     restoreEnv('XAI_API_KEY', originalEnv.XAI_API_KEY)
     restoreEnv('NVIDIA_NIM', originalEnv.NVIDIA_NIM)
     restoreEnv('ANTHROPIC_API_KEY', originalEnv.ANTHROPIC_API_KEY)
@@ -113,6 +129,9 @@ afterEach(() => {
     restoreEnv('ANTHROPIC_BASE_URL', originalEnv.ANTHROPIC_BASE_URL)
     restoreEnv('ANTHROPIC_CUSTOM_HEADERS', originalEnv.ANTHROPIC_CUSTOM_HEADERS)
     globalThis.fetch = originalFetch
+    for (const dir of tempDirs.splice(0)) {
+      rmSync(dir, { recursive: true, force: true })
+    }
   } finally {
     releaseSharedMutationLock()
   }
@@ -321,6 +340,73 @@ test('routes env-only MiniMax requests through the OpenAI-compatible shim', asyn
   })
 })
 
+test('routes env-only MiniMax requests through the OpenAI-compatible shim when only MMX_API_KEY is set', async () => {
+  let capturedUrl: string | undefined
+  let capturedHeaders: Headers | undefined
+
+  delete process.env.CLAUDE_CODE_USE_GEMINI
+  delete process.env.GEMINI_API_KEY
+  delete process.env.GEMINI_MODEL
+  delete process.env.GEMINI_BASE_URL
+  delete process.env.GEMINI_AUTH_MODE
+  delete process.env.MINIMAX_API_KEY
+  process.env.MMX_API_KEY = 'minimax-from-mmx'
+
+  globalThis.fetch = (async (input, init) => {
+    capturedUrl =
+      typeof input === 'string'
+        ? input
+        : input instanceof URL
+          ? input.toString()
+          : input.url
+    capturedHeaders = new Headers(init?.headers)
+
+    return new Response(
+      JSON.stringify({
+        id: 'chatcmpl-minimax-mmx',
+        model: 'MiniMax-M2.7',
+        choices: [
+          {
+            message: {
+              role: 'assistant',
+              content: 'minimax mmx ok',
+            },
+            finish_reason: 'stop',
+          },
+        ],
+        usage: {
+          prompt_tokens: 8,
+          completion_tokens: 3,
+          total_tokens: 11,
+        },
+      }),
+      {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      },
+    )
+  }) as FetchType
+
+  const client = (await getAnthropicClient({
+    maxRetries: 0,
+    model: 'MiniMax-M2.7',
+  })) as unknown as ShimClient
+
+  await client.beta.messages.create({
+    model: 'MiniMax-M2.7',
+    system: 'test system',
+    messages: [{ role: 'user', content: 'hello' }],
+    max_tokens: 64,
+    stream: false,
+  })
+
+  expect(capturedUrl).toBe('https://api.minimax.io/v1/chat/completions')
+  expect(capturedHeaders?.get('authorization')).toBe('Bearer minimax-from-mmx')
+  expect(process.env.OPENAI_API_KEY).toBe('minimax-from-mmx')
+  expect(process.env.MINIMAX_API_KEY).toBe('minimax-from-mmx')
+})
+
 test('env-only MiniMax fallback preserves OpenAI-shaped model and base overrides', async () => {
   let capturedUrl: string | undefined
   let capturedBody: Record<string, unknown> | undefined
@@ -375,6 +461,70 @@ test('env-only MiniMax fallback preserves OpenAI-shaped model and base overrides
   expect(capturedUrl).toBe('https://api.minimax.chat/v1/chat/completions')
   expect(capturedBody?.model).toBe('MiniMax-M2.7-highspeed')
   expect(process.env.OPENAI_API_KEY).toBe('minimax-test-key')
+})
+
+test('env-only MiniMax fallback reuses ~/.mmx oauth access tokens for OPENAI_API_KEY', async () => {
+  let capturedHeaders: Headers | undefined
+  const mmxHome = makeMmxHome()
+  writeFileSync(
+    join(mmxHome, 'credentials.json'),
+    JSON.stringify({
+      tokens: {
+        accessToken: 'oauth-access-token-123456',
+      },
+    }),
+    'utf8',
+  )
+
+  delete process.env.CLAUDE_CODE_USE_GEMINI
+  delete process.env.GEMINI_API_KEY
+  delete process.env.GEMINI_MODEL
+  delete process.env.GEMINI_BASE_URL
+  delete process.env.GEMINI_AUTH_MODE
+  delete process.env.MINIMAX_API_KEY
+  delete process.env.MMX_API_KEY
+  process.env.MMX_HOME = mmxHome
+
+  globalThis.fetch = (async (_input, init) => {
+    capturedHeaders = new Headers(init?.headers)
+
+    return new Response(
+      JSON.stringify({
+        id: 'chatcmpl-minimax-oauth',
+        model: 'MiniMax-M2.7',
+        choices: [
+          {
+            message: { role: 'assistant', content: 'oauth ok' },
+            finish_reason: 'stop',
+          },
+        ],
+        usage: { prompt_tokens: 8, completion_tokens: 3, total_tokens: 11 },
+      }),
+      {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      },
+    )
+  }) as FetchType
+
+  const client = (await getAnthropicClient({
+    maxRetries: 0,
+    model: 'MiniMax-M2.7',
+  })) as unknown as ShimClient
+
+  await client.beta.messages.create({
+    model: 'MiniMax-M2.7',
+    system: 'test system',
+    messages: [{ role: 'user', content: 'hello' }],
+    max_tokens: 64,
+    stream: false,
+  })
+
+  expect(capturedHeaders?.get('authorization')).toBe(
+    'Bearer oauth-access-token-123456',
+  )
+  expect(process.env.OPENAI_API_KEY).toBe('oauth-access-token-123456')
 })
 
 test('env-only MiniMax fallback ignores stale OPENAI_API_BASE when primary base matches', async () => {

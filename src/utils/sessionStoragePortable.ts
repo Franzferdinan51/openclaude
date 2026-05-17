@@ -124,6 +124,7 @@ const SKIP_FIRST_PROMPT_PATTERN =
   /^(?:\s*<[a-z][\w-]*[\s>]|\[Request interrupted by user[^\]]*\])/
 
 const COMMAND_NAME_RE = /<command-name>(.*?)<\/command-name>/
+const COMMAND_ARGS_RE = /<command-args>([\s\S]*?)<\/command-args>/
 
 /**
  * Extracts the first meaningful user prompt from a JSONL head chunk.
@@ -175,9 +176,19 @@ export function extractFirstPromptFromHead(head: string): string {
         let result = raw.replace(/\n/g, ' ').trim()
         if (!result) continue
 
-        // Skip slash-command messages but remember first as fallback
+        // Skip slash-command messages but preserve meaningful args as the
+        // session title when available, so goal-first sessions and other
+        // command-first flows remain discoverable in portable history views.
         const cmdMatch = COMMAND_NAME_RE.exec(result)
         if (cmdMatch) {
+          const commandArgs = COMMAND_ARGS_RE.exec(result)?.[1]?.trim() ?? ''
+          if (commandArgs) {
+            result = commandArgs.replace(/\n/g, ' ').trim()
+            if (result.length > 200) {
+              result = result.slice(0, 200).trim() + '\u2026'
+            }
+            return result
+          }
           if (!commandFallback) commandFallback = cmdMatch[1]!
           continue
         }

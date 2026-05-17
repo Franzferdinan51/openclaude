@@ -4,7 +4,13 @@ type GoalRecord = {
   id: string
   sessionId?: string
   status?: string
-  steps: Array<{ description: string }>
+  currentStepId?: string
+  description?: string
+  steps: Array<{
+    description: string
+    status?: string
+    completedAt?: string
+  }>
 }
 
 let configStore: Record<string, unknown>
@@ -65,6 +71,127 @@ describe('/goal command', () => {
     expect(result).toContain('Multiple active goals found.')
   })
 
+  test('bare /goal <description> uses the Codex-style shorthand create flow', async () => {
+    const goalCommand = await importFreshGoalCommand()
+
+    const result = await goalCommand(['Build', 'user', 'authentication', 'system'])
+
+    expect(result).toContain('Goal created successfully!')
+    expect(getStoredGoals()).toHaveLength(1)
+    expect(getStoredGoals()[0]?.description).toBe('Build user authentication system')
+  })
+
+  test('bare /goal shows current goal status instead of static help when goals exist', async () => {
+    const goalCommand = await importFreshGoalCommand()
+    await goalCommand(['create', 'Track', 'the', 'migration'])
+
+    const result = await goalCommand([])
+
+    expect(result).toContain('Track the migration')
+    expect(result).not.toContain('DuckHive /goal - Persisted Workflow Goals')
+  })
+
+  test('bare /goal shows a summary instead of help when no active goal exists', async () => {
+    const goalCommand = await importFreshGoalCommand()
+
+    const result = await goalCommand([])
+
+    expect(result).toContain('Goal Status Summary')
+    expect(result).toContain('Active: 0 | Paused: 0 | Total: 0')
+  })
+
+  test('adding a new step completes the previous current step', async () => {
+    const goalCommand = await importFreshGoalCommand()
+    await goalCommand(['create', 'Ship', 'the', 'release'])
+    await goalCommand(['step', 'add', 'Write', 'release', 'notes'])
+
+    const result = await goalCommand(['step', 'add', 'Publish', 'announcement'])
+
+    expect(result).toContain('Step added to goal.')
+    const goals = getStoredGoals()
+    expect(goals).toHaveLength(1)
+    expect(goals[0]?.steps).toHaveLength(2)
+    expect(goals[0]?.steps[0]?.status).toBe('completed')
+    expect(goals[0]?.steps[0]?.completedAt).toBeTruthy()
+    expect(goals[0]?.steps[1]?.description).toBe('Publish announcement')
+    expect(goals[0]?.steps[1]?.status).toBe('active')
+  })
+
+  test('step add rejects ambiguous goal references instead of falling back to the active goal', async () => {
+    const goalCommand = await importFreshGoalCommand()
+    await goalCommand(['create', 'Goal', 'one'])
+    await goalCommand(['create', 'Goal', 'two'])
+
+    const result = await goalCommand(['step', 'add', 'goal_', 'Investigate', 'bug'])
+
+    expect(result).toContain('Goal reference is ambiguous: goal_')
+    expect(getStoredGoals()[0]?.steps).toHaveLength(0)
+    expect(getStoredGoals()[1]?.steps).toHaveLength(0)
+  })
+
+  test('step add rejects missing goal_ references instead of treating them as step text', async () => {
+    const goalCommand = await importFreshGoalCommand()
+    await goalCommand(['create', 'Goal', 'one'])
+
+    const result = await goalCommand([
+      'step',
+      'add',
+      'goal_missing',
+      'Investigate',
+      'bug',
+    ])
+
+    expect(result).toContain('Goal not found: goal_missing')
+    expect(getStoredGoals()[0]?.steps).toHaveLength(0)
+  })
+
+  test('step add rejects paused goals even when referenced explicitly', async () => {
+    const goalCommand = await importFreshGoalCommand()
+    await goalCommand(['create', 'Paused', 'goal'])
+    const pausedGoalId = getStoredGoals()[0]?.id
+    await goalCommand(['pause', pausedGoalId!])
+
+    const result = await goalCommand([
+      'step',
+      'add',
+      pausedGoalId!,
+      'Should',
+      'not',
+      'append',
+    ])
+
+    expect(result).toContain('Cannot add a step to a paused goal')
+    expect(getStoredGoals()[0]?.steps).toHaveLength(0)
+  })
+
+  test('step add rejects completed goals even when referenced explicitly', async () => {
+    const goalCommand = await importFreshGoalCommand()
+    await goalCommand(['create', 'Completed', 'goal'])
+    const completedGoalId = getStoredGoals()[0]?.id
+    await goalCommand(['complete', completedGoalId!])
+
+    const result = await goalCommand([
+      'step',
+      'add',
+      completedGoalId!,
+      'Should',
+      'not',
+      'append',
+    ])
+
+    expect(result).toContain('Cannot add a step to a completed goal')
+    expect(getStoredGoals()[0]?.steps).toHaveLength(0)
+  })
+
+  test('step without a subcommand returns usage instead of an undefined error', async () => {
+    const goalCommand = await importFreshGoalCommand()
+
+    const result = await goalCommand(['step'])
+
+    expect(result).toContain('Usage: /goal step add <goal-id> <description>')
+    expect(result).not.toContain('Unknown step command: undefined')
+  })
+
   test('status rejects ambiguous partial goal ids', async () => {
     const goalCommand = await importFreshGoalCommand()
     await goalCommand(['create', 'Goal', 'one'])
@@ -74,6 +201,26 @@ describe('/goal command', () => {
 
     expect(result).toContain('Goal reference is ambiguous: goal_')
     expect(result).toContain('Matches:')
+  })
+
+  test('list rejects unknown filters instead of silently showing all goals', async () => {
+    const goalCommand = await importFreshGoalCommand()
+    await goalCommand(['create', 'Goal', 'one'])
+
+    const result = await goalCommand(['list', 'mystery'])
+
+    expect(result).toContain('Unknown goal filter')
+    expect(result).toContain('all, active, paused, completed')
+  })
+
+  test('unknown subcommands do not silently create a new goal', async () => {
+    const goalCommand = await importFreshGoalCommand()
+
+    const result = await goalCommand(['statue'])
+
+    expect(result).toContain('Unknown goal command: statue')
+    expect(result).toContain('/goal help')
+    expect(getStoredGoals()).toHaveLength(0)
   })
 
   test('bare status prefers the single active goal detail view', async () => {
@@ -102,7 +249,7 @@ describe('/goal command', () => {
 
     const result = await goalCommand(['create', 'Integrate', 'goal', 'workflow'])
 
-    expect(result).toContain('Session: session-current')
+    expect(result).toContain('Attached Session: session-current')
     expect(getStoredGoals()[0]?.sessionId).toBe('session-current')
   })
 
@@ -144,7 +291,7 @@ describe('/goal command', () => {
     sessionId = 'session-next'
     const result = await goalCommand(['attach', 'goal_'])
 
-    expect(result).toContain('Session: session-next')
+    expect(result).toContain('Attached Session: session-next')
     expect(getStoredGoals()[0]?.sessionId).toBe('session-next')
   })
 

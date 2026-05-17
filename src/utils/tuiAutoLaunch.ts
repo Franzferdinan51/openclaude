@@ -21,7 +21,20 @@ export function shouldAutoLaunchStandaloneTui(
     stdoutIsTTY: process.stdout.isTTY === true,
   },
   config?: DuckHiveConfig,
+  runtime = {
+    platform: process.platform,
+  },
 ): boolean {
+  // Windows console input through the standalone Bubble Tea handoff is not yet
+  // reliable enough for the default no-args startup path. Keep the classic REPL
+  // as the safe default there unless the user explicitly opts back in.
+  if (
+    runtime.platform === 'win32' &&
+    !isEnvTruthy(env.DUCKHIVE_TUI_WINDOWS_EXPERIMENT)
+  ) {
+    return false
+  }
+
   return (
     args.length === 0 &&
     io.stdinIsTTY &&

@@ -2,8 +2,8 @@
 /**
  * Session Search Tool - Long-Term Conversation Recall
  *
- * Searches past session transcripts using SQLite FTS5 full-text search,
- * then returns focused summaries of matching conversations.
+ * Searches past session transcripts using full-text search across persisted
+ * session message logs, then returns focused summaries of matching sessions.
  *
  * Inspired by Hermes Agent's session_search_tool.py
  */
@@ -11,15 +11,43 @@
 import { z } from 'zod/v4'
 import { buildTool, type ToolDef } from '../../Tool.js'
 import { lazySchema } from '../../utils/lazySchema.js'
-import {
-  readFileSync,
-  readdirSync,
-  statSync,
-  existsSync,
-} from 'fs'
+import { readFileSync, readdirSync, statSync, existsSync } from 'fs'
 import { join, resolve } from 'path'
+import { getClaudeConfigHomeDir } from '../../utils/envUtils.js'
 
-const SESSIONS_DIR = resolve(process.env.HOME ?? '~', '.duckhive/sessions')
+const sessionSearchDeps: {
+  getClaudeConfigHomeDir: () => string
+} = {
+  getClaudeConfigHomeDir,
+}
+
+export function setSessionSearchToolTestDeps(
+  overrides: Partial<typeof sessionSearchDeps> | null,
+): void {
+  Object.assign(sessionSearchDeps, {
+    getClaudeConfigHomeDir,
+    ...(overrides ?? {}),
+  })
+}
+
+export function getSessionSearchRootDir(
+  configHomeDir = sessionSearchDeps.getClaudeConfigHomeDir(),
+): string {
+  return resolve(configHomeDir, 'sessions')
+}
+
+export function escapeSessionSearchRegex(term: string): string {
+  return term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+export function buildSessionSearchTerms(query: string): string[] {
+  const normalized = query.trim().toLowerCase()
+  if (!normalized) return []
+
+  const tokenTerms = normalized.split(/\s+/).filter(Boolean)
+  const terms = [normalized, ...tokenTerms.filter(term => term.length > 2)]
+  return [...new Set(terms)]
+}
 
 const inputSchema = lazySchema(() =>
   z.strictObject({
@@ -29,16 +57,15 @@ const inputSchema = lazySchema(() =>
 )
 type InputSchema = ReturnType<typeof inputSchema>
 
-/**
- * Get all session directories sorted by modification time (newest first).
- */
-function getSessionDirs(): Array<{ id: string; path: string; mtime: number }> {
-  if (!existsSync(SESSIONS_DIR)) return []
+export function getSessionDirs(
+  sessionsDir = getSessionSearchRootDir(),
+): Array<{ id: string; path: string; mtime: number }> {
+  if (!existsSync(sessionsDir)) return []
   try {
-    return readdirSync(SESSIONS_DIR)
+    return readdirSync(sessionsDir)
       .filter(id => id.length > 0 && !id.startsWith('.'))
       .map(id => {
-        const path = join(SESSIONS_DIR, id)
+        const path = join(sessionsDir, id)
         try {
           const mtime = statSync(path).mtimeMs
           return { id, path, mtime }
@@ -46,18 +73,18 @@ function getSessionDirs(): Array<{ id: string; path: string; mtime: number }> {
           return null
         }
       })
-      .filter((d): d is { id: string; path: string; mtime: number } => d !== null)
+      .filter(
+        (d): d is { id: string; path: string; mtime: number } => d !== null,
+      )
       .sort((a, b) => b.mtime - a.mtime)
   } catch {
     return []
   }
 }
 
-/**
- * Load messages from a session directory.
- * Sessions store messages as JSON lines (jsonl).
- */
-function loadSessionMessages(sessionPath: string): Array<{ role: string; content: string }> {
+export function loadSessionMessages(
+  sessionPath: string,
+): Array<{ role: string; content: string }> {
   const messages: Array<{ role: string; content: string }> = []
   try {
     const msgPath = join(sessionPath, 'messages.jsonl')
@@ -77,16 +104,18 @@ function loadSessionMessages(sessionPath: string): Array<{ role: string; content
   return messages
 }
 
-/**
- * Simple full-text search across session messages.
- * Returns sessions ranked by relevance (number of matches).
- */
-function searchSessions(
+export function searchSessions(
   query: string,
   limit: number,
-): Array<{ sessionId: string; messages: Array<{ role: string; content: string }>; score: number; snippet: string }> {
-  const dirs = getSessionDirs()
-  const queryTerms = query.toLowerCase().split(/\s+/).filter(t => t.length > 2)
+  sessionsDir = getSessionSearchRootDir(),
+): Array<{
+  sessionId: string
+  messages: Array<{ role: string; content: string }>
+  score: number
+  snippet: string
+}> {
+  const dirs = getSessionDirs(sessionsDir)
+  const queryTerms = buildSessionSearchTerms(query)
   const results: Array<{
     sessionId: string
     messages: Array<{ role: string; content: string }>
@@ -103,21 +132,23 @@ function searchSessions(
     let bestSnippetScore = 0
 
     for (const msg of messages) {
-      const text = (msg.content || '').toLowerCase()
+      const original = msg.content || ''
+      const text = original.toLowerCase()
       for (const term of queryTerms) {
-        const count = (text.match(new RegExp(term, 'g')) || []).length
-        if (count > 0) {
-          score += count
-          if (count > bestSnippetScore) {
-            // Extract snippet around first match
-            const idx = text.indexOf(term)
-            const start = Math.max(0, idx - 50)
-            const end = Math.min(text.length, idx + term.length + 100)
-            bestSnippet = (start > 0 ? '...' : '') +
-              text.slice(start, end) +
-              (end < text.length ? '...' : '')
-            bestSnippetScore = count
-          }
+        const regex = new RegExp(escapeSessionSearchRegex(term), 'g')
+        const count = text.match(regex)?.length ?? 0
+        if (count <= 0) continue
+
+        score += count
+        if (count > bestSnippetScore) {
+          const idx = text.indexOf(term)
+          const start = Math.max(0, idx - 50)
+          const end = Math.min(text.length, idx + term.length + 100)
+          bestSnippet =
+            (start > 0 ? '...' : '') +
+            original.slice(start, end) +
+            (end < original.length ? '...' : '')
+          bestSnippetScore = count
         }
       }
     }
@@ -132,9 +163,7 @@ function searchSessions(
     }
   }
 
-  return results
-    .sort((a, b) => b.score - a.score)
-    .slice(0, limit)
+  return results.sort((a, b) => b.score - a.score).slice(0, limit)
 }
 
 export const SessionSearchTool = buildTool({
@@ -150,12 +179,14 @@ export const SessionSearchTool = buildTool({
   },
   get outputSchema() {
     return z.object({
-      sessions: z.array(z.object({
-        sessionId: z.string(),
-        score: z.number(),
-        snippet: z.string(),
-        messageCount: z.number(),
-      })),
+      sessions: z.array(
+        z.object({
+          sessionId: z.string(),
+          score: z.number(),
+          snippet: z.string(),
+          messageCount: z.number(),
+        }),
+      ),
       total: z.number(),
       query: z.string(),
     })

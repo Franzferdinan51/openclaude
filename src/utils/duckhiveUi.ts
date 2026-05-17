@@ -1,7 +1,6 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'fs'
-import { homedir } from 'os'
 import { dirname, join } from 'path'
-import { isEnvTruthy } from './envUtils.js'
+import { getClaudeConfigHomeDir, isEnvTruthy } from './envUtils.js'
 
 export type DuckHiveUISurface = 'tui' | 'legacy'
 
@@ -35,12 +34,16 @@ export function normalizeDuckHiveUISurface(
   return UI_SURFACE_ALIASES[value.trim().toLowerCase()]
 }
 
-export function getDuckHiveConfigDir(homeDir = homedir()): string {
-  return join(homeDir, '.duckhive')
+export function getDuckHiveConfigDir(
+  configHomeDir = getClaudeConfigHomeDir(),
+): string {
+  return configHomeDir
 }
 
-export function getDuckHiveConfigPath(homeDir = homedir()): string {
-  return join(getDuckHiveConfigDir(homeDir), 'config.json')
+export function getDuckHiveConfigPath(
+  configHomeDir = getClaudeConfigHomeDir(),
+): string {
+  return join(getDuckHiveConfigDir(configHomeDir), 'config.json')
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

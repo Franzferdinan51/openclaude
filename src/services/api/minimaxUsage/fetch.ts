@@ -1,5 +1,6 @@
 import { createCombinedAbortSignal } from '../../../utils/combinedAbortSignal.js'
 import { logForDebugging } from '../../../utils/debug.js'
+import { resolveMiniMaxCredentialWithRefresh } from '../../../utils/minimaxCredentials.js'
 import { getClaudeCodeUserAgent } from '../../../utils/userAgent.js'
 import {
   DEFAULT_MINIMAX_BASE_URL,
@@ -74,10 +75,13 @@ export function getMiniMaxUsageUrls(baseUrl?: string): string[] {
 }
 
 export async function fetchMiniMaxUsage(): Promise<MiniMaxUsageData> {
-  const apiKey = process.env.MINIMAX_API_KEY || process.env.OPENAI_API_KEY
+  const minimaxCredential =
+    await resolveMiniMaxCredentialWithRefresh(process.env)
+  const apiKey =
+    minimaxCredential?.credential || process.env.MINIMAX_API_KEY || process.env.OPENAI_API_KEY
   if (!apiKey) {
     throw new Error(
-      'MiniMax auth is required. Set MINIMAX_API_KEY or OPENAI_API_KEY.',
+      'MiniMax auth is required. Set MINIMAX_API_KEY, MMX_API_KEY, sign in with mmx auth login, or set OPENAI_API_KEY.',
     )
   }
 

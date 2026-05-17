@@ -7,6 +7,7 @@
  *
  * Output:
  *   src/entrypoints/sdk/coreTypes.generated.ts
+ *   src/entrypoints/sdk/coreTypes.generated.d.ts
  *
  * The script walks the Zod v4 schema AST (schema.def.type) and emits
  * equivalent TypeScript type literals. Placeholder schemas (z.unknown())
@@ -21,6 +22,9 @@ import * as schemas from '../src/entrypoints/sdk/coreSchemas.js'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const outPath = resolve(
   __dirname, '..', 'src', 'entrypoints', 'sdk', 'coreTypes.generated.ts',
+)
+const dtsOutPath = resolve(
+  __dirname, '..', 'src', 'entrypoints', 'sdk', 'coreTypes.generated.d.ts',
 )
 
 // ---------------------------------------------------------------------------
@@ -428,4 +432,6 @@ function generate(): string {
 console.log('Generating SDK types from Zod schemas...')
 const output = generate()
 writeFileSync(outPath, output, 'utf-8')
+writeFileSync(dtsOutPath, output, 'utf-8')
 console.log(`✓ Written to ${outPath}`)
+console.log(`✓ Written to ${dtsOutPath}`)

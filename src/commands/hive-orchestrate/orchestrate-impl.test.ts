@@ -6,19 +6,25 @@ async function importFreshOrchestrateModule() {
   )
 }
 
+function mockHiveBridgeModule(modes: string[] = ['balanced', 'council']) {
+  const bridge = {
+    getModes: async () => modes,
+    isHealthy: async () => true,
+    getContext: async () => ({
+      councilorCount: 5,
+      recentDecrees: [{ id: 'd1' }],
+      activeTeams: [{ id: 't1' }],
+    }),
+  }
+  mock.module('../../services/hive-bridge/index.js', () => ({
+    getHiveBridge: () => bridge,
+    initHiveBridge: () => bridge,
+  }))
+}
+
 describe('/orchestrate command', () => {
   beforeEach(() => {
-    mock.module('../../services/hive-bridge/hive-bridge.js', () => ({
-      getHiveBridge: () => ({
-        getModes: async () => ['balanced', 'council'],
-        isHealthy: async () => true,
-        getContext: async () => ({
-          councilorCount: 5,
-          recentDecrees: [{ id: 'd1' }],
-          activeTeams: [{ id: 't1' }],
-        }),
-      }),
-    }))
+    mockHiveBridgeModule()
   })
 
   afterEach(() => {
@@ -50,16 +56,20 @@ describe('/orchestrate command', () => {
   })
 
   test('renders a dry-run execution plan from the hybrid orchestrator', async () => {
+    let analyzeMessage = ''
     mock.module('../../orchestrator/hybrid/index.js', () => ({
       createHybridOrchestrator: () => ({
-        analyze: () => ({
+        analyze: (message: string) => {
+          analyzeMessage = message
+          return {
           analysis: {
             complexity: 7,
             category: 'critical',
             needsCouncil: true,
           },
           executionPlan: ['Consult council', 'Spawn swarm', 'Save checkpoint'],
-        }),
+        }
+        },
         execute: async () => ({
           status: 'completed',
           councilTriggered: true,
@@ -81,9 +91,11 @@ describe('/orchestrate command', () => {
     expect(result.value).toContain('Council warranted: YES')
     expect(result.value).toContain('Consult council')
     expect(result.value).toContain('Spawn swarm')
+    expect(analyzeMessage).toBe('Stabilize production incident')
   })
 
   test('renders execution results when not in dry-run mode', async () => {
+    let executeOptions: { councilMode?: string } | undefined
     mock.module('../../orchestrator/hybrid/index.js', () => ({
       createHybridOrchestrator: () => ({
         analyze: () => ({
@@ -94,7 +106,9 @@ describe('/orchestrate command', () => {
           },
           executionPlan: ['Analyze task'],
         }),
-        execute: async () => ({
+        execute: async (_task: string, _history: unknown[], _tools: unknown[], _context?: unknown, options?: { councilMode?: string }) => {
+          executeOptions = options
+          return {
           status: 'completed',
           councilTriggered: true,
           councilSessionId: 'council-42',
@@ -108,7 +122,8 @@ describe('/orchestrate command', () => {
               output: 'Consensus reached',
             },
           ],
-        }),
+          }
+        },
       }),
     }))
 
@@ -122,5 +137,39 @@ describe('/orchestrate command', () => {
     expect(result.value).toContain('Team: team-77')
     expect(result.value).toContain('Checkpoint: checkpoint-9')
     expect(result.value).toContain('Council review: Consensus reached')
+    expect(executeOptions).toEqual({ councilMode: 'balanced' })
+  })
+
+  test('passes the selected council mode through to the hybrid orchestrator', async () => {
+    let executeOptions: { councilMode?: string } | undefined
+    mockHiveBridgeModule(['deliberation', 'vision'])
+    mock.module('../../orchestrator/hybrid/index.js', () => ({
+      createHybridOrchestrator: () => ({
+        analyze: () => ({
+          analysis: {
+            complexity: 5,
+            category: 'complex',
+            needsCouncil: true,
+          },
+          executionPlan: ['Analyze task'],
+        }),
+        execute: async (_task: string, _history: unknown[], _tools: unknown[], _context?: unknown, options?: { councilMode?: string }) => {
+          executeOptions = options
+          return {
+            status: 'completed',
+            councilTriggered: true,
+            teamSpawned: false,
+            steps: [],
+          }
+        },
+      }),
+    }))
+
+    const { call } = await importFreshOrchestrateModule()
+    const result = await call('Investigate council integration --mode=vision', {} as never)
+
+    expect(result.type).toBe('text')
+    expect(result.value).toContain('Council warranted: YES (vision)')
+    expect(executeOptions).toEqual({ councilMode: 'vision' })
   })
 })

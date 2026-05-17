@@ -17,6 +17,10 @@ import {
   type OpenAIEffortLevel,
 } from 'src/utils/effort.js'
 import { getUserAgent } from 'src/utils/http.js'
+import {
+  readMiniMaxApiKey,
+  readMiniMaxRuntimeToken,
+} from 'src/utils/minimaxCredentials.js'
 import { getSmallFastModel } from 'src/utils/model/model.js'
 import {
   getAPIProvider,
@@ -137,6 +141,8 @@ function applyMiniMaxEnvOnlyDefaults(): void {
   const baseUrlOverride = getMiniMaxBaseUrlOverride()
   const hasMiniMaxBaseOverride = baseUrlOverride !== undefined
   const modelOverride = process.env.OPENAI_MODEL?.trim() || undefined
+  const minimaxRuntimeToken = readMiniMaxRuntimeToken(process.env)
+  const minimaxApiKey = readMiniMaxApiKey(process.env)
 
   process.env.CLAUDE_CODE_USE_OPENAI = '1'
   process.env.OPENAI_BASE_URL =
@@ -146,7 +152,14 @@ function applyMiniMaxEnvOnlyDefaults(): void {
       ? modelOverride
       : undefined) ??
     getRouteDefaultModel('minimax')
-  process.env.OPENAI_API_KEY = process.env.MINIMAX_API_KEY
+  if (minimaxRuntimeToken) {
+    process.env.OPENAI_API_KEY = minimaxRuntimeToken
+  } else {
+    delete process.env.OPENAI_API_KEY
+  }
+  if (minimaxApiKey) {
+    process.env.MINIMAX_API_KEY = minimaxApiKey
+  }
   delete process.env.OPENAI_API_FORMAT
   delete process.env.OPENAI_AUTH_HEADER
   delete process.env.OPENAI_AUTH_SCHEME

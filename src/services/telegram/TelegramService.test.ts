@@ -32,6 +32,69 @@ afterEach(() => {
 })
 
 describe('TelegramService polling', () => {
+  test('restores the Telegram bot token from secure storage on fresh startup', async () => {
+    delete process.env.DUCKHIVE_TELEGRAM_BOT_TOKEN
+
+    mock.module('../../utils/secureStorage/index.js', () => ({
+      getSecureStorage: () => ({
+        read: () => ({
+          pluginSecrets: {
+            telegram: {
+              botToken: '123:stored-token',
+              chatId: '42',
+            },
+          },
+        }),
+        update: () => undefined,
+      }),
+    }))
+
+    let getMeCalls = 0
+    const delivered: string[] = []
+    const fetchMock = mock(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes('/bot123:stored-token/getMe')) {
+        getMeCalls += 1
+        return telegramResponse({
+          ok: true,
+          result: { id: 1, is_bot: true, username: 'duckhive_test_bot' },
+        })
+      }
+      if (url.includes('/bot123:stored-token/setMyCommands')) {
+        return telegramResponse({ ok: true, result: true })
+      }
+      if (url.includes('/bot123:stored-token/getUpdates')) {
+        return telegramResponse({
+          ok: true,
+          result: [
+            {
+              update_id: 50,
+              message: {
+                from: { id: 42, is_bot: false, first_name: 'Owner' },
+                chat: { id: 42, type: 'private' },
+                text: 'storage restored',
+                date: 1,
+              },
+            },
+          ],
+        })
+      }
+      return telegramResponse({ ok: true, result: true })
+    }) as unknown as typeof fetch
+    globalThis.fetch = fetchMock
+
+    const service = await importFreshService()
+    service.onTelegramMessage((_chatId, text) => {
+      if (text) delivered.push(text)
+    })
+
+    await service.startTelegramService()
+    await waitFor(() => delivered.includes('storage restored'))
+    service.stopTelegramService()
+
+    expect(getMeCalls).toBeGreaterThanOrEqual(1)
+  })
+
   test('keeps polling after an empty getUpdates batch', async () => {
     let getUpdatesCalls = 0
     const delivered: string[] = []

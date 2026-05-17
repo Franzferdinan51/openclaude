@@ -21,11 +21,31 @@ import {
   rmSync,
 } from 'fs'
 import { join, resolve } from 'path'
+import { getClaudeConfigHomeDir } from '../../utils/envUtils.js'
 
-const SKILLS_DIR = resolve(process.env.HOME ?? '~', '.duckhive/skills')
+const skillManageDeps: {
+  getClaudeConfigHomeDir: () => string
+} = {
+  getClaudeConfigHomeDir,
+}
+
+export function setSkillManageToolTestDeps(
+  overrides: Partial<typeof skillManageDeps> | null,
+): void {
+  Object.assign(skillManageDeps, {
+    getClaudeConfigHomeDir,
+    ...(overrides ?? {}),
+  })
+}
+
+export function getSkillManageSkillsDir(
+  configHomeDir = skillManageDeps.getClaudeConfigHomeDir(),
+): string {
+  return join(configHomeDir, 'skills')
+}
 
 function ensureSkillsDir() {
-  mkdirSync(SKILLS_DIR, { recursive: true })
+  mkdirSync(getSkillManageSkillsDir(), { recursive: true })
 }
 
 const inputSchema = lazySchema(() =>
@@ -43,7 +63,7 @@ type InputSchema = ReturnType<typeof inputSchema>
 
 function getSkillsDir(): string {
   ensureSkillsDir()
-  return SKILLS_DIR
+  return getSkillManageSkillsDir()
 }
 
 function listUserSkills(): Array<{ name: string; path: string; description: string }> {

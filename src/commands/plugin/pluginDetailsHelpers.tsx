@@ -7,9 +7,16 @@ import { c as _c } from "react-compiler-runtime";
  */
 
 import * as React from 'react';
+import {
+  existsSync,
+  readdirSync,
+  statSync,
+} from 'fs';
+import { basename, dirname, join, resolve, sep } from 'path';
 import { ConfigurableShortcutHint } from '../../components/ConfigurableShortcutHint.js';
 import { Byline } from '../../components/design-system/Byline.js';
 import { Box, Text } from '../../ink.js';
+import { isLocalPluginSource } from '../../utils/plugins/schemas.js';
 import type { PluginMarketplaceEntry } from '../../utils/plugins/schemas.js';
 
 /**
@@ -20,6 +27,7 @@ export type InstallablePlugin = {
   marketplaceName: string;
   pluginId: string;
   isInstalled: boolean;
+  marketplaceInstallLocation?: string;
 };
 
 /**
@@ -72,6 +80,106 @@ export function buildPluginDetailsMenuOptions(hasHomepage: string | undefined, g
     action: 'back'
   });
   return options;
+}
+
+function pluralize(label: string, count: number): string {
+  if (count === 1) {
+    return label;
+  }
+  if (label.endsWith('y')) {
+    return `${label.slice(0, -1)}ies`;
+  }
+  return `${label}s`;
+}
+
+function countVisibleEntries(path: string): number {
+  try {
+    return readdirSync(path, { withFileTypes: true }).filter(entry => !entry.name.startsWith('.')).length;
+  } catch {
+    return 0;
+  }
+}
+
+function resolveMarketplaceRoot(installLocation: string): string {
+  const resolved = resolve(installLocation);
+  if (!existsSync(resolved)) {
+    return resolved;
+  }
+  if (statSync(resolved).isDirectory()) {
+    return resolved;
+  }
+  const parent = dirname(resolved);
+  return basename(parent) === '.claude-plugin' ? dirname(parent) : parent;
+}
+
+function resolveLocalPluginRoot(basePath: string, relativePath: string): string | null {
+  const marketplaceRoot = resolveMarketplaceRoot(basePath);
+  const resolvedPath = resolve(marketplaceRoot, relativePath);
+  const normalizedBase = marketplaceRoot + sep;
+  if (
+    resolvedPath !== marketplaceRoot &&
+    !resolvedPath.startsWith(normalizedBase)
+  ) {
+    return null;
+  }
+  return resolvedPath;
+}
+
+export function discoverLocalPluginComponents(
+  plugin: InstallablePlugin,
+): string[] {
+  if (
+    !plugin.marketplaceInstallLocation ||
+    !isLocalPluginSource(plugin.entry.source)
+  ) {
+    return [];
+  }
+
+  const pluginRoot = resolveLocalPluginRoot(
+    plugin.marketplaceInstallLocation,
+    plugin.entry.source,
+  );
+  if (!pluginRoot || !existsSync(pluginRoot)) {
+    return [];
+  }
+
+  const discovered: string[] = [];
+  const componentDirs = [
+    { path: 'commands', label: 'Command' },
+    { path: 'agents', label: 'Agent' },
+    { path: 'skills', label: 'Skill' },
+    { path: 'output-styles', label: 'Output style' },
+  ];
+
+  for (const component of componentDirs) {
+    const fullPath = join(pluginRoot, component.path);
+    if (!existsSync(fullPath)) {
+      continue;
+    }
+    try {
+      if (!statSync(fullPath).isDirectory()) {
+        continue;
+      }
+    } catch {
+      continue;
+    }
+    const count = countVisibleEntries(fullPath);
+    if (count > 0) {
+      discovered.push(
+        `${pluralize(component.label, count)}: ${count} ${pluralize('entry', count)} in ${component.path}/`,
+      );
+    }
+  }
+
+  if (existsSync(join(pluginRoot, 'hooks', 'hooks.json'))) {
+    discovered.push('Hooks: hooks/hooks.json');
+  }
+
+  if (existsSync(join(pluginRoot, '.mcp.json'))) {
+    discovered.push('MCP Servers: .mcp.json');
+  }
+
+  return discovered;
 }
 
 /**

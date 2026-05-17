@@ -6,6 +6,7 @@
  * that the native computer-use backend is macOS-only.
  */
 import type { LocalCommandCall } from '../../types/command.js'
+import { feature } from 'bun:bundle'
 import { existsSync } from 'fs'
 import { homedir, platform } from 'os'
 import { join } from 'path'
@@ -14,8 +15,10 @@ import { addMcpConfig, removeMcpConfig } from '../../services/mcp/config.js'
 import { getCurrentProjectConfig } from '../../utils/config.js'
 
 const PLUGIN_NAME = 'computer-use'
+const CODEX_DESKTOP_APP_BUNDLE = 'Codex.app'
 const CODEX_APP_BUNDLE = 'Codex Computer Use.app'
 const SKY_CLIENT_BIN = 'SkyComputerUseClient'
+const BUILTIN_COMPUTER_USE_RESERVED = feature('CHICAGO_MCP') ? true : false
 
 type ComputerUseDeps = {
   addMcpConfig: typeof import('../../services/mcp/config.js').addMcpConfig
@@ -52,6 +55,14 @@ export function isComputerUseSupportedPlatform(): boolean {
   return getComputerUseDeps().platform() === 'darwin'
 }
 
+function isBuiltinComputerUseReserved(): boolean {
+  return BUILTIN_COMPUTER_USE_RESERVED
+}
+
+export function hasBuiltinComputerUseRuntime(): boolean {
+  return BUILTIN_COMPUTER_USE_RESERVED
+}
+
 /**
  * Find the computer-use plugin directory.
  * Tries DuckHive's bundled copy first, then falls back to system Codex paths.
@@ -65,7 +76,7 @@ export function findComputerUsePluginDir(): string | null {
     join(cwd(), 'packages', 'computer-use-bundle', PLUGIN_NAME),
     join(
       '/Applications',
-      CODEX_APP_BUNDLE,
+      CODEX_DESKTOP_APP_BUNDLE,
       'Contents',
       'Resources',
       'plugins',
@@ -76,7 +87,7 @@ export function findComputerUsePluginDir(): string | null {
     join(
       home,
       'Applications',
-      CODEX_APP_BUNDLE,
+      CODEX_DESKTOP_APP_BUNDLE,
       'Contents',
       'Resources',
       'plugins',
@@ -197,32 +208,51 @@ export async function isInDuckHiveMCPConfig(): Promise<boolean> {
  */
 export async function autoWireComputerUse(): Promise<{
   wired: boolean
+  configured: boolean
   pluginDir: string | null
   binPath: string | null
 }> {
   if (!isComputerUseSupportedPlatform()) {
-    return { wired: false, pluginDir: null, binPath: null }
+    return { wired: false, configured: false, pluginDir: null, binPath: null }
   }
 
   const alreadyWired = await isInDuckHiveMCPConfig()
   if (alreadyWired) {
     const pluginDir = findComputerUsePluginDir()
     const binPath = pluginDir ? findComputeClientBin(pluginDir) : null
-    return { wired: true, pluginDir, binPath }
+    return { wired: true, configured: true, pluginDir, binPath }
   }
 
   const pluginDir = findComputerUsePluginDir()
-  if (!pluginDir) return { wired: false, pluginDir: null, binPath: null }
+  if (!pluginDir) {
+    return { wired: false, configured: false, pluginDir: null, binPath: null }
+  }
 
   const binPath = findComputeClientBin(pluginDir)
-  if (!binPath) return { wired: false, pluginDir, binPath: null }
+  if (!binPath) return { wired: false, configured: false, pluginDir, binPath: null }
 
   const result = await addToDuckHiveMCP(binPath)
   return {
     wired: result.ok,
+    configured: result.ok,
     pluginDir,
     binPath,
   }
+}
+
+export async function inspectComputerUse(): Promise<{
+  configured: boolean
+  pluginDir: string | null
+  binPath: string | null
+}> {
+  if (!isComputerUseSupportedPlatform()) {
+    return { configured: false, pluginDir: null, binPath: null }
+  }
+
+  const configured = await isInDuckHiveMCPConfig()
+  const pluginDir = findComputerUsePluginDir()
+  const binPath = pluginDir ? findComputeClientBin(pluginDir) : null
+  return { configured, pluginDir, binPath }
 }
 
 export function getCodexComputerUseToolOverrides(toolName: string): {
@@ -331,15 +361,35 @@ export const call: LocalCommandCall = async (
   }
 
   if (subcommand === 'status') {
-    const { wired, pluginDir, binPath } = await autoWireComputerUse()
+    if (parts.length > 1) {
+      return {
+        type: 'text',
+        value: 'Usage: /computer-use status',
+      }
+    }
+
+    const { configured, pluginDir, binPath } = await inspectComputerUse()
     const src = pluginDir ?? 'not found'
     const bin = binPath ?? 'not found'
     const status = pluginDir
       ? `Found\n   Plugin: ${src}\n   Binary: ${bin}`
       : 'Plugin not found\n   Install Codex CLI or run `node install.js` to copy the plugin.'
-    const configStatus = wired
-      ? 'Auto-wired into DuckHive MCP'
+    const configStatus = configured
+      ? pluginDir && binPath
+        ? 'Configured in DuckHive MCP'
+        : 'Configured in DuckHive MCP, but the plugin bundle is currently missing'
+      : isBuiltinComputerUseReserved()
+        ? 'Reserved for DuckHive built-in computer-use runtime'
       : 'Not in DuckHive MCP config'
+    const nextStep = configured
+      ? pluginDir && binPath
+        ? 'Restart DuckHive or run `/mcp reload` to activate tools.'
+        : 'Restore the plugin bundle or run `/computer-use disable` to remove the stale MCP entry.'
+      : isBuiltinComputerUseReserved()
+        ? 'This DuckHive build already reserves `computer-use` for the built-in runtime; do not wire the Codex plugin through `/computer-use enable`.'
+      : pluginDir && binPath
+        ? 'Run `/computer-use enable` to wire the plugin into DuckHive MCP.'
+        : 'Install Codex.app or the local computer-use bundle first.'
 
     return {
       type: 'text',
@@ -347,7 +397,7 @@ export const call: LocalCommandCall = async (
         `DuckHive Computer Use\n${'-'.repeat(50)}\n` +
         `${status}\n${configStatus}\n\n` +
         '32 tools: screenshot, click, type, scroll, drag, open_app, and more.\n' +
-        'Restart DuckHive or run `/mcp reload` to activate tools.',
+        nextStep,
     }
   }
 
@@ -356,7 +406,31 @@ export const call: LocalCommandCall = async (
   const binPath = pluginDir ? findComputeClientBin(pluginDir) : null
 
   if (subcommand === 'enable') {
+    if (parts.length > 1) {
+      return {
+        type: 'text',
+        value: 'Usage: /computer-use enable',
+      }
+    }
+
+    if (isBuiltinComputerUseReserved()) {
+      return {
+        type: 'text',
+        value:
+          'This DuckHive build already reserves `computer-use` for the built-in runtime.\n' +
+          'Use the built-in DuckHive computer-use path instead of wiring the Codex plugin through `/computer-use enable`.',
+      }
+    }
+
     if (configured) {
+      if (!pluginDir || !binPath) {
+        return {
+          type: 'text',
+          value:
+            'computer-use is configured in DuckHive MCP, but the plugin bundle is currently missing.\n' +
+            'Reinstall Codex.app or restore the plugin bundle, or run `/computer-use disable` to remove the stale MCP entry.',
+        }
+      }
       return {
         type: 'text',
         value:
@@ -382,6 +456,13 @@ export const call: LocalCommandCall = async (
   }
 
   if (subcommand === 'disable') {
+    if (parts.length > 1) {
+      return {
+        type: 'text',
+        value: 'Usage: /computer-use disable',
+      }
+    }
+
     if (!configured) {
       return {
         type: 'text',

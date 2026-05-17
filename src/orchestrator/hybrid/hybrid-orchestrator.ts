@@ -5,6 +5,7 @@ import { getHiveBridge } from '../../services/hive-bridge/index.js'
 import { spawnTeammate } from '../../tools/shared/spawnMultiAgent.js'
 import type { ToolUseContext } from '../../Tool.js'
 import { getAgentRunStore } from '../../agent-runs/AgentRunStore.js'
+import type { DeliberationMode } from '../../services/hive-bridge/hive-types.js'
 
 export interface HybridOrchestratorConfig {
   enableCouncil?: boolean
@@ -19,6 +20,10 @@ export interface HybridOrchestratorConfig {
 export interface HybridOrchestratorDeps {
   getHiveBridge?: typeof getHiveBridge
   spawnTeammate?: typeof spawnTeammate
+}
+
+export interface HybridExecutionOptions {
+  councilMode?: DeliberationMode
 }
 
 const DEFAULT_CONFIG: HybridOrchestratorConfig = {
@@ -66,7 +71,8 @@ export class HybridOrchestrator {
     message: string,
     history: Array<{role: string; content: string}>,
     tools: string[] = [],
-    context?: ToolUseContext
+    context?: ToolUseContext,
+    options: HybridExecutionOptions = {},
   ): Promise<ExecutionResult> {
     const routing = this.analyze(message, history, tools)
     const { analysis, routing: routeResult } = routing
@@ -100,13 +106,16 @@ export class HybridOrchestrator {
     if (this.config.enableCouncil && (analysis.category === 'critical' || analysis.category === 'complex' || analysis.needsCouncil)) {
       const bridge = this.deps.getHiveBridge()
       if (bridge.isEnabled() && bridge.shouldConsultCouncil(analysis.complexity)) {
-        const councilResult = await bridge.startDeliberation(message, 'balanced')
+        const councilMode = options.councilMode ?? 'deliberation'
+        const councilResult = await bridge.startDeliberation(message, councilMode)
         result.councilTriggered = councilResult.success
         result.councilSessionId = councilResult.sessionId
         result.steps.push({
           step: 'council_deliberate',
           status: councilResult.success ? 'completed' : 'failed',
-          output: councilResult.success ? `Council session: ${councilResult.sessionId}` : councilResult.error,
+          output: councilResult.success
+            ? `Council session: ${councilResult.sessionId} (${councilMode})`
+            : councilResult.error,
         })
       }
     }

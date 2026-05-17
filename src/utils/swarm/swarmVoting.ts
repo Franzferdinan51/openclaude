@@ -13,8 +13,45 @@
 
 import { z } from 'zod/v4'
 import sample from 'lodash-es/sample'
-import { logForDebugging } from './debug.js'
-import { getLastPeerDmSummary, readMailbox, writeToMailbox } from './teammateMailbox.js'
+import { logForDebugging } from '../debug.js'
+import {
+  isIdleNotification,
+  readMailbox,
+  type TeammateMessage,
+} from '../teammateMailbox.js'
+import { getAgentName, getTeamName } from '../teammate.js'
+import { TEAM_LEAD_NAME } from './constants.js'
+
+function debugLog(message: string): void {
+  if (typeof logForDebugging === 'function') {
+    logForDebugging(message)
+  }
+}
+
+type SwarmVotingDeps = {
+  readMailbox: typeof readMailbox
+  getAgentName: typeof getAgentName
+  getTeamName: typeof getTeamName
+  now: () => number
+}
+
+let swarmVotingTestDeps: Partial<SwarmVotingDeps> | null = null
+
+function getSwarmVotingDeps(): SwarmVotingDeps {
+  return {
+    readMailbox,
+    getAgentName,
+    getTeamName,
+    now: () => Date.now(),
+    ...swarmVotingTestDeps,
+  }
+}
+
+export function setSwarmVotingTestDeps(
+  overrides: Partial<SwarmVotingDeps> | null,
+): void {
+  swarmVotingTestDeps = overrides
+}
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -77,21 +114,38 @@ export async function collectResponses(
 ): Promise<CollectedResponses> {
   const responses = new Map()
   const deadline = Date.now() + timeoutMs
+  const { readMailbox, getAgentName, getTeamName } = getSwarmVotingDeps()
+  const collectorAgentName = getAgentName() || TEAM_LEAD_NAME
+  const collectorMailbox = await readMailbox(
+    collectorAgentName,
+    getTeamName(),
+  )
 
   for (const agentId of agentIds) {
     if (Date.now() > deadline) break
 
-    try {
-      const summary = await getLastPeerDmSummary(agentId)
-      if (summary && summary.trim().length > 0) {
-        responses.set(agentId, {
-          text: summary.trim(),
-          timestamp: Date.now(),
-        })
-      }
-    } catch {
-      // Agent hasn't responded yet — skip
+    const candidateMessages = collectorMailbox.filter(
+      message => message.from === agentId,
+    )
+    if (candidateMessages.length === 0) {
+      continue
     }
+
+    const latestMessage = candidateMessages
+      .slice()
+      .sort(
+        (a, b) =>
+          Date.parse(b.timestamp || '') - Date.parse(a.timestamp || ''),
+      )[0]
+    const text = extractResponseText(latestMessage)
+    if (!text) {
+      continue
+    }
+
+    responses.set(agentId, {
+      text,
+      timestamp: Date.parse(latestMessage.timestamp || '') || Date.now(),
+    })
   }
 
   return responses
@@ -173,6 +227,27 @@ function scoreResponse(text: string, criteria: ScoringCriteria): { score: number
   return { score: Math.round(score * 10) / 10, reasoning: reasoning.trim() }
 }
 
+function extractResponseText(message: TeammateMessage | undefined): string | null {
+  if (!message) {
+    return null
+  }
+
+  if (typeof message.summary === 'string' && message.summary.trim().length > 0) {
+    return message.summary.trim()
+  }
+
+  const idleNotification = isIdleNotification(message.text)
+  if (
+    idleNotification?.summary &&
+    idleNotification.summary.trim().length > 0
+  ) {
+    return idleNotification.summary.trim()
+  }
+
+  const rawText = message.text?.trim()
+  return rawText && rawText.length > 0 ? rawText : null
+}
+
 // ─── pick-best ───────────────────────────────────────────────────────────────
 
 /**
@@ -197,7 +272,7 @@ export async function pickBest(
 
   const best = scored[0]
 
-  logForDebugging(`[swarmVoting] pick-best: ${scored.map(s => `${s.agentId}: ${s.score}`).join(', ')}`)
+  debugLog(`[swarmVoting] pick-best: ${scored.map(s => `${s.agentId}: ${s.score}`).join(', ')}`)
 
   return { rankings: scored, best, mode: 'pick-best' }
 }
@@ -251,7 +326,7 @@ export async function mergeResponses(
 
   const mergedText = mergedParts.join('\n')
 
-  logForDebugging(`[swarmVoting] merge: ${contributors.size} agents, ${unique.length} unique sections`)
+  debugLog(`[swarmVoting] merge: ${contributors.size} agents, ${unique.length} unique sections`)
 
   return {
     mergedText,
@@ -270,32 +345,32 @@ export async function mergeResponses(
  */
 export async function vote(
   responses: CollectedResponses,
-  _voters: string[],  // agentIds who submitted votes (read from mailbox)
+  voters: string[],  // agentIds who submitted votes (read from mailbox)
 ): Promise<VotedResult> {
-  // In a full implementation, you'd read each voter's mailbox for their vote.
-  // Here we fall back to the scoring heuristic as a proxy for voting.
+  const explicitVotes = await collectExplicitVotes(voters, responses)
+  if (explicitVotes) {
+    return explicitVotes
+  }
+
+  // Fallback: each agent casts exactly one proxy vote for the strongest peer.
   const opts = DEFAULT_CRITERIA
 
-  // Score as proxy for votes (higher score = more likely to get votes)
   const scores: Record<string, number> = {}
   for (const [agentId, { text }] of responses) {
     scores[agentId] = scoreResponse(text, opts).score
   }
 
-  // Convert scores to votes: each agent "votes" for agents with lower scores
   const votes: Record<string, string[]> = {}
   const tally: Record<string, number> = {}
 
   const agentIds = Array.from(responses.keys())
   for (const voter of agentIds) {
-    const voterScore = scores[voter] ?? 0
-    const votedFor = agentIds.filter(
-      a => a !== voter && (scores[a] ?? 0) < voterScore,
-    )
-    votes[voter] = votedFor
+    const rankedPeers = agentIds
+      .filter(agentId => agentId !== voter)
+      .sort((a, b) => (scores[b] ?? 0) - (scores[a] ?? 0))
+    votes[voter] = rankedPeers.length > 0 ? [rankedPeers[0]!] : []
   }
 
-  // Tally votes
   for (const v of agentIds) tally[v] = 0
   for (const voter of agentIds) {
     for (const voted of votes[voter]) {
@@ -305,7 +380,115 @@ export async function vote(
 
   const winner = Object.entries(tally).sort((a, b) => b[1] - a[1])[0]?.[0] ?? agentIds[0]
 
-  logForDebugging(`[swarmVoting] vote: winner=${winner}, tally=${JSON.stringify(tally)}`)
+  debugLog(`[swarmVoting] vote: winner=${winner}, tally=${JSON.stringify(tally)}`)
+
+  return { winner, votes, tally, mode: 'vote' }
+}
+
+type ParsedVote = {
+  voter: string
+  choice: string
+}
+
+function parseVoteFromMessage(
+  voter: string,
+  message: TeammateMessage,
+  candidateIds: Set<string>,
+): ParsedVote | null {
+  const rawText = message.text?.trim()
+  if (!rawText) {
+    return null
+  }
+
+  try {
+    const parsed = JSON.parse(rawText) as Record<string, unknown>
+    const voteType = typeof parsed.type === 'string' ? parsed.type : ''
+    const voteFor =
+      typeof parsed.voteFor === 'string'
+        ? parsed.voteFor
+        : typeof parsed.choice === 'string'
+          ? parsed.choice
+          : typeof parsed.winner === 'string'
+            ? parsed.winner
+            : null
+
+    if (
+      (voteType === 'swarm_vote' || voteType === 'vote') &&
+      voteFor &&
+      candidateIds.has(voteFor)
+    ) {
+      return { voter, choice: voteFor }
+    }
+  } catch {
+    // Not JSON; continue with text parsing.
+  }
+
+  const labeledMatch = rawText.match(
+    /\b(?:vote|votes?|winner|choice)\s*[:=-]?\s*([A-Za-z0-9@._-]+)/i,
+  )
+  if (labeledMatch?.[1] && candidateIds.has(labeledMatch[1])) {
+    return { voter, choice: labeledMatch[1] }
+  }
+
+  if (candidateIds.has(rawText)) {
+    return { voter, choice: rawText }
+  }
+
+  return null
+}
+
+async function collectExplicitVotes(
+  voters: string[],
+  responses: CollectedResponses,
+): Promise<VotedResult | null> {
+  if (voters.length === 0 || responses.size === 0) {
+    return null
+  }
+
+  const { readMailbox, getAgentName, getTeamName } = getSwarmVotingDeps()
+  const collectorAgentName = getAgentName() || TEAM_LEAD_NAME
+  const collectorMailbox = await readMailbox(
+    collectorAgentName,
+    getTeamName(),
+  )
+  const candidateIds = new Set(Array.from(responses.keys()))
+  const votes: Record<string, string[]> = {}
+  const tally: Record<string, number> = {}
+
+  for (const candidateId of candidateIds) {
+    tally[candidateId] = 0
+  }
+
+  for (const voter of voters) {
+    const latestVote = collectorMailbox
+      .filter(message => message.from === voter)
+      .slice()
+      .sort(
+        (a, b) =>
+          Date.parse(b.timestamp || '') - Date.parse(a.timestamp || ''),
+      )
+      .map(message => parseVoteFromMessage(voter, message, candidateIds))
+      .find(Boolean)
+
+    if (!latestVote) {
+      continue
+    }
+
+    votes[voter] = [latestVote.choice]
+    tally[latestVote.choice] = (tally[latestVote.choice] ?? 0) + 1
+  }
+
+  if (Object.keys(votes).length === 0) {
+    return null
+  }
+
+  const winner =
+    Object.entries(tally).sort((a, b) => b[1] - a[1])[0]?.[0] ??
+    Array.from(candidateIds)[0]
+
+  debugLog(
+    `[swarmVoting] explicit vote: winner=${winner}, tally=${JSON.stringify(tally)}`,
+  )
 
   return { winner, votes, tally, mode: 'vote' }
 }

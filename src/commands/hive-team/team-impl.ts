@@ -33,6 +33,10 @@ export function setTeamTestDeps(overrides: Partial<TeamDeps> | null): void {
   teamTestDeps = overrides
 }
 
+function splitCommandArgs(args: string): string[] {
+  return args.match(/"[^"]*"|'[^']*'|\S+/g)?.map(arg => arg.replace(/^["']|["']$/g, '')) ?? []
+}
+
 function renderTemplates(includeRoles = false): string {
   return Object.entries(TEAM_TEMPLATES)
     .map(([name, template]) => {
@@ -42,14 +46,26 @@ function renderTemplates(includeRoles = false): string {
     .join(includeRoles ? '\n\n' : '\n')
 }
 
+function formatHiveOfflineError(error?: string): string {
+  return `Failed: ${error ?? 'Hive Nation offline'}\nStart the local runtime with \`bun run council:serve\` or point DuckHive at a running service with \`DUCKHIVE_COUNCIL_URL\`.`
+}
+
 export const call: LocalCommandCall = async (args: string) => {
   const hive = getTeamDeps().getHiveBridge()
-  const parts = args.trim().split(/\s+/).filter(Boolean)
+  const parts = splitCommandArgs(args)
   const subcommand = parts[0]?.toLowerCase() ?? ''
 
   if (!subcommand || subcommand === 'list' || subcommand === 'ls') {
     const teams = await hive.getActiveTeams()
     if (teams.length === 0) {
+      const healthy = await hive.isHealthy()
+      if (!healthy) {
+        return {
+          type: 'text',
+          value: formatHiveOfflineError(),
+        }
+      }
+
       return {
         type: 'text',
         value: 'No active teams.\nSpawn one with: /team spawn <name> <type>',
@@ -64,9 +80,20 @@ export const call: LocalCommandCall = async (args: string) => {
     return { type: 'text', value: lines.join('\n') }
   }
 
+  const isTemplateName = (value: string): value is TeamTemplate =>
+    value in TEAM_TEMPLATES
+
   if (subcommand === 'spawn' || subcommand === 'create' || subcommand === 'new') {
-    const type = (parts[parts.length - 1] as TeamTemplate | undefined) ?? 'research'
-    const name = parts.slice(1, -1).join(' ') || parts.slice(1).join(' ')
+    const templateFirstType = parts[1]
+    const templateLastType = parts[parts.length - 1]
+    const type = isTemplateName(templateFirstType ?? '')
+      ? templateFirstType
+      : isTemplateName(templateLastType ?? '')
+        ? templateLastType
+        : 'research'
+    const name = isTemplateName(templateFirstType ?? '')
+      ? parts.slice(2).join(' ')
+      : parts.slice(1, -1).join(' ') || parts.slice(1).join(' ')
 
     if (!name || name === type) {
       return {
@@ -74,6 +101,8 @@ export const call: LocalCommandCall = async (args: string) => {
         value: `Spawn team
 ${'-'.repeat(50)}
 Usage: /team spawn <name> <type>
+   or: /team spawn <type> <name>
+   or: /team <type> <name>
 
 Templates:
 ${renderTemplates()}`,
@@ -91,7 +120,37 @@ Roles: ${TEAM_TEMPLATES[type]?.roles.join(', ') ?? 'unknown'}`,
       }
     }
 
-    return { type: 'text', value: `Failed: ${result.error ?? 'Hive Nation offline'}` }
+    return { type: 'text', value: formatHiveOfflineError(result.error) }
+  }
+
+  if (isTemplateName(subcommand)) {
+    const type = subcommand
+    const name = parts.slice(1).join(' ')
+
+    if (!name) {
+      return {
+        type: 'text',
+        value: `Spawn team
+${'-'.repeat(50)}
+Usage: /team ${type} <name>
+
+Templates:
+${renderTemplates()}`,
+      }
+    }
+
+    const result = await hive.spawnTeam(name, type)
+    if (result.success) {
+      return {
+        type: 'text',
+        value: `Team spawned.
+Name: ${name}
+Template: ${type}
+Roles: ${TEAM_TEMPLATES[type]?.roles.join(', ') ?? 'unknown'}`,
+      }
+    }
+
+    return { type: 'text', value: formatHiveOfflineError(result.error) }
   }
 
   if (subcommand === 'templates' || subcommand === 'types') {
@@ -110,6 +169,7 @@ ${renderTemplates(true)}`,
 ${'-'.repeat(50)}
 /team list                - List active teams
 /team spawn <name> <type> - Spawn a new team
+/team <type> <name>       - Spawn using shorthand template form
 /team templates           - Show available templates`,
   }
 }

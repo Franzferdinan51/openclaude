@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test'
 import React from 'react'
 import stripAnsi from 'strip-ansi'
 import { createRoot } from '../../ink.js'
+import { parseSpawnArgs } from './spawn.tsx'
 
 const SYNC_START = '\x1B[?2026h'
 const SYNC_END = '\x1B[?2026l'
@@ -60,9 +61,19 @@ async function renderSpawnAndWait(node: React.ReactNode): Promise<string> {
 }
 
 describe('/spawn command UI', () => {
+  const sessionsSpawn = mock(
+    async ({
+      task,
+      label,
+    }: {
+      task: string
+      label?: string
+    }) => `spawned:${label ?? 'none'}:${task}`,
+  )
+
   beforeEach(() => {
     mock.module('../../subagentSystem.js', () => ({
-      sessions_spawn: mock(async ({ task }: { task: string }) => `spawned:${task}`),
+      sessions_spawn: sessionsSpawn,
     }))
   })
 
@@ -82,6 +93,84 @@ describe('/spawn command UI', () => {
     expect(output).toContain('Subagent Spawn')
     expect(output).toContain('Task: investigate agent routing')
     expect(output).toContain('Status: Spawned')
-    expect(output).toContain('spawned:investigate agent routing')
+    expect(output).toContain('spawned:spawned-agent:investigate agent routing')
+  })
+
+  test('passes a custom --label through to sessions_spawn', async () => {
+    const { default: Spawn } = await import(
+      `./spawn.tsx?spawn-test=${Date.now()}-${Math.random()}`
+    )
+
+    const output = await renderSpawnAndWait(
+      <Spawn
+        args={['implement', 'router', '--label=reviewer']}
+        context={{} as never}
+      />,
+    )
+
+    expect(output).toContain('Task: implement router')
+    expect(output).toContain('Label: reviewer')
+    expect(output).toContain('spawned:reviewer:implement router')
+    expect(sessionsSpawn).toHaveBeenCalledWith(
+      expect.objectContaining({
+        label: 'reviewer',
+        task: 'implement router',
+      }),
+    )
+  })
+
+  test('supports README-style spawn prefix, agent type, and explicit model', async () => {
+    const { default: Spawn } = await import(
+      `./spawn.tsx?spawn-test=${Date.now()}-${Math.random()}`
+    )
+
+    const output = await renderSpawnAndWait(
+      <Spawn
+        args={['spawn', 'coding', 'Implement', 'a', 'REST', 'API', '--model', 'qwen3.6-35b']}
+        context={{} as never}
+      />,
+    )
+
+    expect(output).toContain('Task: Implement a REST API')
+    expect(output).toContain('Agent type: coding')
+    expect(output).toContain('Model: qwen3.6-35b')
+    expect(sessionsSpawn).toHaveBeenCalledWith(
+      expect.objectContaining({
+        agentType: 'coding',
+        model: 'qwen3.6-35b',
+        task: 'Implement a REST API',
+      }),
+    )
+  })
+})
+
+describe('parseSpawnArgs', () => {
+  test('extracts --label=value without polluting the task text', () => {
+    expect(
+      parseSpawnArgs(['analyze', 'routing', '--label=reviewer']),
+    ).toEqual({
+      task: 'analyze routing',
+      label: 'reviewer',
+    })
+  })
+
+  test('extracts --label <value> form and leaves other words in the task', () => {
+    expect(
+      parseSpawnArgs(['analyze', '--label', 'reviewer', 'routing']),
+    ).toEqual({
+      task: 'analyze routing',
+      label: 'reviewer',
+    })
+  })
+
+  test('supports optional spawn prefix plus agent type and --model', () => {
+    expect(
+      parseSpawnArgs(['spawn', 'coding', 'Implement', 'REST', 'API', '--model=qwen3.6-35b']),
+    ).toEqual({
+      agentType: 'coding',
+      model: 'qwen3.6-35b',
+      task: 'Implement REST API',
+      label: undefined,
+    })
   })
 })

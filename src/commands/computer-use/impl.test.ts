@@ -3,6 +3,7 @@ import {
   buildCodexCUConfig,
   call,
   getCodexComputerUseToolOverrides,
+  hasBuiltinComputerUseRuntime,
   setComputerUseTestDeps,
 } from './impl.js'
 import computerUse from './index.js'
@@ -14,6 +15,7 @@ let configState: Partial<ProjectConfig>
 let addMcpConfig: ReturnType<typeof mock>
 let removeMcpConfig: ReturnType<typeof mock>
 let pluginAvailable = false
+let pluginLocation: 'bundled' | 'codex-app' = 'bundled'
 let currentPlatform: ReturnType<typeof import('os').platform> = 'darwin'
 
 function expectTextResult(result: Awaited<ReturnType<typeof call>>) {
@@ -66,6 +68,7 @@ describe('call', () => {
   beforeEach(() => {
     configState = {}
     pluginAvailable = false
+    pluginLocation = 'bundled'
     currentPlatform = 'darwin'
     addMcpConfig = mock(async () => {})
     removeMcpConfig = mock(async () => {})
@@ -75,28 +78,73 @@ describe('call', () => {
       existsSync: (targetPath: PathLike) => {
         if (!pluginAvailable) return false
 
-        return [
-          join('packages', 'computer-use-bundle', 'computer-use', '.mcp.json'),
-          join(
-            'packages',
-            'computer-use-bundle',
-            'computer-use',
-            'Codex Computer Use.app',
-            'Contents',
-          ),
-          join(
-            'packages',
-            'computer-use-bundle',
-            'computer-use',
-            'Codex Computer Use.app',
-            'Contents',
-            'SharedSupport',
-            'SkyComputerUseClient.app',
-            'Contents',
-            'MacOS',
-            'SkyComputerUseClient',
-          ),
-        ].some(suffix => String(targetPath).endsWith(suffix))
+        const suffixes = pluginLocation === 'bundled'
+          ? [
+              join('packages', 'computer-use-bundle', 'computer-use', '.mcp.json'),
+              join(
+                'packages',
+                'computer-use-bundle',
+                'computer-use',
+                'Codex Computer Use.app',
+                'Contents',
+              ),
+              join(
+                'packages',
+                'computer-use-bundle',
+                'computer-use',
+                'Codex Computer Use.app',
+                'Contents',
+                'SharedSupport',
+                'SkyComputerUseClient.app',
+                'Contents',
+                'MacOS',
+                'SkyComputerUseClient',
+              ),
+            ]
+          : [
+              join(
+                'Applications',
+                'Codex.app',
+                'Contents',
+                'Resources',
+                'plugins',
+                'openai-bundled',
+                'plugins',
+                'computer-use',
+                '.mcp.json',
+              ),
+              join(
+                'Applications',
+                'Codex.app',
+                'Contents',
+                'Resources',
+                'plugins',
+                'openai-bundled',
+                'plugins',
+                'computer-use',
+                'Codex Computer Use.app',
+                'Contents',
+              ),
+              join(
+                'Applications',
+                'Codex.app',
+                'Contents',
+                'Resources',
+                'plugins',
+                'openai-bundled',
+                'plugins',
+                'computer-use',
+                'Codex Computer Use.app',
+                'Contents',
+                'SharedSupport',
+                'SkyComputerUseClient.app',
+                'Contents',
+                'MacOS',
+                'SkyComputerUseClient',
+              ),
+            ]
+
+        return suffixes.some(suffix => String(targetPath).endsWith(suffix))
       },
       getCurrentProjectConfig: () => configState as ProjectConfig,
       homedir: () => 'C:\\Users\\tester',
@@ -114,38 +162,36 @@ describe('call', () => {
 
     expect(result.value).toContain('DuckHive Computer Use')
     expect(result.value).toContain('Plugin not found')
-    expect(result.value).toContain('Not in DuckHive MCP config')
+    if (hasBuiltinComputerUseRuntime()) {
+      expect(result.value).toContain(
+        'Reserved for DuckHive built-in computer-use runtime',
+      )
+      expect(result.value).toContain(
+        'already reserves `computer-use` for the built-in runtime',
+      )
+    } else {
+      expect(result.value).toContain('Not in DuckHive MCP config')
+      expect(result.value).toContain(
+        'Install Codex.app or the local computer-use bundle first.',
+      )
+    }
+    expect(addMcpConfig).not.toHaveBeenCalled()
   })
 
-  test('wires the discovered plugin into MCP config on enable', async () => {
+  test('enable respects the active build contract', async () => {
     pluginAvailable = true
 
     const result = expectTextResult(await call('enable', {} as never))
 
-    expect(result.value).toContain('computer-use enabled.')
-    expect(addMcpConfig).toHaveBeenCalledTimes(1)
-    expect(addMcpConfig).toHaveBeenCalledWith(
-      'computer-use',
-      {
-        type: 'stdio',
-        command: join(
-          'C:\\repo',
-          'packages',
-          'computer-use-bundle',
-          'computer-use',
-          'Codex Computer Use.app',
-          'Contents',
-          'SharedSupport',
-          'SkyComputerUseClient.app',
-          'Contents',
-          'MacOS',
-          'SkyComputerUseClient',
-        ),
-        args: ['mcp'],
-        env: {},
-      },
-      'project',
-    )
+    if (hasBuiltinComputerUseRuntime()) {
+      expect(result.value).toContain(
+        'already reserves `computer-use` for the built-in runtime',
+      )
+      expect(addMcpConfig).not.toHaveBeenCalled()
+    } else {
+      expect(result.value).toContain('computer-use enabled.')
+      expect(addMcpConfig).toHaveBeenCalledTimes(1)
+    }
   })
 
   test('removes the MCP config when disabling an active integration', async () => {
@@ -176,10 +222,111 @@ describe('call', () => {
         },
       },
     }
+    pluginAvailable = true
 
     const result = expectTextResult(await call('enable', {} as never))
 
     expect(result.value).toContain('already wired into DuckHive MCP')
+    expect(addMcpConfig).not.toHaveBeenCalled()
+  })
+
+  test('enable reports stale config when MCP is set but the plugin bundle is missing', async () => {
+    configState = {
+      mcpServers: {
+        'computer-use': {
+          type: 'stdio',
+          command: 'SkyComputerUseClient',
+          args: ['mcp'],
+        },
+      },
+    }
+
+    const result = expectTextResult(await call('enable', {} as never))
+
+    expect(result.value).toContain(
+      'computer-use is configured in DuckHive MCP, but the plugin bundle is currently missing',
+    )
+    expect(result.value).toContain('/computer-use disable')
+    expect(result.value).not.toContain('already wired into DuckHive MCP')
+    expect(addMcpConfig).not.toHaveBeenCalled()
+  })
+
+  test('status reports configured-but-missing when MCP is set but the plugin bundle is gone', async () => {
+    configState = {
+      mcpServers: {
+        'computer-use': {
+          type: 'stdio',
+          command: 'SkyComputerUseClient',
+          args: ['mcp'],
+        },
+      },
+    }
+
+    const result = expectTextResult(await call('status', {} as never))
+
+    expect(result.value).toContain('Plugin not found')
+    expect(result.value).toContain(
+      'Configured in DuckHive MCP, but the plugin bundle is currently missing',
+    )
+    expect(result.value).toContain(
+      'Restore the plugin bundle or run `/computer-use disable` to remove the stale MCP entry.',
+    )
+    expect(result.value).not.toContain('Auto-wired into DuckHive MCP')
+    expect(addMcpConfig).not.toHaveBeenCalled()
+  })
+
+  test('discovers the plugin from a Codex.app install path without mutating MCP config', async () => {
+    pluginAvailable = true
+    pluginLocation = 'codex-app'
+
+    const result = expectTextResult(await call('status', {} as never))
+
+    expect(result.value).toContain(
+      join(
+        'Applications',
+        'Codex.app',
+        'Contents',
+        'Resources',
+        'plugins',
+        'openai-bundled',
+        'plugins',
+        'computer-use',
+      ),
+    )
+    if (hasBuiltinComputerUseRuntime()) {
+      expect(result.value).toContain(
+        'Reserved for DuckHive built-in computer-use runtime',
+      )
+      expect(result.value).toContain(
+        'do not wire the Codex plugin through `/computer-use enable`.',
+      )
+    } else {
+      expect(result.value).toContain('Not in DuckHive MCP config')
+      expect(result.value).toContain(
+        'Run `/computer-use enable` to wire the plugin into DuckHive MCP.',
+      )
+    }
+    expect(addMcpConfig).not.toHaveBeenCalled()
+  })
+
+  test('status suggests reload when the plugin is configured and present', async () => {
+    pluginAvailable = true
+    configState = {
+      mcpServers: {
+        'computer-use': {
+          type: 'stdio',
+          command: 'SkyComputerUseClient',
+          args: ['mcp'],
+        },
+      },
+    }
+
+    const result = expectTextResult(await call('status', {} as never))
+
+    expect(result.value).toContain('Configured in DuckHive MCP')
+    expect(result.value).toContain(
+      'Restart DuckHive or run `/mcp reload` to activate tools.',
+    )
     expect(addMcpConfig).not.toHaveBeenCalled()
   })
 
@@ -191,5 +338,26 @@ describe('call', () => {
     expect(result.value).toContain('requires macOS')
     expect(result.value).toContain('/desktop')
     expect(addMcpConfig).not.toHaveBeenCalled()
+  })
+
+  test('rejects extra args for status', async () => {
+    const result = expectTextResult(await call('status extra', {} as never))
+
+    expect(result.value).toBe('Usage: /computer-use status')
+    expect(addMcpConfig).not.toHaveBeenCalled()
+  })
+
+  test('rejects extra args for enable', async () => {
+    const result = expectTextResult(await call('enable extra', {} as never))
+
+    expect(result.value).toBe('Usage: /computer-use enable')
+    expect(addMcpConfig).not.toHaveBeenCalled()
+  })
+
+  test('rejects extra args for disable', async () => {
+    const result = expectTextResult(await call('disable extra', {} as never))
+
+    expect(result.value).toBe('Usage: /computer-use disable')
+    expect(removeMcpConfig).not.toHaveBeenCalled()
   })
 })

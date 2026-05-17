@@ -40,6 +40,9 @@ export interface DeliberationSession {
 }
 
 export type DeliberationMode =
+  | 'deliberation'
+  | 'legislative'
+  | 'inquiry'
   | 'balanced'      // Standard deliberation
   | 'adversarial'   // Devil's advocate mode
   | 'consensus'     // Consensus building
@@ -48,6 +51,9 @@ export type DeliberationMode =
   | 'swarm_coding'  // Multi-agent code development with quality gates
   | 'deep_research' // Comprehensive research with source verification
   | 'collaborative' // Collaborative building with shared state
+  | 'vision'
+  | 'emergency'
+  | 'risk_assessment'
   | 'devil-advocate'
   | 'legislature'
   | 'prediction'

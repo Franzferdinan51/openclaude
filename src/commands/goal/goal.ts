@@ -217,6 +217,11 @@ function attachCurrentSessionToGoal(goals: Goal[], targetGoal: Goal): void {
   targetGoal.sessionId = sessionId
 }
 
+function getCurrentStep(goal: Goal): GoalStep | undefined {
+  if (!goal.currentStepId) return undefined
+  return goal.steps.find(step => step.id === goal.currentStepId)
+}
+
 async function saveGoals(goals: Goal[]): Promise<void> {
   saveGlobalConfig(config => ({
     ...config,
@@ -241,7 +246,7 @@ function formatGoal(goal: Goal, detailed = false): string {
   }
 
   if (goal.sessionId) {
-    output += `   Session: ${goal.sessionId}\n`
+    output += `   Attached Session: ${goal.sessionId}\n`
   }
 
   if (detailed) {
@@ -294,6 +299,12 @@ async function createGoal(args: string[]): Promise<string> {
 async function listGoals(args: string[]): Promise<string> {
   const goals = getGoals()
   const filter = args[0]?.toLowerCase()
+  const showAll = filter === 'all'
+  const validFilters = new Set(['all', 'active', 'paused', 'completed'])
+
+  if (filter && !validFilters.has(filter)) {
+    return 'Unknown goal filter. Use one of: all, active, paused, completed.'
+  }
 
   let filtered = goals
   if (filter === 'active') {
@@ -308,14 +319,15 @@ async function listGoals(args: string[]): Promise<string> {
     return 'No goals found.'
   }
 
+  const visibleGoals = showAll ? filtered : filtered.slice(0, 10)
   let output = `${bold('DuckHive Goals')}\n`
-  output += `Showing ${filtered.length} of ${goals.length} total goals\n\n`
+  output += `Showing ${visibleGoals.length} of ${goals.length} total goals\n\n`
 
-  for (const goal of filtered.slice(0, 10)) {
+  for (const goal of visibleGoals) {
     output += formatGoal(goal) + '\n'
   }
 
-  if (filtered.length > 10) {
+  if (!showAll && filtered.length > 10) {
     output += `\n... and ${filtered.length - 10} more. Use /goal list all to see all.`
   }
 
@@ -375,6 +387,10 @@ async function pauseGoal(args: string[]): Promise<string> {
   if (goal.status !== 'active') return `Goal is not active (current status: ${goal.status})`
 
   goal.status = 'paused'
+  const currentStep = getCurrentStep(goal)
+  if (currentStep?.status === 'active') {
+    currentStep.status = 'paused'
+  }
   goal.updatedAt = new Date().toISOString()
   await saveGoals(goals)
 
@@ -399,6 +415,10 @@ async function resumeGoal(args: string[]): Promise<string> {
 
   goal.status = 'active'
   attachCurrentSessionToGoal(goals, goal)
+  const currentStep = getCurrentStep(goal)
+  if (currentStep?.status === 'paused') {
+    currentStep.status = 'active'
+  }
   goal.updatedAt = new Date().toISOString()
   await saveGoals(goals)
 
@@ -415,6 +435,12 @@ async function completeGoal(args: string[]): Promise<string> {
   if (!goal) return error ?? 'Usage: /goal complete [goal-id]'
 
   goal.status = 'completed'
+  const currentStep = getCurrentStep(goal)
+  if (currentStep && currentStep.status !== 'completed') {
+    currentStep.status = 'completed'
+    currentStep.completedAt = new Date().toISOString()
+  }
+  goal.currentStepId = undefined
   goal.completedAt = new Date().toISOString()
   goal.updatedAt = new Date().toISOString()
   await saveGoals(goals)
@@ -444,6 +470,11 @@ async function addStep(args: string[], goalId?: string): Promise<string> {
     if (resolvedById.goal) {
       goal = resolvedById.goal
       stepDesc = args.slice(1).join(' ')
+    } else if (
+      firstArg &&
+      (firstArg.startsWith('goal_') || resolvedById.error?.startsWith('Goal reference is ambiguous:'))
+    ) {
+      return resolvedById.error ?? `Goal not found: ${firstArg}`
     } else {
       const currentSessionGoal = getCurrentSessionGoal(goals, ['active'])
       if (currentSessionGoal.goal) {
@@ -464,6 +495,16 @@ async function addStep(args: string[], goalId?: string): Promise<string> {
 
   if (!stepDesc.trim()) {
     return `Usage: /goal step add <goal-id> <step-description>\n   or: /goal step add <step-description> (uses active goal)`
+  }
+
+  if (goal.status !== 'active') {
+    return `Cannot add a step to a ${goal.status} goal. Resume it first or target an active goal instead.`
+  }
+
+  const previousCurrentStep = getCurrentStep(goal)
+  if (previousCurrentStep?.status === 'active') {
+    previousCurrentStep.status = 'completed'
+    previousCurrentStep.completedAt = new Date().toISOString()
   }
 
   const step: GoalStep = {
@@ -523,8 +564,9 @@ function showHelp(): string {
 ${bold('DuckHive /goal - Persisted Workflow Goals')}
 
 ${bold('Commands:')}
+  /goal <description>          Create a new goal (Codex-style shorthand)
   /goal create <description>   Create a new goal
-  /goal list [filter]          List goals (filter: active|paused|completed)
+  /goal list [filter]          List goals (filter: all|active|paused|completed)
   /goal status [id]            Show goal status or summary
   /goal pause [id]             Pause a goal
   /goal resume [id]            Resume a paused goal
@@ -534,6 +576,7 @@ ${bold('Commands:')}
   /goal step add [id] <desc>   Add a step to a goal
 
 ${bold('Examples:')}
+  /goal Build the user authentication system
   /goal create Build the user authentication system
   /goal list active
   /goal status goal_123
@@ -547,6 +590,10 @@ ${italic('Goals persist across sessions and can be resumed later.')}
 
 async function handleStepCommand(args: string[]): Promise<string> {
   const action = args[0]?.toLowerCase()
+
+  if (!action) {
+    return 'Usage: /goal step add <goal-id> <description>\n   or: /goal step add <description> (uses active goal)'
+  }
 
   switch (action) {
     case 'add':
@@ -603,12 +650,17 @@ export default async function goalCommand(args: string[]): Promise<string> {
       return handleStepCommand(args.slice(1))
 
     case 'help':
-    case undefined:
       return showHelp()
+
+    case undefined:
+      return goalStatus([])
 
     default:
       if (subcommand.startsWith('goal_')) {
         return goalStatus(args)
+      }
+      if (args.length === 1) {
+        return `Unknown goal command: ${subcommand}\nUse /goal help to see supported commands.`
       }
       return createGoal(args)
   }

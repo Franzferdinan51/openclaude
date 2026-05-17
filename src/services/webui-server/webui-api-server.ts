@@ -11,6 +11,8 @@ import {
   type AgentRunStatus,
 } from '../../agent-runs/index.js'
 import type { DuckHiveSearchProvider } from '../../utils/duckhiveSearch.js'
+import { getSearchProviderStatus } from './searchProviderStatus.js'
+import { getTelegramWebUiStatus } from './telegramStatus.js'
 
 type JsonValue = Record<string, unknown> | unknown[] | string | number | boolean | null
 
@@ -330,24 +332,7 @@ async function buildStatus(): Promise<Record<string, unknown>> {
     ? JSON.parse(readFileSync(desktopControlPath, 'utf8')) as { version?: string }
     : undefined
 
-  // Search provider status from duckhive config
-  let searchProvider: Record<string, unknown> = { configured: false }
-  try {
-    const duckhiveConfigPath = join(process.env.HOME ?? '', '.duckhive', 'config.json')
-    if (existsSync(duckhiveConfigPath)) {
-      const config = JSON.parse(readFileSync(duckhiveConfigPath, 'utf8')) as Record<string, unknown>
-      const search = config.search as Record<string, unknown> | undefined
-      if (search?.provider) {
-        searchProvider = {
-          configured: true,
-          provider: search.provider,
-          searxngUrl: search.searxngUrl ?? null,
-        }
-      }
-    }
-  } catch {
-    // ignore config read errors
-  }
+  const searchProvider = getSearchProviderStatus()
 
   return {
     system: {
@@ -364,10 +349,7 @@ async function buildStatus(): Promise<Record<string, unknown>> {
       provider: process.env.CLAUDE_CODE_USE_OPENAI ? 'openai-compatible' : 'auto',
       model: process.env.OPENAI_MODEL ?? process.env.ANTHROPIC_MODEL ?? 'auto',
     },
-    telegram: {
-      configured: Boolean(process.env.DUCKHIVE_TELEGRAM_BOT_TOKEN ?? process.env.TELEGRAM_BOT_TOKEN),
-      allowlistConfigured: Boolean(process.env.DUCKHIVE_TELEGRAM_ALLOWED_CHAT_IDS),
-    },
+    telegram: getTelegramWebUiStatus(),
     desktopControl: {
       configured: Boolean(desktopPackage),
       packagePath: desktopControlPath,

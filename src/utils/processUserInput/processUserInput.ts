@@ -60,6 +60,7 @@ import {
   replaceUltraplanKeyword,
 } from '../ultraplan/keyword.js'
 import { processTextPrompt } from './processTextPrompt.js'
+import { resolveVisionModelOverride } from '../model/visionRouting.js'
 export type ProcessUserInputContext = ToolUseContext & LocalJSXCommandContext
 
 export type ProcessUserInputBaseResult = {
@@ -575,18 +576,26 @@ async function processUserInputBase(
   }
 
   // Regular user prompt
-  return addImageMetadataMessage(
-    processTextPrompt(
-      normalizedInput,
-      imageContentBlocks,
-      imagePasteIds,
-      attachmentMessages,
-      uuid,
-      permissionMode,
-      isMeta,
-    ),
-    imageMetadataTexts,
+  const promptResult = processTextPrompt(
+    normalizedInput,
+    imageContentBlocks,
+    imagePasteIds,
+    attachmentMessages,
+    uuid,
+    permissionMode,
+    isMeta,
   )
+
+  const normalizedInputHasImages =
+    Array.isArray(normalizedInput) &&
+    normalizedInput.some(block => block.type === 'image')
+  if (imageContentBlocks.length > 0 || normalizedInputHasImages) {
+    promptResult.model = resolveVisionModelOverride(
+      context.options.mainLoopModel,
+    )
+  }
+
+  return addImageMetadataMessage(promptResult, imageMetadataTexts)
 }
 
 // Adds image metadata texts as isMeta message to result

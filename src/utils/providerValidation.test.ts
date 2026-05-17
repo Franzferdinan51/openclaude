@@ -1,3 +1,6 @@
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { afterEach, beforeAll, beforeEach, expect, test } from 'bun:test'
 import { ensureIntegrationsLoaded, getAllGateways } from '../integrations/index.js'
 
@@ -21,6 +24,8 @@ const ENV_KEYS = [
   'CLAUDE_CODE_USE_MISTRAL',
   'MISTRAL_API_KEY',
   'MINIMAX_API_KEY',
+  'MMX_API_KEY',
+  'MMX_HOME',
   'NVIDIA_API_KEY',
   'NVIDIA_NIM',
   'BNKR_API_KEY',
@@ -36,6 +41,13 @@ const ENV_KEYS = [
 ] as const
 
 const originalEnv: Record<string, string | undefined> = {}
+const tempDirs: string[] = []
+
+function makeMmxHome(): string {
+  const dir = mkdtempSync(join(tmpdir(), 'duckhive-provider-validation-mmx-'))
+  tempDirs.push(dir)
+  return dir
+}
 
 beforeAll(() => {
   ensureIntegrationsLoaded()
@@ -55,6 +67,10 @@ afterEach(() => {
     } else {
       process.env[key] = originalEnv[key]
     }
+  }
+
+  for (const dir of tempDirs.splice(0)) {
+    rmSync(dir, { recursive: true, force: true })
   }
 })
 
@@ -149,11 +165,42 @@ test('minimax validation accepts MINIMAX_API_KEY without OPENAI_API_KEY', async 
   await expect(getProviderValidationError(process.env)).resolves.toBeNull()
 })
 
+test('minimax validation accepts MMX_API_KEY without OPENAI_API_KEY', async () => {
+  process.env.CLAUDE_CODE_USE_OPENAI = '1'
+  process.env.OPENAI_BASE_URL = 'https://api.minimax.io/v1'
+  process.env.MMX_API_KEY = 'mmx-live-key'
+  delete process.env.OPENAI_API_KEY
+
+  await expect(getProviderValidationError(process.env)).resolves.toBeNull()
+})
+
 test('minimax validation accepts MINIMAX_API_KEY on minimax chat host alias', async () => {
   process.env.CLAUDE_CODE_USE_OPENAI = '1'
   process.env.OPENAI_BASE_URL = 'https://api.minimax.chat/v1'
   process.env.MINIMAX_API_KEY = 'minimax-live-key'
   delete process.env.OPENAI_API_KEY
+
+  await expect(getProviderValidationError(process.env)).resolves.toBeNull()
+})
+
+test('minimax validation accepts ~/.mmx oauth credentials without OPENAI_API_KEY', async () => {
+  const mmxHome = makeMmxHome()
+  writeFileSync(
+    join(mmxHome, 'credentials.json'),
+    JSON.stringify({
+      tokens: {
+        accessToken: 'oauth-access-token-123456',
+      },
+    }),
+    'utf8',
+  )
+
+  process.env.CLAUDE_CODE_USE_OPENAI = '1'
+  process.env.OPENAI_BASE_URL = 'https://api.minimax.io/v1'
+  process.env.MMX_HOME = mmxHome
+  delete process.env.OPENAI_API_KEY
+  delete process.env.MINIMAX_API_KEY
+  delete process.env.MMX_API_KEY
 
   await expect(getProviderValidationError(process.env)).resolves.toBeNull()
 })

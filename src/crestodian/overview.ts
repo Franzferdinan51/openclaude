@@ -132,7 +132,7 @@ export function formatDuckCustodianOverview(o: DuckCustodianOverview): string {
     '',
     'Commands: status | health | doctor | doctor fix | mmx-status | lmstudio-status',
     '          memory-stats | lessons | audit | inject-memory <text>',
-    '          openclaw-status | openclaw-restart',
+    'Ops:      openclaw-status | openclaw-restart',
   ].filter(Boolean);
 
   return lines.join('\n');

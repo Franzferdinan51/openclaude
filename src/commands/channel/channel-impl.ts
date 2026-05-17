@@ -7,16 +7,58 @@
  */
 import type { LocalCommandCall, LocalCommandResult } from '../../types/command.js'
 import { call as connectCall } from '../connect/connect-impl.js'
+import { EmailAdapter } from '../../channels/EmailAdapter.js'
+import { WebhookAdapter } from '../../channels/WebhookAdapter.js'
+import { ConsoleAdapter } from '../../channels/ConsoleAdapter.js'
+import {
+  sendTelegramMessage,
+  startTelegramService,
+} from '../../services/telegram/index.js'
+import { getSecureStorage } from '../../utils/secureStorage/index.js'
+import type { ChannelAdapter } from '../../channels/ChannelAdapter.js'
 
 type ChannelDeps = {
   connectCall: typeof connectCall
+  sendTelegramMessage: typeof sendTelegramMessage
+  sendWebhookMessage: (message: string, env: NodeJS.ProcessEnv) => Promise<void>
+  sendEmailMessage: (message: string, env: NodeJS.ProcessEnv) => Promise<void>
+  sendConsoleMessage: (message: string) => Promise<void>
+  connectWebhookRuntime: (env: NodeJS.ProcessEnv) => Promise<void>
+  disconnectWebhookRuntime: () => Promise<boolean>
+  isWebhookRuntimeConnected: () => boolean
+  connectEmailRuntime: (env: NodeJS.ProcessEnv) => Promise<void>
+  disconnectEmailRuntime: () => Promise<boolean>
+  isEmailRuntimeConnected: () => boolean
+  startTelegramService: typeof startTelegramService
+  getSecureStorage: typeof getSecureStorage
+  env: NodeJS.ProcessEnv
 }
 
 let channelTestDeps: Partial<ChannelDeps> | null = null
+const channelRuntimeAdapters: {
+  webhook: ChannelAdapter | null
+  email: ChannelAdapter | null
+} = {
+  webhook: null,
+  email: null,
+}
 
 function getChannelDeps(): ChannelDeps {
   return {
     connectCall,
+    sendTelegramMessage,
+    sendWebhookMessage,
+    sendEmailMessage,
+    sendConsoleMessage,
+    connectWebhookRuntime,
+    disconnectWebhookRuntime,
+    isWebhookRuntimeConnected,
+    connectEmailRuntime,
+    disconnectEmailRuntime,
+    isEmailRuntimeConnected,
+    startTelegramService,
+    getSecureStorage,
+    env: process.env,
     ...channelTestDeps,
   }
 }
@@ -25,21 +67,192 @@ export function setChannelTestDeps(overrides: Partial<ChannelDeps> | null): void
   channelTestDeps = overrides
 }
 
-function listChannels(): string {
+async function sendWebhookMessage(
+  message: string,
+  env: NodeJS.ProcessEnv,
+): Promise<void> {
+  const adapter = new WebhookAdapter({
+    outboundUrl: env.WEBHOOK_OUTBOUND_URL,
+  })
+  await adapter.sendMessage(message)
+}
+
+async function sendEmailMessage(
+  message: string,
+  env: NodeJS.ProcessEnv,
+): Promise<void> {
+  const smtpHost = env.EMAIL_SMTP_HOST ?? env.EMAIL_IMAP_HOST
+  const smtpUser =
+    env.EMAIL_SMTP_USER ?? env.EMAIL_IMAP_USER ?? env.EMAIL_FROM
+  const smtpPassword = env.EMAIL_SMTP_PASSWORD ?? env.EMAIL_IMAP_PASSWORD
+  const adapter = new EmailAdapter({
+    // Allow outbound-only email configs by falling back to SMTP values.
+    imapHost: env.EMAIL_IMAP_HOST ?? smtpHost,
+    imapUser: env.EMAIL_IMAP_USER ?? smtpUser,
+    imapPassword: env.EMAIL_IMAP_PASSWORD ?? smtpPassword,
+    smtpHost,
+    smtpUser,
+    smtpPassword,
+    fromAddress: env.EMAIL_FROM,
+    defaultTo: env.EMAIL_TO,
+  })
+  await adapter.sendMessage(message)
+}
+
+async function sendConsoleMessage(message: string): Promise<void> {
+  const adapter = new ConsoleAdapter({ prompt: '', colorize: false })
+  await adapter.sendMessage(message)
+}
+
+async function connectWebhookRuntime(env: NodeJS.ProcessEnv): Promise<void> {
+  if (channelRuntimeAdapters.webhook?.isConnected()) return
+
+  const adapter = new WebhookAdapter({
+    port: env.WEBHOOK_PORT ? Number(env.WEBHOOK_PORT) : undefined,
+    host: env.WEBHOOK_HOST,
+    path: env.WEBHOOK_PATH,
+    secret: env.WEBHOOK_SECRET,
+    outboundUrl: env.WEBHOOK_OUTBOUND_URL,
+  })
+  await adapter.connect?.()
+  channelRuntimeAdapters.webhook = adapter
+}
+
+async function disconnectWebhookRuntime(): Promise<boolean> {
+  const adapter = channelRuntimeAdapters.webhook
+  if (!adapter) return false
+  await adapter.disconnect?.()
+  channelRuntimeAdapters.webhook = null
+  return true
+}
+
+function isWebhookRuntimeConnected(): boolean {
+  return channelRuntimeAdapters.webhook?.isConnected() ?? false
+}
+
+async function connectEmailRuntime(env: NodeJS.ProcessEnv): Promise<void> {
+  if (channelRuntimeAdapters.email?.isConnected()) return
+
+  const adapter = new EmailAdapter({
+    imapHost: env.EMAIL_IMAP_HOST,
+    imapUser: env.EMAIL_IMAP_USER,
+    imapPassword: env.EMAIL_IMAP_PASSWORD,
+    smtpHost: env.EMAIL_SMTP_HOST,
+    smtpUser: env.EMAIL_SMTP_USER,
+    smtpPassword: env.EMAIL_SMTP_PASSWORD,
+    fromAddress: env.EMAIL_FROM,
+    defaultTo: env.EMAIL_TO,
+  })
+  await adapter.connect?.()
+  channelRuntimeAdapters.email = adapter
+}
+
+async function disconnectEmailRuntime(): Promise<boolean> {
+  const adapter = channelRuntimeAdapters.email
+  if (!adapter) return false
+  await adapter.disconnect?.()
+  channelRuntimeAdapters.email = null
+  return true
+}
+
+function isEmailRuntimeConnected(): boolean {
+  return channelRuntimeAdapters.email?.isConnected() ?? false
+}
+
+function boolLabel(value: boolean, yes: string, no: string): string {
+  return value ? yes : no
+}
+
+function getTelegramSnapshot(storageData: ReturnType<ReturnType<typeof getSecureStorage>['read']>, env: NodeJS.ProcessEnv): string[] {
+  const telegram = storageData?.pluginSecrets?.telegram
+  const token =
+    env.DUCKHIVE_TELEGRAM_BOT_TOKEN ??
+    env.TELEGRAM_BOT_TOKEN ??
+    telegram?.botToken
+  const sameTokenAsStorage = Boolean(token && telegram?.botToken && token === telegram.botToken)
+  const chatId =
+    env.DUCKHIVE_TELEGRAM_ALLOWED_CHAT_ID ??
+    (sameTokenAsStorage || !env.DUCKHIVE_TELEGRAM_BOT_TOKEN && !env.TELEGRAM_BOT_TOKEN
+      ? telegram?.chatId
+      : undefined)
+
+  return [
+    `telegram - ${boolLabel(Boolean(token), 'configured', 'not connected')}`,
+    `  token: ${token ? 'present' : 'missing'}`,
+    `  chat:  ${chatId ? String(chatId) : 'not registered yet'}`,
+    `  commands: /channel connect telegram --token <TOKEN> | /channel status telegram | /channel send telegram <MESSAGE>`,
+  ]
+}
+
+function getWebhookSnapshot(env: NodeJS.ProcessEnv, runtimeConnected = false): string[] {
+  const inboundReady = Boolean(env.WEBHOOK_PORT)
+  const outboundReady = Boolean(env.WEBHOOK_OUTBOUND_URL)
+  const configured = inboundReady || outboundReady
+  return [
+    `webhook - ${boolLabel(configured, 'config present', 'not configured')}`,
+    `  inbound: ${env.WEBHOOK_PORT ? `port ${env.WEBHOOK_PORT}` : 'missing WEBHOOK_PORT'}`,
+    `  outbound: ${env.WEBHOOK_OUTBOUND_URL ?? 'missing WEBHOOK_OUTBOUND_URL'}`,
+    `  inbound: ${boolLabel(inboundReady, 'ready', 'not ready')} | outbound: ${boolLabel(outboundReady, 'ready', 'not ready')}`,
+    `  runtime: ${boolLabel(runtimeConnected, 'connected', 'not connected')}`,
+    `  commands: /channel connect webhook | /channel disconnect webhook | /channel send webhook <MESSAGE>`,
+  ]
+}
+
+function getEmailSnapshot(env: NodeJS.ProcessEnv, runtimeConnected = false): string[] {
+  const inboundReady = Boolean(env.EMAIL_IMAP_HOST && env.EMAIL_IMAP_USER)
+  const outboundReady = Boolean(
+    (env.EMAIL_SMTP_HOST ?? env.EMAIL_IMAP_HOST) &&
+      (env.EMAIL_SMTP_USER ?? env.EMAIL_IMAP_USER ?? env.EMAIL_FROM) &&
+      env.EMAIL_TO,
+  )
+  const configured = inboundReady || outboundReady
+  return [
+    `email - ${boolLabel(configured, 'config present', 'not configured')}`,
+    `  imap: ${env.EMAIL_IMAP_HOST ?? 'missing EMAIL_IMAP_HOST'} / ${env.EMAIL_IMAP_USER ?? 'missing EMAIL_IMAP_USER'}`,
+    `  smtp: ${env.EMAIL_SMTP_HOST ?? env.EMAIL_IMAP_HOST ?? 'missing EMAIL_SMTP_HOST'} / ${env.EMAIL_SMTP_USER ?? env.EMAIL_IMAP_USER ?? env.EMAIL_FROM ?? 'missing EMAIL_SMTP_USER'}`,
+    `  to:   ${env.EMAIL_TO ?? 'missing EMAIL_TO'}`,
+    `  inbound: ${boolLabel(inboundReady, 'ready', 'not ready')} | outbound: ${boolLabel(outboundReady, 'ready', 'not ready')}`,
+    `  runtime: ${boolLabel(runtimeConnected, 'connected', 'not connected')}`,
+    `  commands: /channel connect email | /channel disconnect email | /channel send email <MESSAGE>`,
+  ]
+}
+
+function getConsoleSnapshot(): string[] {
+  return [
+    'console - built in',
+    '  local REPL/debug channel available without extra config',
+  ]
+}
+
+function formatChannelStatus(
+  title: string,
+  lines: string[],
+): string {
+  return `Channel Adapter Status
+
+${'-'.repeat(40)}
+
+${title}
+${lines.join('\n')}
+`
+}
+
+function listChannels(storageData: ReturnType<ReturnType<typeof getSecureStorage>['read']>, env: NodeJS.ProcessEnv): string {
+  const sections = [
+    ...getTelegramSnapshot(storageData, env),
+    '',
+    ...getWebhookSnapshot(env, isWebhookRuntimeConnected()),
+    '',
+    ...getEmailSnapshot(env, isEmailRuntimeConnected()),
+    '',
+    ...getConsoleSnapshot(),
+  ]
+
   return `Channel Adapters
 
 ${'-'.repeat(40)}
 
-telegram - Telegram bot integration
-  Commands:
-    /channel connect telegram --token <TOKEN>
-    /channel disconnect telegram
-    /channel status
-
-To connect Telegram:
-1. Create a bot via @BotFather in Telegram
-2. Copy the bot token
-3. Run: /channel connect telegram --token <your-token>
+${sections.join('\n')}
 `
 }
 
@@ -59,19 +272,77 @@ function getFlagValue(args: string[], flag: string): string | undefined {
 }
 
 export const call: LocalCommandCall = async (args: string) => {
-  const { connectCall } = getChannelDeps()
-  const parsedArgs = args.trim().split(/\s+/).filter(Boolean)
+  const {
+    connectCall,
+    sendTelegramMessage,
+    sendWebhookMessage,
+    sendEmailMessage,
+    sendConsoleMessage,
+    connectWebhookRuntime,
+    disconnectWebhookRuntime,
+    isWebhookRuntimeConnected,
+    connectEmailRuntime,
+    disconnectEmailRuntime,
+    isEmailRuntimeConnected,
+    startTelegramService,
+    getSecureStorage,
+    env,
+  } = getChannelDeps()
+  const parsedArgs = splitCommandArgs(args)
   const [action = '', channelType = ''] = parsedArgs
+  const storageData = getSecureStorage().read()
 
   if (!action) {
-    return { type: 'text', value: listChannels() }
+    return { type: 'text', value: listChannels(storageData, env) }
   }
 
   if (action === 'list') {
-    return { type: 'text', value: listChannels() }
+    return { type: 'text', value: listChannels(storageData, env) }
   }
 
   if (action === 'status') {
+    if (parsedArgs.length > 2) {
+      return {
+        type: 'text',
+        value: `Usage: /channel status [channel-type]\n\nAvailable: telegram, webhook, email, console`,
+      }
+    }
+    if (!channelType) {
+      return {
+        type: 'text',
+        value: listChannels(storageData, env),
+      }
+    }
+    if (channelType === 'webhook') {
+      return {
+        type: 'text',
+        value: formatChannelStatus(
+          'Webhook',
+          getWebhookSnapshot(env, isWebhookRuntimeConnected()),
+        ),
+      }
+    }
+    if (channelType === 'email') {
+      return {
+        type: 'text',
+        value: formatChannelStatus(
+          'Email',
+          getEmailSnapshot(env, isEmailRuntimeConnected()),
+        ),
+      }
+    }
+    if (channelType === 'console') {
+      return {
+        type: 'text',
+        value: formatChannelStatus('Console', getConsoleSnapshot()),
+      }
+    }
+    if (channelType && channelType !== 'telegram') {
+      return {
+        type: 'text',
+        value: `Usage: /channel status [channel-type]\n\nAvailable: telegram, webhook, email, console`,
+      }
+    }
     const result = await connectCall('status', {} as never)
     if (!isTextResult(result)) {
       throw new Error('channel status expected text result from connect command')
@@ -83,25 +354,200 @@ export const call: LocalCommandCall = async (args: string) => {
   }
 
   if (action === 'connect') {
+    if (channelType === 'webhook') {
+      if (parsedArgs.length > 2) {
+        return {
+          type: 'text',
+          value: 'Usage: /channel connect webhook',
+        }
+      }
+      try {
+        await connectWebhookRuntime(env)
+        return {
+          type: 'text',
+          value: 'Webhook adapter connected.',
+        }
+      } catch (error) {
+        const detail = error instanceof Error ? error.message : String(error)
+        return {
+          type: 'text',
+          value: `Webhook connect failed. ${detail}`,
+        }
+      }
+    }
+    if (channelType === 'email') {
+      if (parsedArgs.length > 2) {
+        return {
+          type: 'text',
+          value: 'Usage: /channel connect email',
+        }
+      }
+      try {
+        await connectEmailRuntime(env)
+        return {
+          type: 'text',
+          value: 'Email adapter connected.',
+        }
+      } catch (error) {
+        const detail = error instanceof Error ? error.message : String(error)
+        return {
+          type: 'text',
+          value: `Email connect failed. ${detail}`,
+        }
+      }
+    }
     if (channelType !== 'telegram') {
       return {
         type: 'text',
-        value: `Usage: /channel connect <channel-type>\n\nAvailable: telegram`,
+        value:
+          'Usage: /channel connect <channel-type> [options]\n\nAvailable: telegram (--token <TOKEN>), webhook, email',
+      }
+    }
+    if (parsedArgs.length > 4 && getFlagValue(parsedArgs, '--token')) {
+      return {
+        type: 'text',
+        value: 'Usage: /channel connect telegram --token <TOKEN>',
       }
     }
     const token = getFlagValue(parsedArgs, '--token') ?? parsedArgs.slice(2).join(' ').trim()
+    if (!token) {
+      return {
+        type: 'text',
+        value: 'Usage: /channel connect telegram --token <TOKEN>',
+      }
+    }
     return connectCall(token, {} as never)
   }
 
   if (action === 'disconnect') {
-    if (channelType && channelType !== 'telegram') {
+    if (channelType === 'webhook') {
+      if (parsedArgs.length > 2) {
+        return {
+          type: 'text',
+          value: 'Usage: /channel disconnect webhook',
+        }
+      }
+      const disconnected = await disconnectWebhookRuntime()
       return {
         type: 'text',
-        value: `Usage: /channel disconnect <channel-type>\n\nAvailable: telegram`,
+        value: disconnected
+          ? 'Webhook adapter disconnected.'
+          : 'Webhook adapter was not connected.',
+      }
+    }
+    if (channelType === 'email') {
+      if (parsedArgs.length > 2) {
+        return {
+          type: 'text',
+          value: 'Usage: /channel disconnect email',
+        }
+      }
+      const disconnected = await disconnectEmailRuntime()
+      return {
+        type: 'text',
+        value: disconnected
+          ? 'Email adapter disconnected.'
+          : 'Email adapter was not connected.',
+      }
+    }
+    if (channelType !== 'telegram') {
+      return {
+        type: 'text',
+        value:
+          'Usage: /channel disconnect <channel-type>\n\nAvailable: telegram, webhook, email',
+      }
+    }
+    if (parsedArgs.length > 2) {
+      return {
+        type: 'text',
+        value: 'Usage: /channel disconnect telegram',
       }
     }
     return connectCall('disconnect', {} as never)
   }
 
-  return { type: 'text', value: listChannels() }
+  if (action === 'send') {
+    if (
+      channelType !== 'telegram' &&
+      channelType !== 'webhook' &&
+      channelType !== 'email' &&
+      channelType !== 'console'
+    ) {
+      return {
+        type: 'text',
+        value: `Usage: /channel send <channel-type> <message>\n\nAvailable: telegram, webhook, email, console`,
+      }
+    }
+
+    const message = parsedArgs.slice(2).join(' ').trim()
+    if (!message) {
+      return {
+        type: 'text',
+        value: `Usage: /channel send ${channelType || '<channel-type>'} <message>`,
+      }
+    }
+
+    if (channelType === 'webhook') {
+      try {
+        await sendWebhookMessage(message, env)
+        return {
+          type: 'text',
+          value: 'Webhook message sent.',
+        }
+      } catch (error) {
+        const detail = error instanceof Error ? error.message : String(error)
+        return {
+          type: 'text',
+          value: `Webhook send failed. ${detail}`,
+        }
+      }
+    }
+
+    if (channelType === 'email') {
+      try {
+        await sendEmailMessage(message, env)
+        return {
+          type: 'text',
+          value: 'Email message sent.',
+        }
+      } catch (error) {
+        const detail = error instanceof Error ? error.message : String(error)
+        return {
+          type: 'text',
+          value: `Email send failed. ${detail}`,
+        }
+      }
+    }
+
+    if (channelType === 'console') {
+      try {
+        await sendConsoleMessage(message)
+        return {
+          type: 'text',
+          value: 'Console message emitted.',
+        }
+      } catch (error) {
+        const detail = error instanceof Error ? error.message : String(error)
+        return {
+          type: 'text',
+          value: `Console send failed. ${detail}`,
+        }
+      }
+    }
+
+    await startTelegramService()
+    const sent = await sendTelegramMessage(message)
+    return {
+      type: 'text',
+      value: sent
+        ? 'Telegram message sent.'
+        : 'Telegram send failed. Make sure Telegram is connected and that your bot has received /start from the allowed chat.',
+    }
+  }
+
+  return { type: 'text', value: listChannels(storageData, env) }
+}
+
+function splitCommandArgs(args: string): string[] {
+  return args.match(/"[^"]*"|'[^']*'|\S+/g)?.map(arg => arg.replace(/^["']|["']$/g, '')) ?? []
 }

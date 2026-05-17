@@ -10,6 +10,7 @@ interface TelegramConnectionConfig {
   botToken?: string
   connectedAt?: number
   chatId?: string
+  source?: 'storage' | 'environment'
 }
 
 function getTelegramConfig(storage: SecureStorageData): TelegramConnectionConfig {
@@ -21,6 +22,30 @@ function saveTelegramConfig(storage: SecureStorageData, config: TelegramConnecti
     storage.pluginSecrets = {}
   }
   storage.pluginSecrets.telegram = config as Record<string, string>
+}
+
+function getEffectiveTelegramConfig(
+  storageConfig: TelegramConnectionConfig,
+  env: NodeJS.ProcessEnv = process.env,
+): TelegramConnectionConfig {
+  const envToken =
+    env.DUCKHIVE_TELEGRAM_BOT_TOKEN ?? env.TELEGRAM_BOT_TOKEN
+  const envChatId = env.DUCKHIVE_TELEGRAM_ALLOWED_CHAT_ID
+
+  if (envToken) {
+    const sameTokenAsStorage = envToken === storageConfig.botToken
+    return {
+      ...(sameTokenAsStorage ? storageConfig : {}),
+      botToken: envToken,
+      chatId: envChatId ?? (sameTokenAsStorage ? storageConfig.chatId : undefined),
+      source: 'environment',
+    }
+  }
+
+  return {
+    ...storageConfig,
+    source: storageConfig.botToken ? 'storage' : undefined,
+  }
 }
 
 function formatStatus(config: TelegramConnectionConfig): string {
@@ -38,6 +63,12 @@ function formatStatus(config: TelegramConnectionConfig): string {
     // Partial token for display
     const partialToken = config.botToken.substring(0, 8) + '...' + config.botToken.slice(-4)
     lines.push(`Token:    ${partialToken}`)
+    if (config.chatId) {
+      lines.push(`Chat:     ${config.chatId}`)
+    }
+    if (config.source) {
+      lines.push(`Source:   ${config.source}`)
+    }
   } else {
     lines.push('Status:   ⚪ Not connected')
   }
@@ -64,7 +95,7 @@ export const call: LocalCommandCall = async (args: string) => {
   // --status flag OR positional "status": show connection status
   if (flags.status !== undefined || positional[0] === 'status') {
     const data = storage.read()
-    const config = data ? getTelegramConfig(data) : {}
+    const config = getEffectiveTelegramConfig(data ? getTelegramConfig(data) : {})
     return { type: 'text', value: formatStatus(config) }
   }
 
@@ -75,6 +106,13 @@ export const call: LocalCommandCall = async (args: string) => {
       delete data.pluginSecrets.telegram
       storage.update(data)
     }
+    delete process.env.DUCKHIVE_TELEGRAM_BOT_TOKEN
+    delete process.env.TELEGRAM_BOT_TOKEN
+    import('../../services/telegram/index.js')
+      .then(({ stopTelegramService }) => {
+        void stopTelegramService()
+      })
+      .catch(() => {})
     return {
       type: 'text',
       value: '🔌 Telegram disconnected. Your bot token has been removed.',
@@ -171,7 +209,7 @@ Your bot is now connected. To complete setup:
 
 You can now interact with DuckHive through Telegram!
 
-Run /connect --status to see connection details
-Run /connect --disconnect to remove the connection`,
+Run /connect status to see connection details
+Run /connect disconnect to remove the connection`,
   }
 }

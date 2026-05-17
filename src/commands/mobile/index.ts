@@ -3,7 +3,7 @@ import type { Command } from '../../commands.js'
 const mobile = {
   type: 'local-jsx',
   name: 'mobile',
-  aliases: ['ios', 'android'],
+  aliases: ['ios'],
   description: 'Show QR code to download the Claude mobile app',
   isEnabled: () => false,
   load: () => import('./mobile.js'),

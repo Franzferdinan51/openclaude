@@ -126,6 +126,25 @@ async function internalAnalyze(
   return { verdict, confidence, reasons }
 }
 
+function normalizeExternalCouncilMode(
+  mode: DeliberationRequest['mode'] | undefined,
+): 'deliberation' | 'inquiry' | 'adversarial' | 'consensus' | 'brainstorm' {
+  switch (mode) {
+    case 'socratic':
+    case 'analytical':
+      return 'inquiry'
+    case 'creative':
+      return 'brainstorm'
+    case 'adversarial':
+      return 'adversarial'
+    case 'consensus':
+      return 'consensus'
+    case 'standard':
+    default:
+      return 'deliberation'
+  }
+}
+
 /**
  * Consult council for a task decision
  * Tries external Hive Council first, falls back to internal deliberation
@@ -140,7 +159,10 @@ export async function consultCouncil(
     try {
       const health = await hive.isHealthy()
       if (health) {
-        const result = await hive.startDeliberation(request.topic, request.mode || 'standard')
+        const result = await hive.startDeliberation(
+          request.topic,
+          normalizeExternalCouncilMode(request.mode),
+        )
         return {
           verdict: result.verdict || 'COMPLEX',
           consensus: result.consensusScore || 0.5,

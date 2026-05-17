@@ -31,6 +31,7 @@ import {
   type GeminiResolvedCredential,
   resolveGeminiCredential,
 } from './geminiAuth.js'
+import { readMiniMaxCredential } from './minimaxCredentials.js'
 import { PROFILE_FILE_NAME } from './providerProfile.js'
 import {
   redactSecretValueForDisplay,
@@ -258,6 +259,13 @@ function getCredentialEnvValidationError(
     request &&
     isLocalProviderUrl(request.baseUrl)
   ) {
+    return null
+  }
+
+  const acceptsMiniMaxCredentialSource =
+    validation.credentialEnvVars.includes('MINIMAX_API_KEY') &&
+    validation.credentialEnvVars.includes('MMX_API_KEY')
+  if (acceptsMiniMaxCredentialSource && readMiniMaxCredential(env)) {
     return null
   }
 

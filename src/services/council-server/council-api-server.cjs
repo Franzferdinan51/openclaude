@@ -17,6 +17,7 @@ app.use(express.json({ limit: '50mb' }));
 
 const PORT = process.env.COUNCIL_PORT || process.env.PORT || 3007;
 const SETTINGS_FILE = path.join(__dirname, 'settings.json');
+const SERVER_STARTED_AT = Date.now();
 
 // Default settings
 const defaultSettings = {
@@ -338,6 +339,19 @@ let sessionState = {
 };
 
 let visionSessions = new Map();
+let activeTeams = [];
+let activeDecrees = [];
+
+const TEAM_TEMPLATE_ROLES = {
+  research: ['researcher', 'writer', 'reviewer'],
+  code: ['coder', 'reviewer', 'security'],
+  security: ['security', 'reviewer', 'communicator'],
+  emergency: ['security', 'communicator', 'planner'],
+  planning: ['planner', 'analyst', 'reviewer'],
+  analysis: ['analyst', 'researcher', 'writer'],
+  devops: ['devops', 'security', 'reviewer'],
+  swarm: ['specialist-1', 'specialist-2', 'specialist-3', 'coordinator'],
+};
 
 // ============ MCP TOOLS REGISTRY ============
 
@@ -1203,7 +1217,24 @@ app.post('/mcp', async (req, res) => {
 
 // Health
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString(), version: '3.1.0' });
+  const usage = process.memoryUsage();
+  const total = usage.rss || usage.heapTotal || 0;
+  const used = usage.heapUsed || usage.rss || 0;
+  res.json({
+    status: 'ok',
+    timestamp: Date.now(),
+    version: '3.1.0',
+    uptime: Math.floor((Date.now() - SERVER_STARTED_AT) / 1000),
+    memory: {
+      used,
+      total,
+      percentage: total > 0 ? Math.round((used / total) * 100) : 0,
+    },
+    services: {
+      council: true,
+      hiveCore: true,
+    },
+  });
 });
 
 // Councilors
@@ -1250,6 +1281,73 @@ app.post('/api/session/start', (req, res) => {
 app.post('/api/session/stop', (req, res) => {
   sessionState.messages = [];
   res.json({ ok: true });
+});
+
+// Teams
+app.get('/api/teams', (req, res) => {
+  res.json({ teams: activeTeams });
+});
+
+app.post('/api/team/spawn', (req, res) => {
+  const template = String(req.body.template || 'research');
+  const name = String(req.body.name || '').trim();
+
+  if (!name) {
+    return res.status(400).json({ success: false, error: 'Team name is required' });
+  }
+
+  const roles = (TEAM_TEMPLATE_ROLES[template] || TEAM_TEMPLATE_ROLES.research).map(role => ({
+    role,
+    status: 'pending',
+  }));
+
+  const team = {
+    id: `team_${Date.now()}`,
+    name,
+    template,
+    status: 'active',
+    roles,
+    createdAt: Date.now(),
+    tasks: [],
+  };
+
+  activeTeams.push(team);
+  res.json({ success: true, teamId: team.id, team });
+});
+
+// Decrees
+app.get('/api/decrees', (req, res) => {
+  res.json({ decrees: activeDecrees });
+});
+
+app.get('/api/decree/:id', (req, res) => {
+  const decree = activeDecrees.find(entry => entry.id === req.params.id);
+  if (!decree) return res.status(404).json({ error: 'Not found' });
+  res.json(decree);
+});
+
+app.post('/api/decree', (req, res) => {
+  const title = String(req.body.title || '').trim();
+  const content = String(req.body.content || '').trim();
+
+  if (!title || !content) {
+    return res.status(400).json({ success: false, error: 'Title and content are required' });
+  }
+
+  const decree = {
+    id: `decree_${Date.now()}`,
+    title,
+    content,
+    status: 'active',
+    authority: String(req.body.authority || 'ai-council'),
+    scope: req.body.scope || 'agent',
+    priority: req.body.priority || 'medium',
+    createdAt: Date.now(),
+    enactedAt: Date.now(),
+  };
+
+  activeDecrees.unshift(decree);
+  res.json({ success: true, decreeId: decree.id, decree });
 });
 
 // Vision

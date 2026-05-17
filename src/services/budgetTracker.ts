@@ -10,8 +10,8 @@
  * Follows DuckHive patterns from policyLimits (fail-open, file caching, session state).
  */
 
-import { existsSync } from 'fs'
-import { readFileSync as fsReadFileSync, writeFile } from 'fs/promises'
+import { existsSync, readFileSync as fsReadFileSync } from 'fs'
+import { writeFile } from 'fs/promises'
 import { join } from 'path'
 import { getClaudeConfigHomeDir } from '../utils/envUtils.js'
 import { safeParseJSON } from '../utils/json.js'

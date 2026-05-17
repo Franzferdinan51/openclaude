@@ -62,6 +62,10 @@ type shellCommandResultMsg struct {
 	canceled bool
 }
 
+type externalEditorFinishedMsg struct {
+	err error
+}
+
 type timerTickMsg struct{}
 
 // MainModel is the root tea.Model coordinating the DuckHive shell.
@@ -81,6 +85,8 @@ type MainModel struct {
 	cap           workspaceCapabilities
 	shellCancel   context.CancelFunc
 	shellRunning  bool
+	editorPath    string
+	editorCleanup func() error
 	handoff       *uiHandoff
 }
 
@@ -238,6 +244,10 @@ func (m *MainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case shellCommandResultMsg:
 		m.handleShellResult(msg)
+		return m, nil
+
+	case externalEditorFinishedMsg:
+		m.handleExternalEditorFinished(msg)
 		return m, nil
 
 	case timerTickMsg:
@@ -632,7 +642,7 @@ func (m *MainModel) handleOutbound(msg model.OutMsg) (tea.Model, tea.Cmd) {
 		return m, tea.Suspend
 
 	case model.MsgExternalEditor:
-		m.state.StatusMsg = "external editor is not wired yet in the Go TUI"
+		return m, m.openExternalEditor()
 
 	case model.MsgUndo:
 		m.state.StatusMsg = "undo is not wired yet in the Go TUI"
@@ -1120,6 +1130,156 @@ func (m *MainModel) handleShellResult(msg shellCommandResultMsg) {
 		return
 	}
 	m.state.StatusMsg = fmt.Sprintf("shell finished in %s", msg.duration.Round(time.Millisecond))
+}
+
+func (m *MainModel) openExternalEditor() tea.Cmd {
+	editorCmd, editorPath, cleanup, err := prepareExternalEditorLaunch(runtime.GOOS, m.input.Value())
+	if err != nil {
+		m.state.StatusMsg = fmt.Sprintf("external editor unavailable: %v", err)
+		return nil
+	}
+
+	m.editorPath = editorPath
+	m.editorCleanup = cleanup
+	m.state.StatusMsg = "editing in external editor"
+
+	return tea.ExecProcess(editorCmd, func(err error) tea.Msg {
+		return externalEditorFinishedMsg{err: err}
+	})
+}
+
+func (m *MainModel) handleExternalEditorFinished(msg externalEditorFinishedMsg) {
+	editorPath := m.editorPath
+	cleanup := m.editorCleanup
+	m.editorPath = ""
+	m.editorCleanup = nil
+	defer func() {
+		if cleanup != nil {
+			_ = cleanup()
+		}
+	}()
+
+	if msg.err != nil {
+		m.state.StatusMsg = fmt.Sprintf("external editor failed: %v", msg.err)
+		return
+	}
+	if editorPath == "" {
+		m.state.StatusMsg = "external editor finished"
+		return
+	}
+
+	content, err := os.ReadFile(editorPath)
+	if err != nil {
+		m.state.StatusMsg = fmt.Sprintf("external editor read failed: %v", err)
+		return
+	}
+
+	m.input.SetValue(string(content))
+	m.state.StatusMsg = "external editor applied"
+}
+
+func prepareExternalEditorLaunch(goos, initialContent string) (*exec.Cmd, string, func() error, error) {
+	tmpFile, err := os.CreateTemp("", "duckhive-editor-*.md")
+	if err != nil {
+		return nil, "", nil, err
+	}
+	cleanup := func() error {
+		return os.Remove(tmpFile.Name())
+	}
+	if _, err := tmpFile.WriteString(initialContent); err != nil {
+		_ = tmpFile.Close()
+		_ = cleanup()
+		return nil, "", nil, err
+	}
+	if err := tmpFile.Close(); err != nil {
+		_ = cleanup()
+		return nil, "", nil, err
+	}
+
+	editorName, editorArgs, err := resolveExternalEditorCommand(goos)
+	if err != nil {
+		_ = cleanup()
+		return nil, "", nil, err
+	}
+
+	cmd := exec.Command(editorName, append(editorArgs, tmpFile.Name())...)
+	return cmd, tmpFile.Name(), cleanup, nil
+}
+
+func resolveExternalEditorCommand(goos string) (string, []string, error) {
+	for _, candidate := range []string{
+		strings.TrimSpace(os.Getenv("VISUAL")),
+		strings.TrimSpace(os.Getenv("EDITOR")),
+	} {
+		if candidate == "" {
+			continue
+		}
+		parts, err := splitCommandLine(candidate)
+		if err != nil {
+			return "", nil, err
+		}
+		if len(parts) == 0 {
+			continue
+		}
+		return parts[0], parts[1:], nil
+	}
+
+	if goos == "windows" {
+		if resolved, err := exec.LookPath("notepad.exe"); err == nil {
+			return resolved, nil, nil
+		}
+		return "notepad.exe", nil, nil
+	}
+
+	for _, candidate := range []string{"nano", "vim", "vi"} {
+		if resolved, err := exec.LookPath(candidate); err == nil {
+			return resolved, nil, nil
+		}
+	}
+
+	return "", nil, fmt.Errorf("set VISUAL or EDITOR")
+}
+
+func splitCommandLine(input string) ([]string, error) {
+	var (
+		args      []string
+		current   []rune
+		inQuote   rune
+		hadQuoted bool
+	)
+
+	flush := func() {
+		if len(current) == 0 && !hadQuoted {
+			return
+		}
+		args = append(args, string(current))
+		current = current[:0]
+		hadQuoted = false
+	}
+
+	for _, r := range input {
+		switch {
+		case inQuote != 0:
+			if r == inQuote {
+				inQuote = 0
+				hadQuoted = true
+			} else {
+				current = append(current, r)
+			}
+		case r == '"' || r == '\'':
+			inQuote = r
+		case r == ' ' || r == '\t' || r == '\n' || r == '\r':
+			flush()
+		default:
+			current = append(current, r)
+		}
+	}
+
+	if inQuote != 0 {
+		return nil, fmt.Errorf("unterminated quote in editor command")
+	}
+	flush()
+	return args, nil
 }
 
 func localShellCommand(command string) (string, []string) {

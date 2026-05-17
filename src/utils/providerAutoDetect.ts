@@ -32,6 +32,7 @@
 import { existsSync } from 'fs'
 import { homedir } from 'os'
 import { join } from 'path'
+import { readMiniMaxCredential } from './minimaxCredentials.js'
 
 export type DetectedProviderKind =
   | 'anthropic'
@@ -168,8 +169,9 @@ export function detectProviderFromEnv(
     return { kind: 'mistral', source: 'MISTRAL_API_KEY set' }
   }
 
-  if (envHasNonEmpty(env, 'MINIMAX_API_KEY')) {
-    return { kind: 'minimax', source: 'MINIMAX_API_KEY set' }
+  const minimaxCredential = readMiniMaxCredential(env)
+  if (minimaxCredential) {
+    return { kind: 'minimax', source: `${minimaxCredential.source} available` }
   }
 
   if (envHasNonEmpty(env, 'MIMO_API_KEY')) {

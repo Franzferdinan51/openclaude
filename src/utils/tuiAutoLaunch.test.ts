@@ -34,6 +34,31 @@ test('auto-launch starts when TUI is explicitly preferred in config', () => {
       {},
       { stdinIsTTY: true, stdoutIsTTY: true },
       { ui: { defaultSurface: 'tui' } },
+      { platform: 'linux' },
+    ),
+  ).toBe(true)
+})
+
+test('auto-launch stays disabled on Windows by default even when TUI is preferred', () => {
+  expect(
+    shouldAutoLaunchStandaloneTui(
+      [],
+      {},
+      { stdinIsTTY: true, stdoutIsTTY: true },
+      { ui: { defaultSurface: 'tui' } },
+      { platform: 'win32' },
+    ),
+  ).toBe(false)
+})
+
+test('auto-launch can be re-enabled on Windows with an explicit env opt-in', () => {
+  expect(
+    shouldAutoLaunchStandaloneTui(
+      [],
+      { DUCKHIVE_TUI_WINDOWS_EXPERIMENT: '1' },
+      { stdinIsTTY: true, stdoutIsTTY: true },
+      { ui: { defaultSurface: 'tui' } },
+      { platform: 'win32' },
     ),
   ).toBe(true)
 })

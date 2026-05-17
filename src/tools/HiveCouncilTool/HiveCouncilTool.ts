@@ -3,15 +3,36 @@ import { z } from 'zod/v4'
 import { buildTool, type ToolDef } from '../../Tool.js'
 import { lazySchema } from '../../utils/lazySchema.js'
 import { HiveBridge } from '../../services/hive-bridge/hive-bridge.js'
+import type { DeliberationMode } from '../../services/hive-bridge/hive-types.js'
 import { DESCRIPTION } from './prompt.js'
 
 const hive = new HiveBridge()
+const COUNCIL_MODES = [
+  'deliberation',
+  'legislative',
+  'inquiry',
+  'balanced',
+  'adversarial',
+  'consensus',
+  'brainstorm',
+  'swarm',
+  'swarm_coding',
+  'deep_research',
+  'collaborative',
+  'vision',
+  'emergency',
+  'risk_assessment',
+  'devil-advocate',
+  'legislature',
+  'prediction',
+  'inspector',
+] as const satisfies readonly DeliberationMode[]
 
 const inputSchema = lazySchema(() =>
   z.strictObject({
     action: z.enum(['deliberate', 'status', 'modes', 'councilors']).describe('Council action'),
     topic: z.string().optional().describe('Topic for deliberation'),
-    mode: z.enum(['balanced', 'adversarial', 'consensus', 'brainstorm', 'swarm', 'devil-advocate', 'legislature', 'prediction', 'inspector']).optional().describe('Deliberation mode'),
+    mode: z.enum(COUNCIL_MODES).optional().describe('Deliberation mode'),
   }),
 )
 type InputSchema = ReturnType<typeof inputSchema>
@@ -55,8 +76,15 @@ export const HiveCouncilTool = buildTool({
     switch (action) {
       case 'deliberate': {
         if (!topic) return { data: { success: false, action: 'deliberate', error: 'topic required' } }
-        const result = await hive.startDeliberation(topic, mode ?? 'balanced')
-        return { data: { success: result.success, action: 'deliberate', sessionId: result.sessionId, topic, mode: mode ?? 'balanced', error: result.error } }
+        const availableModes = await hive.getModes()
+        const defaultMode = availableModes.includes('deliberation')
+          ? 'deliberation'
+          : availableModes.includes('balanced')
+            ? 'balanced'
+            : (availableModes[0] ?? 'balanced')
+        const selectedMode = mode ?? defaultMode
+        const result = await hive.startDeliberation(topic, selectedMode)
+        return { data: { success: result.success, action: 'deliberate', sessionId: result.sessionId, topic, mode: selectedMode, error: result.error } }
       }
       case 'status': {
         const session = await hive.getCurrentSession()

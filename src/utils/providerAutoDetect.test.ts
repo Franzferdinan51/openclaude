@@ -118,7 +118,14 @@ describe('detectProviderFromEnv — priority order', () => {
   test('MINIMAX_API_KEY detected', () => {
     expect(scan({ MINIMAX_API_KEY: 'mm-x' })).toEqual({
       kind: 'minimax',
-      source: 'MINIMAX_API_KEY set',
+      source: 'MINIMAX_API_KEY available',
+    })
+  })
+
+  test('MMX_API_KEY detected as MiniMax auth', () => {
+    expect(scan({ MMX_API_KEY: 'mmx-x' })).toEqual({
+      kind: 'minimax',
+      source: 'MMX_API_KEY available',
     })
   })
 

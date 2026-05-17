@@ -2,6 +2,9 @@ package main
 
 import (
 	"context"
+	"os"
+	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"testing"
@@ -290,6 +293,62 @@ func TestResumeMsgClearsSuspendedState(t *testing.T) {
 	}
 }
 
+func TestExternalEditorLoadsEditedContentBackIntoInput(t *testing.T) {
+	m := &MainModel{
+		state:      model.NewAppState(),
+		msgList:    components.NewMessageList(80, 20),
+		input:      components.NewInputArea(80, 3),
+		transcript: screens.NewTranscriptPanel(),
+	}
+
+	tempDir := t.TempDir()
+	editorPath := filepath.Join(tempDir, "draft.md")
+	if err := os.WriteFile(editorPath, []byte("edited from external editor"), 0o600); err != nil {
+		t.Fatalf("WriteFile: %v", err)
+	}
+
+	cleanupCalled := false
+	m.editorPath = editorPath
+	m.editorCleanup = func() error {
+		cleanupCalled = true
+		return os.Remove(editorPath)
+	}
+
+	m.handleExternalEditorFinished(externalEditorFinishedMsg{})
+
+	if got := m.input.Value(); got != "edited from external editor" {
+		t.Fatalf("input value = %q", got)
+	}
+	if m.state.StatusMsg != "external editor applied" {
+		t.Fatalf("StatusMsg = %q", m.state.StatusMsg)
+	}
+	if !cleanupCalled {
+		t.Fatal("expected cleanup to be called")
+	}
+	if _, err := os.Stat(editorPath); !os.IsNotExist(err) {
+		t.Fatalf("expected temp file removed, stat err = %v", err)
+	}
+}
+
+func TestExternalEditorFailureDoesNotOverwriteInput(t *testing.T) {
+	m := &MainModel{
+		state:      model.NewAppState(),
+		msgList:    components.NewMessageList(80, 20),
+		input:      components.NewInputArea(80, 3),
+		transcript: screens.NewTranscriptPanel(),
+	}
+	m.input.SetValue("keep me")
+
+	m.handleExternalEditorFinished(externalEditorFinishedMsg{err: exec.ErrNotFound})
+
+	if got := m.input.Value(); got != "keep me" {
+		t.Fatalf("input value = %q", got)
+	}
+	if !strings.Contains(m.state.StatusMsg, "external editor failed") {
+		t.Fatalf("StatusMsg = %q", m.state.StatusMsg)
+	}
+}
+
 func TestRenderHeaderShowsElapsedSessionClock(t *testing.T) {
 	m := &MainModel{
 		state: model.NewAppState(),
@@ -391,6 +450,28 @@ func TestShellArgsForExecutableUsesPlatformSpecificFlags(t *testing.T) {
 				t.Fatalf("args = %#v, want %#v", args, tt.wantArgs)
 			}
 		})
+	}
+}
+
+func TestResolveExternalEditorCommandUsesQuotedVisual(t *testing.T) {
+	t.Setenv("VISUAL", `"C:\Program Files\Neovim\bin\nvim.exe" --wait`)
+
+	name, args, err := resolveExternalEditorCommand("windows")
+	if err != nil {
+		t.Fatalf("resolveExternalEditorCommand: %v", err)
+	}
+	if name != `C:\Program Files\Neovim\bin\nvim.exe` {
+		t.Fatalf("name = %q", name)
+	}
+	wantArgs := []string{"--wait"}
+	if strings.Join(args, "\x00") != strings.Join(wantArgs, "\x00") {
+		t.Fatalf("args = %#v, want %#v", args, wantArgs)
+	}
+}
+
+func TestSplitCommandLineRejectsUnterminatedQuotes(t *testing.T) {
+	if _, err := splitCommandLine(`"C:\Program Files\Neovim\bin\nvim.exe`); err == nil {
+		t.Fatal("expected unterminated quote error")
 	}
 }
 

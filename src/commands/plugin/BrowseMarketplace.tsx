@@ -22,7 +22,7 @@ import { plural } from '../../utils/stringUtils.js';
 import { truncateToWidth } from '../../utils/truncate.js';
 import { findPluginOptionsTarget, PluginOptionsFlow } from './PluginOptionsFlow.js';
 import { PluginTrustWarning } from './PluginTrustWarning.js';
-import { buildPluginDetailsMenuOptions, extractGitHubRepo, type InstallablePlugin, PluginSelectionKeyHint } from './pluginDetailsHelpers.js';
+import { buildPluginDetailsMenuOptions, discoverLocalPluginComponents, extractGitHubRepo, type InstallablePlugin, PluginSelectionKeyHint } from './pluginDetailsHelpers.js';
 import type { ViewState as ParentViewState } from './types.js';
 import { usePagination } from './usePagination.js';
 type Props = {
@@ -193,6 +193,7 @@ export function BrowseMarketplace({
                   entry: plugin_0,
                   marketplaceName: name_0,
                   pluginId,
+                  marketplaceInstallLocation: config[name_0]?.installLocation,
                   // isPluginGloballyInstalled: only block when user/managed scope
                   // exists (nothing to add). Project/local-scope installs don't
                   // block — user may want to promote to user scope (gh-29997).
@@ -250,10 +251,12 @@ export function BrowseMarketplace({
       setLoading(true);
       try {
         const marketplace_1 = await getMarketplace(marketplaceName);
+        const config = await loadKnownMarketplacesConfig();
         if (cancelled) return;
         if (!marketplace_1) {
           throw new Error(`Failed to load marketplace: ${marketplaceName}`);
         }
+        const marketplaceInstallLocation = config[marketplaceName]?.installLocation;
 
         // Filter out already installed plugins
         const installablePlugins: InstallablePlugin[] = [];
@@ -264,6 +267,7 @@ export function BrowseMarketplace({
             entry,
             marketplaceName: marketplaceName,
             pluginId: pluginId_1,
+            marketplaceInstallLocation,
             // Only mark as "installed" when globally scoped (user/managed).
             // Project/local installs don't block — user can add user scope
             // via the plugin-details view (gh-29997).
@@ -636,6 +640,7 @@ export function BrowseMarketplace({
   if (viewState === 'plugin-details' && selectedPlugin) {
     const hasHomepage_1 = selectedPlugin.entry.homepage;
     const githubRepo_1 = extractGitHubRepo(selectedPlugin);
+    const discoveredLocalComponents = discoverLocalPluginComponents(selectedPlugin);
     const menuOptions = buildPluginDetailsMenuOptions(hasHomepage_1, githubRepo_1);
     return <Box flexDirection="column">
         <Box marginBottom={1}>
@@ -675,16 +680,13 @@ export function BrowseMarketplace({
               · MCP Servers:{' '}
               {Array.isArray(selectedPlugin.entry.mcpServers) ? selectedPlugin.entry.mcpServers.join(', ') : typeof selectedPlugin.entry.mcpServers === 'object' ? Object.keys(selectedPlugin.entry.mcpServers).join(', ') : 'configured'}
             </Text>}
-          {!selectedPlugin.entry.commands && !selectedPlugin.entry.agents && !selectedPlugin.entry.hooks && !selectedPlugin.entry.mcpServers && <>
+          {discoveredLocalComponents.map(component => <Text key={component} dimColor>
+              Â· {component}
+            </Text>)}
+          {!selectedPlugin.entry.commands && !selectedPlugin.entry.agents && !selectedPlugin.entry.hooks && !selectedPlugin.entry.mcpServers && discoveredLocalComponents.length === 0 && <>
                 {typeof selectedPlugin.entry.source === 'object' && 'source' in selectedPlugin.entry.source && (selectedPlugin.entry.source.source === 'github' || selectedPlugin.entry.source.source === 'url' || selectedPlugin.entry.source.source === 'npm' || selectedPlugin.entry.source.source === 'pip') ? <Text dimColor>
                     · Component summary not available for remote plugin
                   </Text> :
-          // TODO: Actually scan local plugin directories to show real components
-          // This would require accessing the filesystem to check for:
-          // - commands/ directory and list files
-          // - agents/ directory and list files
-          // - hooks/ directory and list files
-          // - .mcp.json or mcp-servers.json files
           <Text dimColor>
                     · Components will be discovered at installation
                   </Text>}

@@ -1,6 +1,6 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'fs'
-import { homedir } from 'os'
 import { dirname, join } from 'path'
+import { getClaudeConfigHomeDir } from './envUtils.js'
 
 export type DuckHiveSearchProvider =
   | 'auto'
@@ -62,8 +62,10 @@ export function normalizeDuckHiveSearchProvider(
   return SEARCH_PROVIDER_ALIASES[value.trim().toLowerCase()]
 }
 
-export function getDuckHiveSearchConfigPath(homeDir = homedir()): string {
-  return join(homeDir, '.duckhive', 'config.json')
+export function getDuckHiveSearchConfigPath(
+  configHomeDir = getClaudeConfigHomeDir(),
+): string {
+  return join(configHomeDir, 'config.json')
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

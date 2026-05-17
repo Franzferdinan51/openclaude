@@ -15,6 +15,7 @@ import {
   type RecommendationGoal,
 } from './providerRecommendation.js'
 import { readGeminiAccessToken } from './geminiCredentials.js'
+import { readMiniMaxCredential } from './minimaxCredentials.js'
 import { getOllamaChatBaseUrl } from './providerDiscovery.js'
 import { getPrimaryModel } from './providerModels.js'
 import { getProviderValidationError } from './providerValidation.js'
@@ -83,6 +84,7 @@ const PROFILE_ENV_KEYS = [
   'NVIDIA_MODEL',
   'OPENROUTER_API_KEY',
   'MINIMAX_API_KEY',
+  'MMX_API_KEY',
   'MINIMAX_BASE_URL',
   'MINIMAX_MODEL',
   'MISTRAL_BASE_URL',
@@ -114,6 +116,7 @@ const SECRET_ENV_KEYS = [
   'NVIDIA_API_KEY',
   'OPENROUTER_API_KEY',
   'MINIMAX_API_KEY',
+  'MMX_API_KEY',
   'MISTRAL_API_KEY',
   'BNKR_API_KEY',
   'XAI_API_KEY',
@@ -166,6 +169,7 @@ export type ProfileEnv = {
   NVIDIA_API_KEY?: string
   OPENROUTER_API_KEY?: string
   MINIMAX_API_KEY?: string
+  MMX_API_KEY?: string
   MINIMAX_BASE_URL?: string
   MINIMAX_MODEL?: string
   MISTRAL_BASE_URL?: string
@@ -195,6 +199,7 @@ type SecretValueSource = Partial<
     | 'NVIDIA_API_KEY'
     | 'OPENROUTER_API_KEY'
     | 'MINIMAX_API_KEY'
+    | 'MMX_API_KEY'
     | 'MISTRAL_API_KEY'
     | 'BNKR_API_KEY'
     | 'XAI_API_KEY'
@@ -482,7 +487,12 @@ export function buildMiniMaxProfileEnv(options: {
   processEnv?: NodeJS.ProcessEnv
 }): ProfileEnv | null {
   const processEnv = options.processEnv ?? process.env
-  const key = sanitizeApiKey(options.apiKey ?? processEnv.MINIMAX_API_KEY)
+  const resolvedCredential = readMiniMaxCredential(processEnv)
+  const key = sanitizeApiKey(
+    options.apiKey ??
+      resolvedCredential?.credential ??
+      processEnv.MINIMAX_API_KEY,
+  )
   if (!key) {
     return null
   }
@@ -509,6 +519,8 @@ export function buildMiniMaxProfileEnv(options: {
       defaultModel,
     OPENAI_API_KEY: key,
     MINIMAX_API_KEY: key,
+    MMX_API_KEY:
+      resolvedCredential?.kind === 'api-key' ? resolvedCredential.credential : undefined,
     MINIMAX_BASE_URL: defaultBaseUrl,
     MINIMAX_MODEL: defaultModel,
   }

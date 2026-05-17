@@ -13,6 +13,11 @@
 import type { LocalCommandCall } from '../../types/command.js'
 import { spawnTeammate } from '../../tools/shared/spawnMultiAgent.js'
 import type { ToolUseContext } from '../../Tool.js'
+import {
+  runSwarmVoting,
+  type CollectedResponses,
+  type VotingMode,
+} from '../../utils/swarm/swarmVoting.js'
 
 export type SwarmDomain = 'game' | 'build' | 'research' | 'audit' | 'data' | 'mobile'
 export type SwarmPhase = 'planning' | 'implementation' | 'review' | 'deployment' | 'voting'
@@ -277,6 +282,102 @@ export function setSwarmTestDeps(overrides: Partial<SwarmDeps> | null): void {
   swarmTestDeps = overrides
 }
 
+function splitCommandArgs(args: string): string[] {
+  return args.match(/"[^"]*"|'[^']*'|\S+/g)?.map(arg => arg.replace(/^["']|["']$/g, '')) ?? []
+}
+
+function trimOuterQuotes(value: string): string {
+  return value.replace(/^["']|["']$/g, '').trim()
+}
+
+const DOMAIN_ALIASES: Record<string, SwarmDomain> = {
+  coding: 'build',
+  'code-review': 'audit',
+  security: 'audit',
+  debugging: 'build',
+  architecture: 'build',
+  testing: 'build',
+  devops: 'build',
+  analysis: 'research',
+  docs: 'build',
+  optimization: 'build',
+  refactor: 'build',
+  backend: 'build',
+  frontend: 'build',
+  infrastructure: 'build',
+}
+
+function resolveSwarmDomain(value: string | undefined): SwarmDomain | null {
+  if (!value) return null
+
+  const normalized = value.trim().toLowerCase()
+  if (!normalized) return null
+  if (normalized in DOMAIN_AGENTS) return normalized as SwarmDomain
+  return DOMAIN_ALIASES[normalized] ?? null
+}
+
+function parseVotingResponses(raw: string): CollectedResponses {
+  const sections = raw
+    .split('|')
+    .map(section => trimOuterQuotes(section))
+    .filter(Boolean)
+
+  const responses: CollectedResponses = new Map()
+  for (const [index, text] of sections.entries()) {
+    responses.set(`agent-${index + 1}`, {
+      text,
+      timestamp: Date.now() + index,
+    })
+  }
+
+  return responses
+}
+
+function renderVotingUsage(): string {
+  return `Swarm voting usage
+
+/swarm vote "<response A>" | "<response B>" | "<response C>"
+/swarm merge "<response A>" | "<response B>"
+/swarm pick-best "<response A>" | "<response B>"
+
+Provide at least two responses separated by | so DuckHive can rank, merge, or tally them.`
+}
+
+async function handleVotingMode(mode: VotingMode, raw: string) {
+  const responses = parseVotingResponses(raw)
+  if (responses.size < 2) {
+    return { type: 'text' as const, value: renderVotingUsage() }
+  }
+
+  const result = await runSwarmVoting(responses, { mode })
+
+  if (result.mode === 'pick-best') {
+    const lines = ['Swarm pick-best', '-'.repeat(50)]
+    lines.push(`Winner: ${result.best.agentId} (${result.best.score}/10)`)
+    lines.push(`Reason: ${result.best.reasoning}`)
+    lines.push('\nRankings:')
+    for (const ranking of result.rankings) {
+      lines.push(`- ${ranking.agentId}: ${ranking.score}/10 — ${ranking.reasoning}`)
+    }
+    return { type: 'text' as const, value: lines.join('\n') }
+  }
+
+  if (result.mode === 'merge') {
+    return {
+      type: 'text' as const,
+      value: `Swarm merge\n${'-'.repeat(50)}\nContributors: ${result.contributors.join(', ')}\n\n${result.mergedText}`,
+    }
+  }
+
+  const tallyLines = Object.entries(result.tally)
+    .sort((a, b) => b[1] - a[1])
+    .map(([agentId, count]) => `- ${agentId}: ${count} vote(s)`)
+  return {
+    type: 'text' as const,
+    value: `Swarm vote\n${'-'.repeat(50)}\nWinner: ${result.winner}\n\nTally:\n${tallyLines.join('\n')}`,
+  }
+}
+
 function classifyTaskDomain(task: string): SwarmDomain {
   const msg = task.toLowerCase()
 
@@ -317,7 +418,12 @@ Provide your analysis and implementation.`
 
 export const call: LocalCommandCall = async (args: string, context: ToolUseContext) => {
   const { spawnTeammate, sleep } = getSwarmDeps()
-  const parsedArgs = args.trim().split(/\s+/).filter(Boolean)
+  const parsedArgs = splitCommandArgs(args)
+  const votingMode = parsedArgs[0]
+  if (votingMode === 'vote' || votingMode === 'merge' || votingMode === 'pick-best') {
+    return handleVotingMode(votingMode, parsedArgs.slice(1).join(' ').trim())
+  }
+
   const flags: Record<string, string | boolean> = {}
   const positional: string[] = []
 
@@ -331,7 +437,8 @@ export const call: LocalCommandCall = async (args: string, context: ToolUseConte
   }
 
   const task = positional.join(' ').trim()
-  const domainFlag = flags.domain as SwarmDomain | undefined
+  const requestedDomain = typeof flags.domain === 'string' ? flags.domain : undefined
+  const domainFlag = resolveSwarmDomain(requestedDomain)
   const count = Math.min(Number(flags.count) || 4, 8)
   const dryRun = flags['dry-run'] === true || flags.dry === true
 
@@ -348,6 +455,7 @@ export const call: LocalCommandCall = async (args: string, context: ToolUseConte
     for (const [domain, agents] of Object.entries(DOMAIN_AGENTS)) {
       lines.push(`\n${domain.toUpperCase()}: ${agents.join(', ')}`)
     }
+    lines.push('\nAccepted aliases: coding, security, code-review, debugging, architecture, testing, devops, analysis, docs, optimization, refactor, backend, frontend, infrastructure')
     return { type: 'text', value: lines.join('\n') }
   }
 
@@ -358,15 +466,34 @@ export const call: LocalCommandCall = async (args: string, context: ToolUseConte
 
 Usage: /swarm <task description>
 Example: /swarm build a REST API for task management
-Example: /swarm make a roguelike platformer --count 8
-Example: /swarm audit my codebase for security --domain audit
+Example: /swarm make a roguelike platformer --count=8
+Example: /swarm audit my codebase for security --domain=security
+Example: /swarm pick-best "response A" | "response B"
 
 Flags:
-  --domain=<type>   Force domain (game|build|research|audit|data|mobile)
+  --domain=<type>   Force domain (build|audit|research|data|mobile|game)
+                    Aliases: coding, security, code-review, debugging, architecture,
+                    testing, devops, analysis, docs, optimization, refactor,
+                    backend, frontend, infrastructure
   --count=<N>        Number of agents (1-8, default 4)
   --dry-run         Show plan without spawning agents
   --list            List available agents
-  --list-domain     List agents by domain`,
+  --list-domain     List agents by domain
+
+Voting modes:
+  /swarm vote "<response A>" | "<response B>"
+  /swarm merge "<response A>" | "<response B>"
+  /swarm pick-best "<response A>" | "<response B>"`,
+    }
+  }
+
+  if (requestedDomain && !domainFlag) {
+    return {
+      type: 'text',
+      value: `Unknown swarm domain: ${requestedDomain}
+
+Supported domains: build, audit, research, data, mobile, game
+Accepted aliases: coding, security, code-review, debugging, architecture, testing, devops, analysis, docs, optimization, refactor, backend, frontend, infrastructure`,
     }
   }
 

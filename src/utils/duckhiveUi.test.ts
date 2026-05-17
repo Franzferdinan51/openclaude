@@ -2,8 +2,10 @@ import { afterEach, expect, test } from 'bun:test'
 import { mkdtempSync, rmSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
+import { setClaudeConfigHomeDirForTesting } from './envUtils.js'
 import {
   DEFAULT_DUCKHIVE_UI_SURFACE,
+  getDuckHiveConfigPath,
   getConfiguredDuckHiveUISurface,
   getPreferredDuckHiveUISurface,
   normalizeDuckHiveUISurface,
@@ -14,6 +16,7 @@ import {
 let tempDir: string | undefined
 
 afterEach(() => {
+  setClaudeConfigHomeDirForTesting(undefined)
   if (tempDir) {
     rmSync(tempDir, { recursive: true, force: true })
     tempDir = undefined
@@ -38,6 +41,11 @@ test('uses the configured surface when no env override is set', () => {
 test('defaults to the classic REPL when no surface is configured', () => {
   expect(DEFAULT_DUCKHIVE_UI_SURFACE).toBe('legacy')
   expect(getConfiguredDuckHiveUISurface({})).toBe('legacy')
+})
+
+test('uses DuckHive config home for the default UI config path', () => {
+  setClaudeConfigHomeDirForTesting('C:/DuckHive')
+  expect(getDuckHiveConfigPath()).toBe(join('C:/DuckHive', 'config.json'))
 })
 
 test('prefers explicit env overrides over config', () => {

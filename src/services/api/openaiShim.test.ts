@@ -1,3 +1,6 @@
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { afterEach, beforeEach, expect, test } from 'bun:test'
 import { acquireSharedMutationLock, releaseSharedMutationLock } from '../../test/sharedMutationLock.js'
 import { registerGateway } from '../../integrations/index.ts'
@@ -29,6 +32,7 @@ const originalEnv = {
   NVIDIA_API_KEY: process.env.NVIDIA_API_KEY,
   NVIDIA_NIM: process.env.NVIDIA_NIM,
   MINIMAX_API_KEY: process.env.MINIMAX_API_KEY,
+  MMX_HOME: process.env.MMX_HOME,
   BNKR_API_KEY: process.env.BNKR_API_KEY,
   BANKR_BASE_URL: process.env.BANKR_BASE_URL,
   BANKR_MODEL: process.env.BANKR_MODEL,
@@ -38,6 +42,13 @@ const originalEnv = {
 }
 
 const originalFetch = globalThis.fetch
+const tempDirs: string[] = []
+
+function makeMmxHome(): string {
+  const dir = mkdtempSync(join(tmpdir(), 'duckhive-openai-shim-mmx-'))
+  tempDirs.push(dir)
+  return dir
+}
 
 function restoreEnv(key: string, value: string | undefined): void {
   if (value === undefined) {
@@ -111,6 +122,7 @@ beforeEach(async () => {
   delete process.env.NVIDIA_API_KEY
   delete process.env.NVIDIA_NIM
   delete process.env.MINIMAX_API_KEY
+  delete process.env.MMX_HOME
   delete process.env.BNKR_API_KEY
   delete process.env.BANKR_BASE_URL
   delete process.env.BANKR_MODEL
@@ -144,6 +156,7 @@ afterEach(() => {
     restoreEnv('NVIDIA_API_KEY', originalEnv.NVIDIA_API_KEY)
     restoreEnv('NVIDIA_NIM', originalEnv.NVIDIA_NIM)
     restoreEnv('MINIMAX_API_KEY', originalEnv.MINIMAX_API_KEY)
+    restoreEnv('MMX_HOME', originalEnv.MMX_HOME)
     restoreEnv('BNKR_API_KEY', originalEnv.BNKR_API_KEY)
     restoreEnv('BANKR_BASE_URL', originalEnv.BANKR_BASE_URL)
     restoreEnv('BANKR_MODEL', originalEnv.BANKR_MODEL)
@@ -151,6 +164,9 @@ afterEach(() => {
     restoreEnv('DEEPSEEK_API_KEY', originalEnv.DEEPSEEK_API_KEY)
     restoreEnv('MIMO_API_KEY', originalEnv.MIMO_API_KEY)
     globalThis.fetch = originalFetch
+    for (const dir of tempDirs.splice(0)) {
+      rmSync(dir, { recursive: true, force: true })
+    }
   } finally {
     releaseSharedMutationLock()
   }
@@ -1638,6 +1654,65 @@ test('does not use MINIMAX_API_KEY for non-MiniMax OpenAI-compatible routes', as
   })
 
   expect(capturedAuthorization).toBeNull()
+})
+
+test('uses ~/.mmx oauth credentials for MiniMax routes when OPENAI_API_KEY is unset', async () => {
+  let capturedAuthorization: string | null = null
+  const mmxHome = makeMmxHome()
+  writeFileSync(
+    join(mmxHome, 'credentials.json'),
+    JSON.stringify({
+      tokens: {
+        accessToken: 'oauth-access-token-123456',
+      },
+    }),
+    'utf8',
+  )
+
+  process.env.CLAUDE_CODE_USE_OPENAI = '1'
+  process.env.OPENAI_BASE_URL = 'https://api.minimax.io/v1'
+  process.env.OPENAI_MODEL = 'MiniMax-M2.7'
+  process.env.MMX_HOME = mmxHome
+  delete process.env.MINIMAX_API_KEY
+  delete process.env.OPENAI_API_KEY
+
+  globalThis.fetch = (async (_input, init) => {
+    const headers = init?.headers as Record<string, string> | undefined
+    capturedAuthorization =
+      headers?.Authorization ?? headers?.authorization ?? null
+
+    return new Response(
+      JSON.stringify({
+        id: 'chatcmpl-minimax-oauth',
+        model: 'MiniMax-M2.7',
+        choices: [
+          {
+            message: {
+              role: 'assistant',
+              content: 'ok',
+            },
+            finish_reason: 'stop',
+          },
+        ],
+      }),
+      {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      },
+    )
+  }) as unknown as FetchType
+
+  const client = createOpenAIShimClient({}) as OpenAIShimClient
+
+  await client.beta.messages.create({
+    model: 'MiniMax-M2.7',
+    messages: [{ role: 'user', content: 'hello' }],
+    max_tokens: 32,
+    stream: false,
+  })
+
+  expect(capturedAuthorization).toBe('Bearer oauth-access-token-123456')
 })
 
 test('xiaomi mimo route uses api-key auth header and max_completion_tokens', async () => {

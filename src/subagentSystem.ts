@@ -1,12 +1,64 @@
 import type { ToolUseContext } from './Tool.js'
+import { routeTask } from './orchestrator/multi-model/multi-model-router.js'
 import { spawnTeammate } from './tools/shared/spawnMultiAgent.js'
 
 type SessionsSpawnOptions = {
   label?: string
+  model?: string
+  agentType?: string
   mode?: string
   runtime?: string
   task?: string
   context: ToolUseContext
+}
+
+type SubagentSystemDeps = {
+  routeTask: typeof routeTask
+  spawnTeammate: typeof spawnTeammate
+}
+
+let subagentSystemTestDeps: Partial<SubagentSystemDeps> | null = null
+
+function getSubagentSystemDeps(): SubagentSystemDeps {
+  return {
+    routeTask,
+    spawnTeammate,
+    ...subagentSystemTestDeps,
+  }
+}
+
+export function setSubagentSystemTestDeps(
+  overrides: Partial<SubagentSystemDeps> | null,
+): void {
+  subagentSystemTestDeps = overrides
+}
+
+function inferSpawnComplexity(task: string, agentType?: string): number {
+  const complexityHints = [task, agentType].filter(Boolean).join(' ').toLowerCase()
+  if (
+    /architect|analysis|review|security|audit|refactor|migration|debug|investigate|research/.test(
+      complexityHints,
+    )
+  ) {
+    return 7
+  }
+  if (task.length > 120) return 7
+  if (task.length > 50) return 6
+  return 5
+}
+
+function resolveSpawnModel(task: string, agentType?: string, explicitModel?: string): string {
+  if (explicitModel?.trim()) return explicitModel.trim()
+
+  const routingTask = [agentType, task].filter(Boolean).join(' ')
+  const route = getSubagentSystemDeps().routeTask({
+    task: routingTask,
+    complexity: inferSpawnComplexity(task, agentType),
+    vision: /\bimage|vision|screenshot|photo\b/i.test(routingTask),
+    functionCalling: true,
+    preferQuality: true,
+  })
+  return route.model
 }
 
 /**
@@ -27,14 +79,17 @@ export async function sessions_spawn(
   // Derive a teammate name from the label, sanitizing for use as agentId
   const label = options.label ?? 'subagent'
   const teammateName = label.replace(/[^a-zA-Z0-9_-]/g, '_').substring(0, 40) || 'subagent'
+  const model = resolveSpawnModel(task, options.agentType, options.model)
 
   try {
-    const result = await spawnTeammate(
+    const result = await getSubagentSystemDeps().spawnTeammate(
       {
         name: teammateName,
         prompt: task,
         team_name: 'duckhive-sessions',
         plan_mode_required: false,
+        model,
+        agent_type: options.agentType,
       },
       options.context,
     )

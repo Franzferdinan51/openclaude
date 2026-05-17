@@ -96,7 +96,7 @@ export async function autoOrchestrate(
     logForDebugging(`[auto-orchestrate] needsCouncil=true (reasons: ${analysis.councilReasons.join(', ')}), complexity=${analysis.complexity}, councilThreshold=${bridge.getOptions().councilThreshold}, autoConsult=${bridge.getOptions().autoConsultCouncil}, shouldConsult=${shouldConsult}`)
     if (shouldConsult) {
       try {
-        const result = await bridge.startDeliberation(message, 'balanced')
+        const result = await bridge.startDeliberation(message, 'deliberation')
         logForDebugging(`[auto-orchestrate] deliberation result: success=${result.success}, verdict=${result.verdict ?? 'none'}`)
         councilTriggered = result.success
         if (result.success && result.verdict) {

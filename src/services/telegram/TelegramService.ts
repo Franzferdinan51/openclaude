@@ -98,24 +98,40 @@ class TelegramBotAPI {
 // Storage helpers
 // ============================================================================
 
-const STORAGE_KEY = 'pluginSecrets.telegram'
+const STORAGE_KEY = 'telegram'
 
-function getStorageData(): { botToken?: string; chatId?: number; connectionStatus?: string } | null {
+type TelegramStorageData = {
+  botToken?: string
+  chatId?: number
+  connectionStatus?: string
+}
+
+function getStorageData(): TelegramStorageData | null {
   try {
     const storage = getSecureStorage()
-    return storage.read() as { botToken?: string; chatId?: number; connectionStatus?: string } | null
+    const data = storage.read()
+    const telegram = data?.pluginSecrets?.[STORAGE_KEY]
+    if (!telegram) return null
+    return {
+      botToken: telegram.botToken,
+      chatId:
+        telegram.chatId !== undefined
+          ? Number(telegram.chatId)
+          : undefined,
+      connectionStatus: telegram.connectionStatus,
+    }
   } catch {
     return null
   }
 }
 
-function saveStorageData(data: { botToken?: string; chatId?: number; connectionStatus?: string }): void {
+function saveStorageData(data: TelegramStorageData): void {
   try {
     const storage = getSecureStorage()
     const existing = storage.read() as Record<string, unknown> ?? {}
     existing.pluginSecrets = existing.pluginSecrets ?? {}
-    ;(existing.pluginSecrets as Record<string, unknown>)[STORAGE_KEY.split('.')[1]] = {
-      ...((existing.pluginSecrets as Record<string, unknown>)[STORAGE_KEY.split('.')[1]] as Record<string, unknown> | undefined),
+    ;(existing.pluginSecrets as Record<string, unknown>)[STORAGE_KEY] = {
+      ...((existing.pluginSecrets as Record<string, unknown>)[STORAGE_KEY] as Record<string, unknown> | undefined),
       ...data,
     }
     storage.update(existing)

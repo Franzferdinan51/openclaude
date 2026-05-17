@@ -43,6 +43,221 @@ const DEFAULT_OPTIONS: IntegrationOptions = {
   cacheCouncilResults: true,
 }
 
+const FALLBACK_MODES: DeliberationMode[] = [
+  'deliberation',
+  'legislative',
+  'inquiry',
+  'balanced',
+  'adversarial',
+  'consensus',
+  'brainstorm',
+  'swarm',
+  'swarm_coding',
+  'deep_research',
+  'collaborative',
+  'vision',
+  'emergency',
+  'risk_assessment',
+  'devil-advocate',
+  'legislature',
+  'prediction',
+  'inspector',
+]
+
+function isDeliberationMode(value: string): value is DeliberationMode {
+  return (FALLBACK_MODES as string[]).includes(value)
+}
+
+function normalizeVote(value: unknown): DeliberationMessage['vote'] {
+  if (value === 'yea' || value === 'yes') return 'yea'
+  if (value === 'nay' || value === 'no') return 'nay'
+  if (value === 'abstain') return 'abstain'
+  return undefined
+}
+
+function normalizeMessage(message: unknown, index: number): DeliberationMessage | null {
+  if (!message || typeof message !== 'object') return null
+  const raw = message as Record<string, unknown>
+  const content =
+    typeof raw.content === 'string'
+      ? raw.content
+      : typeof raw.text === 'string'
+        ? raw.text
+        : ''
+
+  if (!content) return null
+
+  return {
+    id: typeof raw.id === 'string' ? raw.id : `message_${index}`,
+    councilor:
+      typeof raw.councilor === 'string'
+        ? raw.councilor
+        : typeof raw.name === 'string'
+          ? raw.name
+          : typeof raw.role === 'string'
+            ? raw.role
+            : 'councilor',
+    role: typeof raw.role === 'string' ? raw.role : undefined,
+    content,
+    vote: normalizeVote(raw.vote),
+    timestamp: typeof raw.timestamp === 'number' ? raw.timestamp : undefined,
+    type:
+      raw.type === 'opening' ||
+      raw.type === 'argument' ||
+      raw.type === 'rebuttal' ||
+      raw.type === 'question' ||
+      raw.type === 'vote' ||
+      raw.type === 'closing'
+        ? raw.type
+        : undefined,
+    confidence: typeof raw.confidence === 'number' ? raw.confidence : undefined,
+  }
+}
+
+function normalizeSession(session: unknown): DeliberationSession | null {
+  if (!session || typeof session !== 'object') return null
+  const raw = session as Record<string, unknown>
+
+  if (
+    typeof raw.id === 'string' &&
+    typeof raw.topic === 'string' &&
+    typeof raw.mode === 'string' &&
+    typeof raw.phase === 'string' &&
+    raw.stats &&
+    typeof raw.stats === 'object'
+  ) {
+    return raw as DeliberationSession
+  }
+
+  const messages = Array.isArray(raw.messages)
+    ? raw.messages
+        .map((message, index) => normalizeMessage(message, index))
+        .filter((message): message is DeliberationMessage => message !== null)
+    : []
+
+  const votes =
+    raw.votes && typeof raw.votes === 'object'
+      ? (raw.votes as Record<string, unknown>)
+      : {}
+
+  const inferredMode =
+    typeof raw.mode === 'string' && isDeliberationMode(raw.mode)
+      ? raw.mode
+      : 'deliberation'
+
+  let phase: DeliberationSession['phase'] = 'idle'
+  if (typeof raw.phase === 'string') {
+    if (
+      raw.phase === 'idle' ||
+      raw.phase === 'opening' ||
+      raw.phase === 'deliberation' ||
+      raw.phase === 'voting' ||
+      raw.phase === 'ended'
+    ) {
+      phase = raw.phase
+    }
+  } else if (typeof raw.topic === 'string' && raw.topic.trim()) {
+    phase = messages.length > 0 ? 'deliberation' : 'opening'
+  }
+
+  return {
+    id: typeof raw.id === 'string' ? raw.id : 'session_unknown',
+    topic: typeof raw.topic === 'string' ? raw.topic : '',
+    mode: inferredMode,
+    phase,
+    messages,
+    stats: {
+      yeas: Number(votes.yea ?? votes.yeas ?? 0),
+      nays: Number(votes.nay ?? votes.nays ?? 0),
+      abstainers: Number(votes.abstain ?? votes.abstainers ?? 0),
+    },
+    startedAt: typeof raw.startedAt === 'number' ? raw.startedAt : undefined,
+    endedAt: typeof raw.endedAt === 'number' ? raw.endedAt : undefined,
+    elapsed: typeof raw.elapsed === 'number' ? raw.elapsed : undefined,
+    viewerCount: typeof raw.viewerCount === 'number' ? raw.viewerCount : undefined,
+  }
+}
+
+function normalizeAskResponse(
+  response: unknown,
+  fallbackQuestion?: string,
+  fallbackMode?: DeliberationMode,
+): AskResponse {
+  if (!response || typeof response !== 'object') {
+    return { success: false }
+  }
+
+  const raw = response as Record<string, unknown>
+  const responses =
+    raw.responses && typeof raw.responses === 'object'
+      ? (raw.responses as Record<string, unknown>)
+      : {}
+
+  const messages = Object.entries(responses)
+    .map(([councilor, content], index) =>
+      normalizeMessage({ id: `${councilor}_${index}`, councilor, content }, index),
+    )
+    .filter((message): message is DeliberationMessage => message !== null)
+
+  const summary = messages
+    .slice(0, 3)
+    .map(message => `${message.councilor}: ${message.content}`)
+    .join(' | ')
+
+  return {
+    success: raw.success !== false,
+    sessionId:
+      typeof raw.sessionId === 'string'
+        ? raw.sessionId
+        : typeof raw.session_id === 'string'
+          ? raw.session_id
+          : undefined,
+    verdict: typeof raw.verdict === 'string' ? raw.verdict : 'COMPLEX',
+    summary: summary || (typeof raw.summary === 'string' ? raw.summary : fallbackQuestion),
+    consensus: typeof raw.consensus === 'number' ? raw.consensus : undefined,
+    messages,
+    recommendations: messages.map(message => message.content),
+  }
+}
+
+function normalizeHealth(health: unknown): HiveHealth | null {
+  if (!health || typeof health !== 'object') return null
+  const raw = health as Record<string, unknown>
+  const memory =
+    raw.memory && typeof raw.memory === 'object'
+      ? (raw.memory as Record<string, unknown>)
+      : {}
+  const services =
+    raw.services && typeof raw.services === 'object'
+      ? (raw.services as Record<string, unknown>)
+      : {}
+
+  const timestampValue =
+    typeof raw.timestamp === 'number'
+      ? raw.timestamp
+      : typeof raw.timestamp === 'string'
+        ? Date.parse(raw.timestamp)
+        : NaN
+
+  return {
+    status:
+      raw.status === 'ok' || raw.status === 'degraded' || raw.status === 'error'
+        ? raw.status
+        : 'ok',
+    timestamp: Number.isFinite(timestampValue) ? timestampValue : Date.now(),
+    uptime: typeof raw.uptime === 'number' ? raw.uptime : 0,
+    memory: {
+      used: typeof memory.used === 'number' ? memory.used : 0,
+      total: typeof memory.total === 'number' ? memory.total : 0,
+      percentage: typeof memory.percentage === 'number' ? memory.percentage : 0,
+    },
+    services: {
+      council: typeof services.council === 'boolean' ? services.council : true,
+      hiveCore: typeof services.hiveCore === 'boolean' ? services.hiveCore : true,
+    },
+  }
+}
+
 export class HiveBridge {
   private config: HiveConfig
   private options: IntegrationOptions
@@ -106,7 +321,7 @@ export class HiveBridge {
     if (this.healthCache && now - this.healthCacheTime < this.healthCacheTTL) {
       return this.healthCache.status === 'ok'
     }
-    const health = await this.apiGet<HiveHealth>('/api/health')
+    const health = normalizeHealth(await this.apiGet<unknown>('/api/health'))
     if (health) {
       this.healthCache = health
       this.healthCacheTime = now
@@ -120,7 +335,7 @@ export class HiveBridge {
     if (this.healthCache && now - this.healthCacheTime < this.healthCacheTTL) {
       return this.healthCache
     }
-    const health = await this.apiGet<HiveHealth>('/api/health')
+    const health = normalizeHealth(await this.apiGet<unknown>('/api/health'))
     if (health) {
       this.healthCache = health
       this.healthCacheTime = now
@@ -135,8 +350,17 @@ export class HiveBridge {
     if (this.councilorsCache && now - this.councilorsCacheTime < this.councilCacheTTL) {
       return this.councilorsCache
     }
-    const data = await this.apiGet<{ councilors: Councilor[] }>('/api/councilors')
-    const councilors = data?.councilors ?? []
+    const data = await this.apiGet<unknown>('/api/councilors')
+    const councilors = Array.isArray(data)
+      ? (data as Councilor[])
+      : (
+          data &&
+          typeof data === 'object' &&
+          'councilors' in data &&
+          Array.isArray((data as { councilors?: unknown }).councilors)
+        )
+        ? ((data as { councilors: Councilor[] }).councilors)
+        : []
     this.councilorsCache = councilors
     this.councilorsCacheTime = now
     return councilors
@@ -146,40 +370,128 @@ export class HiveBridge {
 
   async startDeliberation(
     topic: string,
-    mode: DeliberationMode = 'balanced'
-  ): Promise<{ sessionId?: string; success: boolean; error?: string }> {
-    const result = await this.apiPost<{ success: boolean; sessionId?: string; error?: string }>(
-      '/api/council/deliberate',
-      { topic, mode }
-    )
-    return { success: result?.success ?? false, sessionId: result?.sessionId, error: result?.error }
+    mode: DeliberationMode = 'deliberation'
+  ): Promise<{
+    sessionId?: string
+    success: boolean
+    error?: string
+    verdict?: string
+    consensusScore?: number
+    arguments?: string[]
+    councilors?: string[]
+    duration?: number
+  }> {
+    const start = await this.apiPost<{
+      ok?: boolean
+      success?: boolean
+      sessionId?: string
+      session?: unknown
+      error?: string
+    }>('/api/session/start', { topic, mode })
+
+    if (start?.ok === true || start?.success === true || start?.session || start?.sessionId) {
+      const session = normalizeSession(start.session)
+      const ask = await this.askCouncil({ question: topic, mode })
+      return {
+        success: true,
+        sessionId: session?.id ?? start.sessionId ?? ask.sessionId,
+        verdict: ask.verdict,
+        consensusScore: ask.consensus,
+        arguments: ask.recommendations,
+        councilors: ask.messages?.map(message => message.councilor),
+      }
+    }
+
+    const legacy = await this.apiPost<Record<string, unknown>>('/api/council/deliberate', {
+      topic,
+      mode,
+    })
+    if (legacy) {
+      const ask = normalizeAskResponse(legacy, topic, mode)
+      return {
+        success: ask.success,
+        sessionId: ask.sessionId,
+        error: typeof legacy.error === 'string' ? legacy.error : undefined,
+        verdict: ask.verdict,
+        consensusScore: ask.consensus,
+        arguments: ask.recommendations,
+        councilors: ask.messages?.map(message => message.councilor),
+      }
+    }
+
+    return { success: false, error: start?.error }
   }
 
   async askCouncil(request: AskRequest): Promise<AskResponse> {
-    const result = await this.apiPost<AskResponse>('/api/council/ask', {
+    const body = {
       question: request.question,
-      mode: request.mode ?? 'balanced',
-    })
-    return result ?? { success: false }
+      prompt: request.question,
+      mode: request.mode ?? 'deliberation',
+    }
+    const direct = await this.apiPost('/api/ask', body)
+    if (direct) {
+      return normalizeAskResponse(direct, request.question, request.mode)
+    }
+
+    const legacy = await this.apiPost('/api/council/ask', body)
+    return normalizeAskResponse(legacy, request.question, request.mode)
   }
 
   async getCurrentSession(): Promise<DeliberationSession | null> {
-    const data = await this.apiGet<{ current: DeliberationSession }>('/api/council/all')
-    return data?.current ?? null
+    const direct = await this.apiGet('/api/session')
+    const normalizedDirect = normalizeSession(direct)
+    if (normalizedDirect) return normalizedDirect
+
+    const legacy = await this.apiGet<{ current: DeliberationSession }>('/api/council/all')
+    return normalizeSession(legacy?.current) ?? null
   }
 
   async getMessages(limit = 50): Promise<DeliberationMessage[]> {
     const data = await this.apiGet<{ messages: DeliberationMessage[] }>(
       `/api/council/messages?limit=${limit}`
     )
-    return data?.messages ?? []
+    if (data?.messages) return data.messages
+
+    const session = await this.getCurrentSession()
+    return session?.messages.slice(-limit) ?? []
+  }
+
+  async stopDeliberation(): Promise<{ success: boolean; error?: string }> {
+    const result = await this.apiPost<{ ok?: boolean; success?: boolean; error?: string }>(
+      '/api/session/stop',
+      {}
+    )
+    return {
+      success: result?.ok === true || result?.success === true,
+      error: result?.error,
+    }
   }
 
   async getModes(): Promise<DeliberationMode[]> {
-    return [
-      'balanced', 'adversarial', 'consensus', 'brainstorm', 'swarm',
-      'devil-advocate', 'legislature', 'prediction', 'inspector',
-    ]
+    const direct = await this.apiGet<unknown>('/api/modes')
+    if (Array.isArray(direct)) {
+      const normalized = direct
+        .map(entry => {
+          if (typeof entry === 'string' && isDeliberationMode(entry)) return entry
+          if (
+            entry &&
+            typeof entry === 'object' &&
+            'id' in entry &&
+            typeof (entry as { id: unknown }).id === 'string' &&
+            isDeliberationMode((entry as { id: string }).id)
+          ) {
+            return (entry as { id: DeliberationMode }).id
+          }
+          return null
+        })
+        .filter((entry): entry is DeliberationMode => entry !== null)
+
+      if (normalized.length > 0) {
+        return normalized
+      }
+    }
+
+    return FALLBACK_MODES
   }
 
   // ─── Senate / Decrees ─────────────────────────────────────────────────────

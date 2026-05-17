@@ -45,7 +45,10 @@ describe('HybridOrchestrator AgentRun integration', () => {
     const bridgeMock: BridgeMock = {
       isEnabled: () => true,
       shouldConsultCouncil: complexity => complexity >= 4,
-      startDeliberation: async () => ({ success: true, sessionId: 'council-123' }),
+      startDeliberation: async (_message, mode) => {
+        expect(mode).toBe('deliberation')
+        return { success: true, sessionId: 'council-123' }
+      },
       spawnTeam: async () => ({ success: true, teamId: 'team-123' }),
     }
 
@@ -83,6 +86,7 @@ describe('HybridOrchestrator AgentRun integration', () => {
       'team_spawn',
       'checkpoint_save',
     ])
+    expect(result.steps[0]?.output).toContain('(deliberation)')
 
     const run = store.getRun(result.taskId)
     expect(run?.progress?.summary).toBe('Ready with 3 orchestration steps')

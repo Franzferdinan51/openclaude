@@ -98,6 +98,14 @@ test('resolveActiveRouteIdFromEnv treats MiniMax credential-only env as MiniMax'
   ).toBe('minimax')
 })
 
+test('resolveActiveRouteIdFromEnv treats MMX_API_KEY env as MiniMax', () => {
+  expect(
+    resolveActiveRouteIdFromEnv({
+      MMX_API_KEY: 'mmx-key',
+    } as NodeJS.ProcessEnv),
+  ).toBe('minimax')
+})
+
 test('resolveActiveRouteIdFromEnv treats Venice credential-only env as Venice', () => {
   expect(
     resolveActiveRouteIdFromEnv({

@@ -14,7 +14,7 @@
       "import": "./dist/sdk.mjs"
     },
     "./harness": {
-      "types": "./src/entrypoints/harness.ts",
+      "types": "./src/entrypoints/harness.d.ts",
       "import": "./dist/harness.mjs"
     }
   },
@@ -22,10 +22,12 @@
     "bin/",
     "config/",
     "dist/cli.mjs",
+    "dist/harness.mjs",
     "dist/sdk.mjs",
     "skills/newest-desktop-control/",
+    "src/entrypoints/harness.d.ts",
     "src/entrypoints/sdk.d.ts",
-    "src/entrypoints/harness.ts",
+    "src/entrypoints/sdk/coreTypes.generated.d.ts",
     "src/entrypoints/sdk/coreTypes.generated.ts",
     "README.md"
   ],
@@ -53,6 +55,8 @@
     "dev:grpc": "bun run scripts/start-grpc.ts",
     "dev:grpc:cli": "bun run scripts/grpc-cli.ts",
     "start": "node dist/cli.mjs",
+    "start:local": "node bin/duckhive",
+    "dev:local": "bun run build && node bin/duckhive",
     "web:dev": "bun run --cwd web dev",
     "web:build": "bun run --cwd web build",
     "web:preview": "bun run --cwd web preview",
@@ -70,6 +74,7 @@
     "doctor:runtime": "bun run scripts/system-check.ts",
     "doctor:runtime:json": "bun run scripts/system-check.ts --json",
     "doctor:report": "bun run scripts/system-check.ts --out reports/doctor-runtime.json",
+    "council:serve": "node src/services/council-server/council-api-server.cjs",
     "hardening:check": "bun run smoke && bun run doctor:runtime",
     "hardening:strict": "bun run typecheck && bun run hardening:check",
     "prepack": "npm run build"
@@ -101,11 +106,13 @@
     "cli-highlight": "2.1.11",
     "code-excerpt": "4.0.0",
     "commander": "12.1.0",
+    "cors": "^2.8.5",
     "cross-spawn": "7.0.6",
     "diff": "8.0.3",
     "duck-duck-scrape": "^2.2.7",
     "emoji-regex": "10.6.0",
     "env-paths": "3.0.0",
+    "express": "^5.1.0",
     "execa": "9.6.1",
     "fflate": "0.8.2",
     "figures": "6.1.0",
