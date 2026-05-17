@@ -421,7 +421,7 @@ DuckHive boots with **MiniMax M2.7** as the default model, shown right in the st
 
 ### DuckHive mmx — All MiniMax Modalities
 
-DuckHive mmx gives you the full MiniMax CLI stack directly from the harness. Generate images, synthesize speech, create music, and produce video without leaving the CLI.
+DuckHive mmx gives you the full MiniMax CLI stack directly from the harness. Generate images, synthesize speech, create music, and produce video without leaving the CLI. `duckhive mmx` and the `duckhive minimax` alias run as provider-free terminal commands, so help and media jobs do not need to start the chat REPL first.
 
 ```bash
 # Generate images

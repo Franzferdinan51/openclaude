@@ -341,6 +341,20 @@ async function main(): Promise<void> {
     return;
   }
 
+  // Fast-path for MiniMax media/text/search CLI integration outside the REPL.
+  if (cliCommand === 'mmx' || cliCommand === 'minimax') {
+    profileCheckpoint('cli_mmx_path');
+    const {
+      enableConfigs
+    } = await import('../utils/config.js');
+    enableConfigs();
+    const {
+      mmxHandler
+    } = await import('../cli/mmx.js');
+    await mmxHandler(cliCommandArgs);
+    return;
+  }
+
   // Fast-path for shared AgentRun inspection/control outside the REPL.
   if (cliCommand === 'run' || cliCommand === 'runs' || cliCommand === 'agent-run') {
     profileCheckpoint('cli_run_path');

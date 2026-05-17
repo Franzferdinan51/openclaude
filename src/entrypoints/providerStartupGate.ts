@@ -18,6 +18,8 @@ const PROVIDER_FREE_COMMANDS = new Set([
   'computer-use',
   'cu',
   'comput-use',
+  'mmx',
+  'minimax',
   'run',
   'runs',
   'agent-run',

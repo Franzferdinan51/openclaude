@@ -245,6 +245,25 @@ const cases: SmokeCase[] = [
     ],
   },
   {
+    name: 'top-level mmx help',
+    args: ['mmx', '--help'],
+    includes: [
+      'DuckHive MiniMax Integration',
+      'duckhive mmx text chat',
+      'duckhive mmx image',
+      'duckhive mmx quota',
+    ],
+  },
+  {
+    name: 'top-level minimax alias help',
+    args: ['minimax', '--help'],
+    includes: [
+      'DuckHive MiniMax Integration',
+      'duckhive mmx speech synthesize',
+      'duckhive mmx video generate',
+    ],
+  },
+  {
     name: 'top-level run help',
     args: ['run', '--help'],
     includes: [

@@ -413,6 +413,7 @@ const REQUIRED_HARNESS_COMMANDS = [
   'goal',
   'run',
   'computer-use',
+  'mmx',
   'channel',
   'connect',
   'skill',
@@ -432,6 +433,7 @@ const REQUIRED_HARNESS_ALIASES = [
   'g',
   'subagent',
   'cu',
+  'minimax',
 ] as const
 
 const REQUIRED_AGENT_RUN_CLI_CONTROLS = [
