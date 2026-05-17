@@ -14,6 +14,7 @@ import type { LocalCommandCall } from '../../types/command.js'
 import { spawnTeammate } from '../../tools/shared/spawnMultiAgent.js'
 import type { ToolUseContext } from '../../Tool.js'
 import {
+  collectResponses,
   runSwarmVoting,
   type CollectedResponses,
   type VotingMode,
@@ -265,6 +266,8 @@ const DOMAIN_AGENTS: Record<SwarmDomain, string[]> = {
 
 type SwarmDeps = {
   spawnTeammate: typeof spawnTeammate
+  collectResponses: typeof collectResponses
+  runSwarmVoting: typeof runSwarmVoting
   sleep: (ms: number) => Promise<void>
 }
 
@@ -273,6 +276,8 @@ let swarmTestDeps: Partial<SwarmDeps> | null = null
 function getSwarmDeps(): SwarmDeps {
   return {
     spawnTeammate,
+    collectResponses,
+    runSwarmVoting,
     sleep: ms => new Promise(resolve => setTimeout(resolve, ms)),
     ...swarmTestDeps,
   }
@@ -417,7 +422,7 @@ Provide your analysis and implementation.`
 }
 
 export const call: LocalCommandCall = async (args: string, context: ToolUseContext) => {
-  const { spawnTeammate, sleep } = getSwarmDeps()
+  const { spawnTeammate, collectResponses, runSwarmVoting, sleep } = getSwarmDeps()
   const parsedArgs = splitCommandArgs(args)
   const votingMode = parsedArgs[0]
   if (votingMode === 'vote' || votingMode === 'merge' || votingMode === 'pick-best') {
@@ -627,9 +632,29 @@ Accepted aliases: coding, security, code-review, debugging, architecture, testin
   lines.push(`\n🔄 SWARM PHASE: ${swarmState.phase.toUpperCase()}`)
   lines.push(`🗳️ Voting Phase: Agents voting on final implementation...`)
 
-  // Simulate voting (in production, agents would vote)
-  for (const r of spawnResults.filter(sr => sr.status === 'spawned')) {
-    swarmState.votes[r.agentId || r.agent] = 'approve'
+  const spawnedAgentIds = spawnResults
+    .filter(sr => sr.status === 'spawned')
+    .map(sr => sr.agentId || sr.agent)
+  const collectedResponses = await collectResponses(spawnedAgentIds)
+  if (collectedResponses.size > 0) {
+    const voteResult = await runSwarmVoting(collectedResponses, {
+      mode: 'vote',
+      voters: spawnedAgentIds,
+    })
+    if (voteResult.mode === 'vote') {
+      const winnerVotes = voteResult.tally[voteResult.winner] ?? 0
+      for (const agentId of spawnedAgentIds) {
+        swarmState.votes[agentId] = voteResult.votes[agentId]?.includes(voteResult.winner)
+          ? 'approve'
+          : 'abstain'
+      }
+      lines.push(`\n🗳️ Vote winner: ${voteResult.winner} (${winnerVotes} vote${winnerVotes === 1 ? '' : 's'})`)
+    }
+  } else {
+    for (const agentId of spawnedAgentIds) {
+      swarmState.votes[agentId] = 'abstain'
+    }
+    lines.push(`\n⏸️ No completed agent responses found in the swarm mailbox yet; final approval is pending.`)
   }
   const approveCount = Object.values(swarmState.votes).filter(v => v === 'approve').length
   const totalVotes = Object.keys(swarmState.votes).length
@@ -642,7 +667,9 @@ Accepted aliases: coding, security, code-review, debugging, architecture, testin
   const approvalRate = totalVotes > 0 ? (approveCount / totalVotes) * 100 : 0
   lines.push(`\n📈 Approval Rate: ${approvalRate.toFixed(1)}%`)
 
-  if (approvalRate >= 66) {
+  if (collectedResponses.size === 0) {
+    lines.push(`\n⏸️ SWARM PENDING - Waiting for agent responses before final approval.`)
+  } else if (approvalRate >= 66) {
     lines.push(`\n🎉 SWARM APPROVED! Proceeding with implementation.`)
   } else if (approvalRate >= 50) {
     lines.push(`\n⚠️ SWARM PASSED WITH CONDITIONS`)

@@ -386,8 +386,29 @@ describe('Hive Nation commands', () => {
         agent_id: `${name}-agent`,
       },
     }))
+    const collectResponses = mock(async (agentIds: string[]) => new Map(
+      agentIds.map(agentId => [
+        agentId,
+        {
+          text: `${agentId} completed the task with implementation notes.`,
+          timestamp: Date.now(),
+        },
+      ]),
+    ))
+    const runSwarmVoting = mock(async (_responses: Map<string, unknown>, options: { voters?: string[] }) => {
+      const voters = options.voters ?? []
+      const winner = voters[0] ?? 'agent-1'
+      return {
+        winner,
+        votes: Object.fromEntries(voters.map(voter => [voter, [winner]])),
+        tally: { [winner]: voters.length },
+        mode: 'vote' as const,
+      }
+    })
     setSwarmTestDeps({
       spawnTeammate: spawnTeammate as never,
+      collectResponses: collectResponses as never,
+      runSwarmVoting: runSwarmVoting as never,
       sleep: async () => {},
     })
 
@@ -411,13 +432,45 @@ describe('Hive Nation commands', () => {
       await swarmCall('build an auth api --domain=coding --count=2', {} as never),
     )
     expect(spawnTeammate).toHaveBeenCalledTimes(2)
+    expect(collectResponses).toHaveBeenCalled()
+    expect(runSwarmVoting).toHaveBeenCalled()
     expect(spawned.value).toContain('2/2 agents spawned')
+    expect(spawned.value).toContain('Vote winner:')
     expect(spawned.value).toContain('SWARM APPROVED')
 
     const invalidDomain = expectText(
       await swarmCall('build an auth api --domain=quantum --dry-run', {} as never),
     )
     expect(invalidDomain.value).toContain('Unknown swarm domain: quantum')
+  })
+
+  test('/swarm leaves final approval pending when spawned agents have not responded', async () => {
+    const spawnTeammate = mock(async ({ name }: { name: string }) => ({
+      data: {
+        teammate_id: `${name}-teammate`,
+        agent_id: `${name}-agent`,
+      },
+    }))
+    const collectResponses = mock(async () => new Map())
+    const runSwarmVoting = mock(async () => {
+      throw new Error('runSwarmVoting should not be called without responses')
+    })
+    setSwarmTestDeps({
+      spawnTeammate: spawnTeammate as never,
+      collectResponses: collectResponses as never,
+      runSwarmVoting: runSwarmVoting as never,
+      sleep: async () => {},
+    })
+
+    const spawned = expectText(
+      await swarmCall('build an auth api --domain=coding --count=2', {} as never),
+    )
+
+    expect(spawned.value).toContain('2/2 agents spawned')
+    expect(spawned.value).toContain('No completed agent responses found')
+    expect(spawned.value).toContain('SWARM PENDING')
+    expect(spawned.value).not.toContain('SWARM APPROVED')
+    expect(runSwarmVoting).not.toHaveBeenCalled()
   })
 
   test('/swarm voting modes rank, merge, and tally inline responses', async () => {
