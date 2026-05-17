@@ -1,5 +1,5 @@
 /**
- * DuckCustodian command — DuckHive's self-repair and configuration helper.
+ * DuckCustodian command - DuckHive's self-repair and configuration helper.
  * Pattern from OpenClaw's Crestodian, adapted for DuckHive.
  */
 import type { Command } from '../../commands.js';

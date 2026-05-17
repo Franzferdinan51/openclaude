@@ -89,6 +89,31 @@ describe('/duckcustodian command', () => {
     expect(result.type).toBe('text')
     expect(result.value).toContain('requires approval')
     expect(result.value).toContain('Set defaultModel to minimax/m1')
+    expect(/[^\x00-\x7F]/.test(result.value)).toBe(false)
     expect(execute).not.toHaveBeenCalled()
+  })
+
+  test('renders rescue mode status as ASCII-safe terminal text', async () => {
+    const execute = mock(async () => ({
+      applied: false,
+      message: 'rescue overview',
+    }))
+
+    mock.module('../../crestodian/operations.js', () => ({
+      parseDuckCustodianOperation: mock(() => ({ kind: 'overview' })),
+      isPersistentDuckCustodianOperation: mock(() => false),
+      describeDuckCustodianOperation: mock(() => 'overview'),
+      executeDuckCustodianOperation: execute,
+    }))
+
+    const { call } = await importFreshDuckCustodianModule()
+    const result = await call('--rescue overview', {} as never)
+
+    expect(result.type).toBe('text')
+    expect(result.value).toContain('DuckCustodian rescue mode')
+    expect(result.value).toContain('Gateway reachable: no')
+    expect(result.value).toContain('Config valid: yes')
+    expect(result.value).toContain('rescue overview')
+    expect(/[^\x00-\x7F]/.test(result.value)).toBe(false)
   })
 })

@@ -1,5 +1,5 @@
 /**
- * DuckCustodian Implementation — brings together operations, probes, overview, and audit.
+ * DuckCustodian Implementation - brings together operations, probes, overview, and audit.
  * Mirrors OpenClaw's Crestodian pattern, adapted for DuckHive.
  *
  * High-value additions vs base operations.ts:
@@ -49,7 +49,7 @@ export const call: LocalCommandCall = async (args: string, _context) => {
   // Parse command (default to overview if empty)
   const op: DuckCustodianOperation = parseDuckCustodianOperation(input || 'overview');
 
-  // Message rescue mode: even 'none' op is acceptable — just show gateway status
+  // Message rescue mode: even 'none' op is acceptable - just show gateway status
   if (rescueMode) {
     return handleRescueMode(op, approved);
   }
@@ -59,7 +59,7 @@ export const call: LocalCommandCall = async (args: string, _context) => {
     const desc = describeDuckCustodianOperation(op);
     return {
       type: 'text',
-      value: `⚠️ This operation requires approval:\n\n${desc}\n\nReply with --yes to apply, or a different command to cancel.`,
+      value: `This operation requires approval:\n\n${desc}\n\nReply with --yes to apply, or a different command to cancel.`,
     };
   }
 
@@ -100,9 +100,9 @@ async function handleRescueMode(op: DuckCustodianOperation, approved: boolean): 
   let configValid = false;
   try { getGlobalConfig(); configValid = true; } catch { /* invalid */ }
 
-  const header = `🔧 DuckCustodian rescue mode\n` +
-    `Gateway reachable: ${gatewayStatus.reachable ? '✅ yes' : '❌ no'}\n` +
-    `Config valid: ${configValid ? '✅ yes' : '❌ no'}\n`;
+  const header = `DuckCustodian rescue mode\n` +
+    `Gateway reachable: ${gatewayStatus.reachable ? 'yes' : 'no'}\n` +
+    `Config valid: ${configValid ? 'yes' : 'no'}\n`;
 
   // Non-persistent ops run immediately in rescue mode
   if (!isPersistentDuckCustodianOperation(op)) {
@@ -122,7 +122,7 @@ async function handleRescueMode(op: DuckCustodianOperation, approved: boolean): 
     return {
       type: 'text',
       value: header +
-        `⚠️ Persistent operation — reply with --yes to apply:\n\n${desc}`,
+        `Persistent operation - reply with --yes to apply:\n\n${desc}`,
     };
   }
 
@@ -138,7 +138,7 @@ async function handleRescueMode(op: DuckCustodianOperation, approved: boolean): 
 }
 
 // ---------------------------------------------------------------------------
-// Deps — all DuckCustodian operations wired to real implementations
+// Deps - all DuckCustodian operations wired to real implementations
 // ---------------------------------------------------------------------------
 
 function buildDeps() {
@@ -233,7 +233,7 @@ function buildDeps() {
       // 1. Detect mmx API key
       const mmxKey = process.env.MINIMAX_API_KEY ?? process.env.MMX_API_KEY;
       if (mmxKey) {
-        findings.push(`✅ MINIMAX_API_KEY found in environment`);
+        findings.push(`MINIMAX_API_KEY found in environment`);
         try {
           const { getGlobalClaudeFile } = await import('../../utils/env.js');
           const file = getGlobalClaudeFile();
@@ -247,22 +247,22 @@ function buildDeps() {
               ...(model ? { defaultModel: model } : {}),
             }),
           );
-          findings.push(`✅ mmx API key configured${workspace ? ` (workspace: ${workspace})` : ''}`);
+          findings.push(`mmx API key configured${workspace ? ` (workspace: ${workspace})` : ''}`);
           configured = true;
         } catch (e) {
-          findings.push(`⚠️ Could not write config: ${e}`);
+          findings.push(`Could not write config: ${e}`);
         }
       } else {
-        findings.push(`ℹ️ No MINIMAX_API_KEY found — set it in your shell profile or .env to enable mmx`);
+        findings.push(`No MINIMAX_API_KEY found - set it in your shell profile or .env to enable mmx`);
       }
 
       // 2. Detect LM Studio
       try {
         const r = await probeLmStudio(process.env.LMSTUDIO_BASE_URL ?? 'http://localhost:1234');
         if (r.found) {
-          findings.push(`✅ LM Studio reachable (${r.models.length} models loaded)`);
+          findings.push(`LM Studio reachable (${r.models.length} models loaded)`);
         }
-      } catch { /* LM Studio not running — not an error */ }
+      } catch { /* LM Studio not running - not an error */ }
 
       // 3. Suggest next steps
       if (!configured) {
@@ -271,7 +271,7 @@ function buildDeps() {
         findings.push(`  2. Run: duckcustodian setup`);
         findings.push(`  Or: duckcustodian config-set mmxApiKey <your-key>`);
       } else {
-        findings.push(`\n✅ Setup complete. Run \`mmx status\` to verify.`);
+        findings.push(`\nSetup complete. Run \`mmx status\` to verify.`);
       }
 
       return { ok: configured, message: findings.join('\n') };
@@ -338,7 +338,7 @@ function buildDeps() {
         child.stderr?.on('data', d => { stderr += String(d); });
         child.on('close', async code => {
           if (code === 0) {
-            await appendDuckCustodianAuditEntry({ operation: 'doctor-fix', summary: 'Typecheck OK — no fixes needed' });
+            await appendDuckCustodianAuditEntry({ operation: 'doctor-fix', summary: 'Typecheck OK - no fixes needed' });
           } else {
             // Count errors
             const errorCount = (stderr.match(/error TS/g) ?? []).length;
@@ -379,7 +379,7 @@ function buildDeps() {
           insights.push(`Recent lesson: ${lessons.slice(0, 100)}...`);
         }
       } catch { /* no lessons */ }
-      insights.push('embedRecall index may be stale after dependency updates — run `duckcustodian health` to check');
+      insights.push('embedRecall index may be stale after dependency updates - run `duckcustodian health` to check');
       return insights;
     },
 
