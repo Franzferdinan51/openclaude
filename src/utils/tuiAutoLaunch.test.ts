@@ -1,6 +1,7 @@
 import { expect, test } from 'bun:test'
 import {
   buildStandaloneTuiLaunchEnv,
+  formatStandaloneTuiUnavailableMessage,
   getDefaultStandaloneTuiBridgeArgs,
   getStandaloneTuiBuildCommand,
   getStandaloneTuiExecutablePath,
@@ -121,6 +122,32 @@ test('build command targets the platform-specific TUI binary', () => {
   const linux = getStandaloneTuiBuildCommand('/tmp/duckhive', 'linux')
   expect(linux.args).toContain('duckhive-tui')
   expect(linux.args).not.toContain('duckhive-tui.exe')
+})
+
+test('formats actionable Windows TUI prerequisite errors', () => {
+  const message = formatStandaloneTuiUnavailableMessage(
+    '/tmp/duckhive',
+    'missing-go',
+    'win32',
+  )
+
+  expect(message).toContain('Go is not installed')
+  expect(message).toContain('tui\\duckhive-tui.exe')
+  expect(message).toContain('https://go.dev/dl/')
+  expect(message).toContain('duckhive tui')
+  expect(message).toContain('classic REPL')
+})
+
+test('formats actionable TUI build failure errors', () => {
+  const message = formatStandaloneTuiUnavailableMessage(
+    '/tmp/duckhive',
+    'build-failed',
+    'linux',
+  )
+
+  expect(message).toContain('on-demand build failed')
+  expect(message).toContain('cd tui && go build -o duckhive-tui ./cmd/duckhive-tui')
+  expect(message).toContain('classic REPL')
 })
 
 test('uses the PTY helper by default when it exists', () => {

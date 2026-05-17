@@ -3885,12 +3885,17 @@ async function run(): Promise<CommanderCommand> {
       launchStandaloneTui,
       resolveDuckHiveBaseDir,
     } = await import('./utils/tuiAutoLaunch.js');
-    const launched = await launchStandaloneTui(resolveDuckHiveBaseDir());
+    let unavailableMessage: string | undefined;
+    const launched = await launchStandaloneTui(resolveDuckHiveBaseDir(), {
+      onUnavailable: result => {
+        unavailableMessage = result.message;
+      },
+    });
     if (!launched) {
       // biome-ignore lint/suspicious/noConsole:: command failure must be visible
-      console.error(process.platform === 'win32'
+      console.error(unavailableMessage ?? (process.platform === 'win32'
         ? 'DuckHive TUI binary not found. Run `scripts\\install.ps1` or build `tui\\duckhive-tui.exe` first.'
-        : 'DuckHive TUI binary not found. Run `scripts/install.sh` or build `tui/duckhive-tui` first.');
+        : 'DuckHive TUI binary not found. Run `scripts/install.sh` or build `tui/duckhive-tui` first.'));
       process.exitCode = 1;
       process.exit(1);
     }
