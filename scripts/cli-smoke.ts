@@ -18,6 +18,16 @@ const cases: SmokeCase[] = [
     includes: ['DuckHive'],
   },
   {
+    name: 'yolo version alias',
+    args: ['--yolo', '--version'],
+    includes: ['DuckHive'],
+  },
+  {
+    name: 'dangerously skip permissions version',
+    args: ['--dangerously-skip-permissions', '--version'],
+    includes: ['DuckHive'],
+  },
+  {
     name: 'top-level help',
     args: ['--help'],
     includes: ['Usage: duckhive', 'runtime-doctor', '--yolo'],
@@ -94,6 +104,16 @@ if (process.platform === 'win32') {
     {
       name: 'windows wrapper version',
       args: ['--version'],
+      includes: ['DuckHive'],
+    },
+    {
+      name: 'windows wrapper yolo version alias',
+      args: ['--yolo', '--version'],
+      includes: ['DuckHive'],
+    },
+    {
+      name: 'windows wrapper dangerously skip permissions version',
+      args: ['--dangerously-skip-permissions', '--version'],
       includes: ['DuckHive'],
     },
     {
