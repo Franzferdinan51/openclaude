@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -123,6 +124,13 @@ func main() {
 		runSnapshot()
 		return
 	}
+	if text, ok := inputSmokeRequest(os.Args[1:]); ok {
+		if err := runInputSmoke(text); err != nil {
+			fmt.Fprintf(os.Stderr, "TUI input smoke failed: %v\n", err)
+			os.Exit(1)
+		}
+		return
+	}
 
 	var adapter *bridge.Adapter
 	if socketPath := os.Getenv("DUCKHIVE_BRIDGE_SOCKET"); socketPath != "" {
@@ -175,6 +183,81 @@ func isSnapshotRequest(args []string) bool {
 		}
 	}
 	return false
+}
+
+func inputSmokeRequest(args []string) (string, bool) {
+	for i, arg := range args {
+		switch arg {
+		case "--input-smoke":
+			if i+1 < len(args) && strings.TrimSpace(args[i+1]) != "" {
+				return args[i+1], true
+			}
+			return "typed through duckhive tui", true
+		case "input-smoke":
+			if i+1 < len(args) && strings.TrimSpace(args[i+1]) != "" {
+				return args[i+1], true
+			}
+			return "typed through duckhive tui", true
+		}
+	}
+	return "", false
+}
+
+func runInputSmoke(text string) error {
+	r, w := io.Pipe()
+	defer r.Close()
+	defer w.Close()
+
+	m := &MainModel{
+		state:      model.NewAppState(),
+		msgList:    components.NewMessageList(80, 20),
+		input:      components.NewInputArea(80, 3),
+		keys:       tui.DefaultKeyMap(),
+		welcome:    screens.NewWelcomeModel(),
+		transcript: screens.NewTranscriptPanel(),
+		width:      80,
+		height:     24,
+	}
+	m.settings = screens.NewSettingsScreen(&m.state)
+
+	p := tea.NewProgram(
+		m,
+		tea.WithInput(r),
+		tea.WithOutput(io.Discard),
+		tea.WithoutRenderer(),
+	)
+
+	errs := make(chan error, 1)
+	go func() {
+		_, err := p.Run()
+		errs <- err
+	}()
+
+	if _, err := w.Write([]byte(text)); err != nil {
+		p.Kill()
+		return err
+	}
+	if _, err := w.Write([]byte{0x03}); err != nil {
+		p.Kill()
+		return err
+	}
+
+	select {
+	case err := <-errs:
+		if err != nil {
+			return err
+		}
+	case <-time.After(2 * time.Second):
+		p.Kill()
+		return errors.New("program did not exit after ctrl-c")
+	}
+
+	if got := m.input.Value(); got != text {
+		return fmt.Errorf("composer value = %q, want %q", got, text)
+	}
+
+	fmt.Printf("DuckHive TUI input smoke passed: %q\n", text)
+	return nil
 }
 
 func runSnapshot() {

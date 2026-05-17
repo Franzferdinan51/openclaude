@@ -85,6 +85,24 @@ func TestSnapshotRequestParser(t *testing.T) {
 	}
 }
 
+func TestInputSmokeRequestParser(t *testing.T) {
+	text, ok := inputSmokeRequest([]string{"--input-smoke", "hello tui"})
+	if !ok {
+		t.Fatal("--input-smoke should enable input smoke mode")
+	}
+	if text != "hello tui" {
+		t.Fatalf("input smoke text = %q", text)
+	}
+
+	text, ok = inputSmokeRequest([]string{"input-smoke"})
+	if !ok {
+		t.Fatal("input-smoke should enable input smoke mode")
+	}
+	if text == "" {
+		t.Fatal("input smoke default text should not be empty")
+	}
+}
+
 func TestBuildLauncherEnvStripsTUIOnlyStateForLegacyHandoff(t *testing.T) {
 	t.Setenv("DUCKHIVE_AUTO_TUI", "1")
 	t.Setenv("DUCKHIVE_DEFAULT_UI_SURFACE", "tui")
@@ -767,6 +785,12 @@ func TestTeaProgramInputStreamTypesIntoComposer(t *testing.T) {
 
 	if got := m.input.Value(); got != "typed through tea input" {
 		t.Fatalf("input value = %q", got)
+	}
+}
+
+func TestRunInputSmokeTypesThroughProgramPath(t *testing.T) {
+	if err := runInputSmoke("typed through input smoke"); err != nil {
+		t.Fatalf("runInputSmoke returned error: %v", err)
 	}
 }
 

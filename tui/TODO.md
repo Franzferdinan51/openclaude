@@ -50,3 +50,4 @@ This file started with the Go TUI work, but it now tracks harness-wide integrati
 - Added a local read-only harness-state card for checkpoints, budgets, MCP, ACP, and permissions so offline TUI sessions can inspect readiness while backend commands remain authoritative for mutation.
 - Surfaced Codex-style `/goal` status in the Bubble Tea command deck, command rail, and bridged/local fallback cards.
 - Hardened legacy Go TUI prompt and streaming markers to ASCII-safe output so Windows terminals and log captures do not show mojibake.
+- Added `duckhive tui --input-smoke` so the packaged Bubble Tea input loop is verified through the real launcher path without depending on the Python PTY helper.

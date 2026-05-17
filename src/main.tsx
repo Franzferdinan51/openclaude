@@ -3884,6 +3884,7 @@ async function run(): Promise<CommanderCommand> {
   program.command('tui')
     .description('Launch the DuckHive Bubble Tea TUI')
     .option('--snapshot', 'Render one non-interactive TUI frame and exit for smoke tests')
+    .option('--input-smoke [text]', 'Run a non-interactive Bubble Tea input-loop diagnostic and exit')
     .addHelpText('after', `
 Details:
   duckhive tui launches the standalone Go/Bubble Tea terminal UI when the
@@ -3899,12 +3900,13 @@ Windows:
 
 Diagnostics:
   duckhive tui --snapshot
+  duckhive tui --input-smoke "typed text"
   duckhive runtime-doctor
   duckhive input-test
 `)
     .action(async (
-      options: { snapshot?: boolean },
-      command?: { opts: () => { snapshot?: boolean } },
+      options: { snapshot?: boolean; inputSmoke?: boolean | string },
+      command?: { opts: () => { snapshot?: boolean; inputSmoke?: boolean | string } },
     ) => {
     const {
       launchStandaloneTui,
@@ -3914,7 +3916,27 @@ Diagnostics:
       options.snapshot === true ||
       command?.opts().snapshot === true ||
       process.argv.includes('--snapshot')
-    const tuiArgs = snapshotRequested ? ['--snapshot'] : [];
+    const inputSmokeValue =
+      options.inputSmoke ??
+      command?.opts().inputSmoke
+    const inputSmokeArgIndex = process.argv.indexOf('--input-smoke')
+    const inputSmokeRequested =
+      inputSmokeValue !== undefined ||
+      inputSmokeArgIndex !== -1 ||
+      process.argv.includes('input-smoke')
+    const inputSmokeText =
+      typeof inputSmokeValue === 'string'
+        ? inputSmokeValue
+        : inputSmokeArgIndex !== -1 &&
+            process.argv[inputSmokeArgIndex + 1] &&
+            !process.argv[inputSmokeArgIndex + 1]!.startsWith('-')
+          ? process.argv[inputSmokeArgIndex + 1]!
+          : 'typed through duckhive tui'
+    const tuiArgs = snapshotRequested
+      ? ['--snapshot']
+      : inputSmokeRequested
+        ? ['--input-smoke', inputSmokeText]
+        : [];
     let unavailableMessage: string | undefined;
     const launched = await launchStandaloneTui(resolveDuckHiveBaseDir(), {
       args: tuiArgs,
@@ -3930,7 +3952,7 @@ Diagnostics:
       process.exitCode = 1;
       process.exit(1);
     }
-    if (snapshotRequested) {
+    if (snapshotRequested || inputSmokeRequested) {
       process.exit(0);
     }
   });
