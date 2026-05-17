@@ -26,9 +26,9 @@ DuckHive is an AI coding CLI built on top of [Gitlawb/openclaude](https://github
 | No MiniMax modalities | **Full mmx** — image, speech, music, video |
 | No shell toggle | **Ctrl-X shell toggle** |
 | No hierarchical context | **DUCK.md** context loading (gemini-cli style) |
-| No project init | **init_tool** — auto-generates AGENTS.md + workspace setup |
+| No project init | **`/init` + `init_tool`** — interactive setup plus scriptable project bootstrap |
 | No session export | **/export** — zip sessions for sharing |
-| No built-in council daemon | **Integrated Council daemon** — auto-starts on first run |
+| No built-in council daemon | **Hive Nation bridge** — DuckHive can connect to a Council runtime when one is available |
 | Basic MCP | **dmcp** — enhanced MCP server management |
 | Distribution | **npm global install** — one command setup |
 
@@ -38,7 +38,7 @@ DuckHive is an AI coding CLI built on top of [Gitlawb/openclaude](https://github
 
 ### Experimental Bubble Tea TUI
 
-DuckHive now includes an additive Go/Bubble Tea shell. Plain interactive `duckhive` auto-starts the Go TUI when `tui/duckhive-tui` is present, and `duckhive tui` remains available as an explicit launcher. Set `DUCKHIVE_NO_AUTO_TUI=1` if you want to stay in the legacy Ink REPL.
+DuckHive now includes an additive Go/Bubble Tea shell. On macOS/Linux, plain interactive `duckhive` auto-starts the Go TUI when `tui/duckhive-tui` is present. On Windows, DuckHive now stays on the classic REPL by default for the no-args startup path because the standalone TUI handoff is not reliable enough yet. `duckhive tui` remains available as an explicit launcher. Set `DUCKHIVE_NO_AUTO_TUI=1` if you want to stay in the legacy Ink REPL everywhere, or `DUCKHIVE_TUI_WINDOWS_EXPERIMENT=1` if you want to opt back into the Windows auto-launch path. UI-surface preferences persist through DuckHive's resolved config home, so `/tui`, settings UI changes, and startup auto-launch now read/write one shared `config.json`.
 
 The TUI is only one surface of that work. The actual goal is to merge the useful parts of Codex, Gemini CLI, Kimi CLI, OpenClaw, duck-cli, MiniMax Agent CLI, and mercury-agent throughout the whole DuckHive harness: shared tools, orchestration, sessioning, model routing, permissions, media jobs, automation, and every major interaction surface.
 
@@ -88,16 +88,38 @@ cd DuckHive && bun install && bun run build
 ./bin/duckhive
 ```
 
-Interactive `duckhive` launches the Go TUI first. Use `DUCKHIVE_NO_AUTO_TUI=1 ./bin/duckhive` to stay in the legacy TypeScript REPL.
+Interactive `duckhive` launches the Go TUI first on macOS/Linux. On Windows, the default startup path stays on the legacy TypeScript REPL unless you explicitly run `duckhive tui` or set `DUCKHIVE_TUI_WINDOWS_EXPERIMENT=1`. Use `DUCKHIVE_NO_AUTO_TUI=1 ./bin/duckhive` to force the legacy TypeScript REPL on any platform. DuckHive also keeps Windows on the safer no-raw-mode startup path for early keystroke capture by default; set `DUCKHIVE_WINDOWS_EARLY_INPUT_EXPERIMENT=1` only if you intentionally want to test the older early-input buffering path there.
 
 **After setup:**
 ```bash
-# First-run: init_tool auto-analyzes your project and creates AGENTS.md
-/init_tool action=setup
+# First-run: use the interactive setup wizard
+/init
 
 # Then just code
 duckhive "Implement a REST API"
 ```
+
+**Windows source checkout:**
+```powershell
+bun install
+bun run build
+.\bin\duckhive.cmd --dangerously-skip-permissions
+.\bin\duckhive.cmd --yolo
+```
+
+You can also use the packaged local launcher scripts from a source checkout:
+```powershell
+bun run start:local -- --dangerously-skip-permissions
+bun run start:local -- --yolo
+```
+
+For source checkouts, the outer `bin/duckhive` launcher now defers provider
+and model selection to DuckHive's real startup-profile bootstrap instead of
+hardcoding `ChatGPT/OpenAI` defaults ahead of the CLI. That means first-run
+startup falls back to MiniMax, while saved `/provider` profiles and startup
+settings stay authoritative.
+
+If `duckhive` is not recognized in PowerShell, the package is not installed on your `PATH` yet. Use the local launcher above from a source checkout, or install/link the package globally with `npm i -g github:Franzferdinan51/DuckHive`, `npm link`, or the published `duckhive` package when available.
 
 ---
 
@@ -112,7 +134,13 @@ DuckHive is distributed as a `duckhive` launcher that boots the TypeScript agent
 | Homebrew | `brew install franzferdinan51/tap/duckhive` |
 | Git clone | `git clone && bun install && bun run build` |
 
-The TypeScript agent core (`dist/cli.mjs`) is built via `bun run build` and runs under the Go CLI harness. All integrated services (council daemon on port 3007, MCP servers) are started on-demand.
+The TypeScript agent core (`dist/cli.mjs`) is built via `bun run build` and runs under the Go CLI harness. DuckHive starts its own MCP/runtime surfaces on demand, but the Hive Nation Council runtime is still an external or separately launched service rather than an always-on auto-started daemon in this source checkout.
+
+For this source checkout, the supported local Council runtime command is:
+
+```bash
+bun run council:serve
+```
 
 ### WebUI: Hybrid Agent Console
 
@@ -134,7 +162,7 @@ Useful endpoints:
 | Endpoint | Purpose |
 | --- | --- |
 | `GET /health` | DuckHive WebUI API health/version |
-| `GET /api/status` | provider, Telegram, desktop/Android, OpenClaw optional status |
+| `GET /api/status` | provider, Telegram, search-provider, desktop/Android, OpenClaw optional status resolved from the active DuckHive runtime/config home |
 | `GET /api/runs` | AgentRun list and root run tree |
 | `GET /api/runs/:id/events` | compact run event tail |
 | `POST /api/runs/:id/pause` | pause a run |
@@ -197,7 +225,7 @@ The AgentRun store persists under DuckHive's config home by default, or under `D
 
 Telegram can inspect and control AgentRuns when `DUCKHIVE_TELEGRAM_BOT_TOKEN` is set. For safety, set `DUCKHIVE_TELEGRAM_ALLOWED_CHAT_ID` to a comma-separated chat allowlist before using a bot in shared chats.
 
-Supported run-control commands:
+Telegram bot run-control commands:
 
 ```text
 /agents
@@ -211,11 +239,24 @@ Supported run-control commands:
 /status
 ```
 
+DuckHive's CLI surface for that same lifecycle is the consolidated `/run` command:
+
+```bash
+/run list
+/run <id>
+/run tail <id> [limit]
+/run pause <id>
+/run resume <id>
+/run stop <id>
+/run approve <id> [approval-id]
+/run recover <id> [summary]
+```
+
 Long Telegram responses are chunked, Markdown delivery falls back to plain text, and `bun run doctor:runtime` reports the Agent Harness and Telegram configuration state.
 
 ### /init — Project Setup
 
-> **For non-interactive use (scripts, CI, --print mode): use `init_tool` below.**
+> **For non-interactive use (scripts, CI, --print mode): use the lower-level `init_tool` interface below.**
 > The built-in `/init` REPL command requires an interactive terminal.
 
 **Interactive REPL mode:**
@@ -223,16 +264,16 @@ Long Telegram responses are chunked, Markdown delivery falls back to plain text,
 /init   # Launches the interactive setup wizard
 ```
 
-**Non-interactive (scripts / CI / --print mode):**
+**Non-interactive tool interface (scripts / CI / --print mode):**
 ```bash
-/init_tool action=setup    # Auto-analyze + create AGENTS.md, SOUL.md, TOOLS.md
-/init_tool action=detect   # Preview what would be created
-/init_tool action=config   # Configure ~/.duckhive/config.json
+init_tool action=setup    # Auto-analyze + create AGENTS.md, SOUL.md, TOOLS.md
+init_tool action=detect   # Preview what would be created
+init_tool action=config   # Configure ~/.duckhive/config.json
 ```
 
 ### /export — Session Packaging
 
-Zip up a DuckHive session for sharing or archival. Includes context files, history, and config.
+Zip up a DuckHive session for sharing or archival. Includes workspace context files plus DuckHive config-home metadata such as exported settings and recent history. Exports now follow the live `history.jsonl` prompt-history format, while imports restore that history back into DuckHive's config home instead of polluting the project workspace. Older archives with legacy `history.json` are still accepted and converted into the active `history.jsonl` store on import.
 
 ```bash
 /export                        # Export current session
@@ -245,22 +286,25 @@ Zip up a DuckHive session for sharing or archival. Includes context files, histo
 Track multi-step tasks across sessions with persisted goals. Inspired by Codex `/goal` (r0.128.0). Goals survive restarts and can be resumed later.
 
 ```bash
+/goal Build user authentication system              # Codex-style shorthand create
 /goal create Build user authentication system    # Create a new goal
 /goal list                                          # List all goals
+/goal list all                                      # Disable the 10-goal preview limit
 /goal list active                                   # Filter by status
 /goal status goal_abc123                            # Show goal details
 /goal pause goal_abc123                            # Pause a goal
 /goal resume goal_abc123                           # Resume paused goal
 /goal complete goal_abc123                         # Mark as done
+/goal attach goal_abc123                           # Link the current session UUID
 /goal step add goal_abc123 Implement login API     # Add a step
 /goal clear goal_abc123                             # Delete a goal
 ```
 
-Goals persist in `~/.duckhive/config.json` and survive across sessions.
+Goals persist in DuckHive's config home (default `~/.duckhive/config.json`) and survive across sessions. DuckHive now supports the simpler Codex-style shorthand `/goal <description>` in addition to `/goal create ...`, while still rejecting single-word unknown subcommands like typos instead of silently creating junk goals. `/goal list` keeps a 10-goal preview by default and now reports the visible count accurately, while `/goal list all` really shows the full persisted set; unknown list filters are rejected instead of silently falling back to the full list. `/goal attach` records the real active DuckHive session id instead of a synthetic placeholder, and goal status output shows that attached session so resumed work can be traced back to the conversation that owns it. Active steps now follow the goal lifecycle too: pausing a goal pauses its current step, resuming reactivates it, and completing the goal marks the current step completed and clears the current-step pointer. Adding a new current step now completes the previous current step so one goal does not accumulate multiple active steps. Step creation is restricted to active goals, so paused or completed goals cannot accumulate new active steps. When multiple active goals exist, `/goal pause`, `/goal complete`, `/goal clear`, and `/goal attach` now return command-specific guidance telling you which explicit `goal-id` form to run. Goal-first sessions also stay discoverable in portable history/list-sessions surfaces now: when a session starts with `/goal <objective>`, DuckHive reuses the command arguments as the session title instead of collapsing the thread to a bare `/goal` label. Search-provider preferences use that same resolved config-home `config.json`, so CLI and WebUI status now read/write one shared settings surface.
 
 ### Sub-Agent Spawning with Model Routing
 
-Spawn specialized sub-agents with automatic model selection based on task type. Each sub-agent gets the optimal model from the router.
+Spawn specialized sub-agents with automatic model selection based on task type. When you do not pass `--model`, each sub-agent now gets a routed model from DuckHive's multi-model router based on the agent type and task text.
 
 ```bash
 # Spawn a coding sub-agent (routes to GPT-4o or best available)
@@ -271,17 +315,33 @@ Spawn specialized sub-agents with automatic model selection based on task type. 
 
 # Route a task by complexity
 /router route "build a Flutter app" complexity=7 vision=true
+/router list
+/router compare "analyze this architecture" --complexity=5
 ```
 
-### Integrated Council Daemon
+`/router` is now a real slash command instead of only a lower-level tool surface. It accepts the documented `key=value` syntax as well as `--key=value` flags for `complexity`, `vision`, `functionCalling`, `preferSpeed`, `preferQuality`, and `maxCost`.
 
-AI Council deliberation is auto-started on first run. No separate install — the daemon forks automatically and stays alive between runs.
+`/spawn` and its `/subagent` alias now accept the README forms directly: an optional leading `spawn`, an optional leading agent type like `coding`, `--label`, and `--model`. Those values are forwarded into the teammate spawner instead of being silently treated as task text.
+
+Regular prompt submissions now do a smaller version of that vision routing too: if the current main-loop model lacks image support but the prompt includes image blocks, DuckHive applies a route-aware model override to a known vision-capable model on that active provider when one exists.
+
+### AI Council Runtime
+
+DuckHive’s `/council`, `/team`, `/senate`, and `/orchestrate` surfaces speak to the Hive Nation runtime on port `3007` by default. DuckHive now aligns with the merged Agent-Teams council API shape and can inspect the live council runtime when it is available, but the Council service itself is still a separately launched process in this checkout rather than an auto-started bundled daemon.
 
 ```bash
-/council "Should we use microservices?" mode=adversarial
+bun run council:serve
+
+/council "Should we use microservices?" mode=deliberation
+/council --status
+/council --stop
+/council --modes
+/council --councilors
 /team spawn analysis "Research Redis caching"
 /senate show DECREE-001
 ```
+
+`/council` now resolves its available modes from the live Hive Nation backend when one is running, with a local compatibility fallback when it is not. That keeps the CLI aligned with the merged Agent-Teams council server instead of freezing an older client-side mode list. DuckHive also exposes `/council --modes` for the live mode catalog and `/council --councilors` for the live councilor deck, so the command can inspect the upstream council runtime instead of only starting a deliberation blind. The bridge now accepts the checked-in Council server's raw `/api/councilors` array shape directly, the bundled source-checkout runtime now exposes the `/api/team*` and `/api/decree*` routes that DuckHive's `/team`, `/senate`, and `/decree` surfaces already use, and the runtime health contract now includes `services`, `uptime`, and memory stats so DuckHive's governance context no longer treats a live Council server as partially offline by default. When Hive Nation is offline, the governance wrappers now consistently point source checkouts at `bun run council:serve` and `DUCKHIVE_COUNCIL_URL` instead of only `/council` doing it.
 
 ---
 
@@ -424,7 +484,9 @@ screenshot, mouse_click, keyboard, terminal, file_read, run_script,
 computer_use_screenshot, computer_use_mouse_click, computer_use_keyboard
 ```
 
-Desktop mouse/keyboard/app actions may require Accessibility and Screen Recording permissions on macOS. Android actions require Developer Options plus USB debugging or an emulator. Codex Computer Use is detected through supported Codex app integration points; DuckHive does not patch or bypass proprietary Codex binaries.
+Desktop mouse/keyboard/app actions may require Accessibility and Screen Recording permissions on macOS. Android actions require Developer Options plus USB debugging or an emulator. Codex Computer Use is still detected through supported Codex integration points including a local `packages/computer-use-bundle/computer-use` checkout and the standard Codex.app bundle path `/Applications/Codex.app/Contents/Resources/plugins/openai-bundled/plugins/computer-use`. Separate from that, DuckHive also has a CHICAGO_MCP-gated built-in `computer-use` runtime path in builds where that feature is compiled in; in those builds the `computer-use` MCP server name is reserved for DuckHive itself, so `/computer-use` becomes an inspection/status surface rather than a path that rewires the Codex plugin on top of it. Status guidance is state-aware: it now tells you whether the built-in runtime owns the slot, whether a stale project MCP entry exists, whether to reload MCP, or whether a Codex plugin bundle is merely discoverable for inspection. DuckHive does not patch or bypass proprietary Codex binaries.
+
+The plugin marketplace details view now inspects local-source plugins before installation. When a marketplace entry points at a checked-out plugin directory, DuckHive shows discovered `commands/`, `agents/`, `skills/`, `output-styles/`, `hooks/hooks.json`, and `.mcp.json` components instead of a generic placeholder, so Codex-style plugin browsing is less guessy for local harness development.
 
 ---
 
@@ -500,50 +562,68 @@ Spawn multi-agent crews that work in parallel on complex tasks. DuckHive integra
 
 ```bash
 # Inside duckhive
-/council "Should we use microservices here?"       # 46 councilors debate
-/team researcher "Research Redis caching"          # Spawn researcher agent
+/council "Should we use microservices here?" mode=deliberation
+/council --status                                  # Inspect the active session
+/council --stop                                    # Stop the active session via Hive Nation
+/team research "Research Redis caching"            # Shorthand template form
+/team spawn analysis "Research Redis caching"      # Explicit spawn form
 /senate "Proposal: switch to Bun runtime"         # 94 senators vote
 /decree "DECREE-007: Use Bun for all new APIs"    # Issue binding law
-/orchestrate "Build a REST API"                  # Route by complexity
+/orchestrate "Build a REST API" --mode=deliberation
 ```
 
 **Governance pipeline**: Council debates → Senate passes decree → Teams execute per decree.
 
-> **Integrated Council daemon** — On first `duckhive` run, the AI Council daemon starts automatically on port 3007 and stays alive between invocations. No separate install needed.
+`/orchestrate` now preserves quoted task text when you add flags like `--dry-run`, `--council`, `--mode=...`, or `--team=...`, so the orchestration router sees the same task text the user typed. The selected `--mode` value is now forwarded into the hybrid orchestrator instead of being parsed and then ignored, and when you omit `--mode` DuckHive prefers the live Hive backend default (`deliberation`) before falling back to older compatibility modes.
+
+`/senate` now accepts the bare shorthand form shown above in addition to `/senate issue ...`, and `/decree` strips wrapper quotes from the decree title/content instead of persisting the quote characters as part of the law text.
+
+> **Hive Nation runtime** — DuckHive’s governance commands target the Hive Nation / Council service on port 3007 by default, but that service is not auto-started by the current source checkout. Start the Council runtime separately or point DuckHive at a running service with `DUCKHIVE_COUNCIL_URL`.
+
+### Continuous Self-Improvement
+
+For this source checkout, the built-in local Hive Nation runtime command is `bun run council:serve`.
+
+DuckHive now has two separate background improvement loops:
+
+- repeated-topic detection after memory extraction can author new `skills/<slug>/SKILL.md` entries when the same workflow keeps showing up
+- a self-improvement review fork now inspects recent turns after extraction and can write actionable review notes under `~/.duckhive/self-improvement/reviews/` when it detects missing durable memory, reusable skill gaps, or unfinished harness friction worth fixing later
+
+This is intentionally best-effort and asynchronous. It should not block the main REPL turn.
 
 ---
 
 ### /swarm — Code Swarming
 
-Code swarming launches parallel sub-agents across 17 specialized domains to tackle complex tasks from multiple angles simultaneously.
+Code swarming launches parallel sub-agents across DuckHive's current runtime routing buckets to tackle complex tasks from multiple angles simultaneously.
 
 ```bash
 /swarm "Build a REST API" --domain=coding --count=4
 /swarm "Audit this security vulnerability" --domain=security
 /swarm "Research new ML techniques" --domain=research
-/swarm --list          # Show all 17 available domain agents
+/swarm --list          # Show all available swarm agents
 /swarm --list-domain   # List domain agent capabilities
 /swarm --dry-run       # Preview what would spawn
 ```
 
-**Domain agents include:** coding, code-review, security, debugging, architecture, testing, devops, research, analysis, docs, optimization, refactor, backend, frontend, mobile, infrastructure, data
+`/swarm` accepts the higher-level aliases shown above such as `coding`, `security`, `code-review`, `analysis`, `backend`, and `frontend`, but resolves them onto the current runtime routing buckets: `build`, `audit`, `research`, `data`, `mobile`, and `game`. Unsupported domains are rejected clearly instead of falling through into a runtime error.
 
 ### Swarm Voting — Multi-Agent Response Routing
 
 When multiple agents respond, DuckHive routes the best response through three strategies:
 
 ```bash
-/swarm vote           # Peer voting — agents score each other's work
-/swarm merge          # Merge — combine complementary responses
-/swarm pick-best      # Pick — score by completeness + correctness + code quality
+/swarm vote "response A" | "response B"           # Proxy peer tally
+/swarm merge "response A" | "response B"          # Combine complementary responses
+/swarm pick-best "response A" | "response B"      # Heuristic ranking
 ```
 
 **Strategies:**
-- `vote()` — agents rate peers, highest score wins (LLM-based peer scoring)
+- `vote()` — use explicit mailbox ballots when teammates submit them; otherwise fall back to one proxy vote per agent for the strongest peer
 - `merge()` — combine responses, deduplicate overlapping sections
 - `pickBest()` — heuristic scoring: completeness (40%), correctness (30%), code quality (30%)
 
-Integrates with existing `teammateMailbox.ts` — no new agent spawning mechanism needed.
+The `/swarm` slash command now exposes these modes directly for pasted candidate responses. The shared swarm voting helper no longer points at stub mailbox modules: it now reads the current collector inbox, resolves the latest response summary per agent, accepts structured or plain-text `swarm_vote` ballots when they exist, and only falls back to proxy voting when no explicit ballots were submitted.
 
 ---
 
@@ -557,6 +637,8 @@ Start the Agent Client Protocol server for IDE integration (Kimi CLI style).
 /acp stop              # Stop server
 ```
 
+`/acp status` and `/acp stop` now manage the in-process ACP listener instead of being README-only placeholders. ACP `tools/call` and `tools/call_batch` now execute real shell, file-read, file-write, directory-list, and search operations through DuckHive's ACP server. ACP `chat/message` also routes through DuckHive's SDK query path, and clients that negotiate the `tools` capability can use the local shell/filesystem/search tool family directly (`Bash`, `PowerShell`, `Read`, `Write`, `Edit`, `Grep`, `Glob`, `LSP`). Other tools still stay denied and should go through explicit ACP `tools/call`.
+
 ---
 
 ### /spawn — Subagent Spawning
@@ -567,6 +649,8 @@ Spawn a subagent teammate to handle a task in parallel (Hermes Agent style).
 /spawn "Implement a REST API"
 /spawn "Analyze this code" --label=reviewer
 ```
+
+`--label` is now honored by the slash command itself and becomes the spawned teammate's display/name prefix instead of being ignored by the UI wrapper.
 
 ---
 
@@ -633,9 +717,9 @@ Output: `XS` (trivial), `S` (small), `M` (medium), `L` (large), `XL` (massive)
 
 ---
 
-### Session Search — Full-Text Search Across Sessions
+### Session Search — Literal + Keyword Search Across Sessions
 
-Search past sessions using FTS5 (SQLite full-text search).
+Search past sessions by scanning persisted session message logs. The tool supports both longer keyword queries and short literal strings such as `UI`, `v2`, or punctuation-heavy searches.
 
 ```bash
 # Via /memory or context tools
@@ -645,15 +729,24 @@ Search past sessions using FTS5 (SQLite full-text search).
 
 ---
 
-### Skill Workshop — Auto-Capture Complex Tasks
+### Skill Workshop — Local Skills + ClawHub Registry
 
-Automatically captures complex tasks as reusable skills for future sessions.
+Create and manage reusable skill scaffolds for future sessions through DuckHive's shared skills directory, and connect to the OpenClaw ClawHub skill registry for search, inspection, and installation.
 
 ```bash
-/skill "my new skill"        # Create from current task
-/skill --capture            # Auto-capture mode
-/skills                     # List all skills
+/skill "my new skill"        # Create a reusable skill scaffold
+/skill search "calendar"     # Search ClawHub
+/skill inspect calendar      # Inspect a ClawHub skill
+/skill install calendar      # Install a ClawHub skill into DuckHive's skills dir
+/skill read my-new-skill     # Inspect a saved skill
+/skill delete my-old-skill   # Delete a saved skill
+/skills                      # Open the skills manager UI
 ```
+
+ClawHub registry notes:
+- DuckHive searches ClawHub directly through its public skill APIs.
+- Installed ClawHub skills are written under DuckHive's resolved `skills/` directory and get local provenance metadata at `.clawhub/origin.json`.
+- Override the registry base with `DUCKHIVE_CLAWHUB_REGISTRY` or `CLAWHUB_REGISTRY` if you need a different ClawHub-compatible endpoint.
 
 ---
 
@@ -679,7 +772,7 @@ Query → BM25 (keyword, fast) → EmbedRecall (semantic) → LESSONS (permanent
 ```
 
 **BM25 Keyword Search** (`src/memdir/bm25.ts`) — From-scratch BM25, no external deps:
-- Inverted index over all session files, stored in `~/.duckhive/bm25-index.json`
+- Inverted index over shared DuckHive memory/config-home sources, stored in the resolved config home as `bm25-index.json`
 - Tokenize: lowercase, strip punctuation, split on whitespace
 - BM25 formula: k1=1.5, b=0.75
 - `buildIndex()`, `search(query, limit?)`, `updateIndex()`, `clearIndex()`
@@ -688,7 +781,12 @@ Query → BM25 (keyword, fast) → EmbedRecall (semantic) → LESSONS (permanent
 - Primary: LM Studio `/v1/embeddings` if `LM_STUDIO_URL` is set
 - Fallback: TF-IDF cosine similarity (no external calls, runs locally)
 - 82 stopwords filtered, IDF rebuilt on every index update
+- Index and session bootstrap both use DuckHive's resolved config-home paths
 - `indexDocument()`, `search()`, `clearIndex()`, `indexSessionContent()`
+
+**FTS5 Search Layer** (`src/memdir/fts5.ts`) — SQLite-backed full-text indexing:
+- Database and session roots now use DuckHive's resolved config-home and shared memory-base paths instead of separate hardcoded home directories
+- `initFts5()`, `searchMemoriesFts5()`, `searchSessionsFts5()`, `getFts5Stats()`
 
 **LESSONS.md** (`src/memdir/lessons.ts`) — Permanent failure moat:
 - Append-only log of every provider failure, tool error, API limit, and infra mistake
@@ -721,6 +819,7 @@ Tracks spend per provider daily and auto-falls back when budgets are exhausted:
 ```bash
 /budget                 # Show current spend and remaining
 /budget set minimax 5.00  # Set $5/day limit on minimax
+/budget set global 20.00  # Set the global daily budget cap
 /budget reset          # Reset all spend counters
 ```
 
@@ -731,23 +830,24 @@ State: `~/.duckhive/budget-state.json` · Log: `~/.duckhive/budget-log.jsonl` ·
 Cache LLM responses for 30 seconds to skip redundant API calls:
 
 ```bash
-/cache                  # Show cache stats (hits, misses, size)
-/cache clear           # Flush entire cache
+/cache                 # Show provider-cache stats (entries, hits, misses, TTL)
+/cache clear           # Flush the provider response cache and reset session cache metrics
+/cache-stats           # Show per-request cache history for the current session
 ```
 
-Keyed by `model::baseUrl::SHA256(messages)`, LRU eviction at 1000 entries. TTL configurable via `PROVIDER_CACHE_TTL=30`.
+Keyed by `model::baseUrl::SHA256(messages)`, LRU eviction at 1000 entries. TTL configurable via `PROVIDER_CACHE_TTL=30`. `/cache` now wraps the actual shared provider response cache, while `/cache-stats` remains the detailed per-request observability surface.
 
 ### Custom Providers — OpenAI-Compatible Endpoints
 
-Add any OpenAI-compatible API without code changes:
+Add any OpenAI-compatible API without code changes through the interactive provider manager:
 
 ```bash
-/provider add my-endpoint --base-url https://api.example.com --api-key sk-xxx --model chat
-/provider list            # Show all custom providers
-/provider remove my-endpoint
+/provider                 # Open the provider manager UI
 ```
 
 Config: `~/.duckhive/custom-providers.json` · Auto health-checks endpoints on add.
+
+The current slash command opens the manager used to add, edit, delete, and activate provider profiles. Inline `/provider add|list|remove` subcommands are not currently implemented in the CLI.
 
 First-class OpenAI-compatible presets are available through `/provider` and `--provider`, including OpenRouter and NVIDIA NIM:
 
@@ -763,14 +863,27 @@ Use `OPENROUTER_API_KEY` for OpenRouter and `NVIDIA_API_KEY` for NVIDIA NIM. Duc
 DuckHive unifies messaging across channels through a shared interface — the agent loop doesn't know or care which channel it's talking to:
 
 ```bash
-/channel list           # Show all registered adapters
+/channel list           # Show adapter readiness/config snapshot
+/channel status         # Show all adapter readiness/config
 /channel status telegram  # Check Telegram adapter health
+/channel status webhook   # Check Webhook adapter config
+/channel status email     # Check Email adapter config
+/channel status console   # Check Console adapter availability
 /channel send telegram "Hello"  # Send via Telegram
+/channel send webhook "Hello"   # POST via configured outbound webhook
+/channel send email "Hello"     # Send via configured SMTP/default recipient
+/channel send console "Hello"   # Emit through the local console adapter
+/channel connect telegram --token <TOKEN>
+/channel connect webhook
+/channel connect email
+/channel disconnect telegram
+/channel disconnect webhook
+/channel disconnect email
 ```
 
-Adapters: **TelegramAdapter** · **WebhookAdapter** (HTTP receiver) · **EmailAdapter** (IMAP/SMTP) · **ConsoleAdapter** (local TUI/REPL for debugging). All normalize to DuckHive's `Message` type.
+Adapters: **TelegramAdapter** · **WebhookAdapter** (HTTP receiver) · **EmailAdapter** (IMAP/SMTP) · **ConsoleAdapter** (local TUI/REPL for debugging). All normalize to DuckHive's `Message` type. The `/channel` command now exposes real status snapshots for Telegram, Webhook, Email, and Console plus concrete Telegram connect/send, runtime Webhook connect/disconnect/send, runtime Email connect/disconnect/send, and Console send flows. Webhook status now reports inbound receive readiness, outbound send readiness, and current runtime connection state separately, and email status does the same for IMAP vs SMTP/default-recipient readiness plus live runtime state, so partially configured or currently disconnected adapters are shown accurately instead of looking fully ready.
 
-Telegram supports `DUCKHIVE_TELEGRAM_BOT_TOKEN` or `TELEGRAM_BOT_TOKEN`. The long-polling path is hardened to keep polling after quiet `getUpdates` responses, bound Bot API calls with a timeout, and preserve later valid updates when earlier updates in a batch are filtered.
+Telegram supports `DUCKHIVE_TELEGRAM_BOT_TOKEN` or `TELEGRAM_BOT_TOKEN`. `/connect status` and `/channel status` now reflect env-backed Telegram configuration as well as secure-storage state, including the effective chat ID and whether config came from storage or the current process environment. Env-backed status no longer inherits stale stored chat or connection-timestamp metadata from a different bot token, and `/connect disconnect` now clears both supported runtime token env vars inside the running DuckHive process. The WebUI `/api/status` payload currently exposes Telegram readiness booleans (`configured`, `allowlistConfigured`) rather than the full chat/source detail shown by the CLI commands. Tokens and registered chat IDs now restore correctly from secure storage across fresh starts. The long-polling path is hardened to keep polling after quiet `getUpdates` responses, bound Bot API calls with a timeout, and preserve later valid updates when earlier updates in a batch are filtered.
 
 ### Custom Tools
 
@@ -793,31 +906,40 @@ DuckHive adds 40+ custom tools on top of the OpenClaude base:
 | **TaskPlannerTool** | `/plan` | Structured task decomposition (heuristic or LLM) |
 | **AndroidTool** | `/android` | Full Android control via ADB |
 | **VisionTool** | `/vision` | Phone screenshot + AI analysis |
-| **MemoryTool** | `/memory` | Long-term remember/recall |
-| **LessonsTool** | `/lessons` | Permanent failure moat — provider/tool error log |
-| **BM25Tool** | `/bm25` | Keyword search across all sessions |
-| **EmbedRecallTool** | `/embed` | Semantic search across memory |
-| **KAIROSTool** | `/kairos` | Proactive heartbeat daemon |
-| **MeshTool** | `/mesh` | Agent mesh networking |
-| **SkillTool** | `/skill` | Runtime skill creation |
-| **SkillManageTool** | `/skills` | Create, edit, and manage skills |
-| **SessionSearchTool** | — | FTS5 full-text search across past sessions |
-| **CronRunTool** | `/cron` | Manually trigger scheduled cron jobs |
-| **BudgetTrackerTool** | `/budget` | Daily spend enforcement with auto-fallback |
-| **ProviderCacheTool** | `/cache` | 30s response cache for provider calls |
-| **CustomProvidersTool** | `/provider add\|list\|remove` | OpenAI-compatible endpoint config |
+| **MemoryTool** | `/memory` | Memory editor and recall surface |
+| **LessonsTool** | — | Internal `LESSONS.md` failure moat used by memory/custodian flows |
+| **BM25Tool** | — | Internal keyword index/search layer |
+| **EmbedRecallTool** | — | Internal semantic recall layer |
+| **KAIROSTool** | — | Internal proactive heartbeat/runtime surface |
+| **MeshTool** | — | Internal agent mesh/networking surface |
+| **SkillTool** | — | Internal runtime skill-generation primitive |
+
+`/shadow` is now a real slash command wrapper around DuckHive's shadow Git safety net. It supports `/shadow checkpoint <message>`, `/shadow list`, and `/shadow restore <checkpoint-id> [--file <path>]` so the documented Gemini-style snapshot workflow is reachable from the CLI instead of only through the lower-level tool surface.
+
+`/android` and `/vision` are now real slash commands too. `/android` exposes the documented ADB control flow (`devices`, `screenshot`, `battery`, `tap`, `swipe`, `text`, `shell`), and `/vision` exposes `phone_screenshot`, `analyze`, and `phone_tap` directly from the CLI instead of relying on unrelated mobile-app aliases or tool-only entrypoints.
+
+`/memory`, `/skill`, and `/skills` are the actual user-facing memory/skill commands today. `/skill` now provides a lightweight workshop surface for scaffold/list/read/delete workflows against DuckHive's shared `skills/` directory, while `/skills` still opens the richer interactive manager UI. The lessons, BM25, embed recall, KAIROS, mesh, and runtime skill-generation entries above are implemented subsystems or tool primitives, but they are not currently registered as standalone slash commands in the DuckHive CLI.
+| **SkillWorkshopTool** | `/skill` | Scaffold, inspect, and delete reusable workflow skills |
+| **SkillManageTool** | `/skills` | Interactive skill manager UI |
+| **SessionSearchTool** | — | Literal + keyword search across past sessions |
+| **CronRunTool** | — | Internal scheduled-job trigger surface |
+| **BudgetTrackerTool** | — | Internal daily spend enforcement and fallback logic |
+| **ProviderCacheTool** | — | Internal provider response cache layer |
+| **CustomProvidersTool** | `/provider` | OpenAI-compatible endpoint config via the provider manager |
 | **ChannelAdapterTool** | `/channel` | Unified messaging — Telegram/Webhook/Email/Console |
+
+Hermes-style autonomous skill creation and `SkillManageTool` now use the same shared DuckHive roots as the rest of the harness: repeated-topic detection reads from the resolved memory base, and authored or managed `SKILL.md` files are written under DuckHive's resolved config-home `skills/` directory rather than separate hardcoded home paths.
 | **SecretScannerTool** | — | Detect secrets before writing to memory |
 | **SSRFValidationTool** | — | DNS-based URL validation for SSRF protection |
 | **TrustedFoldersTool** | `/trusted-folders` | Folder-level security boundaries |
 | **ShellModeTool** | `/shell-mode` | Ctrl-X AI↔shell toggle |
-| **SwapTool** | `/swap` | AI/shell mode switching |
+| **SwapTool** | — | Internal AI/shell mode switching primitive |
 | **MCPManageTool** | `/mcp` | MCP server management |
-| **ConfirmTool** | `/confirm` | Gum-style interactive prompts |
-| **StatusBarTool** | `/statusbar` | Bubble Tea status bar rendering |
-| **StreamTool** | `/stream` | Spinners, progress bars, thinking indicators |
-| **REPLPanelTool** | `/panel` | Bubble Tea table/panel rendering |
-| **DeskDevTool** | `/deskdev` | Desktop development mode |
+| **ConfirmTool** | — | Internal interactive confirm/prompt primitive |
+| **StatusBarTool** | `/statusline` | Status line rendering/toggles |
+| **StreamTool** | — | Internal spinners/progress/thinking indicators |
+| **REPLPanelTool** | — | Internal Bubble Tea table/panel renderer |
+| **DeskDevTool** | `/desktop` | Desktop automation mode |
 | **ACPCommand** | `/acp` | ACP server for IDE integration (Kimi CLI style) |
 | **SpawnCommand** | `/spawn` | Spawn a subagent teammate (Hermes Agent style) |
 | **InspectCommand** | `/introspect` | Analyze DUCK.md influence on current session |
@@ -846,7 +968,7 @@ DuckHive v0.9.2
 │   ├── /decree    — binding laws enforced across agents
 │   └── Swarm Voting — vote / merge / pick-best response routing
 ├── 3-Layer Memory & Intelligence
-│   ├── BM25 (keyword) — inverted index, ~/.duckhive/bm25-index.json
+│   ├── BM25 (keyword) — inverted index in DuckHive's resolved config home (`bm25-index.json`)
 │   ├── Embed Recall (semantic) — TF-IDF or LM Studio embeddings
 │   └── LESSONS.md (permanent) — append-only failure moat, never deleted
 ├── Task Planner — SimplePlanner (heuristic) + LLMPlanner (complexity ≥7)
@@ -883,7 +1005,7 @@ DuckHive v0.9.2
 | **DUCK.md Context** | ❌ | ✅ Hierarchical gemini-cli style |
 | **Auto-Compact** | ❌ | ✅ CONTEXT_COLLAPSE=true auto-shrinks |
 | **Session Search** | ❌ | ✅ FTS5 full-text search across sessions |
-| **Skill Workshop** | ❌ | ✅ Auto-capture complex tasks as skills |
+| **Skill Workshop** | ❌ | ✅ Skill workshop scaffold/list/read/delete surface (`/skill`) |
 | **MCP CLI** | Basic | dmcp (enhanced) |
 | **Governance** | ❌ | ✅ Council → Senate → Decree pipeline |
 | **Shadow Git** | ❌ | ✅ Pre-change git snapshots |
@@ -944,8 +1066,16 @@ ln -s "$(pwd)/bin/duckhive" ~/.local/bin/duckhive
 DuckHive inherits the OpenClaude configuration model, while also carrying some compatibility paths from the upstream fork history. Set up your environment:
 
 ```bash
-# MiniMax API key (required for default model + mmx)
+# MiniMax auth for the default model + mmx
 export MINIMAX_API_KEY=sk-your-key-here
+
+# Optional alias if you already use the mmx ecosystem naming
+export MMX_API_KEY=sk-your-key-here
+
+# Or sign in once with the MiniMax CLI and DuckHive will reuse ~/.mmx/config.json
+# plus ~/.mmx/credentials.json OAuth access tokens, refreshing them with
+# `mmx auth refresh` on demand during MiniMax requests when needed.
+# mmx auth login --api-key sk-your-key-here
 
 # Optional: other providers
 export KIMI_API_KEY=sk-kimi-...
@@ -1090,27 +1220,29 @@ MIT License — see [LICENSE](LICENSE) file.
 ## Known Issues & Troubleshooting
 
 ### Yolo Mode (`--yolo` flag)
-Yolo mode is ONLY available as an in-app command, NOT as a CLI flag:
+DuckHive supports yolo mode both as a startup CLI flag and as an in-app toggle:
 ```bash
-# Inside duckhive REPL, type:
+# Start with yolo mode already enabled
+duckhive --yolo
+
+# Or inside duckhive REPL, type:
 /yolo on   # enable
 /yolo off  # disable
 /yolo      # toggle
 ```
 
 ### OpenClaw Integration
-DuckHive has built-in OpenClaw commands (from openclaude upstream):
-- `/openclaw-status` - Check OpenClaw gateway status
-- `/openclaw-restart` - Restart OpenClaw gateway
+DuckHive includes internal OpenClaw gateway helper operations in the Crestodian diagnostics layer:
+- `openclaw-status` - Check OpenClaw gateway status
+- `openclaw-restart` - Restart OpenClaw gateway
 
-These are HELP commands to manage OpenClaw, not conflicts. OpenClaw and DuckHive are SEPARATE:
+These are helper operations to manage OpenClaw, not top-level DuckHive slash commands. OpenClaw and DuckHive are separate:
 - `openclaw` - OpenClaw gateway/agent (standalone)
 - `duckhive` - DuckHive AI coding harness
 
 ### Timer in TUI
-The Go TUI (`duckhive-tui`) doesn't display session elapsed time in the UI.
-The time IS tracked in the bridge layer - the display connection needs work.
-Use the legacy Ink REPL for duration display after tasks.
+The Go TUI (`duckhive-tui`) now shows a live session elapsed clock in the header and status rail.
+The bridge-backed API-duration aggregate is still a partial metric in this surface until the bridge forwards the same duration totals the legacy REPL already tracks.
 
 ### Terminal Freezes During Heavy Tasks
 The SerialBatchEventUploader has a blocking queue. During heavy tool use,
@@ -1136,12 +1268,12 @@ DuckHive is based on **OpenClaude** (https://github.com/Gitlawb/openclaude), NOT
 | **OpenClaw** | https://github.com/openclaw/openclaw | SEPARATE project - DuckHive can interact with it via built-in commands |
 | **DuckHive** | https://github.com/Franzferdinan51/DuckHive | Ryan's fork with MiniMax/MMX/Agent Teams |
 
-### Built-in Commands for OpenClaw Gateway
-These commands let DuckHive check/manage the **OpenClaw gateway** running separately:
-- `/openclaw-status` - Check OpenClaw gateway status (must be running at localhost:18789)
-- `/openclaw-restart` - Restart OpenClaw gateway
+### Built-in OpenClaw Gateway Helpers
+These internal helper operations let DuckHive check/manage the **OpenClaw gateway** running separately:
+- `openclaw-status` - Check OpenClaw gateway status (must be running at localhost:18789)
+- `openclaw-restart` - Restart OpenClaw gateway
 
-These are HELPER commands to manage OpenClaw, NOT DuckHive's upstream.
+These are helper operations to manage OpenClaw, not DuckHive slash commands and not DuckHive's upstream.
 
 ### Common Confusion
 - Type `duckhive` → starts DuckHive (based on OpenClaude)
