@@ -9,6 +9,7 @@
  * - /goal pause [id] - Pause a running goal
  * - /goal resume [id] - Resume a paused goal
  * - /goal complete [id] - Mark a goal as completed
+ * - /goal fail [id] - Mark a goal as failed
  * - /goal clear [id] - Remove a goal
  * - /goal attach [id] - Attach current conversation to a goal
  */
@@ -300,10 +301,10 @@ async function listGoals(args: string[]): Promise<string> {
   const goals = getGoals()
   const filter = args[0]?.toLowerCase()
   const showAll = filter === 'all'
-  const validFilters = new Set(['all', 'active', 'paused', 'completed'])
+  const validFilters = new Set(['all', 'active', 'paused', 'completed', 'failed'])
 
   if (filter && !validFilters.has(filter)) {
-    return 'Unknown goal filter. Use one of: all, active, paused, completed.'
+    return 'Unknown goal filter. Use one of: all, active, paused, completed, failed.'
   }
 
   let filtered = goals
@@ -313,6 +314,8 @@ async function listGoals(args: string[]): Promise<string> {
     filtered = goals.filter((g) => g.status === 'completed')
   } else if (filter === 'paused') {
     filtered = goals.filter((g) => g.status === 'paused')
+  } else if (filter === 'failed') {
+    filtered = goals.filter((g) => g.status === 'failed')
   }
 
   if (filtered.length === 0) {
@@ -448,6 +451,32 @@ async function completeGoal(args: string[]): Promise<string> {
   return `Goal completed! 🎉\n\n${formatGoal(goal)}`
 }
 
+async function failGoal(args: string[]): Promise<string> {
+  const goals = getGoals()
+  const { goal, error } = resolveGoalTarget(goals, args[0], [
+    'active',
+    'paused',
+  ])
+
+  if (!goal) return error ?? 'Usage: /goal fail [goal-id]'
+  if (goal.status !== 'active' && goal.status !== 'paused') {
+    return `Goal is not active or paused (current status: ${goal.status})`
+  }
+
+  goal.status = 'failed'
+  const currentStep = getCurrentStep(goal)
+  if (currentStep && currentStep.status !== 'completed') {
+    currentStep.status = 'failed'
+    currentStep.completedAt = new Date().toISOString()
+  }
+  goal.currentStepId = undefined
+  goal.completedAt = new Date().toISOString()
+  goal.updatedAt = new Date().toISOString()
+  await saveGoals(goals)
+
+  return `Goal marked failed.\n\n${formatGoal(goal)}`
+}
+
 async function addStep(args: string[], goalId?: string): Promise<string> {
   if (args.length === 0) {
     return `Usage: /goal step add <goal-id> <step-description>\n   or: /goal step add <step-description> (uses active goal)`
@@ -571,6 +600,7 @@ ${bold('Commands:')}
   /goal pause [id]             Pause a goal
   /goal resume [id]            Resume a paused goal
   /goal complete [id]          Mark goal as completed
+  /goal fail [id]              Mark goal as failed
   /goal clear [id]             Delete a goal
   /goal attach [id]            Attach current session to goal
   /goal step add [id] <desc>   Add a step to a goal
@@ -583,6 +613,7 @@ ${bold('Examples:')}
   /goal pause goal_123
   /goal resume goal_123
   /goal complete goal_123
+  /goal fail goal_123
 
 ${italic('Goals persist across sessions and can be resumed later.')}
 `.trim()
@@ -636,6 +667,11 @@ export default async function goalCommand(args: string[]): Promise<string> {
     case 'done':
     case 'finish':
       return completeGoal(args.slice(1))
+
+    case 'fail':
+    case 'failed':
+    case 'cancel':
+      return failGoal(args.slice(1))
 
     case 'clear':
     case 'delete':

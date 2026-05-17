@@ -6,6 +6,7 @@ type GoalRecord = {
   status?: string
   currentStepId?: string
   description?: string
+  completedAt?: string
   steps: Array<{
     description: string
     status?: string
@@ -242,6 +243,47 @@ describe('/goal command', () => {
 
     const resumed = await goalCommand(['resume'])
     expect(resumed).toContain('Goal resumed!')
+  })
+
+  test('fail marks the current goal and active step failed', async () => {
+    const goalCommand = await importFreshGoalCommand()
+    await goalCommand(['create', 'Investigate', 'regression'])
+    await goalCommand(['step', 'add', 'Reproduce', 'the', 'bug'])
+
+    const result = await goalCommand(['fail'])
+
+    expect(result).toContain('Goal marked failed.')
+    const goal = getStoredGoals()[0]
+    expect(goal?.status).toBe('failed')
+    expect(goal?.currentStepId).toBeUndefined()
+    expect(goal?.completedAt).toBeTruthy()
+    expect(goal?.steps[0]?.status).toBe('failed')
+    expect(goal?.steps[0]?.completedAt).toBeTruthy()
+  })
+
+  test('fail rejects completed goals even when referenced explicitly', async () => {
+    const goalCommand = await importFreshGoalCommand()
+    await goalCommand(['create', 'Already', 'done'])
+    const goalId = getStoredGoals()[0]?.id
+    await goalCommand(['complete', goalId!])
+
+    const result = await goalCommand(['fail', goalId!])
+
+    expect(result).toContain('Goal is not active or paused')
+    expect(getStoredGoals()[0]?.status).toBe('completed')
+  })
+
+  test('list failed filters failed goals', async () => {
+    const goalCommand = await importFreshGoalCommand()
+    await goalCommand(['create', 'Failed', 'goal'])
+    await goalCommand(['fail'])
+    await goalCommand(['create', 'Active', 'goal'])
+
+    const result = await goalCommand(['list', 'failed'])
+
+    expect(result).toContain('Failed goal')
+    expect(result).not.toContain('Active goal')
+    expect(result).toContain('FAILED')
   })
 
   test('create attaches the current session id to the new goal', async () => {
