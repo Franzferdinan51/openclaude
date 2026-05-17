@@ -235,8 +235,27 @@ describe('/channel command', () => {
     expect(result.value).toBe('connect:123456789:ABCDEFGHIJKLMNOPQRSTUVWX')
   })
 
+  test('delegates documented --token=value syntax without forwarding the flag', async () => {
+    const result = expectTextResult(
+      await call('connect telegram --token=123456789:ABCDEFGHIJKLMNOPQRSTUVWX', {} as never),
+    )
+
+    expect(connectCall).toHaveBeenCalledWith(
+      '123456789:ABCDEFGHIJKLMNOPQRSTUVWX',
+      expect.anything(),
+    )
+    expect(result.value).toBe('connect:123456789:ABCDEFGHIJKLMNOPQRSTUVWX')
+  })
+
   test('connect without a token returns channel-specific usage instead of delegating to /connect', async () => {
     const result = expectTextResult(await call('connect telegram', {} as never))
+
+    expect(result.value).toBe('Usage: /channel connect telegram --token <TOKEN>')
+    expect(connectCall).not.toHaveBeenCalled()
+  })
+
+  test('connect with a bare --token flag returns usage instead of treating the flag as the token', async () => {
+    const result = expectTextResult(await call('connect telegram --token', {} as never))
 
     expect(result.value).toBe('Usage: /channel connect telegram --token <TOKEN>')
     expect(connectCall).not.toHaveBeenCalled()
@@ -270,6 +289,18 @@ describe('/channel command', () => {
     const result = expectTextResult(
       await call(
         'connect telegram --token 123456789:ABCDEFGHIJKLMNOPQRSTUVWX extra',
+        {} as never,
+      ),
+    )
+
+    expect(result.value).toBe('Usage: /channel connect telegram --token <TOKEN>')
+    expect(connectCall).not.toHaveBeenCalled()
+  })
+
+  test('connect rejects extra arguments after --token=value instead of silently ignoring them', async () => {
+    const result = expectTextResult(
+      await call(
+        'connect telegram --token=123456789:ABCDEFGHIJKLMNOPQRSTUVWX extra',
         {} as never,
       ),
     )

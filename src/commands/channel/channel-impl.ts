@@ -260,15 +260,31 @@ function isTextResult(result: LocalCommandResult): result is Extract<LocalComman
   return result.type === 'text'
 }
 
-function getFlagValue(args: string[], flag: string): string | undefined {
-  const prefixed = `${flag}=`
-  const inline = args.find(arg => arg.startsWith(prefixed))
-  if (inline) return inline.slice(prefixed.length).trim()
+function parseTelegramConnectToken(args: string[]): { token?: string; error?: string } {
+  const usage = 'Usage: /channel connect telegram --token <TOKEN>'
+  const rest = args.slice(2)
+  if (rest.length === 0) return { error: usage }
 
-  const index = args.indexOf(flag)
-  if (index !== -1) return args[index + 1]?.trim()
+  const inlineTokenArg = rest.find(arg => arg.startsWith('--token='))
+  if (inlineTokenArg) {
+    const token = inlineTokenArg.slice('--token='.length).trim()
+    const allowed = rest.length === 1
+    return token && allowed ? { token } : { error: usage }
+  }
 
-  return undefined
+  const tokenFlagIndex = rest.indexOf('--token')
+  if (tokenFlagIndex !== -1) {
+    const token = rest[tokenFlagIndex + 1]?.trim()
+    const allowed = rest.length === 2 && tokenFlagIndex === 0
+    return token && allowed && !token.startsWith('--') ? { token } : { error: usage }
+  }
+
+  if (rest.some(arg => arg.startsWith('--token'))) {
+    return { error: usage }
+  }
+
+  const token = rest.join(' ').trim()
+  return token ? { token } : { error: usage }
 }
 
 export const call: LocalCommandCall = async (args: string) => {
@@ -403,17 +419,11 @@ export const call: LocalCommandCall = async (args: string) => {
           'Usage: /channel connect <channel-type> [options]\n\nAvailable: telegram (--token <TOKEN>), webhook, email',
       }
     }
-    if (parsedArgs.length > 4 && getFlagValue(parsedArgs, '--token')) {
-      return {
-        type: 'text',
-        value: 'Usage: /channel connect telegram --token <TOKEN>',
-      }
-    }
-    const token = getFlagValue(parsedArgs, '--token') ?? parsedArgs.slice(2).join(' ').trim()
+    const { token, error } = parseTelegramConnectToken(parsedArgs)
     if (!token) {
       return {
         type: 'text',
-        value: 'Usage: /channel connect telegram --token <TOKEN>',
+        value: error ?? 'Usage: /channel connect telegram --token <TOKEN>',
       }
     }
     return connectCall(token, {} as never)
