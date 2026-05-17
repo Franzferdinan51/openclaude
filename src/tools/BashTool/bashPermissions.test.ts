@@ -2,7 +2,11 @@ import { afterEach, describe, expect, test } from 'bun:test'
 
 import { getEmptyToolPermissionContext } from '../../Tool.js'
 import { SandboxManager } from '../../utils/sandbox/sandbox-adapter.js'
-import { bashToolHasPermission, stripAllLeadingEnvVars } from './bashPermissions.js'
+import {
+  bashToolHasPermission,
+  checkSandboxAutoAllow,
+  stripAllLeadingEnvVars,
+} from './bashPermissions.js'
 
 const originalSandboxMethods = {
   isSandboxingEnabled: SandboxManager.isSandboxingEnabled,
@@ -56,6 +60,83 @@ test('sandbox auto-allow still enforces Bash path constraints', async () => {
   expect(result.behavior).toBe('ask')
   expect('message' in result ? result.message : '').toContain('was blocked')
   expect('message' in result ? result.message : '').toContain('passwd')
+})
+
+test('sandbox auto-allow caps subcommand fanout when AST is unavailable', async () => {
+  ;(globalThis as unknown as { MACRO: { VERSION: string } }).MACRO = {
+    VERSION: 'test',
+  }
+
+  const originalInjectionFlag =
+    process.env.CLAUDE_CODE_DISABLE_COMMAND_INJECTION_CHECK
+  process.env.CLAUDE_CODE_DISABLE_COMMAND_INJECTION_CHECK = '1'
+  try {
+    SandboxManager.isSandboxingEnabled = () => true
+    SandboxManager.isAutoAllowBashIfSandboxedEnabled = () => true
+    SandboxManager.areUnsandboxedCommandsAllowed = () => true
+    SandboxManager.getExcludedCommands = () => []
+
+    const command = Array.from({ length: 60 }, () => 'echo x').join(' && ')
+
+    const result = await bashToolHasPermission(
+      { command },
+      makeToolUseContext(),
+    )
+
+    expect(result.behavior).toBe('ask')
+    expect(result.decisionReason).toMatchObject({
+      type: 'other',
+      reason: expect.stringContaining('too many to safety-check individually'),
+    })
+  } finally {
+    if (originalInjectionFlag === undefined) {
+      delete process.env.CLAUDE_CODE_DISABLE_COMMAND_INJECTION_CHECK
+    } else {
+      process.env.CLAUDE_CODE_DISABLE_COMMAND_INJECTION_CHECK =
+        originalInjectionFlag
+    }
+  }
+})
+
+test('sandbox auto-allow does not cap when astSubcommands is provided', () => {
+  ;(globalThis as unknown as { MACRO: { VERSION: string } }).MACRO = {
+    VERSION: 'test',
+  }
+
+  const subs = Array.from({ length: 60 }, () => 'echo x')
+  const command = subs.join(' && ')
+
+  const result = checkSandboxAutoAllow(
+    { command },
+    getEmptyToolPermissionContext(),
+    subs,
+  )
+
+  expect(result.behavior).toBe('allow')
+  expect(result.decisionReason).toMatchObject({
+    type: 'other',
+    reason: expect.stringContaining('Auto-allowed with sandbox'),
+  })
+})
+
+test('checkSandboxAutoAllow caps fanout when astSubcommands is null', () => {
+  ;(globalThis as unknown as { MACRO: { VERSION: string } }).MACRO = {
+    VERSION: 'test',
+  }
+
+  const command = Array.from({ length: 60 }, () => 'echo x').join(' && ')
+
+  const result = checkSandboxAutoAllow(
+    { command },
+    getEmptyToolPermissionContext(),
+    null,
+  )
+
+  expect(result.behavior).toBe('ask')
+  expect(result.decisionReason).toMatchObject({
+    type: 'other',
+    reason: expect.stringContaining('too many to safety-check individually'),
+  })
 })
 
 // SEC-02 regression: array subscript with command substitution must NOT be stripped.

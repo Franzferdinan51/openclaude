@@ -48,9 +48,11 @@ process.env.CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS ??= 'true'
 // eslint-disable-next-line custom-rules/no-top-level-side-effects
 process.env.COREPACK_ENABLE_AUTO_PIN = '0';
 
-// Set max heap size for child processes in CCR environments (containers have 16GB)
+// Set max heap size for child processes.
+// Local long-running harness tasks can exceed V8's default heap during large
+// context loads and tool-heavy loops. Preserve explicit user heap settings.
 // eslint-disable-next-line custom-rules/no-top-level-side-effects, custom-rules/no-process-env-top-level, custom-rules/safe-env-boolean-check
-if (process.env.CLAUDE_CODE_REMOTE === 'true') {
+if (!process.env.NODE_OPTIONS?.includes('--max-old-space-size')) {
   // eslint-disable-next-line custom-rules/no-top-level-side-effects, custom-rules/no-process-env-top-level
   const existing = process.env.NODE_OPTIONS || '';
   // eslint-disable-next-line custom-rules/no-top-level-side-effects, custom-rules/no-process-env-top-level

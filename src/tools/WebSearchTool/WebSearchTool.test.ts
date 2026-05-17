@@ -2,7 +2,11 @@ import { describe, expect, test } from 'bun:test'
 import type { ProviderOutput } from './providers/types.js'
 import { __test } from './WebSearchTool.js'
 
-const { buildEmptyAdapterResultHint, formatProviderOutputWithEmptyHint } = __test
+const {
+  buildAdapterUnavailableError,
+  buildEmptyAdapterResultHint,
+  formatProviderOutputWithEmptyHint,
+} = __test
 
 describe('buildEmptyAdapterResultHint', () => {
   test('names the active provider and the failing backend', () => {
@@ -68,5 +72,28 @@ describe('formatProviderOutputWithEmptyHint', () => {
     expect(typeof out.results[0]).toBe('string')
     expect(out.results[0]).toContain('Cats')
     expect(out.results[0]).toContain('https://example.com/cats')
+  })
+})
+
+// Regression for adapter failures in auto mode on openai-shim providers with
+// no native web-search fallback: the user must see the underlying adapter error.
+describe('buildAdapterUnavailableError', () => {
+  test('names the active provider', () => {
+    const msg = buildAdapterUnavailableError('minimax', 'rate limited')
+    expect(msg).toContain('minimax')
+  })
+
+  test('embeds the underlying adapter error message verbatim', () => {
+    const msg = buildAdapterUnavailableError(
+      'moonshot',
+      'duckduckgo: 429 Too Many Requests',
+    )
+    expect(msg).toContain('duckduckgo: 429 Too Many Requests')
+  })
+
+  test('points the user at a working native-search provider', () => {
+    const msg = buildAdapterUnavailableError('nvidia-nim', 'timeout')
+    expect(msg).toMatch(/Anthropic/)
+    expect(msg).toMatch(/Codex/)
   })
 })

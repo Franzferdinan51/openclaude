@@ -1,6 +1,6 @@
 # 🦆 DuckHive
 
-![DuckHive](https://img.shields.io/badge/DuckHive-v0.12.0-gold?style=for-the-badge&logo=buymeacoffee)
+![DuckHive](https://img.shields.io/badge/DuckHive-v0.13.0-gold?style=for-the-badge&logo=buymeacoffee)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue?style=for-the-badge&logo=typescript)](package.json)
 [![Bun](https://img.shields.io/badge/Bun-1.3-yellow?style=for-the-badge&logo=bun)](package.json)
@@ -1110,7 +1110,7 @@ Hermes-style autonomous skill creation and `SkillManageTool` now use the same sh
 ## Architecture
 
 ```
-DuckHive v0.12.0
+DuckHive v0.13.0
 ├── MiniMax M2.7 (default model)
 ├── DuckHive mmx (MiniMax CLI integration)
 │   ├── Image generation
@@ -1321,7 +1321,7 @@ duckhive config path
 ./bin/duckhive --version
 
 # Command ownership check
-duckhive --version      # 0.12.0 (DuckHive)
+duckhive --version      # 0.13.0 (DuckHive)
 openclaude --version    # upstream OpenClaude, if installed separately
 ```
 
@@ -1358,9 +1358,9 @@ Recent verification snapshot:
 - `bun test`: `2415 pass`, `0 fail`
 - `bun run build`, `bun run smoke`, `bun run verify:privacy`, and `bun run doctor:runtime`: passing
 - `cd tui && go test ./...`: not run in this Windows checkout because Go is not installed; `duckhive tui` and `bun run doctor:runtime` both report the missing Go prerequisite and keep the classic REPL as the safe default
-- `duckhive --version`: `0.12.0 (DuckHive)`
+- `duckhive --version`: `0.13.0 (DuckHive)`
 - `openclaude --version`: upstream OpenClaude remains separately owned when installed
-- package dry-run publishes as `duckhive@0.12.0`, includes the `duckhive` launcher, `duckhive/sdk`, `duckhive/harness`, `config/`, and the runtime `skills/newest-desktop-control/` skill files without test fixtures
+- package dry-run publishes as `duckhive@0.13.0`, includes the `duckhive` launcher, `duckhive/sdk`, `duckhive/harness`, `config/`, and the runtime `skills/newest-desktop-control/` skill files without test fixtures
 
 Known debt: `bun run typecheck` is still a repo-wide hardening task. The current pass has already added missing transport/OAuth/optional-integration type surfaces, but remaining errors are broad pre-existing TypeScript debt in dormant optional modules, legacy command surfaces, ACP/bridge paths, telemetry, and older UI/test typing. Runtime build, tests, SDK bundle checks, privacy verification, smoke, and doctor are the current green gates; TUI Go tests require Go to be installed.
 
