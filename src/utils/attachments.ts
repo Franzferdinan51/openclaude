@@ -2074,11 +2074,6 @@ export async function getChangedFiles(
       const fileState = toolUseContext.readFileState.get(filePath)
       if (!fileState) return null
 
-      // TODO: Implement offset/limit support for changed files
-      if (fileState.offset !== undefined || fileState.limit !== undefined) {
-        return null
-      }
-
       const normalizedPath = expandPath(filePath)
 
       // Check if file has a deny rule configured
@@ -2092,7 +2087,11 @@ export async function getChangedFiles(
           return null
         }
 
-        const fileInput = { file_path: normalizedPath }
+        const fileInput = {
+          file_path: normalizedPath,
+          offset: fileState.offset,
+          limit: fileState.limit,
+        }
 
         // Validate file path is valid
         const isValid = await FileReadTool.validateInput(
