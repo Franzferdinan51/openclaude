@@ -313,6 +313,25 @@ const cases: SmokeCase[] = [
     ],
   },
   {
+    name: 'top-level senate help',
+    args: ['senate', '--help'],
+    includes: [
+      'Senate command',
+      '/senate list',
+      '/senate issue',
+      '/senate show',
+    ],
+  },
+  {
+    name: 'top-level decree help',
+    args: ['decree', '--help'],
+    includes: [
+      'Decree command',
+      '/decree list',
+      '/decree <title> | <content>',
+    ],
+  },
+  {
     name: 'top-level swarm help',
     args: ['swarm', '--help'],
     includes: [

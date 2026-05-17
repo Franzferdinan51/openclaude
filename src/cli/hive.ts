@@ -18,9 +18,9 @@ const HIVE_COMMANDS: Record<HiveCommand, () => Promise<{ call: (args: string) =>
 export async function hiveCommandHandler(command: HiveCommand, args: string[]): Promise<void> {
   const helpArgsByCommand: Record<HiveCommand, string> = {
     council: '',
-    decree: '',
+    decree: 'help',
     orchestrate: '',
-    senate: '',
+    senate: 'help',
     swarm: '',
     team: 'help',
   }

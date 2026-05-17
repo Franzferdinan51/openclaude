@@ -55,6 +55,17 @@ export const call: LocalCommandCall = async (args: string) => {
   const subcommand = parts[0]?.toLowerCase() ?? ''
   const rest = parts.slice(1).join(' ').trim()
 
+  if (subcommand === 'help') {
+    return {
+      type: 'text',
+      value: `Senate command
+${'-'.repeat(50)}
+/senate list                    - List active decrees
+/senate issue <title>|<content> - Issue a new decree
+/senate show <id>               - View decree details`,
+    }
+  }
+
   function issueUsage() {
     return {
       type: 'text' as const,

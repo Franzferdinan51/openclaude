@@ -33,6 +33,13 @@ export const call: LocalCommandCall = async (args: string) => {
   const hive = getDecreeDeps().getHiveBridge()
   const rest = args.trim()
 
+  if (rest === 'help') {
+    return {
+      type: 'text',
+      value: 'Decree command\n--------------------------------------------------\n/decree list                         - List active decrees\n/decree <title> | <content>          - Issue a binding decree\nExample: /decree Secure Mode | Agents SHALL ask before destructive commands',
+    }
+  }
+
   if (!rest || rest === 'list') {
     const decrees = await hive.getActiveDecrees()
     if (decrees.length === 0) {
