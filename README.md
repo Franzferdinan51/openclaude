@@ -58,6 +58,13 @@ Current TUI foundations:
 - Transcript rail toggle and tracked TUI backlog files
 - Quieter terminal-first styling with inspector/transcript rails kept opt-in
 
+For terminal diagnostics, `duckhive tui --help` now explains the standalone
+Go/Bubble Tea binary requirement, the Windows-safe classic REPL default, the
+`DUCKHIVE_TUI_WINDOWS_EXPERIMENT=1` opt-in, and the companion
+`duckhive runtime-doctor` / `duckhive input-test` checks. This keeps the TUI
+path discoverable without making no-args Windows startup depend on the
+experimental renderer.
+
 Harness capability tracking currently lives in:
 
 - `tui/TODO.md`

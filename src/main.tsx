@@ -3880,7 +3880,24 @@ async function run(): Promise<CommanderCommand> {
     return program;
   }
 
-  program.command('tui').description('Launch the DuckHive Bubble Tea TUI').action(async () => {
+  program.command('tui')
+    .description('Launch the DuckHive Bubble Tea TUI')
+    .addHelpText('after', `
+Details:
+  duckhive tui launches the standalone Go/Bubble Tea terminal UI when the
+  checked-in binary exists. If the binary is missing and Go is installed,
+  DuckHive attempts to build it from ./tui on demand.
+
+Windows:
+  Plain duckhive startup stays on the classic REPL by default because that is
+  the Windows-safe input path. Use duckhive tui explicitly to test the TUI, or
+  set DUCKHIVE_TUI_WINDOWS_EXPERIMENT=1 to opt into Windows auto-launch.
+
+Diagnostics:
+  duckhive runtime-doctor
+  duckhive input-test
+`)
+    .action(async () => {
     const {
       launchStandaloneTui,
       resolveDuckHiveBaseDir,

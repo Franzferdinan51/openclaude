@@ -163,6 +163,16 @@ const cases: SmokeCase[] = [
     ],
   },
   {
+    name: 'tui help',
+    args: ['tui', '--help'],
+    includes: [
+      'Usage: duckhive tui',
+      'Launch the DuckHive Bubble Tea TUI',
+      'Windows-safe input path',
+      'duckhive runtime-doctor',
+    ],
+  },
+  {
     name: 'background run list',
     args: ['ps'],
     includes: ['DuckHive background runs'],
@@ -551,6 +561,8 @@ if (process.platform === 'win32') {
       includes: [
         'Usage: duckhive tui',
         'Launch the DuckHive Bubble Tea TUI',
+        'Windows-safe input path',
+        'duckhive runtime-doctor',
       ],
     },
     {
