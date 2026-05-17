@@ -22,6 +22,10 @@ async function importFreshGoalCommand() {
     .default
 }
 
+async function importFreshGoalModule() {
+  return await import(`./goal.ts?goal-test=${Date.now()}-${Math.random()}`)
+}
+
 function getStoredGoals(): GoalRecord[] {
   return ((configStore['duckhive.goals'] as GoalRecord[]) ?? [])
 }
@@ -80,6 +84,47 @@ describe('/goal command', () => {
     expect(result).toContain('Goal created successfully!')
     expect(getStoredGoals()).toHaveLength(1)
     expect(getStoredGoals()[0]?.description).toBe('Build user authentication system')
+  })
+
+  test('REPL /goal shorthand preserves escaped quotes in descriptions', async () => {
+    const { call } = await importFreshGoalModule()
+
+    const result = await call('Build the \\"fast\\" workflow')
+
+    expect(result.value).toContain('Goal created successfully!')
+    expect(getStoredGoals()).toHaveLength(1)
+    expect(getStoredGoals()[0]?.description).toBe('Build the "fast" workflow')
+  })
+
+  test('REPL /goal create preserves escaped quotes in descriptions', async () => {
+    const { call } = await importFreshGoalModule()
+
+    const result = await call('create "Build the \\"fast\\" workflow"')
+
+    expect(result.value).toContain('Goal created successfully!')
+    expect(getStoredGoals()).toHaveLength(1)
+    expect(getStoredGoals()[0]?.description).toBe('Build the "fast" workflow')
+  })
+
+  test('REPL /goal step add preserves escaped quotes in step descriptions', async () => {
+    const { call } = await importFreshGoalModule()
+    await call('create Ship release')
+
+    const result = await call('step add "Run the \\"fast\\" smoke"')
+
+    expect(result.value).toContain('Step added to goal.')
+    expect(getStoredGoals()[0]?.steps[0]?.description).toBe(
+      'Run the "fast" smoke',
+    )
+  })
+
+  test('REPL /goal rejects unterminated quotes before creating goals', async () => {
+    const { call } = await importFreshGoalModule()
+
+    const result = await call('create "unfinished workflow')
+
+    expect(result.value).toContain('Unterminated quoted string in /goal arguments')
+    expect(getStoredGoals()).toHaveLength(0)
   })
 
   test('goal output uses ASCII-safe terminal status labels', async () => {
