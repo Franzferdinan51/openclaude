@@ -12,7 +12,8 @@ const spawn = {
   name: 'spawn',
   aliases: ['subagent', 'deep-dive'],
   description: 'Spawn a subagent teammate for deep analysis',
-  load: async () => (await import('./spawn.js')).default,
+  supportsNonInteractive: true,
+  load: () => import('./spawn.js'),
 } satisfies Command
 
 export default spawn

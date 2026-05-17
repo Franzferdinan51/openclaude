@@ -442,6 +442,17 @@ const cases: SmokeCase[] = [
     excludes: ['Warning: ignoring saved provider profile', 'Hive Nation offline'],
   },
   {
+    name: 'headless spawn help',
+    args: ['--bare', '-p', '/spawn --help'],
+    timeoutMs: 30000,
+    includes: [
+      'DuckHive spawn - Hermes-style subagent spawning',
+      '/spawn <task description>',
+      'duckhive subagent spawn coding',
+    ],
+    excludes: ['Warning: ignoring saved provider profile', 'Unknown skill: spawn'],
+  },
+  {
     name: 'top-level mmx help',
     args: ['mmx', '--help'],
     includes: [

@@ -4,6 +4,7 @@ import React from 'react'
 import stripAnsi from 'strip-ansi'
 import { createRoot } from '../../ink.js'
 import { parseSpawnArgs } from './parseSpawnArgs.ts'
+import { call } from './spawn.tsx'
 
 const SYNC_START = '\x1B[?2026h'
 const SYNC_END = '\x1B[?2026l'
@@ -141,6 +142,26 @@ describe('/spawn command UI', () => {
         task: 'Implement a REST API',
       }),
     )
+  })
+
+  test('returns provider-free help in noninteractive slash mode', async () => {
+    const completions: string[] = []
+
+    const rendered = await call(
+      result => {
+        if (result) completions.push(result)
+      },
+      {
+        options: {
+          isNonInteractiveSession: true,
+        },
+      } as never,
+      '--help',
+    )
+
+    expect(rendered).toBeNull()
+    expect(completions.join('\n')).toContain('DuckHive spawn - Hermes-style subagent spawning')
+    expect(completions.join('\n')).toContain('/subagent spawn coding "Implement a REST API"')
   })
 })
 
