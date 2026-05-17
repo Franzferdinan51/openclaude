@@ -223,6 +223,26 @@ function getCurrentStep(goal: Goal): GoalStep | undefined {
   return goal.steps.find(step => step.id === goal.currentStepId)
 }
 
+function formatGoalStatusLabel(status: GoalStatus): string {
+  const labels: Record<GoalStatus, string> = {
+    active: '[active]',
+    paused: '[paused]',
+    completed: '[done]',
+    failed: '[failed]',
+  }
+  return labels[status]
+}
+
+function formatStepStatusLabel(status: GoalStatus): string {
+  const labels: Record<GoalStatus, string> = {
+    active: '>',
+    paused: '||',
+    completed: 'x',
+    failed: '!',
+  }
+  return labels[status]
+}
+
 async function saveGoals(goals: Goal[]): Promise<void> {
   saveGlobalConfig(config => ({
     ...config,
@@ -231,14 +251,7 @@ async function saveGoals(goals: Goal[]): Promise<void> {
 }
 
 function formatGoal(goal: Goal, detailed = false): string {
-  const statusIcon: Record<GoalStatus, string> = {
-    active: '🔄',
-    paused: '⏸️',
-    completed: '✅',
-    failed: '❌',
-  }
-
-  let output = `${statusIcon[goal.status]} **${bold(goal.title)}** \`${goal.id}\`\n`
+  let output = `${formatGoalStatusLabel(goal.status)} **${bold(goal.title)}** \`${goal.id}\`\n`
   output += `   Status: ${goal.status.toUpperCase()}\n`
   output += `   Created: ${new Date(goal.createdAt).toLocaleString()}\n`
 
@@ -255,13 +268,7 @@ function formatGoal(goal: Goal, detailed = false): string {
     if (goal.steps.length > 0) {
       output += `\n   Steps (${goal.steps.length}):\n`
       for (const step of goal.steps) {
-        const stepIcon: Record<GoalStatus, string> = {
-          active: '→',
-          paused: '⏸',
-          completed: '✓',
-          failed: '✗',
-        }
-        output += `   ${stepIcon[step.status]} [${step.id}] ${step.description}\n`
+        output += `   ${formatStepStatusLabel(step.status)} [${step.id}] ${step.description}\n`
       }
     }
   }
@@ -441,7 +448,7 @@ async function completeGoal(args: string[]): Promise<string> {
   goal.updatedAt = new Date().toISOString()
   await saveGoals(goals)
 
-  return `Goal completed! 🎉\n\n${formatGoal(goal)}`
+  return `Goal completed.\n\n${formatGoal(goal)}`
 }
 
 async function failGoal(args: string[]): Promise<string> {

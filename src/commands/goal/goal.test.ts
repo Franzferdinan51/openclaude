@@ -82,6 +82,21 @@ describe('/goal command', () => {
     expect(getStoredGoals()[0]?.description).toBe('Build user authentication system')
   })
 
+  test('goal output uses ASCII-safe terminal status labels', async () => {
+    const goalCommand = await importFreshGoalCommand()
+
+    await goalCommand(['create', 'Fix', 'terminal', 'output'])
+    await goalCommand(['step', 'add', 'Verify', 'formatting'])
+    const created = await goalCommand(['status'])
+    const completed = await goalCommand(['complete'])
+
+    expect(created).toContain('[active]')
+    expect(created).toContain('> [step_')
+    expect(completed).toContain('Goal completed.')
+    expect(completed).toContain('[done]')
+    expect(/[^\x00-\x7F]/.test(`${created}\n${completed}`)).toBe(false)
+  })
+
   test('bare /goal shows current goal status instead of static help when goals exist', async () => {
     const goalCommand = await importFreshGoalCommand()
     await goalCommand(['create', 'Track', 'the', 'migration'])
