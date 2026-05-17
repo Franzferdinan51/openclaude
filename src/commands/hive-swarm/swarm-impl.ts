@@ -6,7 +6,7 @@
  *
  * Features:
  * - Wave-based agent spawning (3 agents per wave)
- * - Phase-based workflow: Planning → Implementation → Review → Deployment
+ * - Phase-based workflow: Planning -> Implementation -> Review -> Deployment
  * - Quality gates: >80% test coverage, OWASP Top 10, <200ms response
  * - Voting on final implementation
  */
@@ -382,7 +382,7 @@ async function handleVotingMode(mode: VotingMode, raw: string) {
     lines.push(`Reason: ${result.best.reasoning}`)
     lines.push('\nRankings:')
     for (const ranking of result.rankings) {
-      lines.push(`- ${ranking.agentId}: ${ranking.score}/10 — ${ranking.reasoning}`)
+      lines.push(`- ${ranking.agentId}: ${ranking.score}/10 - ${ranking.reasoning}`)
     }
     return { type: 'text' as const, value: lines.join('\n') }
   }
@@ -488,7 +488,7 @@ export const call: LocalCommandCall = async (args: string, context: ToolUseConte
   if (!task) {
     return {
       type: 'text',
-      value: `🐝 Swarm Command - Parallel Agent Execution
+      value: `Swarm Command - Parallel Agent Execution
 
 Usage: /swarm <task description>
 Example: /swarm build a REST API for task management
@@ -537,16 +537,16 @@ Allowed range: 1-8`,
   const agents = DOMAIN_AGENTS[domain].slice(0, count)
 
   const lines: string[] = []
-  lines.push(`🐝 Swarm Execution${dryRun ? ' (DRY RUN)' : ''}`)
-  lines.push(`━`.repeat(50))
-  lines.push(`📋 Task: ${task}`)
-  lines.push(`🎯 Domain: ${domain}`)
-  lines.push(`👥 Agents (${agents.length}): ${agents.join(', ')}`)
+  lines.push(`Swarm Execution${dryRun ? ' (DRY RUN)' : ''}`)
+  lines.push('-'.repeat(50))
+  lines.push(`Task: ${task}`)
+  lines.push(`Domain: ${domain}`)
+  lines.push(`Agents (${agents.length}): ${agents.join(', ')}`)
 
   if (dryRun) {
-    lines.push(`\n📊 Agent Tasks:`)
+    lines.push(`\nAgent Tasks:`)
     for (const agentId of agents) {
-      lines.push(`  → ${agentId}: ${SWARM_AGENTS[agentId]?.name}`)
+      lines.push(`  > ${agentId}: ${SWARM_AGENTS[agentId]?.name}`)
     }
     return { type: 'text', value: lines.join('\n') }
   }
@@ -557,7 +557,7 @@ Allowed range: 1-8`,
 
   const WAVE_SIZE = 3 // Spawn 3 agents per wave
 
-  lines.push(`\n🚀 Spawning ${agents.length} agents in waves...`)
+  lines.push(`\nSpawning ${agents.length} agents in waves...`)
 
   // Wave-based spawning: spawn WAVE_SIZE agents, wait, then spawn more
   const allSpawnResults: Array<{ agent: string; status: 'spawned' | 'failed'; name?: string; agentId?: string; error?: string }> = []
@@ -567,7 +567,7 @@ Allowed range: 1-8`,
     const waveNum = Math.floor(i / WAVE_SIZE) + 1
     const totalWaves = Math.ceil(agents.length / WAVE_SIZE)
 
-    lines.push(`\n🌊 Wave ${waveNum}/${totalWaves}: Spawning ${waveAgents.length} agents...`)
+    lines.push(`\nWave ${waveNum}/${totalWaves}: Spawning ${waveAgents.length} agents...`)
 
     const spawns = waveAgents.map(async (agentId) => {
       const agent = SWARM_AGENTS[agentId]
@@ -604,16 +604,16 @@ Allowed range: 1-8`,
 
     // Wait between waves (except after last wave)
     if (i + WAVE_SIZE < agents.length) {
-      lines.push(`⏳ Waiting for wave ${waveNum} agents to initialize...`)
+      lines.push(`Waiting for wave ${waveNum} agents to initialize...`)
       await sleep(2000)
     }
   }
 
   const spawnResults = allSpawnResults
 
-  lines.push(`\n📊 Results:`)
+  lines.push(`\nResults:`)
   for (const r of spawnResults) {
-    const icon = r.status === 'spawned' ? '✅' : '❌'
+    const icon = r.status === 'spawned' ? '[spawned]' : '[failed]'
     const detail = r.status === 'spawned'
       ? `${r.name} (${r.agentId})`
       : `Error: ${r.error}`
@@ -621,7 +621,7 @@ Allowed range: 1-8`,
   }
 
   const successCount = spawnResults.filter(r => r.status === 'spawned').length
-  lines.push(`\n✨ ${successCount}/${agents.length} agents spawned`)
+  lines.push(`\n${successCount}/${agents.length} agents spawned`)
 
   // Initialize swarm state for quality gates and voting
   const swarmState: SwarmState = {
@@ -633,35 +633,35 @@ Allowed range: 1-8`,
 
   // Run phase-based workflow
   lines.push(`\n${'='.repeat(50)}`)
-  lines.push(`🔄 SWARM PHASE: ${swarmState.phase.toUpperCase()}`)
+  lines.push(`SWARM PHASE: ${swarmState.phase.toUpperCase()}`)
 
   // Planning phase - agents design the approach
-  lines.push(`📋 Planning Phase: Agents are designing the approach...`)
+  lines.push(`Planning Phase: Agents are designing the approach...`)
   // Note: In production, this would wait for architect agents to complete planning
 
   // Move to implementation phase
   swarmState.phase = 'implementation'
-  lines.push(`\n🔄 SWARM PHASE: ${swarmState.phase.toUpperCase()}`)
-  lines.push(`🔨 Implementation Phase: Agents are building...`)
+  lines.push(`\nSWARM PHASE: ${swarmState.phase.toUpperCase()}`)
+  lines.push(`Implementation Phase: Agents are building...`)
 
   // Move to review phase
   swarmState.phase = 'review'
-  lines.push(`\n🔄 SWARM PHASE: ${swarmState.phase.toUpperCase()}`)
-  lines.push(`🔍 Review Phase: Quality gates configured; evidence pending from agent outputs.`)
-  lines.push(`   ○ Test coverage target (>${DEFAULT_QUALITY_GATES.testCoverage}%)`)
-  lines.push(`   ○ Security review target (OWASP Top 10)`)
-  lines.push(`   ○ Performance target (<${DEFAULT_QUALITY_GATES.performanceThreshold}ms)`)
-  lines.push(`   ○ Documentation target`)
+  lines.push(`\nSWARM PHASE: ${swarmState.phase.toUpperCase()}`)
+  lines.push(`Review Phase: Quality gates configured; evidence pending from agent outputs.`)
+  lines.push(`   - Test coverage target (>${DEFAULT_QUALITY_GATES.testCoverage}%)`)
+  lines.push(`   - Security review target (OWASP Top 10)`)
+  lines.push(`   - Performance target (<${DEFAULT_QUALITY_GATES.performanceThreshold}ms)`)
+  lines.push(`   - Documentation target`)
 
   // Move to deployment phase
   swarmState.phase = 'deployment'
-  lines.push(`\n🔄 SWARM PHASE: ${swarmState.phase.toUpperCase()}`)
-  lines.push(`🚀 Deployment Phase: Release preparation is gated on responses, quality evidence, and voting.`)
+  lines.push(`\nSWARM PHASE: ${swarmState.phase.toUpperCase()}`)
+  lines.push(`Deployment Phase: Release preparation is gated on responses, quality evidence, and voting.`)
 
   // Move to voting phase
   swarmState.phase = 'voting'
-  lines.push(`\n🔄 SWARM PHASE: ${swarmState.phase.toUpperCase()}`)
-  lines.push(`🗳️ Voting Phase: Agents voting on final implementation...`)
+  lines.push(`\nSWARM PHASE: ${swarmState.phase.toUpperCase()}`)
+  lines.push(`Voting Phase: Agents voting on final implementation...`)
 
   const spawnedAgentIds = spawnResults
     .filter(sr => sr.status === 'spawned')
@@ -679,37 +679,37 @@ Allowed range: 1-8`,
           ? 'approve'
           : 'abstain'
       }
-      lines.push(`\n🗳️ Vote winner: ${voteResult.winner} (${winnerVotes} vote${winnerVotes === 1 ? '' : 's'})`)
+      lines.push(`\nVote winner: ${voteResult.winner} (${winnerVotes} vote${winnerVotes === 1 ? '' : 's'})`)
     }
   } else {
     for (const agentId of spawnedAgentIds) {
       swarmState.votes[agentId] = 'abstain'
     }
-    lines.push(`\n⏸️ No completed agent responses found in the swarm mailbox yet; final approval is pending.`)
+    lines.push(`\nNo completed agent responses found in the swarm mailbox yet; final approval is pending.`)
   }
   const approveCount = Object.values(swarmState.votes).filter(v => v === 'approve').length
   const totalVotes = Object.keys(swarmState.votes).length
 
-  lines.push(`\n📊 VOTE RESULTS:`)
-  lines.push(`   ✅ Approve: ${approveCount}`)
-  lines.push(`   ❌ Reject: ${Object.values(swarmState.votes).filter(v => v === 'reject').length}`)
-  lines.push(`   ⬜ Abstain: ${Object.values(swarmState.votes).filter(v => v === 'abstain').length}`)
+  lines.push(`\nVOTE RESULTS:`)
+  lines.push(`   Approve: ${approveCount}`)
+  lines.push(`   Reject: ${Object.values(swarmState.votes).filter(v => v === 'reject').length}`)
+  lines.push(`   Abstain: ${Object.values(swarmState.votes).filter(v => v === 'abstain').length}`)
 
   const approvalRate = totalVotes > 0 ? (approveCount / totalVotes) * 100 : 0
-  lines.push(`\n📈 Approval Rate: ${approvalRate.toFixed(1)}%`)
+  lines.push(`\nApproval Rate: ${approvalRate.toFixed(1)}%`)
 
   if (collectedResponses.size === 0) {
-    lines.push(`\n⏸️ SWARM PENDING - Waiting for agent responses before final approval.`)
+    lines.push(`\nSWARM PENDING - Waiting for agent responses before final approval.`)
   } else if (approvalRate >= 66) {
-    lines.push(`\n🎉 SWARM APPROVED! Proceeding with implementation.`)
+    lines.push(`\nSWARM APPROVED - Proceeding with implementation.`)
   } else if (approvalRate >= 50) {
-    lines.push(`\n⚠️ SWARM PASSED WITH CONDITIONS`)
+    lines.push(`\nSWARM PASSED WITH CONDITIONS`)
   } else {
-    lines.push(`\n🚫 SWARM REJECTED - Needs revision`)
+    lines.push(`\nSWARM REJECTED - Needs revision`)
   }
 
   lines.push(`\n${'='.repeat(50)}`)
-  lines.push(`🏁 Swarm execution complete!`)
+  lines.push(`Swarm execution complete.`)
 
   return { type: 'text', value: lines.join('\n') }
 }
