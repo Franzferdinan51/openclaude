@@ -93,6 +93,16 @@ const cases: SmokeCase[] = [
       'ps/logs/attach/kill',
     ],
   },
+  {
+    name: 'non-interactive repl guidance',
+    args: ['--dangerously-skip-permissions'],
+    expectedStatus: 1,
+    includes: [
+      'DuckHive is running without an interactive terminal',
+      'duckhive -p "<prompt>"',
+      'duckhive runtime-doctor',
+    ],
+  },
 ]
 
 const failures: string[] = []

@@ -1323,6 +1323,12 @@ async function run(): Promise<CommanderCommand> {
 
     // Get isNonInteractiveSession from state (was set before init())
     const isNonInteractiveSession = getIsNonInteractiveSession();
+    if (isNonInteractiveSession && !print && !init && !initOnly && !maintenance) {
+      writeToStderr(
+        'Error: DuckHive is running without an interactive terminal. Use `duckhive -p "<prompt>"` for headless output, or run `duckhive runtime-doctor` in the terminal where you plan to type into the REPL.\n',
+      );
+      process.exit(1);
+    }
 
     // Validate that fallback model is different from main model
     if (fallbackModel && options.model && fallbackModel === options.model) {
