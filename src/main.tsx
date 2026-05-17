@@ -4378,6 +4378,14 @@ async function run(): Promise<CommanderCommand> {
   };
 
   // Doctor command - check installation health
+  program.command('input-test').description(`Test terminal keyboard input without starting providers, the REPL, or the TUI`).action(async () => {
+    const {
+      inputTestHandler
+    } = await import('./cli/inputTest.js');
+    await inputTestHandler([]);
+    process.exit(process.exitCode ?? 0);
+  });
+
   program.command('runtime-doctor').alias('doctor-runtime').description(`Run ${PRODUCT_DISPLAY_NAME} runtime checks without starting the REPL`).option('--json', 'Print JSON results').option('--out <path>', 'Write a redacted diagnostic report to a file').option('--strict-interactive', 'Fail when stdin/stdout are not attached to a real terminal').action(runRuntimeDoctorCommand);
   program.command('doctor:runtime').description(`Compatibility alias for \`duckhive runtime-doctor\`; runs ${PRODUCT_DISPLAY_NAME} runtime checks without starting the REPL`).option('--json', 'Print JSON results').option('--out <path>', 'Write a redacted diagnostic report to a file').option('--strict-interactive', 'Fail when stdin/stdout are not attached to a real terminal').action(runRuntimeDoctorCommand);
 
