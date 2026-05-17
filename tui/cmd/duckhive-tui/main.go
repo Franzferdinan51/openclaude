@@ -885,6 +885,8 @@ func (m *MainModel) handleLocalTUICommand(text string) (bool, tea.Cmd) {
 
 func bridgeBackedLocalCommand(text string) (string, bool) {
 	switch strings.ToLower(strings.TrimSpace(text)) {
+	case "/council":
+		return "/council", true
 	case "/run":
 		return "/run", true
 	case "/provider", "/model", "/search-provider":
@@ -896,6 +898,8 @@ func bridgeBackedLocalCommand(text string) (string, bool) {
 
 func bridgeBackedLocalCommandStatus(command string) string {
 	switch command {
+	case "/council":
+		return "opening council"
 	case "/run":
 		return "opening agent runs"
 	case "/provider":

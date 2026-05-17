@@ -150,6 +150,7 @@ func TestHandleLocalTUICommandUsesBackendForProviderCommands(t *testing.T) {
 		{name: "model manager", input: "/model", wantStatus: "opening model manager"},
 		{name: "search manager", input: "/search-provider", wantStatus: "opening search-provider manager"},
 		{name: "run manager", input: "/run", wantStatus: "opening agent runs"},
+		{name: "council manager", input: "/council", wantStatus: "opening council"},
 	}
 
 	for _, tt := range tests {
