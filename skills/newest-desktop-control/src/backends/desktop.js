@@ -7,7 +7,10 @@ import { existsSync } from 'node:fs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PY_ACTION = join(__dirname, '..', '..', 'scripts', 'pyautogui_action.py');
-const RS_TOOL_PATH = '/Users/duckets/Desktop/rs-agent-tools/mcp-launcher.py';
+
+function rsToolPath() {
+  return process.env.DUCKHIVE_RS_TOOL_PATH ?? process.env.RS_TOOL_PATH ?? null;
+}
 
 async function runPython(action, args = {}) {
   const payload = JSON.stringify({ action, args });
@@ -194,7 +197,10 @@ export function createDesktopBackend() {
 
     async terminal(args = {}) {
       if (!args.command) throw new Error('desktop_terminal requires command');
-      const { stdout, stderr } = await runFile('/bin/bash', ['-lc', args.command], {
+      const shell = process.platform === 'win32'
+        ? { command: 'powershell.exe', args: ['-NoProfile', '-Command', String(args.command)] }
+        : { command: '/bin/bash', args: ['-lc', String(args.command)] };
+      const { stdout, stderr } = await runFile(shell.command, shell.args, {
         timeout: Math.max(1, Number(args.timeout ?? 30)) * 1000,
         maxBuffer: 1024 * 1024 * 5,
       });
@@ -202,10 +208,12 @@ export function createDesktopBackend() {
     },
 
     async rsLookup(args = {}) {
-      if (!existsSync(RS_TOOL_PATH)) throw new Error(`RS lookup helper not found: ${RS_TOOL_PATH}`);
+      const toolPath = rsToolPath();
+      if (!toolPath) throw new Error('RS lookup helper is not configured. Set DUCKHIVE_RS_TOOL_PATH to enable desktop_rs_lookup.');
+      if (!existsSync(toolPath)) throw new Error(`RS lookup helper not found: ${toolPath}`);
       const lookupArgs = args.player ? ['player', args.player] : args.clan ? ['clan', args.clan] : null;
       if (!lookupArgs) throw new Error('desktop_rs_lookup requires player or clan');
-      const { stdout, stderr } = await runFile('python3', [RS_TOOL_PATH, ...lookupArgs], {
+      const { stdout, stderr } = await runFile('python3', [toolPath, ...lookupArgs], {
         timeout: 15000,
         maxBuffer: 1024 * 1024 * 3,
       });

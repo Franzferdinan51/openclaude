@@ -23,9 +23,24 @@ npm start
 ```toml
 [mcp_servers.newest-desktop-control]
 command = "node"
-args = ["/Users/duckets/Desktop/Newest Desktop Control/src/server.js"]
+args = ["<duckhive-repo>/skills/newest-desktop-control/src/server.js"]
 startup_timeout_sec = 20
 tool_timeout_sec = 60
+```
+
+Inside DuckHive, use the checked-in skill path:
+
+```json
+{
+  "mcpServers": {
+    "newest-desktop-control": {
+      "command": "node",
+      "args": ["${SKILL_DIR}/newest-desktop-control/src/server.js"],
+      "startup_timeout_sec": 20,
+      "tool_timeout_sec": 60
+    }
+  }
+}
 ```
 
 ## Tools
@@ -37,6 +52,8 @@ The legacy `computer_use_*` aliases from `computer-use-tool` are also preserved:
 Android tools include `android_devices`, `android_screenshot`, `android_screen_size`, `android_current_activity`, `android_tap`, `android_swipe`, `android_text`, `android_key`, `android_launch_app`, `android_ui_dump`, and `android_logcat`.
 
 Diagnostics include `backend_status`, `codex_mcp_config`, and `permissions_check`.
+
+Codex Computer Use discovery checks the installed Codex app bundle, the user Codex plugin cache, and a local `packages/computer-use-bundle/computer-use` checkout. Override discovery with `DUCKHIVE_CODEX_COMPUTER_USE_PLUGIN_DIR` or `DUCKHIVE_CODEX_COMPUTER_USE_CLIENT` when testing a custom bundle.
 
 ## Why MCP
 
@@ -63,3 +80,5 @@ adb devices -l
 ```
 
 Enable Developer Options and USB debugging on phones, or start an Android emulator.
+
+The optional RuneScape lookup helper is disabled unless `DUCKHIVE_RS_TOOL_PATH` points to a local `mcp-launcher.py`; no user-specific helper path is assumed.
