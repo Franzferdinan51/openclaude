@@ -447,6 +447,8 @@ describe('Hive Nation commands', () => {
     expect(collectResponses).toHaveBeenCalled()
     expect(runSwarmVoting).toHaveBeenCalled()
     expect(spawned.value).toContain('2/2 agents spawned')
+    expect(spawned.value).toContain('Quality gates configured; evidence pending')
+    expect(spawned.value).not.toContain('Running quality gates')
     expect(spawned.value).toContain('Vote winner:')
     expect(spawned.value).toContain('SWARM APPROVED')
 
@@ -507,6 +509,7 @@ describe('Hive Nation commands', () => {
 
     expect(spawned.value).toContain('2/2 agents spawned')
     expect(spawned.value).toContain('No completed agent responses found')
+    expect(spawned.value).toContain('Release preparation is gated')
     expect(spawned.value).toContain('SWARM PENDING')
     expect(spawned.value).not.toContain('SWARM APPROVED')
     expect(runSwarmVoting).not.toHaveBeenCalled()

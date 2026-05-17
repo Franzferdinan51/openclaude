@@ -647,16 +647,16 @@ Allowed range: 1-8`,
   // Move to review phase
   swarmState.phase = 'review'
   lines.push(`\n🔄 SWARM PHASE: ${swarmState.phase.toUpperCase()}`)
-  lines.push(`🔍 Review Phase: Running quality gates...`)
-  lines.push(`   ✓ Test coverage check (>${DEFAULT_QUALITY_GATES.testCoverage}%)`)
-  lines.push(`   ✓ Security checks (OWASP Top 10)`)
-  lines.push(`   ✓ Performance threshold (<${DEFAULT_QUALITY_GATES.performanceThreshold}ms)`)
-  lines.push(`   ✓ Documentation check`)
+  lines.push(`🔍 Review Phase: Quality gates configured; evidence pending from agent outputs.`)
+  lines.push(`   ○ Test coverage target (>${DEFAULT_QUALITY_GATES.testCoverage}%)`)
+  lines.push(`   ○ Security review target (OWASP Top 10)`)
+  lines.push(`   ○ Performance target (<${DEFAULT_QUALITY_GATES.performanceThreshold}ms)`)
+  lines.push(`   ○ Documentation target`)
 
   // Move to deployment phase
   swarmState.phase = 'deployment'
   lines.push(`\n🔄 SWARM PHASE: ${swarmState.phase.toUpperCase()}`)
-  lines.push(`🚀 Deployment Phase: Preparing release...`)
+  lines.push(`🚀 Deployment Phase: Release preparation is gated on responses, quality evidence, and voting.`)
 
   // Move to voting phase
   swarmState.phase = 'voting'
