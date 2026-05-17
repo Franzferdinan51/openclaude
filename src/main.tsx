@@ -1325,7 +1325,7 @@ async function run(): Promise<CommanderCommand> {
     const isNonInteractiveSession = getIsNonInteractiveSession();
     if (isNonInteractiveSession && !print && !init && !initOnly && !maintenance) {
       writeToStderr(
-        'Error: DuckHive is running without an interactive terminal. Use `duckhive -p "<prompt>"` for headless output, or run `duckhive runtime-doctor` in the terminal where you plan to type into the REPL.\n',
+        'Error: DuckHive is running without an interactive terminal. Use `duckhive -p "<prompt>"` for headless output, run `duckhive input-test` in the terminal where typing fails, or run `duckhive runtime-doctor` for full terminal/runtime checks.\n',
       );
       process.exit(1);
     }

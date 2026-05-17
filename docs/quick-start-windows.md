@@ -141,16 +141,23 @@ duckhive --yolo
 Both flags are applied during the earliest launcher phase, before the full CLI
 imports, so they work consistently for startup and the interactive REPL.
 
-If the REPL opens but will not accept typing, run the non-interactive runtime
-doctor from the same PowerShell window:
+If the REPL opens but will not accept typing, first run the provider-free
+keyboard probe from the same PowerShell window:
+
+```powershell
+duckhive input-test
+```
+
+Then run the non-interactive runtime doctor:
 
 ```powershell
 duckhive runtime-doctor
 ```
 
-This checks the Windows stdin mode, TUI fallback, provider routing, ClawHub
-skill hub, computer-use fallback, Telegram connector config, and harness command
-registry without starting the chat UI.
+`input-test` exercises raw keyboard input without starting providers, the REPL,
+or the TUI. `runtime-doctor` checks the Windows stdin mode, TUI fallback,
+provider routing, ClawHub skill hub, computer-use fallback, Telegram connector
+config, and harness command registry without starting the chat UI.
 
 DuckHive also scans parent folders for `DUCK.md`, `AGENTS.md`, and related
 context files. That scan is now bounded by the real Windows filesystem root, so

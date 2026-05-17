@@ -153,6 +153,7 @@ const cases: SmokeCase[] = [
     includes: [
       'DuckHive is running without an interactive terminal',
       'duckhive -p "<prompt>"',
+      'duckhive input-test',
       'duckhive runtime-doctor',
     ],
   },

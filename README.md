@@ -131,8 +131,9 @@ If `duckhive` is not recognized in PowerShell, the package is not installed on y
 
 If `duckhive` is launched from a redirected or otherwise non-interactive terminal
 without `-p/--print`, it exits instead of painting a dead REPL. Use
-`duckhive -p "<prompt>"` for headless output, or run `duckhive runtime-doctor`
-from the terminal where you plan to type into the REPL.
+`duckhive -p "<prompt>"` for headless output, run `duckhive input-test` from
+the terminal where typing fails, or run `duckhive runtime-doctor` for full
+terminal/runtime checks.
 
 If the REPL renders but will not accept typing, run `duckhive input-test` from
 the same terminal first. It exercises the raw keyboard path without starting
