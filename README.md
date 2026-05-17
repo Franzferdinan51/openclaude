@@ -160,6 +160,7 @@ VITE_DUCKHIVE_API_BASE=http://localhost:3017 bun run webui:dev
 ```
 
 The WebUI API exposes health, status, agents, tools, MCP servers, sessions, AgentRun inspection, and run controls. It also streams run lifecycle events over Server-Sent Events at `/api/events`.
+The WebUI run controls use the same shared AgentRun actions as the CLI and Telegram bridge: pause, resume, stop, recover, and targeted approval of the first pending approval ID when one is present.
 
 Useful endpoints:
 

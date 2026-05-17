@@ -30,7 +30,11 @@ interface GatewayContextValue {
   selectedRunId: string | null;
   selectedRun: AgentRun | null;
   selectRun: (runId: string | null) => void;
-  controlRun: (runId: string, action: 'pause' | 'resume' | 'stop' | 'approve' | 'recover') => Promise<void>;
+  controlRun: (
+    runId: string,
+    action: 'pause' | 'resume' | 'stop' | 'approve' | 'recover',
+    payload?: Record<string, unknown>,
+  ) => Promise<void>;
   refresh: () => void;
 }
 
@@ -113,8 +117,9 @@ export function GatewayProvider({ children }: { children: ReactNode }) {
   const controlRun = useCallback(async (
     runId: string,
     action: 'pause' | 'resume' | 'stop' | 'approve' | 'recover',
+    payload: Record<string, unknown> = {},
   ) => {
-    const updated = await runAction(runId, action);
+    const updated = await runAction(runId, action, payload);
     const next = await listRuns();
     setRuns(updated ? next.map(run => run.id === updated.id ? updated : run) : next);
   }, []);

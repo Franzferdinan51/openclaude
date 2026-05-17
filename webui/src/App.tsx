@@ -21,6 +21,7 @@ import {
   ShieldCheck,
   Square,
   TerminalSquare,
+  Undo2,
   Workflow,
   Zap,
 } from 'lucide-react'
@@ -101,6 +102,7 @@ function AppInner() {
   const activeEvents = selectedRunId ? eventsByRun[selectedRunId] ?? [] : []
   const runningCount = runs.filter(run => ['running', 'awaiting_approval', 'recovering'].includes(run.status)).length
   const pendingApprovals = runs.reduce((total, run) => total + (run.permissionState?.pendingApprovalIds?.length ?? 0), 0)
+  const selectedApprovalId = selectedRun?.permissionState?.pendingApprovalIds?.[0]
 
   const handleNewChat = React.useCallback(() => {
     void createSession('New WebUI session')
@@ -115,6 +117,16 @@ function AppInner() {
     void sendMessage(prompt)
     setActiveNav('runs')
   }, [sendMessage])
+
+  const approveSelectedRun = React.useCallback(() => {
+    if (!selectedRun) return
+    const approvalId = selectedRun.permissionState?.pendingApprovalIds?.[0]
+    return controlRun(
+      selectedRun.id,
+      'approve',
+      approvalId ? { approvalId } : {},
+    )
+  }, [controlRun, selectedRun])
 
   return (
     <div className="app-shell" data-theme={theme}>
@@ -392,8 +404,14 @@ function AppInner() {
               <button onClick={() => controlRun(selectedRun.id, 'stop')} title="Stop run">
                 <Square size={15} /> Stop
               </button>
-              <button onClick={() => controlRun(selectedRun.id, 'approve')} title="Approve pending run request">
+              <button
+                onClick={approveSelectedRun}
+                title={selectedApprovalId ? `Approve pending request ${selectedApprovalId}` : 'Approve pending run request'}
+              >
                 <Check size={15} /> Approve
+              </button>
+              <button onClick={() => controlRun(selectedRun.id, 'recover', { summary: 'Recovery requested from DuckHive WebUI' })} title="Mark run for recovery">
+                <Undo2 size={15} /> Recover
               </button>
             </section>
           )}
@@ -431,7 +449,7 @@ function AppInner() {
               <kbd>⌘K</kbd>
             </div>
             <button onClick={() => runCommand(refresh)}><RefreshCw size={15} /> Refresh WebUI data</button>
-            <button onClick={() => selectedRun && runCommand(() => controlRun(selectedRun.id, 'approve'))} disabled={!selectedRun}>
+            <button onClick={() => runCommand(approveSelectedRun)} disabled={!selectedRun}>
               <ShieldCheck size={15} /> Approve selected run
             </button>
             <button onClick={() => runCommand(handleNewChat)}><MessageSquarePlus size={15} /> New console session</button>
