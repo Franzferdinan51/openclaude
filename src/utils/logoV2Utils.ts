@@ -114,8 +114,8 @@ export function truncatePath(path: string, maxLength: number): string {
   if (stringWidth(path) <= maxLength) return path
 
   const separator = '/'
-  const ellipsis = '…'
-  const ellipsisWidth = 1 // '…' is always 1 column
+  const ellipsis = '...'
+  const ellipsisWidth = 3
   const separatorWidth = 1
 
   const parts = path.split(separator)
@@ -283,7 +283,7 @@ export function formatModelAndBilling(
   truncatedModel: string
   truncatedBilling: string
 } {
-  const separator = ' · '
+  const separator = ' - '
   const combinedWidth =
     stringWidth(modelName) + separator.length + stringWidth(billingType)
   const shouldSplit = combinedWidth > availableWidth
