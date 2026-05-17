@@ -422,6 +422,26 @@ describe('/channel command', () => {
     expect(result.value).toBe('Telegram message sent.')
   })
 
+  test('preserves escaped quotes in channel send messages', async () => {
+    const result = expectTextResult(
+      await call('send console "DuckHive says \\"ship it\\""', {} as never),
+    )
+
+    expect(sendConsoleMessage).toHaveBeenCalledWith('DuckHive says "ship it"')
+    expect(result.value).toBe('Console message emitted.')
+  })
+
+  test('rejects unterminated quoted channel arguments', async () => {
+    const result = expectTextResult(
+      await call('send telegram "Hello from DuckHive', {} as never),
+    )
+
+    expect(result.value).toContain('Unterminated quoted string in /channel arguments.')
+    expect(result.value).toContain('Usage: duckhive channel <list|status|connect|disconnect|send>')
+    expect(sendTelegramMessage).not.toHaveBeenCalled()
+    expect(sendConsoleMessage).not.toHaveBeenCalled()
+  })
+
   test('sends a webhook message through the Webhook adapter path', async () => {
     const result = expectTextResult(
       await call('send webhook Hello from DuckHive', {} as never),
