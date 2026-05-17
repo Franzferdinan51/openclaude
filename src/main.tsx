@@ -4399,6 +4399,23 @@ async function run(): Promise<CommanderCommand> {
     await doctorHandler(root);
   });
 
+  program.command('goal').alias('g').description('Manage persisted workflow goals for the REPL and headless runs');
+  program.command('computer-use').alias('cu').description('Inspect and control desktop/Android computer-use integrations');
+  program.command('mmx').alias('minimax').description('Run MiniMax media, search, and text utilities');
+  program.command('provider').description('Inspect active provider routing and saved provider profiles');
+  program.command('run').alias('runs').alias('agent-run').description('Inspect shared AgentRun state and lifecycle events');
+  program.command('channel').description('Inspect and configure shared channel adapters');
+  program.command('connect').alias('telegram').description('Connect Telegram remote control to DuckHive');
+  program.command('team').description('Run Agent Teams templates and orchestration helpers');
+  program.command('council').description('Use AI Council deliberation and review modes');
+  program.command('senate').description('Inspect and issue Hive Nation Senate proposals');
+  program.command('decree').description('Inspect and create Hive Nation decrees');
+  program.command('swarm').description('Run swarm-style multi-agent task planning');
+  program.command('orchestrate').description('Launch shared Hive orchestration flows');
+  program.command('spawn').alias('subagent').alias('deep-dive').description('Queue Hermes-style subagent AgentRuns');
+  program.command('config').alias('settings').description('Show or initialize DuckHive config');
+  program.command('skill').alias('skills').alias('skill-workshop').description('Manage Skill Workshop and ClawHub skills');
+
   // claude update
   //
   // For SemVer-compliant versioning with build metadata (X.X.X+SHA):

@@ -135,6 +135,15 @@ without `-p/--print`, it exits instead of painting a dead REPL. Use
 the terminal where typing fails, or run `duckhive runtime-doctor` for full
 terminal/runtime checks.
 
+The default terminal CLI now advertises DuckHive's harness commands directly in
+`duckhive --help` instead of hiding them behind REPL-only slash command docs.
+Provider-free top-level surfaces include `goal`/`g`, `computer-use`/`cu`,
+`mmx`/`minimax`, `provider`, `run`/`runs`, `channel`, `connect`/`telegram`,
+`config`/`settings`, `skill`/`skills`, `team`, `council`, `senate`, `decree`,
+`swarm`, `orchestrate`, and `spawn`/`subagent`. These command paths start
+without provider validation so diagnostics, setup, and run control remain
+usable even when the chat REPL cannot start.
+
 If the REPL renders but will not accept typing, run `duckhive input-test` from
 the same terminal first. It exercises the raw keyboard path without starting
 providers, the REPL, or the TUI, and echoes characters until Enter is pressed.
