@@ -992,7 +992,7 @@ Cache LLM responses for 30 seconds to skip redundant API calls:
 /cache-stats           # Show per-request cache history for the current session
 ```
 
-Keyed by `model::baseUrl::SHA256(messages)`, LRU eviction at 1000 entries. TTL configurable via `PROVIDER_CACHE_TTL=30`. `/cache` now wraps the actual shared provider response cache, while `/cache-stats` remains the detailed per-request observability surface.
+Keyed by `model::baseUrl::SHA256(messages)`, LRU eviction at 1000 entries. TTL configurable via `PROVIDER_CACHE_TTL=30`. `/cache` now wraps the actual shared provider response cache, rejects malformed quoted input before clearing cache state, and `/cache-stats` remains the detailed per-request observability surface.
 
 ### Custom Providers — OpenAI-Compatible Endpoints
 

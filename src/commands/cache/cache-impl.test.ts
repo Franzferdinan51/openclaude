@@ -56,4 +56,32 @@ describe('/cache command', () => {
     if (result.type !== 'text') throw new Error('unexpected result type')
     expect(result.value).toContain('Provider cache cleared')
   })
+
+  test('rejects unterminated quoted input before clearing caches', async () => {
+    const clearCache = mock(() => {})
+    const resetSessionMetrics = mock(() => {})
+    setCacheTestDeps({
+      cacheClear: clearCache as never,
+      resetSessionCacheStats: resetSessionMetrics as never,
+      getCacheStats: () => ({
+        size: 0,
+        maxSize: 1000,
+        hits: 0,
+        misses: 0,
+        evictions: 0,
+        hitRate: Number.NaN,
+        ttlMs: 30000,
+        ttlSeconds: 30,
+      }),
+    })
+
+    const result = await call('"clear', {} as never)
+
+    expect(result.type).toBe('text')
+    if (result.type !== 'text') throw new Error('unexpected result type')
+    expect(result.value).toContain('Unterminated quoted string in /cache arguments.')
+    expect(result.value).toContain('/cache clear')
+    expect(clearCache).not.toHaveBeenCalled()
+    expect(resetSessionMetrics).not.toHaveBeenCalled()
+  })
 })
