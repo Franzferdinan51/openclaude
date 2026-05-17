@@ -358,6 +358,37 @@ describe('checkHarnessCommandSurfaces', () => {
   })
 })
 
+describe('checkInputTestCliControl', () => {
+  test('verifies the provider-free input test command is reachable', async () => {
+    const { checkInputTestCliControl } = await import('./system-check.js')
+    const result = checkInputTestCliControl({
+      cliPath: 'dist/cli.mjs',
+      runCommand: () => ({
+        status: 0,
+        stdout:
+          'DuckHive input-test\nExercises DuckHive keyboard path without starting providers\n',
+      }),
+    })
+
+    expect(result.ok).toBe(true)
+    expect(result.detail).toContain('duckhive input-test')
+  })
+
+  test('fails when input-test help is not reachable', async () => {
+    const { checkInputTestCliControl } = await import('./system-check.js')
+    const result = checkInputTestCliControl({
+      cliPath: 'dist/cli.mjs',
+      runCommand: () => ({
+        status: 1,
+        stderr: 'provider startup failed',
+      }),
+    })
+
+    expect(result.ok).toBe(false)
+    expect(result.detail).toContain('input-test --help')
+  })
+})
+
 describe('checkAgentRunCliControls', () => {
   test('verifies top-level AgentRun commands avoid provider startup', () => {
     const result = checkAgentRunCliControls({

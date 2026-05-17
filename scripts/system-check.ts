@@ -522,6 +522,52 @@ export function checkAgentRunCliControls(options: {
   )
 }
 
+export function checkInputTestCliControl(options: {
+  cliPath?: string
+  runCommand?: (command: string, args: string[]) => {
+    status: number | null
+    stdout?: string | Buffer
+    stderr?: string | Buffer
+  }
+} = {}): CheckResult {
+  const cliPath = options.cliPath ?? resolve(process.cwd(), 'dist', 'cli.mjs')
+  if (!existsSync(cliPath)) {
+    return fail('Terminal input test', `Missing ${cliPath}. Run: bun run build`)
+  }
+
+  const runCommand =
+    options.runCommand ??
+    ((command: string, args: string[]) =>
+      spawnSync(command, args, {
+        cwd: process.cwd(),
+        encoding: 'utf8',
+        timeout: 10_000,
+        env: {
+          ...process.env,
+          DUCKHIVE_DISABLE_STARTUP_SCREEN: '1',
+        },
+      }))
+
+  const result = runCommand(process.execPath, [cliPath, 'input-test', '--help'])
+  const output = `${result.stdout ?? ''}${result.stderr ?? ''}`
+
+  if (
+    result.status !== 0 ||
+    !output.includes('DuckHive input-test') ||
+    !output.includes('without starting providers')
+  ) {
+    return fail(
+      'Terminal input test',
+      '`duckhive input-test --help` is not reachable without provider startup.',
+    )
+  }
+
+  return pass(
+    'Terminal input test',
+    'Provider-free `duckhive input-test` is available for raw keyboard diagnostics.',
+  )
+}
+
 export function checkSkillHubRegistry(): CheckResult {
   const registry = getClawHubRegistryUrl()
   const commandNames = new Set(builtInCommandNames())
@@ -1196,6 +1242,7 @@ export async function runRuntimeDoctor(argv: string[] = process.argv.slice(2)): 
   results.push(checkComputerUseReadiness())
   results.push(checkHarnessCommandSurfaces())
   results.push(checkAgentRunCliControls())
+  results.push(checkInputTestCliControl())
   results.push(checkSkillHubRegistry())
   results.push(...checkOpenAIEnv())
   results.push(await checkBaseUrlReachability())
