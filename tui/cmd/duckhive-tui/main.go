@@ -231,6 +231,7 @@ func (m *MainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		previousInput := m.input.Value()
+		m.input.Focus()
 		_, cmd := m.input.Update(msg)
 		m.recordInputUndoIfChanged(previousInput)
 		return m, cmd

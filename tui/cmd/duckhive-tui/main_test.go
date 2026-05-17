@@ -15,6 +15,7 @@ import (
 	"github.com/gitlawb/duckhive/tui/model/bridge"
 	"github.com/gitlawb/duckhive/tui/model/components"
 	"github.com/gitlawb/duckhive/tui/model/screens"
+	"github.com/gitlawb/duckhive/tui/tui"
 )
 
 func TestParseUISwitchCommandUsesExplicitTargets(t *testing.T) {
@@ -563,6 +564,27 @@ func TestResumeMsgClearsSuspendedState(t *testing.T) {
 	}
 	if m.state.StatusMsg != "resumed" {
 		t.Fatalf("StatusMsg = %q", m.state.StatusMsg)
+	}
+}
+
+func TestComposerRefocusesBeforeTyping(t *testing.T) {
+	m := &MainModel{
+		state:      model.NewAppState(),
+		msgList:    components.NewMessageList(80, 20),
+		input:      components.NewInputArea(80, 3),
+		keys:       tui.DefaultKeyMap(),
+		transcript: screens.NewTranscriptPanel(),
+	}
+	m.state.ActiveScreen = model.ScreenREPL
+	m.input.Blur()
+
+	_, _ = m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'o', 'k'}})
+
+	if got := m.input.Value(); got != "ok" {
+		t.Fatalf("input value = %q", got)
+	}
+	if !m.input.Focused() {
+		t.Fatal("expected composer to remain focused")
 	}
 }
 

@@ -71,6 +71,21 @@ func (m *InputAreaModel) SetSize(width, height int) {
 	}
 }
 
+// Focus ensures the composer accepts keyboard input after screen transitions.
+func (m *InputAreaModel) Focus() tea.Cmd {
+	return m.ta.Focus()
+}
+
+// Blur releases keyboard focus; mostly useful for modal/screen handoff tests.
+func (m *InputAreaModel) Blur() {
+	m.ta.Blur()
+}
+
+// Focused reports whether the textarea is currently accepting key input.
+func (m *InputAreaModel) Focused() bool {
+	return m.ta.Focused()
+}
+
 // SetHistory loads command history for up/down navigation.
 func (m *InputAreaModel) SetHistory(hist []string) {
 	m.history = hist
