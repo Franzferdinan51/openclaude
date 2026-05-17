@@ -17,6 +17,10 @@ async function importFreshLoopCommand() {
     .default
 }
 
+async function importFreshLoopModule() {
+  return await import(`./loop.ts?loop-test=${Date.now()}-${Math.random()}`)
+}
+
 function getStoredLoops(): LoopRecord[] {
   return ((configStore['duckhive.loops'] as LoopRecord[]) ?? [])
 }
@@ -58,6 +62,26 @@ describe('/loop command', () => {
     expect(loops[0]?.everyMinutes).toBe(15)
     expect(loops[0]?.times).toBe(3)
     expect(loops[0]?.remaining).toBe(3)
+  })
+
+  test('REPL /loop create preserves escaped quotes in prompts', async () => {
+    const { call } = await importFreshLoopModule()
+
+    const result = await call('create "Check the \\"fast\\" lane" --every=15')
+
+    expect(result.value).toContain('Loop created!')
+    expect(getStoredLoops()).toHaveLength(1)
+    expect(getStoredLoops()[0]?.prompt).toBe('Check the "fast" lane')
+    expect(getStoredLoops()[0]?.everyMinutes).toBe(15)
+  })
+
+  test('REPL /loop create rejects unterminated quotes before storing loops', async () => {
+    const { call } = await importFreshLoopModule()
+
+    const result = await call('create "unfinished loop --every=15')
+
+    expect(result.value).toContain('Unterminated quoted string in /loop arguments')
+    expect(getStoredLoops()).toHaveLength(0)
   })
 
   test('list shows stored loops and active filter includes scheduled loops', async () => {

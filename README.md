@@ -1088,6 +1088,8 @@ DuckHive adds 40+ custom tools on top of the OpenClaude base:
 
 `/android` and `/vision` are now real slash commands too. `/android` exposes the documented ADB control flow (`devices`, `screenshot`, `battery`, `tap`, `swipe`, `text`, `shell`), and `/vision` exposes `phone_screenshot`, `analyze`, and `phone_tap` directly from the CLI instead of relying on unrelated mobile-app aliases or tool-only entrypoints. Both commands preserve escaped quotes in user text and reject unterminated quoted input before running ADB actions.
 
+`/loop` is the OpenClaude-inspired scheduled prompt loop surface. Its REPL parser now matches the rest of the terminal harness by preserving escaped quotes in loop prompts and rejecting unterminated quoted input before storing scheduled loops.
+
 `/memory`, `/skill`, and `/skills` are the actual user-facing memory/skill commands today. `/skill` now provides a lightweight workshop surface for scaffold/list/read/delete workflows against DuckHive's shared `skills/` directory, while `/skills` still opens the richer interactive manager UI. The lessons, BM25, embed recall, KAIROS, mesh, and runtime skill-generation entries above are implemented subsystems or tool primitives, but they are not currently registered as standalone slash commands in the DuckHive CLI.
 | **SkillWorkshopTool** | `/skill` | Scaffold local skills, search/inspect/install ClawHub skills, and block malicious registry installs |
 | **SkillManageTool** | `/skills` | Interactive skill manager UI |

@@ -30,6 +30,7 @@ covers the named requirement.
 | OpenClaude conversation export formats must be available without a wholesale merge | `/export` now supports text, Markdown, and JSON via filename inference or `--format`/`-f`; focused tests cover argument parsing and Markdown/JSON rendering. | Verified |
 | Gemini/OpenGateway tool calls must remain executable | The OpenAI-compatible shim converts Gemini `Tool calls requested:` raw-text fallbacks back into `tool_use` blocks for streaming and non-streaming responses; focused `openaiShim` regressions cover Write and Agent raw-tool forms. | Verified |
 | Shadow Git command arguments must fail safely | `/shadow` now preserves escaped quotes in checkpoint messages and rejects unterminated quoted input before creating checkpoints or restoring files. | Verified |
+| Scheduled loop command arguments must fail safely | `/loop` now preserves escaped quotes in prompts and rejects unterminated quoted input before storing scheduled loops; all command splitters under `src\commands` have been moved off the old regex splitter. | Verified |
 | Shared test mutation locks must fail instead of hanging indefinitely | `acquireSharedMutationLock` now applies a five-minute default timeout and reports scoped timeout errors; focused tests cover default timeout, override timeout, and release handoff. | Verified |
 | SDK mutex tests must not mutate the process-global env mutex | The SDK shared mutex now exposes an isolated test-only mutex factory, and `tests\sdk\shared-utils.test.ts` exercises timeout behavior without resetting the global mutex used by other tests. | Verified |
 | OpenGateway partner model catalog must be current | The `gitlawb-opengateway` preset now routes through `https://opengateway.gitlawb.com/v1`, maps to the OpenAI-compatible vendor, and exposes Gemini 3.1 Flash Lite Preview plus GLM 5.1 FP8 catalog entries. | Verified |
@@ -65,6 +66,7 @@ covers the named requirement.
 - `bun test src\commands\run\run-impl.test.ts`
 - `bun test src\commands\goal\goal.test.ts`
 - `bun test src\commands\android\android-impl.test.ts src\commands\vision\vision-impl.test.ts src\commands\shadow\shadow-impl.test.ts`
+- `bun test src\commands\loop\loop.test.ts`
 - `bun test scripts\system-check.test.ts`
 
 ## Open Work
