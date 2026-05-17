@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { c as _c } from "react-compiler-runtime";
 // Conditionally require()'d in LogoV2.tsx behind feature('KAIROS') ||
-// feature('KAIROS_CHANNELS'). No feature() guard here — the whole file
+// feature('KAIROS_CHANNELS'). No feature() guard here - the whole file
 // tree-shakes via the require pattern when both flags are false (see
 // docs/feature-gating.md). Do NOT import this module statically from
 // unguarded code.
@@ -71,7 +71,7 @@ export function ChannelsNotice() {
     }
     let t2;
     if ($[9] === Symbol.for("react.memo_cache_sentinel")) {
-      t2 = <Text dimColor={true}>Channels require claude.ai authentication · run /login, then restart</Text>;
+      t2 = <Text dimColor={true}>Channels require DuckHive channel authentication - run /login, then restart</Text>;
       $[9] = t2;
     } else {
       t2 = $[9];
@@ -136,7 +136,7 @@ export function ChannelsNotice() {
   }
   let t2;
   if ($[24] !== flag) {
-    t2 = <Text dimColor={true}>Experimental · inbound messages will be pushed into this session, this carries prompt injection risks. Restart DuckHive without {flag} to disable.</Text>;
+    t2 = <Text dimColor={true}>Experimental - inbound messages will be pushed into this session, this carries prompt injection risks. Restart DuckHive without {flag} to disable.</Text>;
     $[24] = flag;
     $[25] = t2;
   } else {
@@ -163,10 +163,10 @@ export function ChannelsNotice() {
   return t4;
 }
 function _temp4(u_0) {
-  return <Text key={`${formatEntry(u_0.entry)}:${u_0.why}`} color="warning">{formatEntry(u_0.entry)} · {u_0.why}</Text>;
+  return <Text key={`${formatEntry(u_0.entry)}:${u_0.why}`} color="warning">{formatEntry(u_0.entry)} - {u_0.why}</Text>;
 }
 function _temp3(u) {
-  return <Text key={`${formatEntry(u.entry)}:${u.why}`} color="warning">{formatEntry(u.entry)} · {u.why}</Text>;
+  return <Text key={`${formatEntry(u.entry)}:${u.why}`} color="warning">{formatEntry(u.entry)} - {u.why}</Text>;
 }
 function _temp2(c) {
   return !c.dev;
@@ -223,14 +223,14 @@ function findUnmatched(entries: readonly ChannelEntry[], allowlist: ReturnType<t
   // Plugin-kind allowlist check: same {marketplace, plugin} test as the
   // gate at channelNotification.ts. entry.dev bypasses (dev flag opts out
   // of the allowlist). Org list replaces ledger when set (team/enterprise).
-  // GrowthBook _CACHED_MAY_BE_STALE — cold cache yields [] so every plugin
+  // GrowthBook _CACHED_MAY_BE_STALE - cold cache yields [] so every plugin
   // entry warns; same tradeoff the gate already accepts.
   const {
     entries: allowed,
     source
   } = allowlist;
 
-  // Independent ifs — a plugin entry that's both uninstalled AND
+  // Independent ifs - a plugin entry that's both uninstalled AND
   // unlisted shows two lines. Server kind checks config + dev flag.
   const out: Unmatched[] = [];
   for (const entry of entries) {
