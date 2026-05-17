@@ -8,6 +8,7 @@ import {
   checkCliInputMode,
   checkAgentRunCliControls,
   checkHarnessCommandSurfaces,
+  checkTopLevelCliHelpSurface,
   checkOpenAIEnv,
   checkSkillHubRegistry,
   checkTelegramChannelConfig,
@@ -356,6 +357,53 @@ describe('checkHarnessCommandSurfaces', () => {
     expect(result.detail).toContain('g')
     expect(result.detail).toContain('subagent')
     expect(result.detail).toContain('cu')
+  })
+})
+
+describe('checkTopLevelCliHelpSurface', () => {
+  test('verifies duckhive --help advertises terminal harness commands', () => {
+    const result = checkTopLevelCliHelpSurface({
+      cliPath: 'dist/cli.mjs',
+      runCommand: () => ({
+        status: 0,
+        stdout: [
+          'goal|g',
+          'run|runs',
+          'computer-use|cu',
+          'mmx|minimax',
+          'provider',
+          'channel',
+          'connect|telegram',
+          'config|settings',
+          'skill|skills',
+          'spawn|subagent',
+          'orchestrate',
+          'team',
+          'council',
+          'senate',
+          'decree',
+          'swarm',
+        ].join('\n'),
+      }),
+    })
+
+    expect(result.ok).toBe(true)
+    expect(result.detail).toContain('duckhive --help')
+    expect(result.detail).toContain('orchestrate')
+  })
+
+  test('fails when top-level help omits a terminal harness command', () => {
+    const result = checkTopLevelCliHelpSurface({
+      cliPath: 'dist/cli.mjs',
+      runCommand: () => ({
+        status: 0,
+        stdout: 'goal|g\nrun|runs\n',
+      }),
+    })
+
+    expect(result.ok).toBe(false)
+    expect(result.detail).toContain('computer-use|cu')
+    expect(result.detail).toContain('swarm')
   })
 })
 

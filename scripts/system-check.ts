@@ -448,6 +448,25 @@ const REQUIRED_AGENT_RUN_CLI_CONTROLS = [
   'kill',
 ] as const
 
+const REQUIRED_TOP_LEVEL_HELP_TERMS = [
+  'goal|g',
+  'run|runs',
+  'computer-use|cu',
+  'mmx|minimax',
+  'provider',
+  'channel',
+  'connect|telegram',
+  'config|settings',
+  'skill|skills',
+  'spawn|subagent',
+  'orchestrate',
+  'team',
+  'council',
+  'senate',
+  'decree',
+  'swarm',
+] as const
+
 export function checkHarnessCommandSurfaces(): CheckResult {
   const commandNames = new Set(builtInCommandNames())
   const missing = REQUIRED_HARNESS_COMMANDS.filter(name => !commandNames.has(name))
@@ -471,6 +490,49 @@ export function checkHarnessCommandSurfaces(): CheckResult {
   return pass(
     'Harness command surfaces',
     `${REQUIRED_HARNESS_COMMANDS.length} core commands registered: ${REQUIRED_HARNESS_COMMANDS.join(', ')}. Key aliases registered: ${REQUIRED_HARNESS_ALIASES.join(', ')}.`,
+  )
+}
+
+export function checkTopLevelCliHelpSurface(options: {
+  cliPath?: string
+  runCommand?: (command: string, args: string[]) => {
+    status: number | null
+    stdout?: string | Buffer
+    stderr?: string | Buffer
+  }
+} = {}): CheckResult {
+  const cliPath = options.cliPath ?? resolve(process.cwd(), 'dist', 'cli.mjs')
+  if (!existsSync(cliPath)) {
+    return fail('Top-level CLI help', `Missing ${cliPath}. Run: bun run build`)
+  }
+
+  const runCommand =
+    options.runCommand ??
+    ((command: string, args: string[]) =>
+      spawnSync(command, args, {
+        cwd: process.cwd(),
+        encoding: 'utf8',
+        timeout: 10_000,
+        env: {
+          ...process.env,
+          DUCKHIVE_DISABLE_STARTUP_SCREEN: '1',
+        },
+      }))
+
+  const result = runCommand(process.execPath, [cliPath, '--help'])
+  const output = `${result.stdout ?? ''}${result.stderr ?? ''}`
+  const missing = REQUIRED_TOP_LEVEL_HELP_TERMS.filter(term => !output.includes(term))
+
+  if (result.status !== 0 || missing.length > 0) {
+    return fail(
+      'Top-level CLI help',
+      `Missing terminal help entries: ${missing.join(', ') || 'help command failed'}.`,
+    )
+  }
+
+  return pass(
+    'Top-level CLI help',
+    `duckhive --help advertises terminal harness commands: ${REQUIRED_TOP_LEVEL_HELP_TERMS.join(', ')}.`,
   )
 }
 
@@ -1244,6 +1306,7 @@ export async function runRuntimeDoctor(argv: string[] = process.argv.slice(2)): 
   results.push(checkTuiLaunchPath())
   results.push(checkComputerUseReadiness())
   results.push(checkHarnessCommandSurfaces())
+  results.push(checkTopLevelCliHelpSurface())
   results.push(checkAgentRunCliControls())
   results.push(checkInputTestCliControl())
   results.push(checkSkillHubRegistry())
