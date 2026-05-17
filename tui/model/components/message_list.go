@@ -11,6 +11,8 @@ import (
 	"github.com/gitlawb/duckhive/tui/tui"
 )
 
+const streamingCursor = "|"
+
 // MessageListModel renders a scrollable list of messages.
 type MessageListModel struct {
 	viewport   viewport.Model
@@ -179,7 +181,7 @@ func formatMessage(msg model.Message, width int, selected bool) string {
 
 func formatLabeledMessage(label, content string, style lipgloss.Style, width int, streaming, selected bool) string {
 	if streaming {
-		content += "▌"
+		content += streamingCursor
 	}
 	body := style.MaxWidth(width).Render(content)
 	body = tui.MessageBody.Width(width).Render(body)
@@ -215,7 +217,7 @@ func formatToolMessage(msg model.Message, width int, selected bool) string {
 
 	content := msg.Content
 	if msg.IsStreaming {
-		content += "▌"
+		content += streamingCursor
 	}
 	bodyStyle := tui.ToolBody
 	if msg.IsError {
