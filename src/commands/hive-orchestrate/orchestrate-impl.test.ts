@@ -173,6 +173,73 @@ describe('/orchestrate command', () => {
     expect(executeOptions).toEqual({ councilMode: 'vision' })
   })
 
+  test('rejects unknown council modes before orchestration analysis', async () => {
+    let analyzeCalled = false
+    mockHiveBridgeModule(['deliberation', 'consensus'])
+    mock.module('../../orchestrator/hybrid/index.js', () => ({
+      createHybridOrchestrator: () => ({
+        analyze: () => {
+          analyzeCalled = true
+          return {
+            analysis: {
+              complexity: 5,
+              category: 'complex',
+              needsCouncil: true,
+            },
+            executionPlan: ['Analyze task'],
+          }
+        },
+        execute: async () => ({
+          status: 'completed',
+          councilTriggered: true,
+          teamSpawned: false,
+          steps: [],
+        }),
+      }),
+    }))
+
+    const { call } = await importFreshOrchestrateModule()
+    const result = await call('Investigate council integration --mode=quantum', {} as never)
+
+    expect(result.type).toBe('text')
+    expect(result.value).toContain('Unknown council mode: quantum')
+    expect(result.value).toContain('Available modes: deliberation, consensus')
+    expect(analyzeCalled).toBe(false)
+  })
+
+  test('maps concensus spelling to consensus mode for council compatibility', async () => {
+    let executeOptions: { councilMode?: string } | undefined
+    mockHiveBridgeModule(['deliberation', 'consensus'])
+    mock.module('../../orchestrator/hybrid/index.js', () => ({
+      createHybridOrchestrator: () => ({
+        analyze: () => ({
+          analysis: {
+            complexity: 5,
+            category: 'complex',
+            needsCouncil: true,
+          },
+          executionPlan: ['Analyze task'],
+        }),
+        execute: async (_task: string, _history: unknown[], _tools: unknown[], _context?: unknown, options?: { councilMode?: string }) => {
+          executeOptions = options
+          return {
+            status: 'completed',
+            councilTriggered: true,
+            teamSpawned: false,
+            steps: [],
+          }
+        },
+      }),
+    }))
+
+    const { call } = await importFreshOrchestrateModule()
+    const result = await call('Investigate council integration --mode=concensus', {} as never)
+
+    expect(result.type).toBe('text')
+    expect(result.value).toContain('Council warranted: YES (consensus)')
+    expect(executeOptions).toEqual({ councilMode: 'consensus' })
+  })
+
   test('rejects unknown team templates instead of silently ignoring them', async () => {
     let analyzeCalled = false
     mock.module('../../orchestrator/hybrid/index.js', () => ({

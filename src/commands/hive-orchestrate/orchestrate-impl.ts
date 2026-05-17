@@ -22,6 +22,11 @@ function splitCommandArgs(args: string): string[] {
   return args.match(/"[^"]*"|'[^']*'|\S+/g)?.map(arg => arg.replace(/^["']|["']$/g, '')) ?? []
 }
 
+function normalizeCouncilMode(value: string): string {
+  // Keep compatibility with the upstream AI-Bot-Council-Concensus spelling.
+  return value === 'concensus' ? 'consensus' : value
+}
+
 export const call: LocalCommandCall = async (args: string) => {
   const hive = getHiveBridge()
   const parsedArgs = splitCommandArgs(args)
@@ -45,7 +50,12 @@ export const call: LocalCommandCall = async (args: string) => {
       : (availableModes[0] ?? 'balanced')
 
   const task = positional.join(' ').trim()
-  const councilMode = (flags.mode as DeliberationMode) ?? defaultMode
+  const requestedMode = typeof flags.mode === 'string'
+    ? normalizeCouncilMode(flags.mode)
+    : flags.mode === true
+      ? ''
+      : undefined
+  const councilMode = (requestedMode ?? defaultMode) as DeliberationMode
   const requestedTeam = typeof flags.team === 'string' ? flags.team : undefined
   const teamTemplate = requestedTeam as TeamTemplate | undefined
   const forceCouncil = flags.council === true
@@ -73,6 +83,24 @@ Example: /orchestrate Build a REST API --council --team=code`,
       value:
         `Unknown team template: ${requestedTeam}\n` +
         `Available templates: ${TEAM_TEMPLATES.join(', ')}`,
+    }
+  }
+
+  if (requestedMode === '') {
+    return {
+      type: 'text',
+      value:
+        'Missing council mode value.\n' +
+        `Available modes: ${availableModes.join(', ')}`,
+    }
+  }
+
+  if (requestedMode && !availableModes.includes(councilMode)) {
+    return {
+      type: 'text',
+      value:
+        `Unknown council mode: ${requestedMode}\n` +
+        `Available modes: ${availableModes.join(', ')}`,
     }
   }
 
