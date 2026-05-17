@@ -97,6 +97,23 @@ if (process.platform === 'win32') {
       includes: ['DuckHive'],
     },
     {
+      name: 'windows wrapper tui help',
+      args: ['tui', '--help'],
+      includes: [
+        'Usage: duckhive tui',
+        'Launch the DuckHive Bubble Tea TUI',
+      ],
+    },
+    {
+      name: 'windows wrapper tui missing binary failure',
+      args: ['tui'],
+      expectedStatus: 1,
+      includes: [
+        'DuckHive TUI binary was not found',
+        'The default classic REPL still works with',
+      ],
+    },
+    {
       name: 'windows wrapper strict interactive failure',
       args: ['runtime-doctor', '--strict-interactive'],
       expectedStatus: 1,
