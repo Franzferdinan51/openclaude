@@ -1,8 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 import {
   builtInCommandNames,
+  filterCommandsShadowingBuiltIns,
   formatDescriptionWithSource,
 } from './commands.js'
+import loop from './commands/loop/index.js'
 import mobile from './commands/mobile/index.js'
 import onboard from './commands/onboard/index.js'
 import { isCommand } from './types/command.js'
@@ -180,6 +182,32 @@ describe('isCommand', () => {
         }),
       }),
     ).toBe(true)
+  })
+})
+
+describe('filterCommandsShadowingBuiltIns', () => {
+  test('keeps built-in commands ahead of same-name bundled skills', () => {
+    const shadowingSkill = {
+      type: 'prompt',
+      name: 'loop',
+      source: 'builtin',
+      description: 'Bundled prompt skill with the same name',
+      getPromptForCommand: async () => [],
+    } as any
+    const uniqueSkill = {
+      type: 'prompt',
+      name: 'unique-skill',
+      source: 'builtin',
+      description: 'Non-conflicting bundled prompt skill',
+      getPromptForCommand: async () => [],
+    } as any
+
+    expect(
+      filterCommandsShadowingBuiltIns(
+        [shadowingSkill, uniqueSkill, loop],
+        [loop],
+      ),
+    ).toEqual([uniqueSkill, loop])
   })
 })
 

@@ -8,7 +8,7 @@ covers the named requirement.
 
 | Requirement | Current evidence | Status |
 | --- | --- | --- |
-| Default Windows CLI must start without freezing and accept typing | `npm run smoke` passes `TextInput` buffered typing, Windows data-event stdin selection, and Ink stdin delivery tests; CLI smoke reports 51 commands plus Windows wrapper checks. | Verified |
+| Default Windows CLI must start without freezing and accept typing | `npm run smoke` passes `TextInput` buffered typing, Windows data-event stdin selection, Ink stdin delivery tests, and 55 CLI smoke cases plus Windows wrapper checks. | Verified |
 | Prompt submission must not crash with `Cannot read properties of undefined (reading '_zod')` | Built-in tool-schema conversion regression was added in `src/utils/api.test.ts`; the prompt-schema fix was committed as `9ed65d9`. | Verified by focused regression in prior pass |
 | `duckhive` command must resolve and report the DuckHive version | `node dist\cli.mjs runtime-doctor` reports `duckhive` on PATH targeting this checkout and version `0.13.0 (DuckHive)`. | Verified |
 | Version metadata and README must match the release | `package.json` and README now report `0.13.0`; `npm pack --dry-run --json` publishes `duckhive@0.13.0`. | Verified |
@@ -31,6 +31,7 @@ covers the named requirement.
 | Gemini/OpenGateway tool calls must remain executable | The OpenAI-compatible shim converts Gemini `Tool calls requested:` raw-text fallbacks back into `tool_use` blocks for streaming and non-streaming responses; focused `openaiShim` regressions cover Write and Agent raw-tool forms. | Verified |
 | Shadow Git command arguments must fail safely | `/shadow` now preserves escaped quotes in checkpoint messages and rejects unterminated quoted input before creating checkpoints or restoring files. | Verified |
 | Scheduled loop command must match documented behavior and fail safely | `/loop status` now works as documented, creation accepts separated option values, invalid options reject before storing loops, lifecycle commands reject ambiguous partial IDs, and all command splitters under `src\commands` have been moved off the old regex splitter. | Verified |
+| Built-in terminal commands must not be shadowed by bundled prompt skills | Command loading now filters external skill/plugin/workflow name collisions against built-in commands, so the bundled `loop` skill no longer shadows the local `/loop` command; CLI smoke covers provider-free `/loop help`. | Verified |
 | Shared test mutation locks must fail instead of hanging indefinitely | `acquireSharedMutationLock` now applies a five-minute default timeout and reports scoped timeout errors; focused tests cover default timeout, override timeout, and release handoff. | Verified |
 | SDK mutex tests must not mutate the process-global env mutex | The SDK shared mutex now exposes an isolated test-only mutex factory, and `tests\sdk\shared-utils.test.ts` exercises timeout behavior without resetting the global mutex used by other tests. | Verified |
 | OpenGateway partner model catalog must be current | The `gitlawb-opengateway` preset now routes through `https://opengateway.gitlawb.com/v1`, maps to the OpenAI-compatible vendor, and exposes Gemini 3.1 Flash Lite Preview plus GLM 5.1 FP8 catalog entries. | Verified |
@@ -49,6 +50,7 @@ covers the named requirement.
 - `node dist\cli.mjs runtime-doctor`
 - `npm pack --dry-run --json`
 - `cd tui && go test ./...` using local Go 1.26.3 from `.tmp\go-toolchain`
+- `bun test src\commands.test.ts scripts\system-check.test.ts`
 - `bun test src\tools\BashTool\bashPermissions.test.ts src\tools\WebSearchTool\WebSearchTool.test.ts`
 - `bun test src\utils\exportFormats.test.ts src\utils\exportRenderer.formats.test.ts`
 - `bun test src\services\api\openaiShim.test.ts`
@@ -67,7 +69,6 @@ covers the named requirement.
 - `bun test src\commands\goal\goal.test.ts`
 - `bun test src\commands\android\android-impl.test.ts src\commands\vision\vision-impl.test.ts src\commands\shadow\shadow-impl.test.ts`
 - `bun test src\commands\loop\loop.test.ts`
-- `bun test scripts\system-check.test.ts`
 
 ## Open Work
 

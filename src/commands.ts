@@ -558,17 +558,37 @@ const loadAllCommands = memoize(async (cwd: string): Promise<Command[]> => {
     getPluginCommands(),
     getWorkflowCommands ? getWorkflowCommands(cwd) : Promise.resolve([]),
   ])
+  const builtInCommands = COMMANDS()
 
-  return [
+  return filterCommandsShadowingBuiltIns([
     ...bundledSkills,
     ...builtinPluginSkills,
     ...skillDirCommands,
     ...workflowCommands,
     ...pluginCommands,
     ...pluginSkills,
-    ...COMMANDS(),
-  ]
+    ...builtInCommands,
+  ], builtInCommands)
 })
+
+export function filterCommandsShadowingBuiltIns(
+  commands: Command[],
+  builtInCommands: Command[] = COMMANDS(),
+): Command[] {
+  const builtInCommandSet = new Set(builtInCommands)
+  const reservedNames = new Set(
+    builtInCommands.flatMap(command => [command.name, ...(command.aliases ?? [])]),
+  )
+
+  return commands.filter(command => {
+    if (builtInCommandSet.has(command)) {
+      return true
+    }
+
+    const commandNames = [command.name, ...(command.aliases ?? [])]
+    return !commandNames.some(name => reservedNames.has(name))
+  })
+}
 
 /**
  * Returns commands available to the current user. The expensive loading is

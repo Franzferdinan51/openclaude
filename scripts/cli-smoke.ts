@@ -290,6 +290,46 @@ const cases: SmokeCase[] = [
     ],
   },
   {
+    name: 'headless loop help',
+    args: ['--bare', '-p', '/loop help'],
+    timeoutMs: 30000,
+    includes: [
+      'DuckHive /loop - Scheduled Prompt Loops',
+      '/loop status [id]',
+      '/loop create "Check git status"',
+    ],
+  },
+  {
+    name: 'headless android usage',
+    args: ['--bare', '-p', '/android'],
+    timeoutMs: 30000,
+    includes: [
+      'Android control',
+      '/android devices',
+      '/android text "hello world"',
+    ],
+  },
+  {
+    name: 'headless vision usage',
+    args: ['--bare', '-p', '/vision'],
+    timeoutMs: 30000,
+    includes: [
+      'Vision',
+      '/vision phone_screenshot',
+      '/vision analyze "Describe the screenshot"',
+    ],
+  },
+  {
+    name: 'headless shadow list',
+    args: ['--bare', '-p', '/shadow list'],
+    env: createIsolatedConfigEnv,
+    timeoutMs: 30000,
+    includes: [
+      'Shadow Git',
+      'No checkpoints yet',
+    ],
+  },
+  {
     name: 'top-level mmx help',
     args: ['mmx', '--help'],
     includes: [

@@ -417,6 +417,7 @@ const GITHUB_COPILOT_BASE = 'https://api.githubcopilot.com'
 
 const REQUIRED_HARNESS_COMMANDS = [
   'goal',
+  'loop',
   'run',
   'computer-use',
   'mmx',
@@ -434,6 +435,17 @@ const REQUIRED_HARNESS_COMMANDS = [
   'swarm',
   'tui',
   'doctor',
+] as const
+
+const REQUIRED_SLASH_ONLY_COMMANDS = [
+  'android',
+  'vision',
+  'shadow',
+  'checkpoint',
+  'router',
+  'budget',
+  'cache',
+  'export',
 ] as const
 
 const REQUIRED_HARNESS_ALIASES = [
@@ -482,7 +494,7 @@ const REQUIRED_CONNECTOR_STATUS_COMMANDS = [
 export function checkHarnessCommandSurfaces(): CheckResult {
   return pass(
     'Harness command surfaces',
-    `${REQUIRED_HARNESS_COMMANDS.length} required core commands declared: ${REQUIRED_HARNESS_COMMANDS.join(', ')}. Key aliases declared: ${REQUIRED_HARNESS_ALIASES.join(', ')}.`,
+    `${REQUIRED_HARNESS_COMMANDS.length} required core commands declared: ${REQUIRED_HARNESS_COMMANDS.join(', ')}. Required slash-only surfaces declared: ${REQUIRED_SLASH_ONLY_COMMANDS.join(', ')}. Key aliases declared: ${REQUIRED_HARNESS_ALIASES.join(', ')}.`,
   )
 }
 
