@@ -50,8 +50,8 @@ async function waitForCondition(
 }
 
 describe('determineStdinMode', () => {
-  test('uses readable events on Windows by default to match the OpenClaude input path', () => {
-    expect(determineStdinMode({ env: {}, platform: 'win32' })).toBe('readable')
+  test('uses data events on Windows by default for PowerShell/npm shim input', () => {
+    expect(determineStdinMode({ env: {}, platform: 'win32' })).toBe('data')
   })
 
   test('keeps readable events on Windows with explicit opt-in', () => {
@@ -96,7 +96,7 @@ describe('determineStdinMode', () => {
 })
 
 describe('Ink stdin delivery', () => {
-  test('default readable stdin delivers typed characters to useInput listeners', async () => {
+  test('default stdin delivers typed characters to useInput listeners', async () => {
     const received: string[] = []
     const { stdout, stdin } = createTestStreams()
     const root = await createRoot({

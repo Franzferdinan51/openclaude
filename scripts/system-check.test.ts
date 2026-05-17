@@ -123,31 +123,31 @@ describe('formatReachabilityFailureDetail', () => {
 })
 
 describe('checkCliInputMode', () => {
-  test('passes on Windows when readable stdin remains the default', () => {
+  test('passes on Windows when data stdin remains the default', () => {
     const result = checkCliInputMode({}, { platform: 'win32' })
 
     expect(result.ok).toBe(true)
-    expect(result.detail).toContain('OpenClaude-compatible readable stdin')
+    expect(result.detail).toContain('PowerShell-safe data stdin')
   })
 
-  test('fails on Windows when data stdin is forced', () => {
+  test('passes on Windows when data stdin is forced', () => {
     const result = checkCliInputMode(
       { DUCKHIVE_USE_DATA_STDIN: '1' },
       { platform: 'win32' },
     )
 
-    expect(result.ok).toBe(false)
-    expect(result.detail).toContain('readable input path')
+    expect(result.ok).toBe(true)
+    expect(result.detail).toContain('PowerShell-safe data stdin')
   })
 
-  test('passes on Windows when readable stdin is forced', () => {
+  test('fails on Windows when readable stdin is forced', () => {
     const result = checkCliInputMode(
       { DUCKHIVE_USE_READABLE_STDIN: '1' },
       { platform: 'win32' },
     )
 
-    expect(result.ok).toBe(true)
-    expect(result.detail).toContain('OpenClaude-compatible readable stdin')
+    expect(result.ok).toBe(false)
+    expect(result.detail).toContain('data input path')
   })
 
   test('passes on non-Windows without Windows-specific warnings', () => {

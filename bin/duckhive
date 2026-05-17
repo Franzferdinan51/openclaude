@@ -38,10 +38,6 @@ function applyDefaultTerminalEnv(env = process.env) {
   if (process.platform !== 'win32') return
 
   if (!isTruthy(env.DUCKHIVE_ALLOW_FRAGILE_STDIN)) {
-    delete env.DUCKHIVE_USE_DATA_STDIN
-    delete env.OPENCLAUDE_USE_DATA_STDIN
-    delete env.DUCKHIVE_USE_READABLE_STDIN
-    delete env.OPENCLAUDE_USE_READABLE_STDIN
     delete env.DUCKHIVE_USE_CONIN_STDIN
   }
 

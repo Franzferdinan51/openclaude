@@ -316,7 +316,7 @@ export function checkCliInputMode(
 
   return pass(
     'CLI input mode',
-    'OpenClaude-compatible readable stdin is active; early input capture remains disabled by default.',
+    'PowerShell-safe data stdin is active by default on Windows; early input capture remains disabled.',
   )
 }
 
