@@ -131,7 +131,21 @@ duckhive --yolo
 
 `--yolo` is an alias for `--dangerously-skip-permissions`.
 
-## 5. If Your Provider Fails
+## 5. If the REPL Renders But Will Not Accept Typing
+
+If the classic REPL opens but the prompt will not accept keyboard input, force
+the Windows-safe stdin path and disable early key capture before launching:
+
+```powershell
+$env:DUCKHIVE_DISABLE_EARLY_INPUT='1'
+$env:DUCKHIVE_USE_DATA_STDIN='1'
+duckhive --dangerously-skip-permissions
+```
+
+This keeps startup from touching `stdin` before Ink owns raw mode. Remove those
+environment variables after confirming your terminal works normally.
+
+## 6. If Your Provider Fails
 
 Check the basics:
 
@@ -154,13 +168,13 @@ Check the basics:
 - make sure a model is loaded in LM Studio
 - make sure the model name matches what you set in `OPENAI_MODEL`
 
-## 6. Updating DuckHive
+## 7. Updating DuckHive
 
 ```powershell
 npm install -g github:Franzferdinan51/DuckHive
 ```
 
-## 7. Uninstalling DuckHive
+## 8. Uninstalling DuckHive
 
 ```powershell
 npm uninstall -g duckhive

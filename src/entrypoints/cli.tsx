@@ -408,7 +408,10 @@ async function main(): Promise<void> {
   }
 
 
-  if (process.env.OPENCLAUDE_DISABLE_EARLY_INPUT !== '1') {
+  if (
+    process.env.DUCKHIVE_DISABLE_EARLY_INPUT !== '1' &&
+    process.env.OPENCLAUDE_DISABLE_EARLY_INPUT !== '1'
+  ) {
     const {
       startCapturingEarlyInput
     } = await import('../utils/earlyInput.js');

@@ -35,6 +35,13 @@ export function shouldStartCapturingEarlyInput(options?: {
   const platform = options?.platform ?? process.platform
   const env = options?.env ?? process.env
 
+  if (
+    isTruthy(env.DUCKHIVE_DISABLE_EARLY_INPUT) ||
+    isTruthy(env.OPENCLAUDE_DISABLE_EARLY_INPUT)
+  ) {
+    return false
+  }
+
   // Windows raw-mode handoff is more fragile than Unix terminals, and a bad
   // transition here can leave the classic REPL looking alive but ignoring
   // keystrokes. Keep the safer default there unless explicitly re-enabled.
@@ -60,19 +67,10 @@ export function startCapturingEarlyInput(): void {
   // be in print mode. Raw mode disables ISIG (terminal Ctrl+C → SIGINT),
   // which would make -p uninterruptible.
   if (isCapturing || !shouldStartCapturingEarlyInput()) {
-    // On Windows, early input capture is disabled by default. Ensure stdin
-    // is in a clean state before Ink takes over. Some Windows terminals
-    // leave stdin in a semi-paused or unref'd state that causes the
-    // 'readable' event to never fire, silently dropping keystrokes.
-    if (process.platform === 'win32' && process.stdin.isTTY) {
-      try {
-        process.stdin.setEncoding('utf8')
-        process.stdin.ref()
-        process.stdin.resume()
-      } catch {
-        // Ignore -- if stdin can't be configured, Ink will handle the error
-      }
-    }
+    // Do not touch stdin when early capture is disabled. On Windows, even a
+    // best-effort resume/ref here can race Ink's raw-mode setup and leave the
+    // REPL painted but unable to receive keystrokes. Let Ink become the first
+    // owner of the stream.
     return
   }
 
