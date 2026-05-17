@@ -305,7 +305,8 @@ export const call: LocalCommandCall = async (args: string) => {
     env,
   } = getChannelDeps()
   const parsedArgs = splitCommandArgs(args)
-  const [action = '', channelType = ''] = parsedArgs
+  const action = parsedArgs[0]?.toLowerCase() ?? ''
+  const channelType = parsedArgs[1]?.toLowerCase() ?? ''
   const storageData = getSecureStorage().read()
 
   if (!action) {
@@ -555,7 +556,13 @@ export const call: LocalCommandCall = async (args: string) => {
     }
   }
 
-  return { type: 'text', value: listChannels(storageData, env) }
+  return {
+    type: 'text',
+    value:
+      `Unknown channel action: ${parsedArgs[0]}\n\n` +
+      'Usage: /channel <list|status|connect|disconnect|send> [channel-type] [message]\n' +
+      'Available channels: telegram, webhook, email, console',
+  }
 }
 
 function splitCommandArgs(args: string): string[] {

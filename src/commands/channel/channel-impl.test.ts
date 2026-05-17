@@ -164,6 +164,23 @@ describe('/channel command', () => {
     expect(connectCall).not.toHaveBeenCalled()
   })
 
+  test('accepts mixed-case actions and channel names', async () => {
+    const result = expectTextResult(await call('STATUS Telegram', {} as never))
+
+    expect(connectCall).toHaveBeenCalledWith('status', expect.anything())
+    expect(result.value).toContain('connect:status')
+  })
+
+  test('unknown actions return usage instead of silently showing the adapter list', async () => {
+    const result = expectTextResult(await call('stats telegram', {} as never))
+
+    expect(result.value).toContain('Unknown channel action: stats')
+    expect(result.value).toContain('Usage: /channel <list|status|connect|disconnect|send>')
+    expect(result.value).toContain('Available channels: telegram, webhook, email, console')
+    expect(result.value).not.toContain('Channel Adapters')
+    expect(connectCall).not.toHaveBeenCalled()
+  })
+
   test('shows webhook adapter status from the shared snapshot surface', async () => {
     const result = expectTextResult(await call('status webhook', {} as never))
 
