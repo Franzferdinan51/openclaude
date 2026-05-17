@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from 'bun:test'
-import { mkdirSync, mkdtempSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
@@ -9,6 +9,7 @@ import {
   checkAgentRunCliControls,
   checkConnectorCliControls,
   checkHarnessCommandSurfaces,
+  checkHarnessStateReadiness,
   checkTopLevelCliHelpSurface,
   checkOpenAIEnv,
   checkSkillHubRegistry,
@@ -389,6 +390,60 @@ describe('checkHarnessCommandSurfaces', () => {
     expect(result.detail).toContain('g')
     expect(result.detail).toContain('subagent')
     expect(result.detail).toContain('cu')
+  })
+})
+
+describe('checkHarnessStateReadiness', () => {
+  test('reports shared checkpoint, budget, MCP, ACP, and permission readiness', () => {
+    const root = mkdtempSync(join(tmpdir(), 'duckhive-harness-state-'))
+    const configDir = join(root, '.duckhive')
+    mkdirSync(join(configDir, 'checkpoints'), { recursive: true })
+    writeFileSync(join(configDir, 'checkpoints', 'release-ready.json'), '{}')
+    writeFileSync(join(configDir, 'budget-state.json'), '{}')
+    writeFileSync(join(configDir, 'budget-log.jsonl'), '{}\n')
+
+    mkdirSync(join(root, 'src', 'services', 'mcp'), { recursive: true })
+    mkdirSync(join(root, 'src', 'commands', 'acp'), { recursive: true })
+    mkdirSync(join(root, 'src', 'utils', 'permissions'), { recursive: true })
+    writeFileSync(join(root, 'src', 'commands', 'acp', 'acp-impl.ts'), '')
+    writeFileSync(
+      join(root, 'src', 'utils', 'permissions', 'permissions.ts'),
+      '',
+    )
+
+    const result = checkHarnessStateReadiness({
+      cwd: root,
+      configDir,
+      homeDir: root,
+    })
+
+    expect(result.ok).toBe(true)
+    expect(result.detail).toContain('checkpoints=1')
+    expect(result.detail).toContain('budget=state+log')
+    expect(result.detail).toContain('MCP=detected')
+    expect(result.detail).toContain('ACP=detected')
+    expect(result.detail).toContain('permissions=detected')
+    expect(result.detail).toContain('/checkpoint')
+    expect(result.detail).toContain('/permissions')
+  })
+
+  test('falls back to legacy checkpoint count without failing empty state', () => {
+    const root = mkdtempSync(join(tmpdir(), 'duckhive-harness-state-'))
+    const legacyDir = join(root, '.config', 'openclaude', 'checkpoints')
+    mkdirSync(legacyDir, { recursive: true })
+    writeFileSync(join(legacyDir, 'legacy.json'), '{}')
+
+    const result = checkHarnessStateReadiness({
+      cwd: root,
+      homeDir: root,
+    })
+
+    expect(result.ok).toBe(true)
+    expect(result.detail).toContain('checkpoints=1')
+    expect(result.detail).toContain('budget=not initialized')
+    expect(result.detail).toContain('MCP=not detected')
+    expect(result.detail).toContain('ACP=not detected')
+    expect(result.detail).toContain('permissions=not detected')
   })
 })
 

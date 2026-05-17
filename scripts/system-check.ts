@@ -1,5 +1,6 @@
 // @ts-nocheck
-import { existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs'
+import { homedir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { spawnSync } from 'node:child_process'
 import {
@@ -495,6 +496,71 @@ export function checkHarnessCommandSurfaces(): CheckResult {
   return pass(
     'Harness command surfaces',
     `${REQUIRED_HARNESS_COMMANDS.length} required core commands declared: ${REQUIRED_HARNESS_COMMANDS.join(', ')}. Required slash-only surfaces declared: ${REQUIRED_SLASH_ONLY_COMMANDS.join(', ')}. Key aliases declared: ${REQUIRED_HARNESS_ALIASES.join(', ')}.`,
+  )
+}
+
+function countCheckpointJsonFiles(dir: string): number {
+  try {
+    return readdirSync(dir, { withFileTypes: true }).filter(
+      entry => entry.isFile() && entry.name.endsWith('.json'),
+    ).length
+  } catch {
+    return 0
+  }
+}
+
+function resolveHarnessConfigDir(options: {
+  configDir?: string
+  homeDir?: string
+} = {}): string {
+  const configured = options.configDir ?? process.env.CLAUDE_CONFIG_DIR
+  if (configured?.trim()) {
+    return configured
+  }
+
+  return join(options.homeDir ?? homedir(), '.duckhive')
+}
+
+export function checkHarnessStateReadiness(options: {
+  cwd?: string
+  configDir?: string
+  homeDir?: string
+} = {}): CheckResult {
+  const cwd = options.cwd ?? process.cwd()
+  const home = options.homeDir ?? homedir()
+  const configDir = resolveHarnessConfigDir({
+    configDir: options.configDir,
+    homeDir: home,
+  })
+  let checkpoints = countCheckpointJsonFiles(join(configDir, 'checkpoints'))
+  if (checkpoints === 0) {
+    checkpoints = countCheckpointJsonFiles(
+      join(home, '.config', 'openclaude', 'checkpoints'),
+    )
+  }
+
+  const budgetState = existsSync(join(configDir, 'budget-state.json'))
+  const budgetLog = existsSync(join(configDir, 'budget-log.jsonl'))
+  const budget =
+    budgetState && budgetLog
+      ? 'state+log'
+      : budgetState
+        ? 'state only'
+        : budgetLog
+          ? 'log only'
+          : 'not initialized'
+
+  const mcpDetected =
+    existsSync(join(cwd, 'src', 'services', 'mcp')) ||
+    existsSync(join(cwd, 'config', 'mcporter.json'))
+  const acpDetected = existsSync(join(cwd, 'src', 'commands', 'acp', 'acp-impl.ts'))
+  const permissionsDetected = existsSync(
+    join(cwd, 'src', 'utils', 'permissions', 'permissions.ts'),
+  )
+
+  return pass(
+    'Harness state readiness',
+    `checkpoints=${checkpoints}; budget=${budget}; MCP=${mcpDetected ? 'detected' : 'not detected'}; ACP=${acpDetected ? 'detected' : 'not detected'}; permissions=${permissionsDetected ? 'detected' : 'not detected'}. Read-only diagnostics; mutate through /checkpoint, /budget, /mcp, /acp, and /permissions.`,
   )
 }
 
@@ -1383,6 +1449,7 @@ export async function runRuntimeDoctor(argv: string[] = process.argv.slice(2)): 
   results.push(checkTuiLaunchPath())
   results.push(checkComputerUseReadiness())
   results.push(checkHarnessCommandSurfaces())
+  results.push(checkHarnessStateReadiness())
   results.push(checkTopLevelCliHelpSurface())
   results.push(checkAgentRunCliControls())
   results.push(checkInputTestCliControl())
