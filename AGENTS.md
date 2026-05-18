@@ -5,6 +5,15 @@
 
 DuckHive is an open-source coding agent and CLI. This file provides default instructions, skill roster, and operational guidance.
 
+## Core operating principle: act, then verify
+
+**Finding is not finishing.** Once you know where to change, make the change — don't keep investigating. One targeted read that locates the bug, then one edit, then commit. Three investigations max, then act.
+
+- Don't search for the same thing twice
+- Don't map the entire architecture before making a targeted fix
+- A partial fix is better than zero fix delivered
+- Perfect certainty is not required
+
 ## Safety defaults
 
 - Don't dump directories or secrets into chat.
@@ -74,31 +83,17 @@ duckhive duckcustodian     # Operations dashboard
 
 This project is indexed by GitNexus as **DuckHive** (72586 symbols, 142203 relationships, 300 execution flows).
 
-### Always do
+### When to use GitNexus
 
-- **MUST run impact analysis before editing any symbol.** Before modifying a function, class, or method, run `gitnexus_impact({target: "symbolName", direction: "upstream"})` and report the blast radius.
-- **MUST run `gitnexus_detect_changes()` before committing** to verify your changes only affect expected symbols and execution flows.
-- **MUST warn the user** if impact analysis returns HIGH or CRITICAL risk before proceeding with edits.
-- When exploring unfamiliar code, use `gitnexus_query({query: "concept"})` to find execution flows instead of grepping.
-- When you need full context on a specific symbol — callers, callees, which execution flows it participates in — use `gitnexus_context({name: "symbolName"})`.
+GitNexus is a power tool — use it for **architecture questions and risky changes**, not for every edit.
 
-### Never do
+- For **routine bug fixes, refactors, and small features**: read the file directly, make the edit, move on
+- For **understanding unfamiliar code**: `gitnexus_query({query: "concept"})` is faster than grep
+- For **risky refactors** (renaming widely-used symbols, extracting interfaces): run `gitnexus_impact` first
+- For **impact blast radius before risky edits**: run `gitnexus_impact`, warn user on HIGH/CRITICAL
+- Before **committing**: run `gitnexus_detect_changes()` to verify scope
 
-- NEVER edit a function, class, or method without first running `gitnexus_impact` on it.
-- NEVER ignore HIGH or CRITICAL risk warnings from impact analysis.
-- NEVER rename symbols with find-and-replace — use `gitnexus_rename` which understands the call graph.
-- NEVER commit changes without running `gitnexus_detect_changes()` to check affected scope.
-
-### Resources
-
-| Resource | Use for |
-|----------|---------|
-| `gitnexus://repo/DuckHive/context` | Codebase overview, check index freshness |
-| `gitnexus://repo/DuckHive/clusters` | All functional areas |
-| `gitnexus://repo/DuckHive/processes` | All execution flows |
-| `gitnexus://repo/DuckHive/process/{name}` | Step-by-step execution trace |
-
-### CLI reference
+### Quick reference
 
 | Task | Read this skill file |
 |------|---------------------|
@@ -108,6 +103,15 @@ This project is indexed by GitNexus as **DuckHive** (72586 symbols, 142203 relat
 | Rename / extract / split / refactor | `.claude/skills/gitnexus/gitnexus-refactoring/SKILL.md` |
 | Tools, resources, schema reference | `.claude/skills/gitnexus/gitnexus-guide/SKILL.md` |
 | Index, status, clean, wiki CLI commands | `.claude/skills/gitnexus/gitnexus-cli/SKILL.md` |
+
+### Resources
+
+| Resource | Use for |
+|----------|---------|
+| `gitnexus://repo/DuckHive/context` | Codebase overview, check index freshness |
+| `gitnexus://repo/DuckHive/clusters` | All functional areas |
+| `gitnexus://repo/DuckHive/processes` | All execution flows |
+| `gitnexus://repo/DuckHive/process/{name}` | Step-by-step execution trace |
 
 <!-- openclaw:end -->
 <!-- gitnexus:end -->
