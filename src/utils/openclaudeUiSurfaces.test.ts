@@ -16,6 +16,7 @@ import {
 import { getValidationTip } from './settings/validationTips.ts'
 import loginCommandFactory from '../commands/login/index.ts'
 import logoutCommand from '../commands/logout/index.ts'
+import passesCommand from '../commands/passes/index.ts'
 
 const originalConfigDir = process.env.CLAUDE_CONFIG_DIR
 const repoRoot = join(import.meta.dir, '..', '..')
@@ -275,5 +276,10 @@ describe('DuckHive active terminal UI copy', () => {
     expect(combined).not.toContain("Review Claude Code's changes")
     expect(combined).not.toContain('Claude is waiting for your input')
     expect(combined).not.toContain('help us improve Claude Code')
+  })
+
+  test('/passes command metadata uses DuckHive wording', () => {
+    expect(passesCommand.description).toContain('Share a free week of DuckHive')
+    expect(passesCommand.description).not.toContain('Claude Code')
   })
 })
