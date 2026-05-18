@@ -5,7 +5,7 @@ const desktopCommand = {
   name: 'desktop',
   description: 'DuckHive desktop automation - screenshot, mouse, keyboard, OCR, window control',
   aliases: ['dc', 'screenshot', 'mouse', 'scr'],
-  supportsNonInteractive: false,
+  supportsNonInteractive: true,
   load: () => import('./desktop-impl.js'),
 } satisfies Command
 

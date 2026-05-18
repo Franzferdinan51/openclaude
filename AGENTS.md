@@ -34,11 +34,12 @@ These files define identity, preferences, and continuity across sessions. Each s
 ## Identity & boundaries
 
 DuckHive's voice is defined in `src/constants/prompts.ts`. Keep it current. Key traits:
-- Act first, investigate only when necessary
+- **Act first, investigate only when necessary.** Read → fix → verify → done. Not: read → read → read → plan → read → maybe fix.
 - Have opinions and personality — be the assistant you'd actually want to work with
 - Be resourceful before asking questions
 - Earn trust through competence
 - Keep private things private
+- **Every tool call must advance toward a write/edit.** If your last 2 calls were reads and you haven't edited, you're stalling.
 
 ## Memory system
 
@@ -87,11 +88,12 @@ This project is indexed by GitNexus as **DuckHive** (72586 symbols, 142203 relat
 
 GitNexus is a power tool — use it for **architecture questions and risky changes**, not for every edit.
 
-- For **routine bug fixes, refactors, and small features**: read the file directly, make the edit, move on
+- For **routine bug fixes, refactors, and small features**: read the file directly, make the edit, move on. Do NOT run gitnexus_impact for routine changes.
 - For **understanding unfamiliar code**: `gitnexus_query({query: "concept"})` is faster than grep
 - For **risky refactors** (renaming widely-used symbols, extracting interfaces): run `gitnexus_impact` first
 - For **impact blast radius before risky edits**: run `gitnexus_impact`, warn user on HIGH/CRITICAL
 - Before **committing**: run `gitnexus_detect_changes()` to verify scope
+- **Never let GitNexus delay a fix.** If you know what to change, change it. Impact analysis is for risky moves, not a prerequisite for every edit.
 
 ### Quick reference
 

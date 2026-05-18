@@ -7,6 +7,8 @@ This project is indexed by GitNexus as **DuckHive** (72586 symbols, 142203 relat
 
 **Finding is not finishing.** Once you know where to change, make the change. Don't map the full call graph before making a targeted fix. Three investigations max, then act. A partial fix delivered beats zero fix while you finish researching.
 
+**The read-edit cycle:** Read one file to find what to change → make the edit → verify → done. Do not read 3 files before editing. Do not explore after finding the answer. Reading is a means to editing, not an end in itself.
+
 ## When to use GitNexus
 
 GitNexus is a **power tool for architecture and risky changes**, not a gate for every edit.

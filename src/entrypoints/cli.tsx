@@ -354,6 +354,20 @@ async function main(): Promise<void> {
     return;
   }
 
+  // Fast-path for legacy desktop automation help outside the REPL.
+  if (cliCommand === 'desktop' || cliCommand === 'dc' || cliCommand === 'screenshot' || cliCommand === 'mouse' || cliCommand === 'scr') {
+    profileCheckpoint('cli_desktop_path');
+    const {
+      enableConfigs
+    } = await import('../utils/config.js');
+    enableConfigs();
+    const {
+      desktopHandler
+    } = await import('../cli/desktop.js');
+    await desktopHandler(cliCommandArgs);
+    return;
+  }
+
   // Fast-path for MiniMax media/text/search CLI integration outside the REPL.
   if (cliCommand === 'mmx' || cliCommand === 'minimax') {
     profileCheckpoint('cli_mmx_path');

@@ -4489,6 +4489,7 @@ Diagnostics:
 
   program.command('goal').alias('g').description('Manage persisted workflow goals for the REPL and headless runs');
   program.command('computer-use').alias('cu').description('Inspect and control desktop/Android computer-use integrations');
+  program.command('desktop').alias('dc').alias('screenshot').alias('mouse').alias('scr').description('Show legacy desktop_control automation help without starting provider auth');
   program.command('mmx').alias('minimax').description('Run MiniMax media, search, and text utilities');
   program.command('voice').description('Inspect push-to-talk voice readiness without starting provider auth');
   program.command('provider').description('Inspect active provider routing and saved provider profiles');

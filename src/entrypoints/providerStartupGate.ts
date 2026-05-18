@@ -43,6 +43,11 @@ const PROVIDER_FREE_COMMANDS = new Set([
   'spawn',
   'subagent',
   'deep-dive',
+  'desktop',
+  'dc',
+  'screenshot',
+  'mouse',
+  'scr',
   'ps',
   'logs',
   'attach',
@@ -77,6 +82,11 @@ const PROVIDER_FREE_PRINT_SLASH_COMMANDS = new Set([
   'cache',
   'provider-cache',
   'export',
+  'desktop',
+  'dc',
+  'screenshot',
+  'mouse',
+  'scr',
   'voice',
   'loop',
   'permissions',
@@ -154,7 +164,7 @@ function isProviderFreePrintSlashCommand(args: readonly string[]): boolean {
     return false
   }
 
-  const command = prompt.slice(1).trim().split(/\s+/, 1)[0]
+  const command = prompt.slice(1).trim().split(/\s+/)[0]
   return Boolean(command && PROVIDER_FREE_PRINT_SLASH_COMMANDS.has(command))
 }
 

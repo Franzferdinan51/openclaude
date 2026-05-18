@@ -167,6 +167,7 @@ const cases: SmokeCase[] = [
       'runtime-doctor',
       'goal',
       'computer-use',
+      'desktop',
       'mmx',
       'voice',
       'provider',
@@ -204,6 +205,33 @@ const cases: SmokeCase[] = [
       'terminal input is not usable',
       'duckhive input-test',
       'duckhive runtime-doctor',
+    ],
+  },
+  {
+    name: 'top-level desktop help',
+    args: ['desktop', '--help'],
+    env: createIsolatedConfigEnv,
+    includes: [
+      'DuckHive Desktop Control',
+      'desktop_control screenshot',
+      'APPROVAL REQUIRED',
+    ],
+    excludes: [
+      'Warning: ignoring saved provider profile',
+      'Unknown skill: desktop',
+    ],
+  },
+  {
+    name: 'headless desktop slash help',
+    args: ['--bare', '-p', '/desktop --help'],
+    env: createIsolatedConfigEnv,
+    includes: [
+      'DuckHive Desktop Control',
+      'desktop_control screenshot',
+    ],
+    excludes: [
+      'Warning: ignoring saved provider profile',
+      'Unknown skill: desktop',
     ],
   },
   {
