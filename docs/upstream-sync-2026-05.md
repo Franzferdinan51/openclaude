@@ -104,6 +104,12 @@ DuckHive checked the live upstream repositories on May 7, 2026 and refreshed the
 | --- | --- | --- |
 | Codex | Stable Codex added configurable TUI keymaps in the reviewed `rust-v0.128.0` feature set. | Ported the compatible terminal lesson into DuckHive's Go TUI without changing the classic REPL startup path: `DUCKHIVE_TUI_KEYMAP_PATH` and `DUCKHIVE_TUI_KEYMAP` can override action keys through JSON, inline overrides win over file overrides, invalid entries warn while defaults remain active, and `HandleKey` now dispatches by key binding/action rather than hardcoded key strings. The slice also fixed the documented `ctrl+p` model-picker shortcut by including `ModelPicker` in active chat bindings. |
 
+## Refreshed Codex Permission Profile Follow-up May 18, 2026
+
+| Upstream | Current state | DuckHive action |
+| --- | --- | --- |
+| Codex | Stable Codex tracks permission profiles and sandbox profile selection as first-class terminal workflows. | Ported the compatible terminal workflow into DuckHive's existing permissions command: `/permissions profile list/status/<name>` now works provider-free in headless slash mode, applies named `safe`, `balanced`, `edit`, `yolo`, and `off` presets, writes local project settings by default, supports `--project` and `--user`, and pairs `permissions.defaultMode` with matching sandbox settings. Provider startup now skips `/permissions` and `/allowed-tools` just like other local slash commands, so automation can inspect or apply profiles without provider-auth warnings. |
+
 ## Ported In 0.8.1
 
 ### OpenClaude effort fix
@@ -138,7 +144,7 @@ Affected files:
 
 ### Codex
 
-Stable Codex `rust-v0.128.0` adds persisted goal workflows, configurable TUI keymaps, permission profiles, sandbox profile selection, plugin marketplace improvements, external agent session import, and explicit MultiAgentV2 settings. DuckHive has now ported the compatible TUI keymap slice and already has adjacent goal, plan, permission, plugin, and agent-team surfaces, so the remaining items should continue as feature slices with their own tests.
+Stable Codex `rust-v0.128.0` adds persisted goal workflows, configurable TUI keymaps, permission profiles, sandbox profile selection, plugin marketplace improvements, external agent session import, and explicit MultiAgentV2 settings. DuckHive has now ported the compatible TUI keymap and permission/sandbox profile slices and already has adjacent goal, plan, plugin, and agent-team surfaces, so the remaining items should continue as feature slices with their own tests.
 
 Codex `rust-v0.129.0-alpha.*` was treated as prerelease-only. Do not import alpha behavior into DuckHive `main` until the API and storage shapes settle.
 

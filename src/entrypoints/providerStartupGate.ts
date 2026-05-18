@@ -23,6 +23,8 @@ const PROVIDER_FREE_COMMANDS = new Set([
   'mmx',
   'minimax',
   'provider',
+  'permissions',
+  'allowed-tools',
   'run',
   'runs',
   'agent-run',
@@ -73,6 +75,8 @@ const PROVIDER_FREE_PRINT_SLASH_COMMANDS = new Set([
   'provider-cache',
   'export',
   'loop',
+  'permissions',
+  'allowed-tools',
 ])
 
 const GLOBAL_OPTIONS_WITH_VALUE = new Set([

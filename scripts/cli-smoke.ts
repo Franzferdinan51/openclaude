@@ -505,6 +505,30 @@ const cases: SmokeCase[] = [
     excludes: ['Warning: ignoring saved provider profile', 'Unknown skill: spawn'],
   },
   {
+    name: 'headless permission profile list',
+    args: ['--bare', '-p', '/permissions profile list'],
+    timeoutMs: 30000,
+    includes: [
+      'Permission profiles',
+      'safe: Safe planning',
+      'balanced: Balanced harness',
+      'yolo: Yolo bypass',
+    ],
+    excludes: ['Warning: ignoring saved provider profile'],
+  },
+  {
+    name: 'headless permission profile apply',
+    args: ['--bare', '-p', '/permissions profile safe --user'],
+    env: createIsolatedConfigEnv,
+    timeoutMs: 30000,
+    includes: [
+      'Applied permission profile "safe" to user settings.',
+      'Mode: plan',
+      'Sandbox: enabled, auto-allow bash off, unsandboxed fallback off',
+    ],
+    excludes: ['Warning: ignoring saved provider profile'],
+  },
+  {
     name: 'top-level mmx help',
     args: ['mmx', '--help'],
     includes: [
