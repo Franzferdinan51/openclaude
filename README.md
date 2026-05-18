@@ -1419,12 +1419,12 @@ Recent verification snapshot:
 - `bun test`: `3369 pass`, `0 fail`, `8487 expect()` calls across 381 files
 - `npm run smoke`: `12 pass`, `0 fail`, plus `CLI smoke passed (67 commands plus Windows wrapper checks)`
 - focused prompt, tips, Telegram, and UI branding regressions cover agent-team/council prompt guidance, disabled sponsored-tip behavior, Telegram 421 retry handling, and DuckHive-facing GitHub setup artifacts
-- `cd tui && go test ./...`: historical pass with local Go 1.26.3 from `.tmp\go-toolchain`; current shell has no Go toolchain, so retest is blocked until Go is restored
+- `cd tui && go test ./...`: passing with local Go 1.25.4 from `.tmp\go-toolchain`; the packaged `tui\duckhive-tui.exe` was rebuilt from that tested source
 - `duckhive --version`: `0.13.3 (DuckHive)`
 - `openclaude --version`: upstream OpenClaude remains separately owned when installed
 - package dry-run publishes as `duckhive@0.13.3`, includes the `duckhive` launcher, `duckhive/sdk`, `duckhive/harness`, `config/`, `tui\duckhive-tui.exe`, and the runtime `skills/newest-desktop-control/` skill files without test fixtures
 
-Known local limitation: `duckhive tui` is an interactive terminal app, so final keyboard verification in the exact user shell still requires a real PowerShell terminal. Use `duckhive tui --snapshot` for non-interactive CI/log rendering, `duckhive tui --input-smoke "typed text"` for the packaged Bubble Tea input-loop diagnostic, `cd tui && go test ./...` for component-level regressions, and `duckhive tui --help` for launcher diagnostics.
+Known local limitation: `duckhive tui` is an interactive terminal app, so final keyboard verification in the exact user shell still requires a real PowerShell terminal. Use `duckhive tui --snapshot` for non-interactive CI/log rendering, `duckhive tui --input-smoke "typed text"` for the packaged Bubble Tea input-loop diagnostic, local Go 1.25.4 with `cd tui && go test ./...` for component-level regressions, and `duckhive tui --help` for launcher diagnostics.
 
 ---
 

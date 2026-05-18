@@ -152,4 +152,4 @@ Historical verification highlights from the SDKv2 sync:
 Current project-wide verification status after the CLI/TUI completion audit:
 
 - `bun run typecheck`, `npm run smoke`, full `bun test`, `npm run integrations:check`, `npm run verify:privacy`, and `npm pack --dry-run --json` pass on the TypeScript/Node side.
-- `cd tui && go test ./...` remains blocked on the current Windows machine because Go is not installed; the runtime doctor reports that state and keeps the classic REPL as the Windows-safe default.
+- `cd tui && go test ./...` now passes on the current Windows machine with a local Go 1.25.4 toolchain under `.tmp\go-toolchain`; the packaged Bubble Tea binary was rebuilt and rechecked with `duckhive tui --snapshot` plus `duckhive tui --input-smoke`.
