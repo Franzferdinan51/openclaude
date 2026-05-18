@@ -38,6 +38,23 @@ export interface TelegramUpdate {
 export type TelegramCommandHandler = (chatId: number, args: string) => void
 export type TelegramMessageHandler = (chatId: number, text: string) => void
 
+const TELEGRAM_DEFAULT_REQUEST_TIMEOUT_MS = 30_000
+const TELEGRAM_GET_UPDATES_REQUEST_TIMEOUT_MS = 45_000
+const TELEGRAM_DEFAULT_LONG_POLL_TIMEOUT_SECONDS = 30
+const TELEGRAM_LONG_POLL_ABORT_MARGIN_SECONDS = 5
+
+export function resolveTelegramLongPollTimeoutSeconds(timeoutSeconds: number): number {
+  const maxLongPollTimeoutSeconds = Math.max(
+    1,
+    Math.floor(TELEGRAM_GET_UPDATES_REQUEST_TIMEOUT_MS / 1000) -
+      TELEGRAM_LONG_POLL_ABORT_MARGIN_SECONDS,
+  )
+  const configuredTimeoutSeconds = Number.isFinite(timeoutSeconds)
+    ? Math.max(1, Math.floor(timeoutSeconds))
+    : TELEGRAM_DEFAULT_LONG_POLL_TIMEOUT_SECONDS
+  return Math.min(configuredTimeoutSeconds, maxLongPollTimeoutSeconds)
+}
+
 // ============================================================================
 // Telegram Bot API Client
 // ============================================================================
@@ -45,16 +62,20 @@ export type TelegramMessageHandler = (chatId: number, text: string) => void
 class TelegramBotAPI {
   private token: string
   private baseUrl = 'https://api.telegram.org/bot'
-  private timeoutMs = 30_000
+  private timeoutMs = TELEGRAM_DEFAULT_REQUEST_TIMEOUT_MS
 
   constructor(token: string) {
     this.token = token
   }
 
-  private async request<T>(method: string, body?: Record<string, unknown>): Promise<T> {
+  private async request<T>(
+    method: string,
+    body?: Record<string, unknown>,
+    timeoutMs = this.timeoutMs,
+  ): Promise<T> {
     const url = `${this.baseUrl}${this.token}/${method}`
     const { signal, cleanup } = createCombinedAbortSignal(undefined, {
-      timeoutMs: this.timeoutMs,
+      timeoutMs,
     })
     const response = await fetch(url, {
       method: 'POST',
@@ -72,8 +93,19 @@ class TelegramBotAPI {
     return this.request('getMe')
   }
 
-  async getUpdates(offset: number, timeout: number = 30): Promise<TelegramUpdate> {
-    return this.request('getUpdates', { offset, timeout, allowed_updates: ['message'] })
+  async getUpdates(
+    offset: number,
+    timeout: number = TELEGRAM_DEFAULT_LONG_POLL_TIMEOUT_SECONDS,
+  ): Promise<TelegramUpdate> {
+    return this.request(
+      'getUpdates',
+      {
+        offset,
+        timeout: resolveTelegramLongPollTimeoutSeconds(timeout),
+        allowed_updates: ['message'],
+      },
+      TELEGRAM_GET_UPDATES_REQUEST_TIMEOUT_MS,
+    )
   }
 
   async sendMessage(chatId: number, text: string, parseMode: 'Markdown' | 'HTML' | undefined = undefined): Promise<unknown> {

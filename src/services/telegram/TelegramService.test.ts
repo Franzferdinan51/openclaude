@@ -145,6 +145,45 @@ describe('TelegramService polling', () => {
     expect(getUpdatesCalls).toBeGreaterThanOrEqual(2)
   })
 
+  test('bounds getUpdates long-poll seconds below the HTTP abort timeout', async () => {
+    const service = await importFreshService()
+
+    expect(service.resolveTelegramLongPollTimeoutSeconds(30)).toBe(30)
+    expect(service.resolveTelegramLongPollTimeoutSeconds(999)).toBe(40)
+    expect(service.resolveTelegramLongPollTimeoutSeconds(0)).toBe(1)
+  })
+
+  test('sends bounded getUpdates timeout in the polling request body', async () => {
+    let getUpdatesBody: { timeout?: unknown } | undefined
+    const fetchMock = mock(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      if (url.endsWith('/getMe')) {
+        return telegramResponse({
+          ok: true,
+          result: { id: 1, is_bot: true, username: 'duckhive_test_bot' },
+        })
+      }
+      if (url.endsWith('/setMyCommands')) {
+        return telegramResponse({ ok: true, result: true })
+      }
+      if (url.endsWith('/getUpdates')) {
+        getUpdatesBody = JSON.parse(String(init?.body ?? '{}')) as {
+          timeout?: unknown
+        }
+        return telegramResponse({ ok: true, result: [] })
+      }
+      return telegramResponse({ ok: true, result: true })
+    }) as unknown as typeof fetch
+    globalThis.fetch = fetchMock
+
+    const service = await importFreshService()
+    await service.startTelegramService()
+    await waitFor(() => getUpdatesBody !== undefined)
+    service.stopTelegramService()
+
+    expect(getUpdatesBody?.timeout).toBe(30)
+  })
+
   test('starts from TELEGRAM_BOT_TOKEN fallback when DuckHive token env is absent', async () => {
     delete process.env.DUCKHIVE_TELEGRAM_BOT_TOKEN
     process.env.TELEGRAM_BOT_TOKEN = '123:legacy-token'
