@@ -1417,7 +1417,7 @@ The `/statusbar session` surface now reads the same public build version used by
 
 Recent verification snapshot:
 
-- `npm run build`, `npm run smoke`, `npm run verify:privacy`, and `node dist\cli.mjs runtime-doctor`: passing on Windows for `duckhive@0.13.5`
+- `npm run typecheck`, `npm run build`, `npm run smoke`, `npm run verify:privacy`, and `node dist\cli.mjs runtime-doctor`: passing on Windows for `duckhive@0.13.5`
 - `bun test src\utils\api.test.ts`: `7 pass`, `0 fail`, covering Zod schema conversion and every built-in tool schema
 - `npm run smoke`: `12 pass`, `0 fail`, plus `CLI smoke passed (74 commands plus Windows wrapper checks)`
 - focused 0.13.5 checks cover Zod 4 schema conversion, Windows stdin delivery, TextInput buffering, provider-free command surfaces, TUI backend slash-command routing, and packaged TUI input smoke
@@ -1427,8 +1427,6 @@ Recent verification snapshot:
 - package dry-run publishes as `duckhive@0.13.5`, includes the `duckhive` launcher, `duckhive/sdk`, `duckhive/harness`, `config/`, `tui\duckhive-tui.exe`, and the runtime `skills/newest-desktop-control/` skill files without test fixtures
 
 Known local limitation: `duckhive tui` is an interactive terminal app, so final keyboard verification in the exact user shell still requires a real PowerShell terminal. Use `duckhive tui --snapshot` for non-interactive CI/log rendering, `duckhive tui --input-smoke "typed text"` for the packaged Bubble Tea input-loop diagnostic, local Go 1.25.4 with `cd tui && go test ./...` for component-level regressions, and `duckhive tui --help` for launcher diagnostics.
-
-Current repository-wide TypeScript limitation: `npm run typecheck` still fails on pre-existing strict-null/type-narrowing errors outside the TUI routing slice, mainly in bridge, print, MCP, and main REPL paths. The build/smoke gates remain green because the bundled runtime path compiles through `scripts/build.ts`, but full typecheck cleanup remains open work.
 
 ---
 
