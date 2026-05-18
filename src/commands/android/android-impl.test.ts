@@ -1,4 +1,6 @@
 import { afterEach, describe, expect, test } from 'bun:test'
+import { tmpdir } from 'os'
+import { join } from 'path'
 import { call, setAndroidTestDeps } from './android-impl.js'
 
 afterEach(() => {
@@ -36,14 +38,15 @@ describe('/android command', () => {
     })
 
     const result = await call('screenshot', {} as never)
+    const screenshotPath = join(tmpdir(), 'duckhive-android-screenshot.png')
     expect(result.type).toBe('text')
     if (result.type !== 'text') throw new Error('unexpected result type')
-    expect(result.value).toContain('/tmp/android_screenshot.png')
+    expect(result.value).toContain(screenshotPath)
     expect(commands).toContain(
       'adb -s 192.168.1.251:40835 shell screencap /sdcard/scr.png',
     )
     expect(commands).toContain(
-      'adb -s 192.168.1.251:40835 pull /sdcard/scr.png /tmp/android_screenshot.png',
+      `adb -s 192.168.1.251:40835 pull /sdcard/scr.png "${screenshotPath}"`,
     )
   })
 

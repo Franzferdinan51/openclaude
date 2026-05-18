@@ -1,5 +1,7 @@
 import type { LocalCommandCall } from '../../types/command.js'
 import { execSync } from 'child_process'
+import { tmpdir } from 'os'
+import { join } from 'path'
 
 type VisionDeps = {
   exec: (command: string, options?: { timeout?: number }) => string | Buffer
@@ -96,6 +98,14 @@ function usage(error?: string): string {
   return error ? `${error}\n\n${lines.join('\n')}` : lines.join('\n')
 }
 
+function shellQuote(value: string): string {
+  return `"${value.replace(/"/g, '\\"')}"`
+}
+
+function getVisionScreenshotPath(): string {
+  return join(tmpdir(), 'duckhive-vision-screenshot.png')
+}
+
 export const call: LocalCommandCall = async (args: string) => {
   const exec = getVisionDeps().exec
   const parsed = splitCommandArgs(args)
@@ -108,11 +118,12 @@ export const call: LocalCommandCall = async (args: string) => {
 
   try {
     if (subcommand === 'phone_screenshot' || subcommand === 'capture') {
+      const screenshotPath = getVisionScreenshotPath()
       exec(`adb -s ${device} shell screencap /sdcard/scr.png`, { timeout: 10000 })
-      exec(`adb -s ${device} pull /sdcard/scr.png /tmp/vision_screenshot.png`, { timeout: 10000 })
+      exec(`adb -s ${device} pull /sdcard/scr.png ${shellQuote(screenshotPath)}`, { timeout: 10000 })
       return {
         type: 'text',
-        value: 'Vision screenshot saved to /tmp/vision_screenshot.png',
+        value: `Vision screenshot saved to ${screenshotPath}`,
       }
     }
 
@@ -123,7 +134,7 @@ export const call: LocalCommandCall = async (args: string) => {
       }
       return {
         type: 'text',
-        value: `Vision analysis queued\n${'-'.repeat(40)}\nPrompt: ${prompt}\nImage: /tmp/vision_screenshot.png`,
+        value: `Vision analysis queued\n${'-'.repeat(40)}\nPrompt: ${prompt}\nImage: ${getVisionScreenshotPath()}`,
       }
     }
 

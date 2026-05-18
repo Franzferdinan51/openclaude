@@ -23,7 +23,7 @@ covers the named requirement.
 | Background AgentRun controls must be inspectable from the terminal | `duckhive attach <run-id> [limit]` now prints run metadata, pending approvals, recent events, and exact control commands instead of a not-implemented placeholder; focused tests cover event tail and invalid limits. | Verified |
 | REPL `/run` controls must parse recovery text safely | `/run recover` now preserves escaped quotes inside quoted summaries and rejects unterminated quoted arguments before mutating run state; focused tests cover both paths. | Verified |
 | Computer-use must be reachable without blocking on Codex.app | Runtime doctor reports bundled `newest-desktop-control` available for desktop, Android, and compatibility aliases; package dry-run includes the skill files. | Verified fallback |
-| Android and Vision command arguments must preserve user text safely | `/android` and `/vision` now preserve escaped quotes and reject unterminated quoted input before running ADB actions; focused tests cover text, analyze, and no-exec rejection paths. | Verified |
+| Android and Vision command arguments must preserve user text safely | `/android` and `/vision` now preserve escaped quotes and reject unterminated quoted input before running ADB actions; screenshot pulls write to Node's OS temp directory instead of Unix-only `/tmp`, with quoted local paths for Windows; focused tests cover text, analyze, screenshot, and no-exec rejection paths. | Verified |
 | ClawHub skill hub must be connected | Runtime doctor reports ClawHub registry default `https://clawhub.ai` and `/skill search`, `/skill inspect`, `/skill install` availability. | Verified surface |
 | ClawHub/local skill CLI arguments must preserve user text safely | `/skill` now preserves escaped quotes in local skill names and ClawHub search queries, and rejects unterminated quoted input before creating a skill or calling the registry. | Verified |
 | Telegram/channel connectors must be provider-free and inspectable | Runtime doctor reports connector CLI status commands for `connect status`, `telegram status`, and `channel status telegram`; `/channel --help` now resolves to the adapter readiness snapshot instead of an unknown-action error; Telegram built-in command replies now use ASCII-safe list markers and run separators; README documents Telegram env and AgentRun controls. | Verified surface |
@@ -45,6 +45,7 @@ covers the named requirement.
 | Windows TUI must be runnable | A local verified Go 1.26.3 toolchain built `tui\duckhive-tui.exe`; `node dist\cli.mjs runtime-doctor` now reports `Terminal TUI - Ready` and `Terminal TUI input`; CLI smoke covers `duckhive tui --help`, provider-free `duckhive tui --snapshot`, and `duckhive tui --input-smoke` through both Node and Windows wrapper launch paths. | Verified binary and input readiness |
 | TUI tests must be verified | Local Go 1.26.3 ran `cd tui && go test ./...` successfully after fixing the stale header version, header wrap, ASCII-safe empty-state/footer markers, adding a Bubble Tea program-loop input regression that types through the configured input stream, adding packaged `duckhive tui --input-smoke` coverage, adding local model-picker regressions for offline `ctrl+p`, preset rendering, and escape return, and adding local harness-state regressions for checkpoint, budget, MCP, ACP, and permission readiness. | Verified |
 | Harness state must be inspectable outside the TUI | `checkHarnessStateReadiness()` now adds a read-only `runtime-doctor` result for checkpoint count, budget state/log files, MCP, ACP, and permission readiness, with focused tests for current DuckHive config-home state and legacy OpenClaude checkpoint fallback. | Verified |
+| MemoryTool must use DuckHive-owned storage | `MemoryTool` stores memories under DuckHive config-home `memory/memories.json`; focused tests cover config-home path selection and remember/recall/search/stats/forget behavior. | Verified |
 | Full repository test suite must be rerun after the latest packaging/TUI audit changes | `bun test` now reports `3226 pass`, `0 fail`, `8002 expect()` calls across 368 files. | Verified |
 
 ## Current Green Gates
@@ -76,6 +77,7 @@ covers the named requirement.
 - `bun test src\commands\run\run-impl.test.ts`
 - `bun test src\commands\goal\goal.test.ts`
 - `bun test src\commands\android\android-impl.test.ts src\commands\vision\vision-impl.test.ts src\commands\shadow\shadow-impl.test.ts`
+- `bun test src\commands\android\android-impl.test.ts src\commands\vision\vision-impl.test.ts src\tools\MemoryTool\MemoryTool.test.ts`
 - `bun test src\commands\loop\loop.test.ts`
 
 ## Open Work

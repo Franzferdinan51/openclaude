@@ -1,6 +1,8 @@
 import type { LocalCommandCall } from '../../types/command.js'
 import { execSync_DEPRECATED } from '../../utils/execSyncWrapper.js'
 import type { ExecSyncOptionsWithStringEncoding } from 'child_process'
+import { tmpdir } from 'os'
+import { join } from 'path'
 
 type AndroidDeps = {
   exec: (command: string, options: ExecSyncOptionsWithStringEncoding) => string
@@ -111,6 +113,14 @@ function usage(error?: string): string {
   return error ? `${error}\n\n${lines.join('\n')}` : lines.join('\n')
 }
 
+function shellQuote(value: string): string {
+  return `"${value.replace(/"/g, '\\"')}"`
+}
+
+function getAndroidScreenshotPath(): string {
+  return join(tmpdir(), 'duckhive-android-screenshot.png')
+}
+
 export const call: LocalCommandCall = async (args: string) => {
   const exec = getAndroidDeps().exec
   const parsed = splitCommandArgs(args)
@@ -128,13 +138,14 @@ export const call: LocalCommandCall = async (args: string) => {
 
     if (subcommand === 'screenshot') {
       const device = getPhoneDevice(exec)
+      const screenshotPath = getAndroidScreenshotPath()
       const adb = (rest: string) =>
         exec(`adb -s ${device} ${rest}`, { encoding: 'utf8', timeout: 20000 })
       adb('shell screencap /sdcard/scr.png')
-      adb('pull /sdcard/scr.png /tmp/android_screenshot.png')
+      adb(`pull /sdcard/scr.png ${shellQuote(screenshotPath)}`)
       return {
         type: 'text',
-        value: 'Android screenshot saved to /tmp/android_screenshot.png',
+        value: `Android screenshot saved to ${screenshotPath}`,
       }
     }
 

@@ -1,4 +1,6 @@
 import { afterEach, describe, expect, test } from 'bun:test'
+import { tmpdir } from 'os'
+import { join } from 'path'
 import { call, setVisionTestDeps } from './vision-impl.js'
 
 afterEach(() => {
@@ -16,14 +18,15 @@ describe('/vision command', () => {
     })
 
     const result = await call('phone_screenshot', {} as never)
+    const screenshotPath = join(tmpdir(), 'duckhive-vision-screenshot.png')
     expect(result.type).toBe('text')
     if (result.type !== 'text') throw new Error('unexpected result type')
-    expect(result.value).toContain('/tmp/vision_screenshot.png')
+    expect(result.value).toContain(screenshotPath)
     expect(commands).toContain(
       'adb -s 192.168.1.251:40835 shell screencap /sdcard/scr.png',
     )
     expect(commands).toContain(
-      'adb -s 192.168.1.251:40835 pull /sdcard/scr.png /tmp/vision_screenshot.png',
+      `adb -s 192.168.1.251:40835 pull /sdcard/scr.png "${screenshotPath}"`,
     )
   })
 
@@ -33,6 +36,7 @@ describe('/vision command', () => {
     if (result.type !== 'text') throw new Error('unexpected result type')
     expect(result.value).toContain('Vision analysis queued')
     expect(result.value).toContain('Describe the screenshot')
+    expect(result.value).toContain(join(tmpdir(), 'duckhive-vision-screenshot.png'))
   })
 
   test('preserves escaped quotes in analysis prompts', async () => {
