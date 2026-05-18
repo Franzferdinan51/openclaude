@@ -712,6 +712,31 @@ async function addStep(args: string[], goalId?: string): Promise<string> {
   return `Step added to goal.\n\n${formatGoal(goal, true)}`
 }
 
+async function completeStep(args: string[]): Promise<string> {
+  const goals = getGoals()
+  const { goal, error } = resolveGoalTarget(goals, args[0], ['active'])
+  if (!goal) {
+    return error ?? 'No active goal found.'
+  }
+
+  const currentStep = getCurrentStep(goal)
+  if (!currentStep) {
+    return 'No current step to complete.'
+  }
+
+  currentStep.status = 'completed'
+  currentStep.completedAt = new Date().toISOString()
+  goal.updatedAt = new Date().toISOString()
+
+  // Find next incomplete step
+  const nextStep = goal.steps.find(s => s.status !== 'completed' && s.id !== currentStep.id)
+  goal.currentStepId = nextStep?.id
+
+  await saveGoals(goals, { type: 'step_added', goal })
+
+  return `Step completed: ${currentStep.description}${nextStep ? `\nNext step: ${nextStep.description}` : '\nAll steps completed!'}`
+}
+
 function buildAutonomousGoalTask(goal: Goal, currentStep: GoalStep | undefined): string {
   const stepGuidance = currentStep
     ? `Current step: ${currentStep.description}`
@@ -931,6 +956,9 @@ async function handleStepCommand(args: string[]): Promise<string> {
     case 'add':
     case 'create':
       return addStep(args.slice(1))
+    case 'complete':
+    case 'done':
+      return completeStep(args.slice(1))
     default:
       return 'Unknown step command: ' + action + '\nUsage: /goal step add <goal-id> <description>'
   }

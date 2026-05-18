@@ -25,7 +25,7 @@ const MAX_STATUS_CHARS = 2000
 let systemPromptInjection: string | null = null
 
 // Storage key for goals (must match goal.ts)
-const GOALS_STORAGE_KEY = '***'
+const GOALS_STORAGE_KEY = 'duckhive.goals'
 
 /**
  * Build the goal system prompt section when a goal has active autonomous mode.
