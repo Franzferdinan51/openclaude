@@ -4,7 +4,7 @@ import { selectModel, type RouteResult } from './model-router.js'
 import { getHiveBridge } from '../../services/hive-bridge/index.js'
 import { spawnTeammate } from '../../tools/shared/spawnMultiAgent.js'
 import type { ToolUseContext } from '../../Tool.js'
-import { getAgentRunStore } from '../../agent-runs/AgentRunStore.js'
+import { getAgentRunStore, type AgentRunStore } from '../../agent-runs/AgentRunStore.js'
 import type { DeliberationMode } from '../../services/hive-bridge/hive-types.js'
 
 export interface HybridOrchestratorConfig {
@@ -20,6 +20,7 @@ export interface HybridOrchestratorConfig {
 export interface HybridOrchestratorDeps {
   getHiveBridge?: typeof getHiveBridge
   spawnTeammate?: typeof spawnTeammate
+  getAgentRunStore?: () => AgentRunStore
 }
 
 export interface HybridExecutionOptions {
@@ -45,6 +46,7 @@ export class HybridOrchestrator {
     this.deps = {
       getHiveBridge: deps.getHiveBridge ?? getHiveBridge,
       spawnTeammate: deps.spawnTeammate ?? spawnTeammate,
+      getAgentRunStore: deps.getAgentRunStore ?? getAgentRunStore,
     }
   }
 
@@ -87,7 +89,7 @@ export class HybridOrchestrator {
       teamSpawned: false,
       status: 'pending',
     }
-    const agentRunStore = getAgentRunStore()
+    const agentRunStore = this.deps.getAgentRunStore()
     agentRunStore.createRun({
       id: result.taskId,
       title: message,

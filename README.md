@@ -1383,7 +1383,7 @@ re-run `cd tui && go test ./...` when a Go toolchain is available.
 
 The query loop also includes the upstream OpenClaude repeated-tool-failure guard. If the same tool, error category, or file path fails repeatedly without an intervening successful tool result, DuckHive stops the loop with a path-safe diagnostic instead of burning turns forever. The default threshold is `3`; set `DUCKHIVE_TOOL_FAILURE_LOOP_THRESHOLD=0` to disable it, or set a higher integer when intentionally debugging repeated failures. `CLAUDE_CODE_TOOL_FAILURE_LOOP_THRESHOLD` remains supported as an upstream compatibility fallback.
 
-Tool schema conversion is also hardened against malformed nested Zod schemas. If a tool exposes a broken field schema, DuckHive now logs the conversion failure and falls back to an empty object schema instead of crashing prompt submission with `Cannot read properties of undefined (reading '_zod')`. The post-build bundle patch that protects the remaining Zod v4 conversion sites is now strict: `scripts/postbuild-patch.mjs` fails the build if any expected `_zod` patch target disappears instead of silently shipping an unpatched CLI, and `scripts/postbuild-patch.test.ts` covers both the successful patch path and the failure path.
+Tool schema conversion is also hardened against malformed nested Zod schemas. If a tool exposes a broken field schema, DuckHive now logs the conversion failure and falls back to an empty object schema instead of crashing prompt submission with `Cannot read properties of undefined (reading '_zod')`. The post-build bundle patch that protects the remaining Zod v4 conversion sites is now strict: `scripts/postbuild-patch.mjs` fails the build if any expected `_zod` patch target disappears instead of silently shipping an unpatched CLI, and `scripts/postbuild-patch.test.ts` covers both the successful patch path and the failure path. Runtime doctor network probes also use cleanup-safe timeout signals instead of raw `AbortSignal.timeout`, guarded by `scripts/no-raw-abort-signal-timeout.test.ts`.
 
 The API retry path also applies the Hermes-style auxiliary fallback lesson to quota and payment exhaustion: when a primary model returns explicit 402/payment, credit, daily quota, or quota-exhausted 429 signals and `--fallback-model` is configured, DuckHive switches to the fallback model instead of failing immediately. Generic 429 rate limits still follow the normal retry path. If no fallback is configured, DuckHive still fails closed with explicit billing/provider guidance.
 
@@ -1407,7 +1407,7 @@ The `/statusbar session` surface now reads the same public build version used by
 Recent verification snapshot:
 
 - `npm run typecheck`, `npm run build`, `npm run smoke`, `npm run verify:privacy`, and `node dist\cli.mjs runtime-doctor`: passing on Windows for `duckhive@0.13.2`
-- `bun test`: `3226 pass`, `0 fail`, `8002 expect()` calls across 368 files
+- `bun test`: `3362 pass`, `0 fail`, `8455 expect()` calls across 380 files
 - `npm run smoke`: `12 pass`, `0 fail`, plus `CLI smoke passed (67 commands plus Windows wrapper checks)`
 - focused upstream-sync regression tests for Bash sandbox fanout and WebSearch adapter diagnostics: `17 pass`, `0 fail`
 - `cd tui && go test ./...`: historical pass with local Go 1.26.3 from `.tmp\go-toolchain`; current shell has no Go toolchain, so retest is blocked until Go is restored

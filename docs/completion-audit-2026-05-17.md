@@ -31,6 +31,7 @@ covers the named requirement.
 | Channel message commands must preserve user text safely | `/channel` now parses quoted arguments with escaped quotes and rejects unterminated quoted strings instead of silently sending malformed messages; focused tests cover console send and Telegram rejection. | Verified |
 | Agent Teams and AI Council CLI arguments must preserve user text safely | `/team`, `/council`, `/orchestrate`, `/spawn`, `/swarm`, `/senate`, and `/decree` now preserve escaped quotes, reject unterminated quoted input before spawning/starting/executing/issuing, and accept separated flag values where applicable; CLI smoke covers provider-free headless `/spawn --help`, `/swarm --help`, `/senate --help`, and `/decree --help`. | Verified |
 | AI Council runtime must be inspectable from the terminal | `runtime-doctor` checks the local `council:serve` source/script, probes `DUCKHIVE_COUNCIL_URL` or default `/api/health`, and verifies `/api/councilors` returns a usable councilor catalog; focused tests cover live, offline guidance, missing source, and empty catalog paths. | Verified |
+| Runtime-doctor HTTP timeouts must clean up promptly | `checkCouncilRuntimeReadiness()` now uses `createCombinedAbortSignal(..., { timeoutMs: 1500 })` instead of raw `AbortSignal.timeout`; `scripts\no-raw-abort-signal-timeout.test.ts` guards against reintroducing raw timeout signals across source files. | Verified |
 | OpenClaude upstream refresh must be handled safely | Live `git ls-remote` confirms OpenClaude `main` at `f71e7692373a61d28c82fc3fadff3feaa4071ede`; DuckHive selectively ported the safe repeated-tool-failure loop guard from that delta while keeping DuckHive code, branding, and provider defaults intact. | Verified |
 | OpenClaude conversation export formats must be available without a wholesale merge | `/export` now supports text, Markdown, and JSON via filename inference or `--format`/`-f`; focused tests cover argument parsing and Markdown/JSON rendering, and CLI smoke covers provider-free headless `/export --help` plus a real JSON file write. | Verified |
 | Gemini/OpenGateway tool calls must remain executable | The OpenAI-compatible shim converts Gemini `Tool calls requested:` raw-text fallbacks back into `tool_use` blocks for streaming and non-streaming responses; focused `openaiShim` regressions cover Write and Agent raw-tool forms. | Verified |
@@ -46,7 +47,7 @@ covers the named requirement.
 | TUI tests must be verified | Historical audit evidence recorded local Go 1.26.3 running `cd tui && go test ./...`; as of the 2026-05-18 continuation, neither `go` nor `.tmp\go-toolchain\go\bin\go.exe` is available in this shell, so the current verified gate is the packaged `duckhive tui --input-smoke` path through `npm run smoke` plus `runtime-doctor` terminal TUI readiness. | Verified packaged binary/input; Go retest blocked by missing toolchain |
 | Harness state must be inspectable outside the TUI | `checkHarnessStateReadiness()` now adds a read-only `runtime-doctor` result for checkpoint count, budget state/log files, MCP, ACP, and permission readiness, with focused tests for current DuckHive config-home state and legacy OpenClaude checkpoint fallback. | Verified |
 | MemoryTool must use DuckHive-owned storage | `MemoryTool` stores memories under DuckHive config-home `memory/memories.json`; focused tests cover config-home path selection and remember/recall/search/stats/forget behavior. | Verified |
-| Full repository test suite must be rerun after the latest packaging/TUI audit changes | Historical audit evidence recorded `bun test` at `3226 pass`, `0 fail`, `8002 expect()` calls across 368 files. The 2026-05-18 continuation verified focused memory/Council tests plus typecheck/build/runtime-doctor/smoke, but did not rerun the full `bun test` suite. | Historical full-suite evidence; latest continuation not fully rerun |
+| Full repository test suite must be rerun after the latest packaging/TUI audit changes | Current 2026-05-18 evidence: `bun test` completed at `3362 pass`, `0 fail`, `8455 expect()` calls across 380 files after fixing the raw timeout signal guard and isolating HybridOrchestrator AgentRunStore tests from global suite state. | Verified |
 
 ## Current Green Gates
 
@@ -55,8 +56,10 @@ Latest continuation evidence from 2026-05-18:
 - `npm run typecheck`
 - `npm run build`
 - `npm run smoke` (`CLI smoke passed (67 commands plus Windows wrapper checks)`)
+- `bun test` (`3362 pass`, `0 fail`, `8455 expect()` calls across 380 files)
 - `node dist\cli.mjs runtime-doctor`
 - `bun test scripts\postbuild-patch.test.ts`
+- `bun test scripts\no-raw-abort-signal-timeout.test.ts scripts\system-check.test.ts src\orchestrator\hybrid\hybrid-orchestrator.test.ts`
 - `npm pack --dry-run --json`
 - `node dist\cli.mjs --version` (`0.13.2 (DuckHive)`)
 - `node --check src\services\council-server\council-api-server.cjs`
@@ -64,7 +67,6 @@ Latest continuation evidence from 2026-05-18:
 
 Historical broader gates from earlier audit passes:
 
-- `bun test`
 - `npm run verify:privacy`
 - `cd tui && go test ./...` using local Go 1.26.3 from `.tmp\go-toolchain` (not available in the 2026-05-18 shell)
 - `bun test src\commands.test.ts scripts\system-check.test.ts`

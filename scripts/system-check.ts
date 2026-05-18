@@ -26,6 +26,7 @@ import {
   resolveActiveRouteIdFromEnv,
 } from '../src/integrations/routeMetadata.js'
 import { getClawHubRegistryUrl } from '../src/services/clawhub/skillHub.js'
+import { createCombinedAbortSignal } from '../src/utils/combinedAbortSignal.js'
 
 type CheckResult = {
   ok: boolean
@@ -1385,13 +1386,18 @@ export async function checkCouncilRuntimeReadiness(options: {
   const fetchJson =
     options.fetchJson ??
     (async (url: string) => {
-      const response = await fetch(url, {
-        signal: AbortSignal.timeout(1500),
-      })
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`)
+      const timeout = createCombinedAbortSignal(undefined, { timeoutMs: 1500 })
+      try {
+        const response = await fetch(url, {
+          signal: timeout.signal,
+        })
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`)
+        }
+        return await response.json()
+      } finally {
+        timeout.cleanup()
       }
-      return await response.json()
     })
 
   try {

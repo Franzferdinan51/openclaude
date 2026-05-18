@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test'
-import { resetAgentRunStoreForTesting } from '../../agent-runs/AgentRunStore.js'
+import { createAgentRunStore } from '../../agent-runs/AgentRunStore.js'
 import { HybridOrchestrator } from './hybrid-orchestrator.js'
 
 type BridgeMock = {
@@ -11,7 +11,7 @@ type BridgeMock = {
 
 describe('HybridOrchestrator AgentRun integration', () => {
   beforeEach(() => {
-    resetAgentRunStoreForTesting({ persist: false })
+    mock.restore()
   })
 
   afterEach(() => {
@@ -19,13 +19,18 @@ describe('HybridOrchestrator AgentRun integration', () => {
   })
 
   test('creates a coordinator AgentRun for orchestrated work', async () => {
-    const store = resetAgentRunStoreForTesting({ persist: false })
-    const orchestrator = new HybridOrchestrator({
-      enableCouncil: false,
-      enableParallelAgents: false,
-      enableTeamSpawn: false,
-      enableCheckpoint: false,
-    })
+    const store = createAgentRunStore({ persist: false })
+    const orchestrator = new HybridOrchestrator(
+      {
+        enableCouncil: false,
+        enableParallelAgents: false,
+        enableTeamSpawn: false,
+        enableCheckpoint: false,
+      },
+      {
+        getAgentRunStore: () => store,
+      },
+    )
 
     const result = await orchestrator.execute('build a small api', [], [])
 
@@ -55,7 +60,7 @@ describe('HybridOrchestrator AgentRun integration', () => {
     const spawnTeammate = mock(async () => {
       throw new Error('spawnTeammate should not be used without a tool context')
     })
-    const store = resetAgentRunStoreForTesting({ persist: false })
+    const store = createAgentRunStore({ persist: false })
     const orchestrator = new HybridOrchestrator(
       {
         enableCouncil: true,
@@ -66,6 +71,7 @@ describe('HybridOrchestrator AgentRun integration', () => {
       {
         getHiveBridge: (() => bridgeMock) as never,
         spawnTeammate: spawnTeammate as never,
+        getAgentRunStore: () => store,
       },
     )
 
@@ -105,7 +111,7 @@ describe('HybridOrchestrator AgentRun integration', () => {
       startDeliberation: async () => ({ success: false, error: 'disabled' }),
       spawnTeam: async () => ({ success: false, error: 'disabled' }),
     }
-    const store = resetAgentRunStoreForTesting({ persist: false })
+    const store = createAgentRunStore({ persist: false })
     const orchestrator = new HybridOrchestrator(
       {
         enableCouncil: false,
@@ -116,6 +122,7 @@ describe('HybridOrchestrator AgentRun integration', () => {
       {
         getHiveBridge: (() => bridgeMock) as never,
         spawnTeammate: spawnTeammate as never,
+        getAgentRunStore: () => store,
       },
     )
 
