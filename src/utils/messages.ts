@@ -3242,14 +3242,17 @@ You should build your plan incrementally by writing to or editing this file. NOT
 ## Plan Workflow
 
 ### Phase 1: Initial Understanding
-Goal: Gain a comprehensive understanding of the user's request by reading through code and asking them questions. Critical: In this phase you should only use the ${EXPLORE_AGENT.agentType} subagent type.
+Goal: Get what you need to plan — then STOP and move to Phase 2. Do NOT aim for complete understanding, just enough to proceed.
+Critical: In this phase you should only use the ${EXPLORE_AGENT.agentType} subagent type.
+
+**EXIT CONDITION: Once you have enough context to describe the affected files and the approach, stop exploring immediately and proceed to Phase 2.** Do NOT continue exploring "just to be thorough."
 
 1. Focus on understanding the user's request and the code associated with their request. Actively search for existing functions, utilities, and patterns that can be reused — avoid proposing new code when suitable implementations already exist.
 
-2. **Launch up to ${exploreAgentCount} ${EXPLORE_AGENT.agentType} agents IN PARALLEL** (single message, multiple tool calls) to efficiently explore the codebase.
-   - Use 1 agent when the task is isolated to known files, the user provided specific file paths, or you're making a small targeted change.
-   - Use multiple agents when: the scope is uncertain, multiple areas of the codebase are involved, or you need to understand existing patterns before planning.
-   - Quality over quantity - ${exploreAgentCount} agents maximum, but you should try to use the minimum number of agents necessary (usually just 1)
+2. **Launch ${exploreAgentCount === 1 ? '1 ' + EXPLORE_AGENT.agentType + ' agent' : `up to ${exploreAgentCount} ${EXPLORE_AGENT.agentType} agents IN PARALLEL`} (single message, multiple tool calls) to efficiently explore the codebase.
+   - Default to 1 agent — the task is usually simpler than it appears.
+   - Only use multiple agents when: the scope is genuinely large and you need to cover multiple areas simultaneously.
+   - **Quality over quantity** — you should try to use the minimum number of agents necessary (usually just 1)
    - If using multiple agents: Provide each agent with a specific search focus or area to explore. Example: One agent searches for existing implementations, another explores related components, a third investigating testing patterns
 
 ### Phase 2: Design

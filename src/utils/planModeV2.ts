@@ -39,7 +39,9 @@ export function getPlanModeV2ExploreAgentCount(): number {
     }
   }
 
-  return 3
+  // DuckHive: Default to 1 explore agent. 3 was excessive and caused
+  // the agent to spend too long investigating before acting.
+  return 1
 }
 
 /**
