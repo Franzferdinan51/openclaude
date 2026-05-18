@@ -27,8 +27,25 @@ export interface TelegramMessage {
     from: { id: number; is_bot: boolean; first_name: string; username?: string }
     chat: { id: number; type: string }
     text?: string
+    caption?: string
+    photo?: TelegramPhotoSize[]
+    document?: TelegramDocument
     date: number
   }
+}
+
+interface TelegramPhotoSize {
+  file_id: string
+  width: number
+  height: number
+  file_size?: number
+}
+
+interface TelegramDocument {
+  file_id: string
+  file_name?: string
+  mime_type?: string
+  file_size?: number
 }
 
 export interface TelegramUpdate {
@@ -258,6 +275,40 @@ function normalizeTelegramCommand(rawCommand: string): string {
   return rawCommand.split('@', 1)[0]?.toLowerCase() ?? ''
 }
 
+function formatTelegramFileSize(size: number | undefined): string {
+  return typeof size === 'number' && Number.isFinite(size)
+    ? `, ${size} bytes`
+    : ''
+}
+
+function formatTelegramInboundText(message: TelegramMessage['message']): string | null {
+  if (!message) return null
+
+  const parts: string[] = []
+  const text = (message.text ?? message.caption)?.trim()
+  if (text) parts.push(text)
+
+  const largestPhoto = message.photo?.at(-1)
+  if (largestPhoto) {
+    parts.push(
+      `[telegram image: ${largestPhoto.width}x${largestPhoto.height}${formatTelegramFileSize(largestPhoto.file_size)}]`,
+    )
+  }
+
+  if (message.document) {
+    const label = message.document.mime_type?.startsWith('image/')
+      ? 'telegram image document'
+      : 'telegram document'
+    const fileName = message.document.file_name
+      ? `: ${message.document.file_name}`
+      : ''
+    const mime = message.document.mime_type ? `, ${message.document.mime_type}` : ''
+    parts.push(`[${label}${fileName}${mime}${formatTelegramFileSize(message.document.file_size)}]`)
+  }
+
+  return parts.length > 0 ? parts.join('\n') : null
+}
+
 // ============================================================================
 // Polling (non-interval, promise-based with reconnect)
 // ============================================================================
@@ -274,9 +325,9 @@ async function pollLoop(): Promise<void> {
     for (const update of updates.result) {
       offset = update.update_id + 1
 
-      if (update.message?.text) {
+      const text = formatTelegramInboundText(update.message)
+      if (update.message && text) {
         const chatId = update.message.chat.id
-        const text = update.message.text
         lastInboundChatId = chatId
 
         if (!isChatAllowed(chatId)) {

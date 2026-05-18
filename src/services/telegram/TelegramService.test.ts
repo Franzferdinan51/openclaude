@@ -146,6 +146,55 @@ describe('TelegramService polling', () => {
     expect(getMeCalls).toBeGreaterThanOrEqual(1)
   })
 
+  test('forwards Telegram photo captions with image placeholders', async () => {
+    const delivered: string[] = []
+    const fetchMock = mock(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.endsWith('/getMe')) {
+        return telegramResponse({
+          ok: true,
+          result: { id: 1, is_bot: true, username: 'duckhive_test_bot' },
+        })
+      }
+      if (url.endsWith('/setMyCommands')) {
+        return telegramResponse({ ok: true, result: true })
+      }
+      if (url.endsWith('/getUpdates')) {
+        return telegramResponse({
+          ok: true,
+          result: [
+            {
+              update_id: 51,
+              message: {
+                from: { id: 42, is_bot: false, first_name: 'Owner' },
+                chat: { id: 42, type: 'private' },
+                caption: 'please inspect this',
+                photo: [
+                  { file_id: 'small', width: 160, height: 120, file_size: 1000 },
+                  { file_id: 'large', width: 1024, height: 768, file_size: 12000 },
+                ],
+                date: 1,
+              },
+            },
+          ],
+        })
+      }
+      return telegramResponse({ ok: true, result: true })
+    }) as unknown as typeof fetch
+    globalThis.fetch = fetchMock
+
+    const service = await importFreshService()
+    service.onTelegramMessage((_chatId, text) => {
+      if (text) delivered.push(text)
+    })
+
+    await service.startTelegramService()
+    await waitFor(() =>
+      delivered.includes('please inspect this\n[telegram image: 1024x768, 12000 bytes]'),
+    )
+    service.stopTelegramService()
+  })
+
   test('keeps polling after an empty getUpdates batch', async () => {
     let getUpdatesCalls = 0
     const delivered: string[] = []

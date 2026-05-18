@@ -161,6 +161,40 @@ describe('TelegramAdapter', () => {
     expect(message?.content).toBe('allowed from env')
   })
 
+  test('preserves Telegram photo captions with image placeholders', async () => {
+    globalThis.fetch = mock(async () =>
+      telegramResponse({
+        ok: true,
+        result: [
+          {
+            update_id: 1,
+            message: {
+              message_id: 1,
+              chat: { id: 42, type: 'private', username: 'owner' },
+              from: { id: 42, is_bot: false, first_name: 'Owner' },
+              caption: 'inspect this image',
+              photo: [
+                { file_id: 'small', width: 160, height: 120, file_size: 1000 },
+                { file_id: 'large', width: 640, height: 480, file_size: 9000 },
+              ],
+              date: 1,
+            },
+          },
+        ],
+      }),
+    ) as unknown as typeof fetch
+
+    const adapter = new TelegramAdapter({
+      botToken: '123:test-token',
+      allowedChatId: 42,
+      longPollTimeout: 1000,
+    })
+
+    const message = await adapter.receiveMessage()
+
+    expect(message?.content).toBe('inspect this image\n[telegram image: 640x480, 9000 bytes]')
+  })
+
   test('malformed DuckHive allowlist env fails closed instead of accepting every chat', async () => {
     process.env.DUCKHIVE_TELEGRAM_ALLOWED_CHAT_ID = 'not-a-chat-id'
     globalThis.fetch = mock(async () =>

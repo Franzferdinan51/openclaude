@@ -40,7 +40,24 @@ interface TelegramMessage {
   chat: { id: number; type: string; title?: string; username?: string }
   from?: { id: number; is_bot: boolean; first_name: string }
   text?: string
+  caption?: string
+  photo?: TelegramPhotoSize[]
+  document?: TelegramDocument
   date: number
+}
+
+interface TelegramPhotoSize {
+  file_id: string
+  width: number
+  height: number
+  file_size?: number
+}
+
+interface TelegramDocument {
+  file_id: string
+  file_name?: string
+  mime_type?: string
+  file_size?: number
 }
 
 interface TelegramSendMessageParams {
@@ -104,6 +121,38 @@ export function resolveTelegramAdapterLongPollSeconds(timeoutMs: number): number
     ? Math.max(1_000, Math.floor(timeoutMs))
     : DEFAULT_LONG_POLL_TIMEOUT_MS
   return Math.max(1, Math.floor(Math.min(configuredMs, maxLongPollMs) / 1000))
+}
+
+function formatTelegramFileSize(size: number | undefined): string {
+  return typeof size === 'number' && Number.isFinite(size)
+    ? `, ${size} bytes`
+    : ''
+}
+
+function formatTelegramInboundContent(message: TelegramMessage): string | null {
+  const parts: string[] = []
+  const text = (message.text ?? message.caption)?.trim()
+  if (text) parts.push(text)
+
+  const largestPhoto = message.photo?.at(-1)
+  if (largestPhoto) {
+    parts.push(
+      `[telegram image: ${largestPhoto.width}x${largestPhoto.height}${formatTelegramFileSize(largestPhoto.file_size)}]`,
+    )
+  }
+
+  if (message.document) {
+    const label = message.document.mime_type?.startsWith('image/')
+      ? 'telegram image document'
+      : 'telegram document'
+    const fileName = message.document.file_name
+      ? `: ${message.document.file_name}`
+      : ''
+    const mime = message.document.mime_type ? `, ${message.document.mime_type}` : ''
+    parts.push(`[${label}${fileName}${mime}${formatTelegramFileSize(message.document.file_size)}]`)
+  }
+
+  return parts.length > 0 ? parts.join('\n') : null
 }
 
 // Adapter
@@ -281,7 +330,7 @@ export class TelegramAdapter implements ChannelAdapter {
     // Filter to allowed chats if configured.
     if (this.allowedChatIds && !this.allowedChatIds.has(tgMsg.chat.id)) return null
 
-    const text = tgMsg.text?.trim()
+    const text = formatTelegramInboundContent(tgMsg)
     if (!text) return null
 
     const content = [
