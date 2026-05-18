@@ -1,6 +1,6 @@
 # 🦆 DuckHive
 
-![DuckHive](https://img.shields.io/badge/DuckHive-v0.13.1-gold?style=for-the-badge&logo=buymeacoffee)
+![DuckHive](https://img.shields.io/badge/DuckHive-v0.13.2-gold?style=for-the-badge&logo=buymeacoffee)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue?style=for-the-badge&logo=typescript)](package.json)
 [![Bun](https://img.shields.io/badge/Bun-1.3-yellow?style=for-the-badge&logo=bun)](package.json)
@@ -1134,7 +1134,7 @@ Hermes-style autonomous skill creation and `SkillManageTool` now use the same sh
 ## Architecture
 
 ```
-DuckHive v0.13.1
+DuckHive v0.13.2
 ├── MiniMax M2.7 (default model)
 ├── DuckHive mmx (MiniMax CLI integration)
 │   ├── Image generation
@@ -1345,7 +1345,7 @@ duckhive config path
 ./bin/duckhive --version
 
 # Command ownership check
-duckhive --version      # 0.13.1 (DuckHive)
+duckhive --version      # 0.13.2 (DuckHive)
 openclaude --version    # upstream OpenClaude, if installed separately
 ```
 
@@ -1402,14 +1402,14 @@ The `/statusbar session` surface now reads the same public build version used by
 
 Recent verification snapshot:
 
-- `npm run typecheck`, `npm run build`, `npm run smoke`, `npm run verify:privacy`, and `node dist\cli.mjs runtime-doctor`: passing on Windows for `duckhive@0.13.1`
+- `npm run typecheck`, `npm run build`, `npm run smoke`, `npm run verify:privacy`, and `node dist\cli.mjs runtime-doctor`: passing on Windows for `duckhive@0.13.2`
 - `bun test`: `3226 pass`, `0 fail`, `8002 expect()` calls across 368 files
 - `npm run smoke`: `12 pass`, `0 fail`, plus `CLI smoke passed (67 commands plus Windows wrapper checks)`
 - focused upstream-sync regression tests for Bash sandbox fanout and WebSearch adapter diagnostics: `17 pass`, `0 fail`
 - `cd tui && go test ./...`: passing with local Go 1.26.3 from `.tmp\go-toolchain`
-- `duckhive --version`: `0.13.1 (DuckHive)`
+- `duckhive --version`: `0.13.2 (DuckHive)`
 - `openclaude --version`: upstream OpenClaude remains separately owned when installed
-- package dry-run publishes as `duckhive@0.13.1`, includes the `duckhive` launcher, `duckhive/sdk`, `duckhive/harness`, `config/`, `tui\duckhive-tui.exe`, and the runtime `skills/newest-desktop-control/` skill files without test fixtures
+- package dry-run publishes as `duckhive@0.13.2`, includes the `duckhive` launcher, `duckhive/sdk`, `duckhive/harness`, `config/`, `tui\duckhive-tui.exe`, and the runtime `skills/newest-desktop-control/` skill files without test fixtures
 
 Known local limitation: `duckhive tui` is an interactive terminal app, so final keyboard verification in the exact user shell still requires a real PowerShell terminal. Use `duckhive tui --snapshot` for non-interactive CI/log rendering, `duckhive tui --input-smoke "typed text"` for the packaged Bubble Tea input-loop diagnostic, `cd tui && go test ./...` for component-level regressions, and `duckhive tui --help` for launcher diagnostics.
 
