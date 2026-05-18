@@ -74,6 +74,12 @@ DuckHive checked the live upstream repositories on May 7, 2026 and refreshed the
 | --- | --- | --- |
 | OpenClaw | `main`/`HEAD` at `8725364cf0be867b040469dfe68e83a3a0d3436a` | Reviewed OpenClaw's queued inbound image hydration fix. DuckHive already restores queued pasted images and embedded base64 image blocks through `popAllEditable`; added focused regression tests so queued prompt input cannot silently lose current-turn images when pulled back into the REPL input buffer. |
 
+## Refreshed Codex Memory Follow-up May 18, 2026
+
+| Project | Current probe result | DuckHive follow-up |
+| --- | --- | --- |
+| Codex | `main`/`HEAD` at `22dd9ad3929253ed24d7ee4f10f238e95ab25f37` | Ported the compatible memory-summary densification idea into DuckHive's session-memory prompt layer. The default session-memory template now starts with `v1`, update prompts preserve that version line, oversized notes are pushed toward a dense routing/index layer, and the total reminder budget was lowered from 12k to 6k estimated tokens. |
+
 ## Ported In 0.8.1
 
 ### OpenClaude effort fix

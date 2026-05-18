@@ -516,6 +516,8 @@ DuckHive loads hierarchical context from `DUCK.md` files (gemini-cli style), mer
 
 DuckHive automatically finds and loads the nearest `DUCK.md` up the directory tree, prepending it to every prompt.
 
+Session memory follows the same terminal-first continuity goal. Inspired by Codex's dense memory-summary refresh, DuckHive's default session-memory file starts with a `v1` schema line, keeps sections as compact routing handles instead of long chronology, and asks the updater to preserve exact paths, symbols, commands, upstream commit ids, error strings, verification gates, and current blockers. Over-budget reminders now target a denser 6k-token file before compaction injects it back into the session.
+
 ---
 
 ### Desktop And Android Control

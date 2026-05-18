@@ -6,9 +6,11 @@ import { getErrnoCode, toError } from '../../utils/errors.js'
 import { logError } from '../../utils/log.js'
 
 const MAX_SECTION_LENGTH = 2000
-const MAX_TOTAL_SESSION_MEMORY_TOKENS = 12000
+const MAX_TOTAL_SESSION_MEMORY_TOKENS = 6000
 
-export const DEFAULT_SESSION_MEMORY_TEMPLATE = `
+export const SESSION_MEMORY_TEMPLATE_VERSION = 'v1'
+
+export const DEFAULT_SESSION_MEMORY_TEMPLATE = `${SESSION_MEMORY_TEMPLATE_VERSION}
 # Session Title
 _A short and distinctive 5-10 word descriptive title for the session. Super info dense, no filler_
 
@@ -19,7 +21,7 @@ _What is actively being worked on right now? Pending tasks not yet completed. Im
 _What did the user ask to build? Any design decisions or other explanatory context_
 
 # Files and Functions
-_What are the important files? In short, what do they contain and why are they relevant?_
+_Important files, functions, commands, and exact error strings. Keep this as a dense routing index for future agents._
 
 # Workflow
 _What bash commands are usually run and in what order? How to interpret their output if not obvious?_
@@ -37,7 +39,7 @@ _What has worked well? What has not? What to avoid? Do not duplicate items from 
 _If the user asked a specific output such as an answer to a question, a table, or other document, repeat the exact result here_
 
 # Worklog
-_Step by step, what was attempted, done? Very terse summary for each step_
+_Newest useful steps only. Prefer high-signal decisions, verification, commits, and remaining blockers over chronological detail._
 `
 
 function getDefaultUpdatePrompt(): string {
@@ -54,6 +56,7 @@ Your ONLY task is to use the Edit tool to update the notes file, then stop. You 
 
 CRITICAL RULES FOR EDITING:
 - The file must maintain its exact structure with all sections, headers, and italic descriptions intact
+- The first line must be exactly "${SESSION_MEMORY_TEMPLATE_VERSION}". If it is missing, add it before "# Session Title". If it has any other version, rewrite the file using the default structure and this exact first line.
 -- NEVER modify, delete, or add section headers (the lines starting with '#' like # Task specification)
 -- NEVER modify or delete the italic _section description_ lines (these are the lines in italics immediately following each header - they start and end with underscores)
 -- The italic _section descriptions_ are TEMPLATE INSTRUCTIONS that must be preserved exactly as-is - they guide what content belongs in each section
@@ -62,6 +65,8 @@ CRITICAL RULES FOR EDITING:
 - Do NOT reference this note-taking process or instructions anywhere in the notes
 - It's OK to skip updating a section if there are no substantial new insights to add. Do not add filler content like "No info yet", just leave sections blank/unedited if appropriate.
 - Write DETAILED, INFO-DENSE content for each section - include specifics like file paths, function names, error messages, exact commands, technical details, etc.
+- Prefer compact routing handles over long prose: exact paths, symbols, commands, issue/error strings, upstream commit ids, and verification gates that a future agent can search.
+- Keep the notes current, not archival. When old worklog detail is no longer useful, replace it with shorter decision triggers and current blockers.
 - For "Key results", include the complete, exact output the user requested (e.g., full table, full answer, etc.)
 - Do not include information that's already in the CLAUDE.md files included in the context
 - Keep each section under ~${MAX_SECTION_LENGTH} tokens/words - if a section is approaching this limit, condense it by cycling out less important details while preserving the most critical information
@@ -74,6 +79,8 @@ STRUCTURE PRESERVATION REMINDER:
 Each section has TWO parts that must be preserved exactly as they appear in the current file:
 1. The section header (line starting with #)
 2. The italic description line (the _italicized text_ immediately after the header - this is a template instruction)
+
+The file also has one version line before the first section. It must remain exactly "${SESSION_MEMORY_TEMPLATE_VERSION}".
 
 You ONLY update the actual content that comes AFTER these two preserved lines. The italic description lines starting and ending with underscores are part of the template structure, NOT content to be edited or removed.
 
@@ -182,7 +189,7 @@ function generateSectionReminders(
 
   if (overBudget) {
     parts.push(
-      `\n\nCRITICAL: The session memory file is currently ~${totalTokens} tokens, which exceeds the maximum of ${MAX_TOTAL_SESSION_MEMORY_TOKENS} tokens. You MUST condense the file to fit within this budget. Aggressively shorten oversized sections by removing less important details, merging related items, and summarizing older entries. Prioritize keeping "Current State" and "Errors & Corrections" accurate and detailed.`,
+    `\n\nCRITICAL: The session memory file is currently ~${totalTokens} tokens, which exceeds the maximum of ${MAX_TOTAL_SESSION_MEMORY_TOKENS} tokens. You MUST condense the file to fit within this budget. Regenerate the notes as a dense routing/index layer instead of a chronological handbook. Keep the first line exactly "${SESSION_MEMORY_TEMPLATE_VERSION}". Aggressively shorten oversized sections by removing less important details, merging related items, and summarizing older entries. Prioritize keeping "Current State", "Files and Functions", and "Errors & Corrections" accurate and searchable.`,
     )
   }
 
