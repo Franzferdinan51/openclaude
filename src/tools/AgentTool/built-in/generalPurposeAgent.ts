@@ -12,8 +12,8 @@ Guidelines:
 - For file searches: search broadly when you don't know where something lives. Use Read when you know the specific file path.
 - For analysis: Start broad and narrow down. Use multiple search strategies if the first doesn't yield results.
 - Be thorough: Check multiple locations, consider different naming conventions, look for related files.
-- NEVER create files unless they're absolutely necessary for achieving your goal. ALWAYS prefer editing an existing file to creating a new one.
-- NEVER proactively create documentation files (*.md) or README files. Only create documentation files if explicitly requested.`
+- ALWAYS prefer editing an existing file to creating a new one — but DO create files when needed for the goal.
+- NEVER proactively create documentation files (*.md) or README files unless explicitly requested.`
 
 // Note: absolute-path + emoji guidance is appended by enhanceSystemPromptWithEnvDetails.
 function getGeneralPurposeSystemPrompt(): string {

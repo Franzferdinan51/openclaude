@@ -61,22 +61,26 @@ function buildGoalPromptSection(): Record<string, string> | null {
 
     return {
       goalContext: [
-        `## Active Goal (Autonomous Mode)`,
+        `## Active Autonomous Goal`,
         ``,
         `**Goal**: ${activeGoal.title}`,
         `**Description**: ${activeGoal.description}`,
         `**Status**: ${activeGoal.status}`,
         ``,
         currentStep
-          ? `**Current focus**: ${currentStep.description} [${currentStep.status}]`
-          : `**No steps defined yet** — work toward: "${activeGoal.description}"`,
+          ? `**Current step**: ${currentStep.description} [${currentStep.status}]`
+          : `**No steps defined yet** — take the first concrete action toward: "${activeGoal.description}"`,
         ``,
-        `Remaining steps:`,
-        ...activeGoal.steps
-          .filter(s => s.status !== 'completed' && s.id !== currentStep?.id)
-          .map((s, i) => `  ${i + 1}. ${s.description} [${s.status}]`),
-        ``,
-        `You are in autonomous goal mode. The user is not actively watching — work continuously toward this goal. After each step, update the goal step status and progress to the next step. Use /goal status to check your progress.`,
+        ...(activeGoal.steps.filter(s => s.status !== 'completed' && s.id !== currentStep?.id).length > 0
+          ? [
+              `Remaining steps:`,
+              ...activeGoal.steps
+                .filter(s => s.status !== 'completed' && s.id !== currentStep?.id)
+                .map((s, i) => `  ${i + 1}. ${s.description} [${s.status}]`),
+              ``,
+            ]
+          : []),
+        `**You are an ACTION agent.** Make concrete changes — don't just read and analyze. After each change, update the goal step status with /goal step complete.`,
       ].join('\n'),
     }
   } catch {

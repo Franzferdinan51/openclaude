@@ -713,13 +713,28 @@ async function addStep(args: string[], goalId?: string): Promise<string> {
 }
 
 function buildAutonomousGoalTask(goal: Goal, currentStep: GoalStep | undefined): string {
+  const stepGuidance = currentStep
+    ? `Current step: ${currentStep.description}`
+    : 'First step: identify the most concrete action that advances the goal and take it now.'
+
   return [
     `Pursue DuckHive goal ${goal.id}: ${goal.title}`,
     '',
-    `Goal description: ${goal.description}`,
-    currentStep ? `Current step: ${currentStep.description}` : 'Current step: define and execute the next concrete step.',
+    `Goal: ${goal.description}`,
+    stepGuidance,
     '',
-    'Work autonomously until the current goal step has a concrete result. Report progress through the team conversation and keep the final response concise.',
+    `You are an ACTION agent, not a research agent. Your job is to make concrete changes — not just read and analyze.`,
+    '',
+    `=== ACTION RULES ===`,
+    `- READ files to understand what to change, then EDIT or WRITE to make the change`,
+    `- If a file needs to exist for the goal, CREATE it`,
+    `- If something is broken, FIX it — don't just describe the problem`,
+    `- NEVER stop after reading files — every reading turn must lead to a writing turn`,
+    `- If you've explored for 2 tool calls and have no clear edit target, you're done exploring — make the change anyway`,
+    `- When a step is complete, update the goal step status via /goal step complete`,
+    '',
+    `=== STOPPING ===`,
+    `Stop when you have made at least one concrete change that advances the goal, or when the goal step is done. Concise report only.`,
   ].join('\n')
 }
 
