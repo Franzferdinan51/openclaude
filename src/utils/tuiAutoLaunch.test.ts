@@ -131,12 +131,26 @@ test('detects non-interactive TUI diagnostic modes', () => {
   expect(isStandaloneTuiNonInteractiveMode(['snapshot'])).toBe(true)
   expect(isStandaloneTuiNonInteractiveMode(['--input-smoke', 'typed'])).toBe(true)
   expect(isStandaloneTuiNonInteractiveMode(['input-smoke'])).toBe(true)
+  expect(isStandaloneTuiNonInteractiveMode(['--submit-smoke', 'submitted'])).toBe(true)
+  expect(isStandaloneTuiNonInteractiveMode(['submit-smoke'])).toBe(true)
   expect(isStandaloneTuiNonInteractiveMode([])).toBe(false)
 })
 
 test('input smoke launch bypasses the PTY helper and exits from the TUI binary', async () => {
   const ok = await launchStandaloneTui(process.cwd(), {
     args: ['--input-smoke', 'typed through launcher test'],
+    env: {
+      DUCKHIVE_TUI_DIRECT: '0',
+      DUCKHIVE_TUI_SKIP_PTY_HELPER: '0',
+    },
+  })
+
+  expect(ok).toBe(true)
+})
+
+test('submit smoke launch bypasses the PTY helper and exits from the TUI binary', async () => {
+  const ok = await launchStandaloneTui(process.cwd(), {
+    args: ['--submit-smoke', 'submitted through launcher test'],
     env: {
       DUCKHIVE_TUI_DIRECT: '0',
       DUCKHIVE_TUI_SKIP_PTY_HELPER: '0',

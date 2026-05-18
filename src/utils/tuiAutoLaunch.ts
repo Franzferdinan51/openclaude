@@ -233,7 +233,9 @@ export function isStandaloneTuiNonInteractiveMode(args: string[]): boolean {
     args.includes('--snapshot') ||
     args.includes('snapshot') ||
     args.includes('--input-smoke') ||
-    args.includes('input-smoke')
+    args.includes('input-smoke') ||
+    args.includes('--submit-smoke') ||
+    args.includes('submit-smoke')
   )
 }
 

@@ -316,6 +316,16 @@ const cases: SmokeCase[] = [
     excludes: ['warning: no DUCKHIVE_BRIDGE_SOCKET'],
   },
   {
+    name: 'tui submit smoke',
+    args: ['tui', '--submit-smoke', 'submitted from cli smoke'],
+    timeoutMs: 30000,
+    includes: [
+      'DuckHive TUI submit smoke passed',
+      'submitted from cli smoke',
+    ],
+    excludes: ['warning: no DUCKHIVE_BRIDGE_SOCKET'],
+  },
+  {
     name: 'background run list',
     args: ['ps'],
     includes: ['DuckHive background runs'],
@@ -1164,6 +1174,16 @@ if (process.platform === 'win32') {
       includes: [
         'DuckHive TUI input smoke passed',
         'typed from wrapper smoke',
+      ],
+      excludes: ['warning: no DUCKHIVE_BRIDGE_SOCKET'],
+    },
+    {
+      name: 'windows wrapper tui submit smoke',
+      args: ['tui', '--submit-smoke', 'submitted from wrapper smoke'],
+      timeoutMs: 30000,
+      includes: [
+        'DuckHive TUI submit smoke passed',
+        'submitted from wrapper smoke',
       ],
       excludes: ['warning: no DUCKHIVE_BRIDGE_SOCKET'],
     },

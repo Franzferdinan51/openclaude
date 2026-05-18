@@ -132,6 +132,13 @@ func main() {
 		}
 		return
 	}
+	if text, ok := submitSmokeRequest(os.Args[1:]); ok {
+		if err := runSubmitSmoke(text); err != nil {
+			fmt.Fprintf(os.Stderr, "TUI submit smoke failed: %v\n", err)
+			os.Exit(1)
+		}
+		return
+	}
 
 	var adapter *bridge.Adapter
 	if socketPath := os.Getenv("DUCKHIVE_BRIDGE_SOCKET"); socketPath != "" {
@@ -204,6 +211,24 @@ func inputSmokeRequest(args []string) (string, bool) {
 	return "", false
 }
 
+func submitSmokeRequest(args []string) (string, bool) {
+	for i, arg := range args {
+		switch arg {
+		case "--submit-smoke":
+			if i+1 < len(args) && strings.TrimSpace(args[i+1]) != "" {
+				return args[i+1], true
+			}
+			return "submitted through duckhive tui", true
+		case "submit-smoke":
+			if i+1 < len(args) && strings.TrimSpace(args[i+1]) != "" {
+				return args[i+1], true
+			}
+			return "submitted through duckhive tui", true
+		}
+	}
+	return "", false
+}
+
 func runInputSmoke(text string) error {
 	r, w := io.Pipe()
 	defer r.Close()
@@ -258,6 +283,78 @@ func runInputSmoke(text string) error {
 	}
 
 	fmt.Printf("DuckHive TUI input smoke passed: %q\n", text)
+	return nil
+}
+
+func runSubmitSmoke(text string) error {
+	r, w := io.Pipe()
+	defer r.Close()
+	defer w.Close()
+
+	m := &MainModel{
+		state:      model.NewAppState(),
+		msgList:    components.NewMessageList(80, 20),
+		input:      components.NewInputArea(80, 3),
+		keys:       loadTUIKeyMap(),
+		welcome:    screens.NewWelcomeModel(),
+		transcript: screens.NewTranscriptPanel(),
+		width:      80,
+		height:     24,
+	}
+	m.settings = screens.NewSettingsScreen(&m.state)
+
+	p := tea.NewProgram(
+		m,
+		tea.WithInput(r),
+		tea.WithOutput(io.Discard),
+		tea.WithoutRenderer(),
+	)
+
+	errs := make(chan error, 1)
+	go func() {
+		_, err := p.Run()
+		errs <- err
+	}()
+
+	if _, err := w.Write([]byte(text)); err != nil {
+		p.Kill()
+		return err
+	}
+	if _, err := w.Write([]byte{'\r'}); err != nil {
+		p.Kill()
+		return err
+	}
+	time.Sleep(100 * time.Millisecond)
+	if _, err := w.Write([]byte{0x03}); err != nil {
+		p.Kill()
+		return err
+	}
+
+	select {
+	case err := <-errs:
+		if err != nil {
+			return err
+		}
+	case <-time.After(2 * time.Second):
+		p.Kill()
+		return errors.New("program did not exit after ctrl-c")
+	}
+
+	if got := m.input.Value(); got != "" {
+		return fmt.Errorf("composer value after submit = %q, want empty", got)
+	}
+	messages := m.msgList.Messages()
+	if len(messages) < 2 {
+		return fmt.Errorf("submitted message count = %d, want at least 2", len(messages))
+	}
+	if got := messages[0].Content; got != text {
+		return fmt.Errorf("submitted user message = %q, want %q", got, text)
+	}
+	if got := messages[1].Content; !strings.Contains(got, "No backend bridge is configured") {
+		return fmt.Errorf("submit fallback message = %q, want no-bridge guidance", got)
+	}
+
+	fmt.Printf("DuckHive TUI submit smoke passed: %q\n", text)
 	return nil
 }
 

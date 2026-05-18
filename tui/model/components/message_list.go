@@ -60,6 +60,11 @@ func (m *MessageListModel) AppendMessage(msg model.Message) {
 	m.viewport.GotoBottom()
 }
 
+// Messages returns a snapshot of currently rendered messages for diagnostics and tests.
+func (m *MessageListModel) Messages() []model.Message {
+	return append([]model.Message(nil), m.messages...)
+}
+
 // UpdateMessage replaces a message by ID, returns true if found.
 func (m *MessageListModel) UpdateMessage(id string, fn func(*model.Message)) bool {
 	for i := range m.messages {
