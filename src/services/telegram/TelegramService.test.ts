@@ -216,6 +216,41 @@ describe('TelegramService polling', () => {
     expect(getMeCalls).toBeGreaterThanOrEqual(1)
   })
 
+  test('retries Telegram 421 misdirected request responses once during startup', async () => {
+    let getMeCalls = 0
+    const fetchMock = mock(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.endsWith('/getMe')) {
+        getMeCalls += 1
+        if (getMeCalls === 1) {
+          return new Response('Misdirected Request', {
+            status: 421,
+            statusText: 'Misdirected Request',
+          })
+        }
+        return telegramResponse({
+          ok: true,
+          result: { id: 1, is_bot: true, username: 'duckhive_test_bot' },
+        })
+      }
+      if (url.endsWith('/setMyCommands')) {
+        return telegramResponse({ ok: true, result: true })
+      }
+      if (url.endsWith('/getUpdates')) {
+        return telegramResponse({ ok: true, result: [] })
+      }
+      return telegramResponse({ ok: true, result: true })
+    }) as unknown as typeof fetch
+    globalThis.fetch = fetchMock
+
+    const service = await importFreshService()
+    await service.startTelegramService()
+    await waitFor(() => getMeCalls >= 2)
+    service.stopTelegramService()
+
+    expect(getMeCalls).toBe(2)
+  })
+
   test('uses ASCII-safe built-in command responses', async () => {
     const sentMessages: string[] = []
     const commands = ['/start', '/help', '/status']

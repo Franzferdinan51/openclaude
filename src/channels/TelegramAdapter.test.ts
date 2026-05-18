@@ -271,4 +271,51 @@ describe('TelegramAdapter', () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
+
+  test('retries Telegram 421 misdirected request responses once', async () => {
+    let calls = 0
+    const fetchMock = mock(async () => {
+      calls += 1
+      if (calls === 1) {
+        return new Response('Misdirected Request', {
+          status: 421,
+          statusText: 'Misdirected Request',
+        })
+      }
+      return telegramResponse({ ok: true, result: { message_id: 1 } })
+    }) as unknown as typeof fetch
+    globalThis.fetch = fetchMock
+
+    const adapter = new TelegramAdapter({
+      botToken: '123:test-token',
+      allowedChatId: 42,
+      longPollTimeout: 1000,
+    })
+
+    await adapter.sendMessage('retry me')
+
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
+  test('does not retry unrelated Telegram HTTP errors', async () => {
+    const fetchMock = mock(async () =>
+      new Response('server error', {
+        status: 500,
+        statusText: 'Internal Server Error',
+      }),
+    ) as unknown as typeof fetch
+    globalThis.fetch = fetchMock
+
+    const adapter = new TelegramAdapter({
+      botToken: '123:test-token',
+      allowedChatId: 42,
+      longPollTimeout: 1000,
+    })
+
+    await expect(adapter.sendMessage('do not retry')).rejects.toThrow(
+      '[TelegramAdapter] HTTP 500 from sendMessage',
+    )
+
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
 })

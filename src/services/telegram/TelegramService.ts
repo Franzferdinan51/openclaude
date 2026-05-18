@@ -15,6 +15,7 @@ import { createCombinedAbortSignal } from '../../utils/combinedAbortSignal.js'
 import { getSecureStorage } from '../../utils/secureStorage/index.js'
 import { getAgentRunStore } from '../../agent-runs/AgentRunStore.js'
 import type { AgentRun, AgentRunStatus } from '../../agent-runs/types.js'
+import { isTelegramMisdirectedResponse } from '../../utils/telegramRetry.js'
 
 // ============================================================================
 // Types
@@ -74,19 +75,29 @@ class TelegramBotAPI {
     timeoutMs = this.timeoutMs,
   ): Promise<T> {
     const url = `${this.baseUrl}${this.token}/${method}`
-    const { signal, cleanup } = createCombinedAbortSignal(undefined, {
-      timeoutMs,
-    })
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: body ? JSON.stringify(body) : undefined,
-      signal,
-    }).finally(cleanup)
-    if (!response.ok) {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const { signal, cleanup } = createCombinedAbortSignal(undefined, {
+        timeoutMs,
+      })
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: body ? JSON.stringify(body) : undefined,
+        signal,
+      }).finally(cleanup)
+      if (response.ok) {
+        return response.json() as Promise<T>
+      }
+      const responseText = await response.text().catch(() => '')
+      if (
+        attempt === 0 &&
+        isTelegramMisdirectedResponse(response.status, response.statusText, responseText)
+      ) {
+        continue
+      }
       throw new Error(`Telegram API error: ${response.status} ${response.statusText}`)
     }
-    return response.json() as Promise<T>
+    throw new Error(`Telegram API error: retry exhausted for ${method}`)
   }
 
   async getMe(): Promise<{ ok: boolean; result: { id: number; is_bot: boolean; username: string } }> {

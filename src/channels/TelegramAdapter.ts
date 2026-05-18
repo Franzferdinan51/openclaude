@@ -24,6 +24,7 @@ import type {
 import { normalizeMessage } from './ChannelAdapter.js'
 import type { Message } from '../utils/mailbox.js'
 import { createCombinedAbortSignal } from '../utils/combinedAbortSignal.js'
+import { isTelegramMisdirectedResponse } from '../utils/telegramRetry.js'
 
 // Telegram Bot API types
 
@@ -301,19 +302,29 @@ export class TelegramAdapter implements ChannelAdapter {
     timeoutMs = DEFAULT_API_TIMEOUT_MS,
   ): Promise<T> {
     const url = `${this.apiBase}/bot${this.botToken}/${method}`
-    const { signal, cleanup } = createCombinedAbortSignal(undefined, {
-      timeoutMs,
-    })
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(params),
-      signal,
-    }).finally(cleanup)
-    if (!res.ok) {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const { signal, cleanup } = createCombinedAbortSignal(undefined, {
+        timeoutMs,
+      })
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(params),
+        signal,
+      }).finally(cleanup)
+      if (res.ok) {
+        return res.json() as Promise<T>
+      }
+      const responseText = await res.text().catch(() => '')
+      if (
+        attempt === 0 &&
+        isTelegramMisdirectedResponse(res.status, res.statusText, responseText)
+      ) {
+        continue
+      }
       throw new Error(`[TelegramAdapter] HTTP ${res.status} from ${method}`)
     }
-    return res.json() as Promise<T>
+    throw new Error(`[TelegramAdapter] retry exhausted for ${method}`)
   }
 }
 

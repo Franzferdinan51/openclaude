@@ -24,8 +24,8 @@ DuckHive checked the live upstream repositories on May 7, 2026 and refreshed the
 
 | Project | Current probe result | DuckHive follow-up |
 | --- | --- | --- |
-| OpenAI Codex | `main`/`HEAD` at `e7bffc5a20e92cbc64d6c16a1b257d0b2e4cd5df` | Keep `/goal` as the current stable Codex-inspired slice; continue feature-by-feature review rather than importing prerelease behavior wholesale. |
-| OpenClaw | `main`/`HEAD` at `1b5bc33161112529abb053242a6493a256b27022` | Existing Telegram/channel/ClawHub/OpenClaw config hardening remains the DuckHive-shaped slice. Further gateway-specific OpenClaw changes still need separate review before porting. |
+| OpenAI Codex | `main`/`HEAD` at `64ead6a83a6ed348229bc98a9b5d8b0c550d8305` | Keep `/goal` as the current stable Codex-inspired slice; the newer exec-server websocket keepalive commit has no direct DuckHive exec-server equivalent after review, while DuckHive already carries websocket ping/keepalive behavior in its CLI transport. |
+| OpenClaw | `main`/`HEAD` at `1300b2263027f1f9a72a2e5fbde2fd272536461f` | Ported the compatible Telegram HTTP 421/Misdirected Request retry behavior into DuckHive's Telegram service and channel adapter. The newer Mac gateway/sidebar, QA-lab classification, ACP cron timeout, autoreview fallback, and GitHub Copilot replay-id commits remain OpenClaw-specific or need separate runtime-backed review before porting. |
 | OpenClaude | `main`/`HEAD` at `f71e7692373a61d28c82fc3fadff3feaa4071ede` | DuckHive already carries the repeated-tool-failure guard and the recent Gemini raw tool-call/TaskList label-preservation behavior; keep future OpenClaude imports selective. |
 | Hermes Agent | `main`/`HEAD` at `43e566f77eaf01293086eb7cb99a21e240d60634` | No new Hermes-specific follow-up slice identified beyond the already-ported auxiliary fallback and existing self-improvement/memory surfaces. |
 
