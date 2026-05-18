@@ -921,6 +921,8 @@ duckhive dmcp remove <name> # Remove an MCP server
 duckhive dmcp health        # Check MCP server health
 ```
 
+The legacy `duckhive mcp` helper stores its `mcp-servers.json` file in the same resolved DuckHive config home as the rest of the CLI state, not a raw Unix-only `~/.config/duckhive` path. Set `CLAUDE_CONFIG_DIR` when you need to redirect that state for portable installs or tests.
+
 ---
 
 ### Memory & Intelligence — 3-Layer Recall System

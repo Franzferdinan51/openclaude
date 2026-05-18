@@ -7,13 +7,37 @@
  *   duckhive mcp remove  — Remove an MCP server
  *   duckhive mcp reload  — Reload MCP servers
  *
- * Config file: ~/.config/duckhive/mcp-servers.json
+ * Config file: <DuckHive config home>/mcp-servers.json
  */
 import { type Command } from '@commander-js/extra-typings'
 import { writeFileSync, readFileSync, mkdirSync, existsSync } from 'fs'
-import { resolve } from 'path'
+import { dirname, join } from 'path'
+import { getClaudeConfigHomeDir } from '../../utils/envUtils.js'
 
-const DUCKHIVE_MCP_CONFIG = resolve(process.env.HOME ?? '~', '.config/duckhive/mcp-servers.json')
+type DuckHiveMcpCommandDeps = {
+  getClaudeConfigHomeDir: () => string
+}
+
+let duckHiveMcpCommandTestDeps: Partial<DuckHiveMcpCommandDeps> | null = null
+
+function getDuckHiveMcpCommandDeps(): DuckHiveMcpCommandDeps {
+  return {
+    getClaudeConfigHomeDir,
+    ...duckHiveMcpCommandTestDeps,
+  }
+}
+
+export function setDuckHiveMcpCommandTestDeps(
+  overrides: Partial<DuckHiveMcpCommandDeps> | null,
+): void {
+  duckHiveMcpCommandTestDeps = overrides
+}
+
+export function getDuckHiveMcpConfigPath(
+  configHomeDir = getDuckHiveMcpCommandDeps().getClaudeConfigHomeDir(),
+): string {
+  return join(configHomeDir, 'mcp-servers.json')
+}
 
 interface McpServer {
   type?: string
@@ -22,17 +46,19 @@ interface McpServer {
 }
 
 function loadServers(): Record<string, McpServer> {
+  const configPath = getDuckHiveMcpConfigPath()
   try {
-    if (existsSync(DUCKHIVE_MCP_CONFIG)) {
-      return JSON.parse(readFileSync(DUCKHIVE_MCP_CONFIG, 'utf8'))
+    if (existsSync(configPath)) {
+      return JSON.parse(readFileSync(configPath, 'utf8'))
     }
   } catch {}
   return {}
 }
 
 function saveServers(servers: Record<string, McpServer>): void {
-  mkdirSync(resolve(DUCKHIVE_MCP_CONFIG, '..'), { recursive: true })
-  writeFileSync(DUCKHIVE_MCP_CONFIG, JSON.stringify(servers, null, 2), 'utf8')
+  const configPath = getDuckHiveMcpConfigPath()
+  mkdirSync(dirname(configPath), { recursive: true })
+  writeFileSync(configPath, JSON.stringify(servers, null, 2), 'utf8')
 }
 
 function cliError(msg: string): void {
