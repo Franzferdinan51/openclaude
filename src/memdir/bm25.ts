@@ -13,7 +13,7 @@
  *   await bm25.clearIndex()
  */
 
-import { readFileSync as readFileSyncNode } from 'fs'
+import { readFileSync as readFileSyncNode, unlinkSync } from 'fs'
 import { readdir, readFile, stat, writeFile, mkdir } from 'fs/promises'
 import { basename, join, dirname, sep as pathSep } from 'path'
 import { getMemoryBaseDir } from './paths.js'
@@ -622,8 +622,7 @@ export class Bm25Service {
   async clearIndex(): Promise<void> {
     this.index = null
     try {
-      const fs = require('fs')
-      fs.unlinkSync(this.indexPath)
+      unlinkSync(this.indexPath)
     } catch {
       // File didn't exist — that's fine
     }

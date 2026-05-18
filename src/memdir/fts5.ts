@@ -10,7 +10,13 @@
  *   const results = await searchFts5("typescript preferences", 5)
  */
 
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  statSync,
+} from 'node:fs'
 import { join, dirname } from 'node:path'
 import Database from 'better-sqlite3'
 import { getMemoryBaseDir } from './paths.js'
@@ -64,7 +70,7 @@ function getDb(): Database.Database {
     // Ensure directory exists
     const dir = dirname(DB_PATH)
     try {
-      require('fs').mkdirSync(dir, { recursive: true })
+      mkdirSync(dir, { recursive: true })
     } catch { /* already exists */ }
 
     _db = new Database(DB_PATH)
