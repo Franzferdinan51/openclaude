@@ -229,14 +229,22 @@ describe('checkTuiInputSmoke', () => {
     const result = checkTuiInputSmoke({
       cliPath: 'dist/cli.mjs',
       smokeText: 'typed by test',
-      runCommand: (_command, args) => ({
-        status: 0,
-        stdout: `DuckHive TUI input smoke passed: "${args.at(-1)}"`,
-      }),
+      submitText: 'submitted by test',
+      runCommand: (_command, args) =>
+        args.includes('--submit-smoke')
+          ? {
+              status: 0,
+              stdout: `DuckHive TUI submit smoke passed: "${args.at(-1)}"`,
+            }
+          : {
+              status: 0,
+              stdout: `DuckHive TUI input smoke passed: "${args.at(-1)}"`,
+            },
     })
 
     expect(result.ok).toBe(true)
     expect(result.detail).toContain('Bubble Tea input loop')
+    expect(result.detail).toContain('submit path')
   })
 
   test('fails when packaged TUI input smoke does not echo typed text', () => {
@@ -251,6 +259,27 @@ describe('checkTuiInputSmoke', () => {
 
     expect(result.ok).toBe(false)
     expect(result.detail).toContain('Packaged TUI input smoke failed')
+  })
+
+  test('fails when packaged TUI submit smoke does not echo submitted text', () => {
+    const result = checkTuiInputSmoke({
+      cliPath: 'dist/cli.mjs',
+      smokeText: 'typed by test',
+      submitText: 'submitted by test',
+      runCommand: (_command, args) =>
+        args.includes('--submit-smoke')
+          ? {
+              status: 0,
+              stdout: 'DuckHive TUI submit smoke passed: "other text"',
+            }
+          : {
+              status: 0,
+              stdout: `DuckHive TUI input smoke passed: "${args.at(-1)}"`,
+            },
+    })
+
+    expect(result.ok).toBe(false)
+    expect(result.detail).toContain('Packaged TUI submit smoke failed')
   })
 })
 

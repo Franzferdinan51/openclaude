@@ -303,6 +303,7 @@ function checkTuiLaunchPath(): CheckResult {
 export function checkTuiInputSmoke(options: {
   cliPath?: string
   smokeText?: string
+  submitText?: string
   runCommand?: (command: string, args: string[]) => {
     status: number | null
     stdout?: string | Buffer
@@ -315,6 +316,7 @@ export function checkTuiInputSmoke(options: {
   }
 
   const smokeText = options.smokeText ?? 'typed through runtime doctor'
+  const submitText = options.submitText ?? 'submitted through runtime doctor'
   const runCommand =
     options.runCommand ??
     ((command: string, args: string[]) =>
@@ -328,27 +330,45 @@ export function checkTuiInputSmoke(options: {
         },
       }))
 
-  const result = runCommand(process.execPath, [
+  const inputResult = runCommand(process.execPath, [
     cliPath,
     'tui',
     '--input-smoke',
     smokeText,
   ])
-  const output = `${result.stdout ?? ''}${result.stderr ?? ''}`
+  const inputOutput = `${inputResult.stdout ?? ''}${inputResult.stderr ?? ''}`
   if (
-    result.status !== 0 ||
-    !output.includes('DuckHive TUI input smoke passed') ||
-    !output.includes(smokeText)
+    inputResult.status !== 0 ||
+    !inputOutput.includes('DuckHive TUI input smoke passed') ||
+    !inputOutput.includes(smokeText)
   ) {
     return fail(
       'Terminal TUI input',
-      `Packaged TUI input smoke failed. Output: ${output.trim() || 'none'}`,
+      `Packaged TUI input smoke failed. Output: ${inputOutput.trim() || 'none'}`,
+    )
+  }
+
+  const submitResult = runCommand(process.execPath, [
+    cliPath,
+    'tui',
+    '--submit-smoke',
+    submitText,
+  ])
+  const submitOutput = `${submitResult.stdout ?? ''}${submitResult.stderr ?? ''}`
+  if (
+    submitResult.status !== 0 ||
+    !submitOutput.includes('DuckHive TUI submit smoke passed') ||
+    !submitOutput.includes(submitText)
+  ) {
+    return fail(
+      'Terminal TUI input',
+      `Packaged TUI submit smoke failed. Output: ${submitOutput.trim() || 'none'}`,
     )
   }
 
   return pass(
     'Terminal TUI input',
-    '`duckhive tui --input-smoke` verified the packaged Bubble Tea input loop through the CLI launcher.',
+    '`duckhive tui --input-smoke` and `duckhive tui --submit-smoke` verified the packaged Bubble Tea input loop and submit path through the CLI launcher.',
   )
 }
 

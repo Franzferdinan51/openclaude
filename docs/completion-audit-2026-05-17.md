@@ -52,7 +52,7 @@ covers the named requirement.
 | Session search must stay local and provider-free | Inspired by Hermes `abf1af540193c30047ff3e7e759c330faf3a880f`, DuckHive's `agenticSessionSearch` now uses deterministic local scoring across tags, titles, branches, summaries, first prompts, and transcript excerpts instead of `sideQuery`; focused tests cover metadata ranking, quoted phrase transcript matching, and OR-style broad recall. | Verified |
 | Skill slash commands must load from symlinked skill directories | Inspired by Hermes `ff078738ea0108548fc9c147140942fbeab7c833`, `src\skills\loadSkillsDir.test.ts` verifies DuckHive discovers and loads a skill command from a symlinked `.claude\skills\<name>` directory while preserving the visible skill root. | Verified |
 | Other harnesses must be tracked for feature pulls | Live upstream probes on 2026-05-18 confirm Codex `main` at `7ee7fe239f8bd2f478a30c369c2566004769a3da`, OpenClaw `main` at `b823a5a26626ee4637975cd923dfd12df063baf0`, OpenClaude `main` at `f71e7692373a61d28c82fc3fadff3feaa4071ede`, and Hermes Agent `main` at `609c485fc6d0a0c24a023cd1349ebd6ddbf60315`. DuckHive is no longer behind `Gitlawb/openclaude:main`; `main..openclaude/main` is empty. The latest OpenClaw delta set was reviewed as CI/docs/xAI OAuth sidecar/release-stability internals with no direct DuckHive runtime port identified; the Hermes deliverable-mode slice now covers Telegram uploads and terminal AgentRun artifact visibility. | Tracked |
-| Windows TUI must be runnable | A local verified Go 1.25.4 toolchain built `tui\duckhive-tui.exe`; `duckhive tui --snapshot` renders the packaged Bubble Tea UI, and `duckhive tui --input-smoke "typed after go rebuild"` verifies the rebuilt packaged input loop through the real launcher. `node dist\cli.mjs runtime-doctor` and CLI smoke also cover `Terminal TUI - Ready`, `Terminal TUI input`, `duckhive tui --help`, snapshot, and input smoke through Node and Windows wrapper launch paths; current package dry-run includes `tui/duckhive-tui.exe` and TUI source files. | Verified binary and input readiness |
+| Windows TUI must be runnable | A local verified Go 1.25.4 toolchain built `tui\duckhive-tui.exe`; `duckhive tui --snapshot` renders the packaged Bubble Tea UI, `duckhive tui --input-smoke "typed after go rebuild"` verifies the rebuilt packaged input loop through the real launcher, and `duckhive tui --submit-smoke "submitted through cli wrapper"` verifies typing plus Enter submission. `node dist\cli.mjs runtime-doctor` and CLI smoke now cover `Terminal TUI - Ready`, `Terminal TUI input`, `duckhive tui --help`, snapshot, input smoke, and submit smoke through Node and Windows wrapper launch paths; current package dry-run includes `tui/duckhive-tui.exe` and TUI source files. | Verified binary, input, and submit readiness |
 | TUI keymaps must be configurable like Codex-style terminal workflows | The Go TUI now loads action-key overrides from `DUCKHIVE_TUI_KEYMAP_PATH` and `DUCKHIVE_TUI_KEYMAP`, merges inline JSON over file JSON, warns on invalid entries while preserving defaults, and resolves remapped actions by binding instead of literal key string. Focused `tui/tui` tests cover custom model/shell/undo mappings, env/file merge precedence, unknown-action warnings, and the default `ctrl+p` model-picker path. | Verified |
 | TUI backend slash commands must stay command-shaped | Argument-bearing backend commands such as `/goal Build the harness`, `/council Review this plan`, `/permissions profile list`, `/budget set minimax 5`, `/channel status telegram`, and `/computer-use tools` now dispatch through the bridge when connected, and fall back to local read-only cards when offline instead of being sent as normal chat. Focused Go tests cover bridged and offline routing, and the rebuilt packaged binary passes `duckhive tui --snapshot` plus `duckhive tui --input-smoke "backend command routing smoke"`. | Verified |
 | TUI tests must be verified | Current 2026-05-18 evidence: downloaded the official Go 1.25.4 Windows amd64 archive from `go.dev/dl`, verified SHA256 `6dad204d42719795f22067553b2b042c0e710b32c5a00f6c67892865167fdfd0`, extracted it to `.tmp\go-toolchain`, and ran `cd tui && go test ./...` successfully across `tui`, `tui/cmd/duckhive-tui`, `tui/model/bridge`, and `tui/model/components`. | Verified |
@@ -67,11 +67,11 @@ Latest continuation evidence from 2026-05-18:
 
 - `npm run build`
 - `npm run typecheck`
-- `npm run smoke` (`CLI smoke passed (79 commands plus Windows wrapper checks)`, including the mock OpenAI-compatible prompt-submission `_zod` regression)
+- `npm run smoke` (`CLI smoke passed (80 commands plus Windows wrapper checks)`, including the mock OpenAI-compatible prompt-submission `_zod` regression and packaged TUI submit smoke)
 - `npm run verify:privacy`
 - `bun test` (`3369 pass`, `0 fail`, `8487 expect()` calls across 381 files)
 - `duckhive --version`, `duckhive --yolo --version`, `duckhive --dangerously-skip-permissions --version`, and `node dist\cli.mjs --version` (`0.13.6 (DuckHive)`)
-- `duckhive runtime-doctor` (PATH launcher, Windows data-event stdin, packaged TUI input smoke, ClawHub, connector controls, provider readiness, AI Council, harness command surfaces)
+- `duckhive runtime-doctor` (PATH launcher, Windows data-event stdin, packaged TUI input and submit smoke, ClawHub, connector controls, provider readiness, AI Council, harness command surfaces)
 - `Get-Command duckhive` and `where.exe duckhive` (PowerShell/npm shims resolve on PATH)
 - `duckhive goal --help` and `duckhive g --help`
 - `duckhive computer-use status`
@@ -85,6 +85,7 @@ Latest continuation evidence from 2026-05-18:
 - `node dist\cli.mjs allowed-tools profile status`
 - `node dist\cli.mjs checkpoint list` with isolated `CLAUDE_CONFIG_DIR`
 - `duckhive tui --input-smoke "typed text"`
+- `duckhive tui --submit-smoke "submitted text"`
 - `node dist\cli.mjs runtime-doctor`
 - `bun test src\utils\agenticSessionSearch.test.ts`
 - `bun test src\skills\loadSkillsDir.test.ts`
@@ -135,6 +136,6 @@ Historical broader gates from earlier audit passes:
 
 ## Open Work
 
-- Test full `duckhive tui` keyboard interaction manually from a real interactive PowerShell terminal. Non-interactive `duckhive tui --snapshot` now renders one TUI frame and exits for CI/log verification, `duckhive tui --input-smoke "typed text"` verifies packaged Bubble Tea input-loop delivery through the launcher, `runtime-doctor` verifies binary readiness, and local Go 1.25.4 now verifies `cd tui && go test ./...`.
+- Test full `duckhive tui` keyboard interaction manually from a real interactive PowerShell terminal. Non-interactive `duckhive tui --snapshot` now renders one TUI frame and exits for CI/log verification, `duckhive tui --input-smoke "typed text"` verifies packaged Bubble Tea input-loop delivery through the launcher, `duckhive tui --submit-smoke "submitted text"` verifies typing plus Enter submission, `runtime-doctor` verifies binary/input/submit readiness, and local Go 1.25.4 now verifies `cd tui && go test ./...`.
 - Continue feature-by-feature upstream imports rather than merging upstream harnesses wholesale. DuckHive and OpenClaude histories are divergent, so release commits, branding changes, and unrelated upstream removals must be reviewed selectively.
 - Keep importing upstream features as independent, verified slices. The current tested state is green, but the product goal remains open-ended until each new upstream slice has its own impact analysis, implementation, and verification.
