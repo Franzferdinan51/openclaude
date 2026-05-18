@@ -47,6 +47,33 @@ describe('/run command', () => {
     expect([...result.value].every(char => char.charCodeAt(0) < 128)).toBe(true)
   })
 
+  test('lists runs from a bare status shorthand', async () => {
+    const store = makeStore()
+    store.createRun({ title: 'Review auth flow', status: 'running', selectedAgent: 'reviewer' })
+    store.createRun({ id: 'run_2', title: 'Queued task', status: 'queued' })
+    setRunTestDeps({ getAgentRunStore: () => store })
+
+    const result = await call('running', {} as never)
+
+    expect(result.type).toBe('text')
+    if (result.type !== 'text') throw new Error('unexpected result type')
+    expect(result.value).toContain('run_1 [running] Review auth flow - reviewer')
+    expect(result.value).not.toContain('run_2 [queued] Queued task')
+  })
+
+  test('rejects extra arguments after a bare status shorthand', async () => {
+    const store = makeStore()
+    store.createRun({ title: 'Review auth flow', status: 'running' })
+    setRunTestDeps({ getAgentRunStore: () => store })
+
+    const result = await call('running extra', {} as never)
+
+    expect(result.type).toBe('text')
+    if (result.type !== 'text') throw new Error('unexpected result type')
+    expect(result.value).toContain('Status shorthand accepts one status filter: running')
+    expect(result.value).toContain('Usage:')
+  })
+
   test('shows run detail from bare run id input', async () => {
     const store = makeStore()
     store.createRun({

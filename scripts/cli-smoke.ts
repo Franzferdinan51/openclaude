@@ -540,6 +540,18 @@ const cases: SmokeCase[] = [
     ],
   },
   {
+    name: 'top-level runs status shorthand',
+    args: ['runs', 'queued'],
+    env: () => ({
+      CLAUDE_CONFIG_DIR: bgControlConfigDir,
+      CLAUDE_CODE_SYNC_PLUGIN_INSTALL_TIMEOUT_MS: '1',
+    }),
+    includes: [
+      'Agent Runs',
+      'test prompt',
+    ],
+  },
+  {
     name: 'top-level team help',
     args: ['team', '--help'],
     includes: [

@@ -130,6 +130,10 @@ function parseRunStatus(status?: string): { status?: AgentRunStatus; error?: str
   }
 }
 
+function isAgentRunStatus(value: string | undefined): value is AgentRunStatus {
+  return Boolean(value && (AGENT_RUN_STATUSES as readonly string[]).includes(value))
+}
+
 function parseTailLimit(raw?: string): { limit?: number; error?: string } {
   if (!raw) return { limit: 20 }
   const limit = Number(raw)
@@ -229,6 +233,13 @@ export const call: LocalCommandCall = async (args: string) => {
     const parsedStatus = parseRunStatus(tokens[1])
     if (parsedStatus.error) return { type: 'text', value: usage(parsedStatus.error) }
     return { type: 'text', value: renderRunList(store, parsedStatus.status) }
+  }
+
+  if (isAgentRunStatus(subcommand)) {
+    if (tokens.length > 1) {
+      return { type: 'text', value: usage(`Status shorthand accepts one status filter: ${subcommand}`) }
+    }
+    return { type: 'text', value: renderRunList(store, subcommand) }
   }
 
   if (subcommand === 'tail') {

@@ -314,6 +314,7 @@ The terminal `/run` surface validates status filters against the real AgentRun l
 
 ```bash
 duckhive ps [status]          # List AgentRuns
+duckhive runs [status]        # List AgentRuns through the /run alias
 duckhive logs <id> [limit]    # Show recent AgentRun events
 duckhive attach <id> [limit]  # Inspect an AgentRun with recent events and controls
 duckhive pause <id>           # Pause a run
