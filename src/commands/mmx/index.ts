@@ -2,23 +2,7 @@
  * DuckHive mmx command - MiniMax CLI integration
  */
 import { spawn } from 'child_process'
-import { existsSync } from 'fs'
-import { resolve } from 'path'
-
-function findMmx(): string {
-  if (process.env.MMX_BIN) return process.env.MMX_BIN
-  const executable = process.platform === 'win32' ? 'mmx.cmd' : 'mmx'
-  const locations = [
-    resolve(process.env.HOME ?? '~', '.npm-global/bin', executable),
-    resolve(process.env.LOCALAPPDATA ?? '', 'Programs', 'npm', executable),
-    `/usr/local/bin/${executable}`,
-    `/usr/bin/${executable}`,
-  ]
-  for (const loc of locations) {
-    if (existsSync(loc)) return loc
-  }
-  return executable
-}
+import { findMmx } from './findMmx.js'
 
 const MMX_BIN = findMmx()
 

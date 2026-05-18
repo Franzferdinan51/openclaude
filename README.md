@@ -454,6 +454,8 @@ The `/router` command preserves escaped quotes in routed task text, rejects unte
 
 DuckHive mmx gives you the full MiniMax CLI stack directly from the harness. Generate images, synthesize speech, create music, and produce video without leaving the CLI. `duckhive mmx` and the `duckhive minimax` alias run as provider-free terminal commands, so help and media jobs do not need to start the chat REPL first.
 
+The MMX launcher honors `MMX_BIN` first, then checks Windows npm shim locations such as `%APPDATA%\npm\mmx.cmd`, `%LOCALAPPDATA%\Programs\npm\mmx.cmd`, and the user's `.npm-global/bin` path through the real home directory. It never falls back through a literal `~` path, so Windows installs without `HOME` still resolve correctly.
+
 ```bash
 # Generate images
 duckhive mmx image "A cyberpunk cat"
