@@ -13,8 +13,9 @@
  *   await bm25.clearIndex()
  */
 
+import { readFileSync as readFileSyncNode } from 'fs'
 import { readdir, readFile, stat, writeFile, mkdir } from 'fs/promises'
-import { basename, join, dirname } from 'path'
+import { basename, join, dirname, sep as pathSep } from 'path'
 import { getMemoryBaseDir } from './paths.js'
 import { getClaudeConfigHomeDir } from '../utils/envUtils.js'
 
@@ -238,7 +239,7 @@ function buildInvertedIndex(
 function readFileSync(path: string, encoding: 'utf-8'): string {
   // Use the promise-based readFile wrapped in a sync-compatible way for buildIndex
   // (buildIndex is async anyway, so we just use await readFile)
-  return require('fs').readFileSync(path, encoding) as string
+  return readFileSyncNode(path, encoding) as string
 }
 
 // ---------------------------------------------------------------------------
@@ -288,13 +289,12 @@ async function discoverDocs(
   maxDepth = 3,
 ): Promise<DiscoveredDoc[]> {
   const results: DiscoveredDoc[] = []
-  const sep = require('path').sep as string
 
   try {
     const entries = await readdir(rootDir, { recursive: true })
     for (const relativePath of entries) {
       // Enforce depth limit
-      const depth = relativePath.split(sep).length - 1
+      const depth = relativePath.split(pathSep).length - 1
       if (depth >= maxDepth) continue
 
       const fullPath = join(rootDir, relativePath)

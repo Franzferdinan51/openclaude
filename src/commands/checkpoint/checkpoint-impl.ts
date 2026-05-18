@@ -3,7 +3,15 @@
  */
 import type { LocalCommandCall } from '../../types/command.js'
 import { join } from 'path'
-import { mkdirSync, readdirSync, writeFileSync, existsSync, rmSync } from 'fs'
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from 'fs'
 import { getClaudeConfigHomeDir } from '../../utils/envUtils.js'
 
 const CHECKPOINT_DIR = join(getClaudeConfigHomeDir(), 'checkpoints')
@@ -26,7 +34,7 @@ function listCheckpoints(): Checkpoint[] {
       .map(f => {
         const p = join(CHECKPOINT_DIR, f)
         try {
-          const s = require('fs').statSync(p)
+          const s = statSync(p)
           return { name: f.replace('.json', ''), created: s.mtimeMs, size: s.size }
         } catch {
           return null
@@ -74,7 +82,7 @@ export const call: LocalCommandCall = async (args: string) => {
     const path = join(CHECKPOINT_DIR, `${name}.json`)
     if (!existsSync(path)) return { type: 'text', value: `Checkpoint not found: "${name}"` }
     try {
-      const data = JSON.parse(require('fs').readFileSync(path, 'utf-8'))
+      const data = JSON.parse(readFileSync(path, 'utf-8'))
       return { type: 'text', value: `Loaded: "${data.name}"\nCreated: ${new Date(data.created).toLocaleString()}` }
     } catch (e) {
       return { type: 'text', value: `Failed: ${e}` }
