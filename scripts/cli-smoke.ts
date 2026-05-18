@@ -529,6 +529,21 @@ const cases: SmokeCase[] = [
     excludes: ['Warning: ignoring saved provider profile'],
   },
   {
+    name: 'top-level permission profile list',
+    args: ['permissions', 'profile', 'list'],
+    timeoutMs: 30000,
+    includes: [
+      'Permission profiles',
+      'safe: Safe planning',
+      'balanced: Balanced harness',
+      'yolo: Yolo bypass',
+    ],
+    excludes: [
+      'DuckHive is running without an interactive terminal',
+      'Warning: ignoring saved provider profile',
+    ],
+  },
+  {
     name: 'top-level mmx help',
     args: ['mmx', '--help'],
     includes: [

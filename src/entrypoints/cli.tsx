@@ -382,6 +382,20 @@ async function main(): Promise<void> {
     return;
   }
 
+  // Fast-path for permission/sandbox profile diagnostics outside the REPL.
+  if (cliCommand === 'permissions' || cliCommand === 'allowed-tools') {
+    profileCheckpoint('cli_permissions_path');
+    const {
+      enableConfigs
+    } = await import('../utils/config.js');
+    enableConfigs();
+    const {
+      permissionsHandler
+    } = await import('../cli/permissions.js');
+    await permissionsHandler(cliCommandArgs);
+    return;
+  }
+
   // Fast-path for shared AgentRun inspection/control outside the REPL.
   if (cliCommand === 'run' || cliCommand === 'runs' || cliCommand === 'agent-run') {
     profileCheckpoint('cli_run_path');

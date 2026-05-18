@@ -44,7 +44,7 @@ covers the named requirement.
 | Scheduled loop command must match documented behavior and fail safely | `/loop status` now works as documented, creation accepts separated option values, invalid options reject before storing loops, lifecycle commands reject ambiguous partial IDs, and all command splitters under `src\commands` have been moved off the old regex splitter. | Verified |
 | Built-in terminal commands must not be shadowed by bundled prompt skills | Command loading now filters external skill/plugin/workflow name collisions against built-in commands, so the bundled `loop` skill no longer shadows the local `/loop` command; CLI smoke covers provider-free `/loop help`. | Verified |
 | Provider-free print slash commands must not emit provider-auth warnings | The startup gate now skips provider profile validation for known local `-p "/command"` slash commands while keeping auth validation for normal print prompts; CLI smoke rejects saved-provider warnings for `/loop`, `/android`, `/vision`, `/shadow`, `/checkpoint`, `/router`, `/budget`, `/cache`, `/export`, `/permissions profile`, `/spawn`, `/swarm`, `/senate`, and `/decree`. | Verified |
-| Permission and sandbox profiles must be selectable from the terminal | Inspired by Codex permission/sandbox profile workflows, `/permissions profile` now exposes provider-free `list`, `status`, and named profile application for `safe`, `balanced`, `edit`, `yolo`, and `off`. Profiles set `permissions.defaultMode` plus matching sandbox settings, default to local project settings, support `--project` and `--user`, and update the active session permission mode. Focused tests cover parsing, unknown-option rejection before mutation, generated settings, active AppState transition, and terminal status/list rendering; CLI smoke covers provider-free profile list plus safe profile application in an isolated config home. | Verified |
+| Permission and sandbox profiles must be selectable from the terminal | Inspired by Codex permission/sandbox profile workflows, `/permissions profile` and top-level `duckhive permissions profile` now expose provider-free `list`, `status`, and named profile application for `safe`, `balanced`, `edit`, `yolo`, and `off`; `duckhive allowed-tools profile status` remains a compatibility alias. Profiles set `permissions.defaultMode` plus matching sandbox settings, default to local project settings, support `--project` and `--user`, and update the active session permission mode. Focused tests cover parsing, unknown-option rejection before mutation, generated settings, active AppState transition, and terminal status/list rendering; CLI smoke covers provider-free slash profile list, top-level profile list, and safe profile application in an isolated config home. | Verified |
 | Shared test mutation locks must fail instead of hanging indefinitely | `acquireSharedMutationLock` now applies a five-minute default timeout and reports scoped timeout errors; focused tests cover default timeout, override timeout, and release handoff. | Verified |
 | SDK mutex tests must not mutate the process-global env mutex | The SDK shared mutex now exposes an isolated test-only mutex factory, and `tests\sdk\shared-utils.test.ts` exercises timeout behavior without resetting the global mutex used by other tests. | Verified |
 | OpenGateway partner model catalog must be current | The `gitlawb-opengateway` preset now routes through `https://opengateway.gitlawb.com/v1`, maps to the OpenAI-compatible vendor, and exposes Gemini 3.1 Flash Lite Preview plus GLM 5.1 FP8 catalog entries. | Verified |
@@ -64,7 +64,7 @@ Latest continuation evidence from 2026-05-18:
 
 - `npm run typecheck`
 - `npm run build`
-- `npm run smoke` (`CLI smoke passed (73 commands plus Windows wrapper checks)`)
+- `npm run smoke` (`CLI smoke passed (74 commands plus Windows wrapper checks)`)
 - `npm run verify:privacy`
 - `bun test` (`3369 pass`, `0 fail`, `8487 expect()` calls across 381 files)
 - `duckhive --version`, `duckhive --yolo --version`, `duckhive --dangerously-skip-permissions --version`, and `node dist\cli.mjs --version` (`0.13.4 (DuckHive)`)
@@ -78,6 +78,8 @@ Latest continuation evidence from 2026-05-18:
 - `duckhive skill inspect api-agent-rate-limiter-1-3-1`
 - `node dist\cli.mjs --bare -p "/permissions profile list"`
 - `node dist\cli.mjs --bare -p "/permissions profile safe --user"` with isolated `CLAUDE_CONFIG_DIR`
+- `node dist\cli.mjs permissions profile list`
+- `node dist\cli.mjs allowed-tools profile status`
 - `duckhive tui --input-smoke "typed text"`
 - `node dist\cli.mjs runtime-doctor`
 - `bun test src\utils\agenticSessionSearch.test.ts`

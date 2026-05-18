@@ -108,7 +108,7 @@ DuckHive checked the live upstream repositories on May 7, 2026 and refreshed the
 
 | Upstream | Current state | DuckHive action |
 | --- | --- | --- |
-| Codex | Stable Codex tracks permission profiles and sandbox profile selection as first-class terminal workflows. | Ported the compatible terminal workflow into DuckHive's existing permissions command: `/permissions profile list/status/<name>` now works provider-free in headless slash mode, applies named `safe`, `balanced`, `edit`, `yolo`, and `off` presets, writes local project settings by default, supports `--project` and `--user`, and pairs `permissions.defaultMode` with matching sandbox settings. Provider startup now skips `/permissions` and `/allowed-tools` just like other local slash commands, so automation can inspect or apply profiles without provider-auth warnings. |
+| Codex | Stable Codex tracks permission profiles and sandbox profile selection as first-class terminal workflows. | Ported the compatible terminal workflow into DuckHive's existing permissions command: `/permissions profile list/status/<name>` and top-level `duckhive permissions profile list/status/<name>` now work provider-free, apply named `safe`, `balanced`, `edit`, `yolo`, and `off` presets, write local project settings by default, support `--project` and `--user`, and pair `permissions.defaultMode` with matching sandbox settings. Provider startup now skips `/permissions` and `/allowed-tools` just like other local slash commands, and `duckhive allowed-tools profile status` is a direct compatibility alias, so automation can inspect or apply profiles without provider-auth warnings or the interactive REPL guard. |
 
 ## Ported In 0.8.1
 
