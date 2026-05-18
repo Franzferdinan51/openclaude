@@ -15,7 +15,7 @@ import { getFsImplementation, setFsImplementation } from '../fsOperations.js'
 import { sanitizePath } from '../sessionStoragePortable.js'
 import { SQLiteProvider } from './SQLiteProvider.js'
 
-describe('SQLite Storage Layer', { timeout: 30_000 }, () => {
+describe('SQLite Storage Layer', () => {
   const originalConfigDir = process.env.CLAUDE_CONFIG_DIR
   const originalCwd = process.cwd()
   const originalFs = getFsImplementation()
@@ -134,7 +134,7 @@ describe('SQLite Storage Layer', { timeout: 30_000 }, () => {
     const entity = Object.values(graph.entities).find(e => e.name === 'sqlite-test')
     expect(entity).toBeDefined()
     expect(entity?.attributes.status).toBe('durable')
-  })
+  }, 30_000)
 
   it('self-heals SQLite from JSON if DB is deleted', async () => {
     const sqlitePath = join(getProjectsDir(), sanitizePath(workspaceDir), 'knowledge.db')
@@ -160,7 +160,7 @@ describe('SQLite Storage Layer', { timeout: 30_000 }, () => {
     
     // 4. Verify SQLite was recreated
     expect(existsSync(sqlitePath)).toBe(true)
-  })
+  }, 30_000)
 
   it('handles large transactions (Stress Test)', async () => {
     const count = 100
@@ -173,7 +173,7 @@ describe('SQLite Storage Layer', { timeout: 30_000 }, () => {
     clearMemoryOnly()
     const graph = getGlobalGraph()
     expect(Object.keys(graph.entities).length).toBe(count)
-  })
+  }, 30_000)
 
   it('does not report a closed on-disk database as cleared', async () => {
     const projectDir = join(getProjectsDir(), sanitizePath(workspaceDir))
