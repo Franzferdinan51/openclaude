@@ -114,7 +114,7 @@ DuckHive checked the live upstream repositories on May 7, 2026 and refreshed the
 
 | Upstream | Current state | DuckHive action |
 | --- | --- | --- |
-| OpenClaude | `main`/`HEAD` at `f71e7692373a61d28c82fc3fadff3feaa4071ede` after fetch; `main..openclaude/main` is empty and `main...openclaude/main` is `697 0`. | DuckHive remains ahead of OpenClaude with no pending upstream commits to merge. Added a real CLI smoke prompt-submission gate against an in-process OpenAI-compatible mock so the `_zod` prompt crash path is covered by the release smoke suite rather than only by lower-level bundle-patch tests. |
+| OpenClaude | `main`/`HEAD` at `f71e7692373a61d28c82fc3fadff3feaa4071ede` after fetch; `main..openclaude/main` is empty and `main...openclaude/main` is `700 0`. | DuckHive remains ahead of OpenClaude with no pending upstream commits to merge. Added a real CLI smoke prompt-submission gate against an in-process OpenAI-compatible mock so the `_zod` prompt crash path is covered by the release smoke suite rather than only by lower-level bundle-patch tests. |
 
 ## Ported In 0.8.1
 
@@ -231,4 +231,4 @@ Historical verification highlights from the SDKv2 sync:
 Current project-wide verification status after the CLI/TUI completion audit:
 
 - `bun run typecheck`, `npm run smoke`, full `bun test`, `npm run integrations:check`, `npm run verify:privacy`, and `npm pack --dry-run --json` pass on the TypeScript/Node side.
-- `cd tui && go test ./...` now passes on the current Windows machine with a local Go 1.25.4 toolchain under `.tmp\go-toolchain`; the packaged Bubble Tea binary was rebuilt and rechecked with `duckhive tui --snapshot` plus `duckhive tui --input-smoke`.
+- `cd tui && go test ./...` now passes on the current Windows machine with a local Go 1.25.4 toolchain under `.tmp\go-toolchain`; the packaged Bubble Tea binary was rebuilt and rechecked with `duckhive tui --snapshot`, `duckhive tui --input-smoke`, and `duckhive tui --submit-smoke`.
