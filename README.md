@@ -1379,6 +1379,8 @@ that toolchain.
 
 The query loop also includes the upstream OpenClaude repeated-tool-failure guard. If the same tool, error category, or file path fails repeatedly without an intervening successful tool result, DuckHive stops the loop with a path-safe diagnostic instead of burning turns forever. The default threshold is `3`; set `DUCKHIVE_TOOL_FAILURE_LOOP_THRESHOLD=0` to disable it, or set a higher integer when intentionally debugging repeated failures. `CLAUDE_CODE_TOOL_FAILURE_LOOP_THRESHOLD` remains supported as an upstream compatibility fallback.
 
+Tool schema conversion is also hardened against malformed nested Zod schemas. If a tool exposes a broken field schema, DuckHive now logs the conversion failure and falls back to an empty object schema instead of crashing prompt submission with `Cannot read properties of undefined (reading '_zod')`.
+
 The API retry path also applies the Hermes-style auxiliary fallback lesson to quota and payment exhaustion: when a primary model returns explicit 402/payment, credit, daily quota, or quota-exhausted 429 signals and `--fallback-model` is configured, DuckHive switches to the fallback model instead of failing immediately. Generic 429 rate limits still follow the normal retry path. If no fallback is configured, DuckHive still fails closed with explicit billing/provider guidance.
 
 Codex-compatible HTTP surfaces now keep DuckHive attribution instead of leaking the upstream OpenClaude originator. Runtime doctor Codex probes, Codex Responses requests, Codex web search, Codex usage reads, and `/cache-probe` share the `duckhive` originator header while preserving Codex's own OAuth originator where the login protocol requires it.

@@ -3,6 +3,7 @@
  */
 
 import { toJSONSchema, type ZodTypeAny } from 'zod/v4'
+import { logForDebugging } from './debug.js'
 
 export type JsonSchema7Type = Record<string, unknown>
 
@@ -45,7 +46,14 @@ export function zodToJsonSchema(schema: unknown): JsonSchema7Type {
 
   const hit = cache.get(schema)
   if (hit) return hit
-  const result = toJSONSchema(schema) as JsonSchema7Type
+  let result: JsonSchema7Type
+  try {
+    result = toJSONSchema(schema) as JsonSchema7Type
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    logForDebugging(`[zodToJsonSchema] failed to convert schema: ${message}`)
+    result = emptyObjectSchema
+  }
   cache.set(schema, result)
   return result
 }

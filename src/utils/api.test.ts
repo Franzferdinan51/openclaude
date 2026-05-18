@@ -128,6 +128,17 @@ test('zodToJsonSchema tolerates missing and JSON-schema-shaped inputs', () => {
   })
 })
 
+test('zodToJsonSchema tolerates malformed nested Zod schemas without _zod crashes', () => {
+  const malformedSchema = z.object({
+    bad: undefined as unknown as z.ZodTypeAny,
+  })
+
+  expect(zodToJsonSchema(malformedSchema)).toEqual({
+    type: 'object',
+    properties: {},
+  })
+})
+
 test('toolToAPISchema does not crash on a non-Zod input schema', async () => {
   const schema = await toolToAPISchema(
     {
