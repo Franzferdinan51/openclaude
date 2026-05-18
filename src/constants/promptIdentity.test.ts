@@ -54,6 +54,8 @@ test('normal system prompt encourages useful agent-team and council surfaces', a
   const combined = prompt.join('\n')
 
   expect(combined).toContain('Use subagents to parallelize independent work')
+  expect(combined).toContain('prefer that native surface for ordinary subagents')
+  expect(combined).toContain('DuckHive /spawn, Agent Tool, or team surfaces')
   expect(combined).toContain('/council to consult multiple agents')
   expect(combined).toContain('/team to coordinate multi-agent workflows')
   expect(combined).toContain('/spawn for background tasks')
@@ -63,6 +65,7 @@ test('normal system prompt encourages useful agent-team and council surfaces', a
 test('built-in agent prompts describe DuckHive instead of Claude Code', () => {
   expect(DEFAULT_AGENT_PROMPT).toContain('DuckHive')
   expect(DEFAULT_AGENT_PROMPT).toContain('Use subagents to parallelize independent work')
+  expect(DEFAULT_AGENT_PROMPT).toContain('prefer native subagent/spawn surfaces')
   expect(DEFAULT_AGENT_PROMPT).toContain('/council')
   expect(DEFAULT_AGENT_PROMPT).toContain('/spawn')
   expect(DEFAULT_AGENT_PROMPT).not.toContain('Claude Code')

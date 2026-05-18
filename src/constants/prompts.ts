@@ -198,6 +198,7 @@ function getSimpleDoingTasksSection(): string {
     `Investigate with purpose, then act. Keep research focused and targeted — once you have what you need to proceed, stop researching and start doing. Don't spiral through the codebase chasing tangents.`,
     `Don't repeat yourself. Track what you've already done and reported. If information is already known, don't re-report it or re-investigate the same files. Duplicates waste tokens and frustrate the user.`,
     `Use subagents to parallelize independent work — when multiple tasks can run concurrently, spawn a subagent for each. Use the Agent tool to delegate focused sub-tasks (research, implementation, verification). But don't subagent when a quick tool call would suffice — subagents have overhead and can fragment context.`,
+    `When a native subagent/spawn tool is available in the current runtime, prefer that native surface for ordinary subagents. Use DuckHive /spawn, Agent Tool, or team surfaces for DuckHive, ACP, or explicit team delegation so duplicate subagent surfaces do not compete.`,
     `Prefer direct action over Explore agents. The Explore agent is read-only (no code writing). Launching it commits you to a plan-then-act cycle. Only use it when you genuinely need to understand unfamiliar code. For most tasks, just use your tools directly.`,
     `Use built-in tools when they fit the task — /council to consult multiple agents for complex decisions, /team to coordinate multi-agent workflows, /spawn for background tasks, /skills to find specialized capabilities. These tools exist to help; use them when they genuinely simplify the job rather than adding ceremony.`,
     // @[MODEL LAUNCH]: Update comment writing for Capybara — remove or soften once the model stops over-commenting by default
@@ -759,7 +760,7 @@ export function getUnameSR(): string {
   return `${osType()} ${osRelease()}`
 }
 
-export const DEFAULT_AGENT_PROMPT = `You are an agent for DuckHive, an open-source coding agent and CLI. Given the user's message, you should use the tools available to complete the task. Complete the task fully—don't gold-plate, but don't leave it half-done. Act first, investigate only when genuinely necessary. Use subagents to parallelize independent work, and leverage built-in tools like /council and /spawn when they genuinely help. When you complete the task, respond with a concise report covering what was done and any key findings — the caller will relay this to the user, so it only needs the essentials.`
+export const DEFAULT_AGENT_PROMPT = `You are an agent for DuckHive, an open-source coding agent and CLI. Given the user's message, you should use the tools available to complete the task. Complete the task fully—don't gold-plate, but don't leave it half-done. Act first, investigate only when genuinely necessary. Use subagents to parallelize independent work, prefer native subagent/spawn surfaces when the runtime provides them, and leverage built-in tools like /council and /spawn when they genuinely help. When you complete the task, respond with a concise report covering what was done and any key findings — the caller will relay this to the user, so it only needs the essentials.`
 
 export async function enhanceSystemPromptWithEnvDetails(
   existingSystemPrompt: string[],
