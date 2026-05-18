@@ -41,7 +41,7 @@ covers the named requirement.
 | Shared test mutation locks must fail instead of hanging indefinitely | `acquireSharedMutationLock` now applies a five-minute default timeout and reports scoped timeout errors; focused tests cover default timeout, override timeout, and release handoff. | Verified |
 | SDK mutex tests must not mutate the process-global env mutex | The SDK shared mutex now exposes an isolated test-only mutex factory, and `tests\sdk\shared-utils.test.ts` exercises timeout behavior without resetting the global mutex used by other tests. | Verified |
 | OpenGateway partner model catalog must be current | The `gitlawb-opengateway` preset now routes through `https://opengateway.gitlawb.com/v1`, maps to the OpenAI-compatible vendor, and exposes Gemini 3.1 Flash Lite Preview plus GLM 5.1 FP8 catalog entries. | Verified |
-| Other harnesses must be tracked for feature pulls | Live `git ls-remote` confirms Codex `main` at `e7bffc5a20e92cbc64d6c16a1b257d0b2e4cd5df`, OpenClaw `main` at `17ab3b11cb85d70788083c4ccbfd8408aaac5d31`, and Hermes Agent `main` at `43e566f77eaf01293086eb7cb99a21e240d60634`. | Tracked |
+| Other harnesses must be tracked for feature pulls | Live `git ls-remote` confirms Codex `main` at `e7bffc5a20e92cbc64d6c16a1b257d0b2e4cd5df`, OpenClaw `main` at `5434769e47e69a254456879c25a4f3fb60cf9eac`, OpenClaude `main` at `f71e7692373a61d28c82fc3fadff3feaa4071ede`, and Hermes Agent `main` at `43e566f77eaf01293086eb7cb99a21e240d60634`. | Tracked |
 | Windows TUI must be runnable | A local verified Go 1.26.3 toolchain built `tui\duckhive-tui.exe`; `node dist\cli.mjs runtime-doctor` now reports `Terminal TUI - Ready` and `Terminal TUI input`; CLI smoke covers `duckhive tui --help`, provider-free `duckhive tui --snapshot`, and `duckhive tui --input-smoke` through both Node and Windows wrapper launch paths. | Verified binary and input readiness |
 | TUI tests must be verified | Local Go 1.26.3 ran `cd tui && go test ./...` successfully after fixing the stale header version, header wrap, ASCII-safe empty-state/footer markers, adding a Bubble Tea program-loop input regression that types through the configured input stream, adding packaged `duckhive tui --input-smoke` coverage, adding local model-picker regressions for offline `ctrl+p`, preset rendering, and escape return, and adding local harness-state regressions for checkpoint, budget, MCP, ACP, and permission readiness. | Verified |
 | Harness state must be inspectable outside the TUI | `checkHarnessStateReadiness()` now adds a read-only `runtime-doctor` result for checkpoint count, budget state/log files, MCP, ACP, and permission readiness, with focused tests for current DuckHive config-home state and legacy OpenClaude checkpoint fallback. | Verified |
@@ -52,7 +52,7 @@ covers the named requirement.
 - `npm run typecheck`
 - `bun test`
 - `npm run build`
-- `npm run smoke` (`CLI smoke passed (66 commands plus Windows wrapper checks)`)
+- `npm run smoke` (`CLI smoke passed (67 commands plus Windows wrapper checks)`)
 - `npm run verify:privacy`
 - `node dist\cli.mjs runtime-doctor`
 - `npm pack --dry-run --json`

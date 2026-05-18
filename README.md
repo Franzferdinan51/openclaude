@@ -1392,7 +1392,7 @@ Recent verification snapshot:
 
 - `npm run typecheck`, `npm run build`, `npm run smoke`, `npm run verify:privacy`, and `node dist\cli.mjs runtime-doctor`: passing on Windows for `duckhive@0.13.1`
 - `bun test`: `3226 pass`, `0 fail`, `8002 expect()` calls across 368 files
-- `npm run smoke`: `12 pass`, `0 fail`, plus `CLI smoke passed (66 commands plus Windows wrapper checks)`
+- `npm run smoke`: `12 pass`, `0 fail`, plus `CLI smoke passed (67 commands plus Windows wrapper checks)`
 - focused upstream-sync regression tests for Bash sandbox fanout and WebSearch adapter diagnostics: `17 pass`, `0 fail`
 - `cd tui && go test ./...`: passing with local Go 1.26.3 from `.tmp\go-toolchain`
 - `duckhive --version`: `0.13.1 (DuckHive)`
