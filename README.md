@@ -1388,6 +1388,8 @@ The Go TUI prompt and streaming markers use ASCII-safe `> ` and `|` indicators a
 
 Android and Vision terminal helpers now keep screenshot artifacts in the OS temp directory instead of Unix-only `/tmp` paths, and quote local ADB pull destinations so Windows temp paths with spaces remain valid. This applies to both the slash commands and the built-in `AndroidTool` / `VisionTool` entrypoints. The focused regressions cover screenshot output paths, escaped prompt text, tool-level screenshot paths, and no-exec rejection on unterminated quoted input.
 
+Init and MemPalace built-in tools now resolve their DuckHive state through the shared config-home resolver instead of raw `HOME` / `~` path construction. That keeps config writes, MemPalace storage, and status output aligned with `CLAUDE_CONFIG_DIR`, Windows profile paths, and DuckHive's `~/.duckhive` migration behavior; focused regressions cover config writes, quoted palace paths, and missing MemPalace detection.
+
 The `/statusbar session` surface now reads the same public build version used by the CLI instead of carrying a stale hardcoded `DuckHive v0.8.0` string, and the status bar regression compares against `package.json` so future release bumps fail fast when terminal version copy drifts.
 
 Recent verification snapshot:

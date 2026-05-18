@@ -2,12 +2,33 @@
 import { z } from 'zod/v4'
 import { buildTool, type ToolDef } from '../../Tool.js'
 import { lazySchema } from '../../utils/lazySchema.js'
-import { execSync } from 'child_process'
+import { execSync, type ExecSyncOptions } from 'child_process'
 import { existsSync, mkdirSync, writeFileSync } from 'fs'
 import { join } from 'path'
+import { getClaudeConfigHomeDir } from '../../utils/envUtils.js'
 
-const DUCKHIVE_DIR = join(process.env.HOME ?? '~', '.duckhive')
-const PALACE_DIR = join(DUCKHIVE_DIR, 'mempalace')
+type MemPalaceToolDeps = {
+  exec: (command: string, options?: ExecSyncOptions) => string | Buffer
+  getClaudeConfigHomeDir: () => string
+}
+
+let memPalaceToolTestDeps: Partial<MemPalaceToolDeps> | null = null
+
+function getMemPalaceToolDeps(): MemPalaceToolDeps {
+  return {
+    exec: execSync,
+    getClaudeConfigHomeDir,
+    ...memPalaceToolTestDeps,
+  }
+}
+
+export function setMemPalaceToolTestDeps(overrides: Partial<MemPalaceToolDeps> | null): void {
+  memPalaceToolTestDeps = overrides
+}
+
+export function getMemPalaceToolDir(): string {
+  return join(getMemPalaceToolDeps().getClaudeConfigHomeDir(), 'mempalace')
+}
 
 const inputSchema = lazySchema(() =>
   z.strictObject({
@@ -39,11 +60,20 @@ const outputSchema = lazySchema(() =>
 type InputSchema = z.infer<typeof inputSchema>
 type Output = z.infer<typeof outputSchema>
 
+function shellQuote(value: string): string {
+  return `"${value.replace(/"/g, '\\"')}"`
+}
+
+function execMempalace(args: string[], timeout = 30000): string {
+  const palaceDir = getMemPalaceToolDir()
+  const cmd = `python3 -m mempalace --palace ${shellQuote(palaceDir)} ${args.join(' ')}`
+  const result = getMemPalaceToolDeps().exec(cmd, { timeout })
+  return result.toString().trim()
+}
+
 function runMempalace(args: string[], timeout = 30000): string {
   try {
-    const cmd = `python3 -m mempalace --palace ${PALACE_DIR} ${args.join(' ')}`
-    const result = execSync(cmd, { timeout })
-    return result.toString().trim()
+    return execMempalace(args, timeout)
   } catch (e: any) {
     return e.stdout?.toString()?.trim() || e.stderr?.toString()?.trim() || e.message
   }
@@ -57,48 +87,49 @@ export const MemPalaceTool = buildTool({
   get outputSchema() { return outputSchema() },
   async call(input: z.infer<InputSchema>): Promise<{ data: Output }> {
     const { action, query, mode, paths, wing, context, maxResults } = input
+    const palaceDir = getMemPalaceToolDir()
 
     if (action === 'status') {
       let version = 'unknown'
       let installed = false
       try {
-        version = runMempalace(['--version']).trim()
+        version = execMempalace(['--version']).trim()
         installed = true
       } catch {
         installed = false
       }
-      const palaceExists = existsSync(PALACE_DIR)
+      const palaceExists = existsSync(palaceDir)
       return {
         data: {
           success: true,
           action: 'status',
           installed,
           output: installed
-            ? `MemPalace: ${version}\nDuckHive palace: ${palaceExists ? PALACE_DIR : 'not initialized'}\nPalace dir: ${PALACE_DIR}`
+            ? `MemPalace: ${version}\nDuckHive palace: ${palaceExists ? palaceDir : 'not initialized'}\nPalace dir: ${palaceDir}`
             : 'MemPalace not installed. Run: pip install mempalace',
         },
       }
     }
 
     try {
-      runMempalace(['--version'])
+      execMempalace(['--version'])
     } catch {
       return { data: { success: false, action, error: 'MemPalace not installed. Install: pip install mempalace && pyenv install 3.10+' } }
     }
 
     switch (action) {
       case 'init': {
-        mkdirSync(PALACE_DIR, { recursive: true })
-        const configPath = join(PALACE_DIR, 'config.json')
+        mkdirSync(palaceDir, { recursive: true })
+        const configPath = join(palaceDir, 'config.json')
         const palaceConfig = {
-          palace_path: PALACE_DIR,
+          palace_path: palaceDir,
           collection_name: 'duckhive_drawers',
           topic_wings: ['duckhive', 'context', 'learnings'],
           hall_keywords: { facts: ['fact', 'important'], preferences: ['pref', 'prefer'] }
         }
         writeFileSync(configPath, JSON.stringify(palaceConfig, null, 2), 'utf8')
-        const out = runMempalace([`init ${PALACE_DIR} --yes`])
-        return { data: { success: true, action: 'init', output: `Initialized DuckHive MemPalace at ${PALACE_DIR}\n${out}` } }
+        const out = runMempalace([`init ${shellQuote(palaceDir)} --yes`])
+        return { data: { success: true, action: 'init', output: `Initialized DuckHive MemPalace at ${palaceDir}\n${out}` } }
       }
 
       case 'search': {

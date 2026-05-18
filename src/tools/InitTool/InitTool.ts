@@ -6,9 +6,32 @@ import { readFileSync, writeFileSync, existsSync, readdirSync, statSync, readFil
 import { resolve, join, basename } from 'path'
 import { DESCRIPTION } from './prompt.js'
 import { sessions_spawn } from '../../subagentSystem.js'
+import { getClaudeConfigHomeDir } from '../../utils/envUtils.js'
 
-const DUCKHIVE_DIR = join(process.env.HOME ?? '~', '.duckhive')
-const EXPORTS_DIR = join(DUCKHIVE_DIR, 'exports')
+type InitToolDeps = {
+  getClaudeConfigHomeDir: () => string
+}
+
+let initToolTestDeps: Partial<InitToolDeps> | null = null
+
+function getInitToolDeps(): InitToolDeps {
+  return {
+    getClaudeConfigHomeDir,
+    ...initToolTestDeps,
+  }
+}
+
+export function setInitToolTestDeps(overrides: Partial<InitToolDeps> | null): void {
+  initToolTestDeps = overrides
+}
+
+export function getInitToolConfigDir(): string {
+  return getInitToolDeps().getClaudeConfigHomeDir()
+}
+
+export function getInitToolConfigPath(): string {
+  return resolve(getInitToolConfigDir(), 'config.json')
+}
 
 const inputSchema = lazySchema(() =>
   z.strictObject({
@@ -254,13 +277,13 @@ function buildConfig(): string {
   return JSON.stringify({
     version: '1.0',
     providers: {
-      default: 'claude',
-      fallback: 'openrouter',
+      default: 'minimax',
+      fallback: 'codex',
     },
     models: {
-      default: 'claude-sonnet-4',
-      coding: 'claude-sonnet-4',
-      fast: 'claude-haiku-3',
+      default: 'MiniMax-M2.7',
+      coding: 'MiniMax-M2.7',
+      fast: 'MiniMax-M2.7',
     },
     features: {
       council: true,
@@ -321,13 +344,14 @@ export const InitTool = buildTool({
 
     // ── config action ──────────────────────────────────────────────────────────
     if (action === 'config') {
+      const configDir = getInitToolConfigDir()
+      const configPath = getInitToolConfigPath()
       // Ensure .duckhive dir exists
       try {
         const { mkdirSync } = await import('fs')
-        mkdirSync(DUCKHIVE_DIR, { recursive: true })
+        mkdirSync(configDir, { recursive: true })
       } catch { /* dir may already exist */ }
 
-      const configPath = resolve(DUCKHIVE_DIR, 'config.json')
       let config: Record<string, unknown> = {}
       if (existsSync(configPath)) {
         try { config = JSON.parse(readFileSync(configPath, 'utf8')) } catch { /* ignore */ }
@@ -361,7 +385,7 @@ export const InitTool = buildTool({
         { file: 'AGENTS.md', exists: analysis.existingFiles.some(f => f.path === 'AGENTS.md'), reason: 'Project architecture, build commands, conventions' },
         { file: 'SOUL.md', exists: analysis.existingFiles.some(f => f.path === 'SOUL.md'), reason: 'Team culture, values, communication style' },
         { file: 'TOOLS.md', exists: analysis.existingFiles.some(f => f.path === 'TOOLS.md'), reason: 'Available tools and best practices' },
-        { file: '~/.duckhive/config.json', exists: existsSync(resolve(DUCKHIVE_DIR, 'config.json')), reason: 'DuckHive settings (providers, models, features)' },
+        { file: getInitToolConfigPath(), exists: existsSync(getInitToolConfigPath()), reason: 'DuckHive settings (providers, models, features)' },
       ]
       return { data: { success: true, action: 'detect', preview } }
     }
@@ -405,9 +429,11 @@ export const InitTool = buildTool({
       // Create DuckHive config
       try {
         const { mkdirSync } = await import('fs')
-        mkdirSync(DUCKHIVE_DIR, { recursive: true })
-        writeFileSync(resolve(DUCKHIVE_DIR, 'config.json'), buildConfig(), 'utf8')
-        filesCreated.push('~/.duckhive/config.json')
+        const configDir = getInitToolConfigDir()
+        const configPath = getInitToolConfigPath()
+        mkdirSync(configDir, { recursive: true })
+        writeFileSync(configPath, buildConfig(), 'utf8')
+        filesCreated.push(configPath)
       } catch (e) {
         return { data: { success: false, action: 'setup', error: `Failed to create config: ${e instanceof Error ? e.message : String(e)}` } }
       }
