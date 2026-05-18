@@ -58,7 +58,10 @@ function saveSettings(settings) {
 
 function loadOpenClawConfig() {
   try {
-    const p = path.join(process.env.HOME || '', '.openclaw', 'openclaw.json');
+    const p =
+      process.env.DUCKHIVE_OPENCLAW_CONFIG_PATH ||
+      process.env.OPENCLAW_CONFIG_PATH ||
+      path.join(os.homedir(), '.openclaw', 'openclaw.json');
     if (fs.existsSync(p)) return JSON.parse(fs.readFileSync(p, 'utf8'));
   } catch (e) {
     console.error('Error loading OpenClaw config:', e);

@@ -696,6 +696,8 @@ Decrees issued without an explicit authority now default to `duckhive` across th
 
 > **Hive Nation runtime** — DuckHive’s governance commands target the Hive Nation / Council service on port 3007 by default, but that service is not auto-started by the current source checkout. Start the Council runtime separately or point DuckHive at a running service with `DUCKHIVE_COUNCIL_URL`.
 
+The bundled Council server can enrich live-context questions through Brave Search. Set `BRAVE_API_KEY` or `BRAVE_SEARCH_API_KEY` directly, or point `DUCKHIVE_OPENCLAW_CONFIG_PATH` / `OPENCLAW_CONFIG_PATH` at an OpenClaw `openclaw.json`; otherwise it falls back to `~/.openclaw/openclaw.json` using the OS home directory.
+
 ### Continuous Self-Improvement
 
 For this source checkout, the built-in local Hive Nation runtime command is `bun run council:serve`.
