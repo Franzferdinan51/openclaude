@@ -499,10 +499,14 @@ export function switchSession(
 
 const sessionSwitched = createSignal<[id: SessionId]>()
 
-const activeGoalId = createSignal<string | null>(null)
+let _activeGoalId: string | null = null
+const activeGoalIdChanged = createSignal<[string | null]>()
 
-export const getActiveGoalId = () => activeGoalId[0].peek()
-export const setActiveGoalId = (id: string | null) => activeGoalId[1].set(id)
+export const getActiveGoalId = () => _activeGoalId
+export const setActiveGoalId = (id: string | null) => {
+  _activeGoalId = id
+  activeGoalIdChanged.emit(id)
+}
 
 /**
  * Register a callback that fires when switchSession changes the active
