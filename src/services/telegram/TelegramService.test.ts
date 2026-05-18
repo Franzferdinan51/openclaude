@@ -32,6 +32,57 @@ afterEach(() => {
 })
 
 describe('TelegramService polling', () => {
+  test('redacts Telegram chat and bot identifiers in debug logs', async () => {
+    const debugLogs: string[] = []
+    mock.module('../../utils/debug.js', () => ({
+      logForDebugging: (message: string) => {
+        debugLogs.push(message)
+      },
+    }))
+
+    const fetchMock = mock(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.endsWith('/getMe')) {
+        return telegramResponse({
+          ok: true,
+          result: { id: 1, is_bot: true, username: 'private_duckhive_bot' },
+        })
+      }
+      if (url.endsWith('/setMyCommands')) {
+        return telegramResponse({ ok: true, result: true })
+      }
+      if (url.endsWith('/getUpdates')) {
+        return telegramResponse({
+          ok: true,
+          result: [
+            {
+              update_id: 60,
+              message: {
+                from: { id: 424242, is_bot: false, first_name: 'Private' },
+                chat: { id: 424242, type: 'private' },
+                text: 'hello',
+                date: 1,
+              },
+            },
+          ],
+        })
+      }
+      return telegramResponse({ ok: true, result: true })
+    }) as unknown as typeof fetch
+    globalThis.fetch = fetchMock
+
+    const service = await importFreshService()
+    await service.startTelegramService()
+    await waitFor(() => debugLogs.some(log => log.includes('registered chat')))
+    service.stopTelegramService()
+
+    const combined = debugLogs.join('\n')
+    expect(combined).toContain('bot username: @[redacted]')
+    expect(combined).toContain('registered chat [redacted]')
+    expect(combined).not.toContain('private_duckhive_bot')
+    expect(combined).not.toContain('424242')
+  })
+
   test('restores the Telegram bot token from secure storage on fresh startup', async () => {
     delete process.env.DUCKHIVE_TELEGRAM_BOT_TOKEN
 

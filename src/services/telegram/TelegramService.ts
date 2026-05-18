@@ -43,6 +43,7 @@ const TELEGRAM_DEFAULT_REQUEST_TIMEOUT_MS = 30_000
 const TELEGRAM_GET_UPDATES_REQUEST_TIMEOUT_MS = 45_000
 const TELEGRAM_DEFAULT_LONG_POLL_TIMEOUT_SECONDS = 30
 const TELEGRAM_LONG_POLL_ABORT_MARGIN_SECONDS = 5
+const TELEGRAM_DEBUG_REDACTED = '[redacted]'
 
 export function resolveTelegramLongPollTimeoutSeconds(timeoutSeconds: number): number {
   const maxLongPollTimeoutSeconds = Math.max(
@@ -54,6 +55,10 @@ export function resolveTelegramLongPollTimeoutSeconds(timeoutSeconds: number): n
     ? Math.max(1, Math.floor(timeoutSeconds))
     : TELEGRAM_DEFAULT_LONG_POLL_TIMEOUT_SECONDS
   return Math.min(configuredTimeoutSeconds, maxLongPollTimeoutSeconds)
+}
+
+function redactTelegramDebugIdentifier(_value: number | string | null | undefined): string {
+  return TELEGRAM_DEBUG_REDACTED
 }
 
 // ============================================================================
@@ -275,7 +280,9 @@ async function pollLoop(): Promise<void> {
         lastInboundChatId = chatId
 
         if (!isChatAllowed(chatId)) {
-          logForDebugging(`[telegram] rejected message from unauthorized chat ${chatId}`)
+          logForDebugging(
+            `[telegram] rejected message from unauthorized chat ${redactTelegramDebugIdentifier(chatId)}`,
+          )
           continue
         }
 
@@ -283,7 +290,9 @@ async function pollLoop(): Promise<void> {
         if (!registeredChatId) {
           registeredChatId = chatId
           saveChatId(chatId)
-          logForDebugging(`[telegram] registered chat ${chatId}`)
+          logForDebugging(
+            `[telegram] registered chat ${redactTelegramDebugIdentifier(chatId)}`,
+          )
           // Notify REPL that connection is ready
           for (const h of messageHandlers) {
             try { h(chatId, '') } catch { /* noop */ }
@@ -370,13 +379,17 @@ export async function startTelegramService(): Promise<void> {
   try {
     api = new TelegramBotAPI(token)
     const me = await api.getMe()
-    logForDebugging(`[telegram] bot username: @${me.result.username}`)
+    logForDebugging(
+      `[telegram] bot username: @${redactTelegramDebugIdentifier(me.result.username)}`,
+    )
 
     // Restore chatId from storage
     const storedChatId = getStoredChatId()
     if (storedChatId) {
       registeredChatId = storedChatId
-      logForDebugging(`[telegram] restored chat ${storedChatId} from storage`)
+      logForDebugging(
+        `[telegram] restored chat ${redactTelegramDebugIdentifier(storedChatId)} from storage`,
+      )
     }
 
     // Set bot commands
@@ -425,7 +438,9 @@ export async function sendTelegramMessage(text: string): Promise<boolean> {
     for (const chunk of chunkTelegramMessage(text)) {
       await api.sendMarkdown(chatId, chunk)
     }
-    logForDebugging(`[telegram] sent message to ${chatId}`)
+    logForDebugging(
+      `[telegram] sent message to ${redactTelegramDebugIdentifier(chatId)}`,
+    )
     return true
   } catch (err) {
     logForDebugging(`[telegram] send error: ${err instanceof Error ? err.message : String(err)}`)
