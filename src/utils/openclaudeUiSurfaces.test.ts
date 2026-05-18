@@ -257,20 +257,45 @@ describe('DuckHive provider and GitHub setup surfaces', () => {
       join(repoRoot, 'src', 'components', 'WorkflowMultiselectDialog.tsx'),
       'utf8',
     )
+    const existingWorkflow = readFileSync(
+      join(repoRoot, 'src', 'commands', 'install-github-app', 'ExistingWorkflowStep.tsx'),
+      'utf8',
+    )
+    const installGitHubApp = readFileSync(
+      join(repoRoot, 'src', 'commands', 'install-github-app', 'install-github-app.tsx'),
+      'utf8',
+    )
     const setupActions = readFileSync(
       join(repoRoot, 'src', 'commands', 'install-github-app', 'setupGitHubActions.ts'),
       'utf8',
     )
-    const combined = [workflowDialog, setupActions].join('\n')
+    const githubConstants = readFileSync(
+      join(repoRoot, 'src', 'constants', 'github-app.ts'),
+      'utf8',
+    )
+    const combined = [
+      workflowDialog,
+      existingWorkflow,
+      installGitHubApp,
+      setupActions,
+      githubConstants,
+    ].join('\n')
 
     expect(combined).toContain('DuckHive PR assistant')
     expect(combined).toContain('DuckHive code review')
     expect(combined).toContain('DuckHive PR assistant workflow')
     expect(combined).toContain('DuckHive code review workflow')
+    expect(combined).toContain('Add DuckHive GitHub workflow')
+    expect(combined).toContain('Installing DuckHive GitHub workflow')
+    expect(combined).toContain('A DuckHive-compatible GitHub workflow')
     expect(combined).not.toContain('@Claude Code - Tag @claude')
     expect(combined).not.toContain('Claude Code Review - Automated code review')
     expect(combined).not.toContain('Claude PR Assistant workflow')
     expect(combined).not.toContain('Claude Code Review workflow')
+    expect(combined).not.toContain('Add Claude Code GitHub Workflow')
+    expect(combined).not.toContain('Installing Claude Code GitHub App')
+    expect(combined).not.toContain('What is Claude Code?')
+    expect(combined).not.toContain('A Claude workflow file already exists')
   })
 })
 

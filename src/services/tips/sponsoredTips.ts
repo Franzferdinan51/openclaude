@@ -6,10 +6,7 @@ import type { Tip, TipContext, TipSponsor } from './types.js'
 const DEFAULT_FREQUENCY = 10
 
 export function sponsoredTipsEnabled(): boolean {
-  const settings = getSettings_DEPRECATED()
-  if (settings.sponsoredTipsEnabled === false) return false
-  if (settings.sponsoredTipsFrequency === 0) return false
-  return true
+  return false
 }
 
 export function getSponsoredTipsFrequency(): number {

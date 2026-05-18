@@ -1,4 +1,4 @@
-export const PR_TITLE = 'Add Claude Code GitHub Workflow'
+export const PR_TITLE = 'Add DuckHive GitHub workflow'
 
 export const GITHUB_ACTION_SETUP_DOCS_URL =
   'https://github.com/anthropics/claude-code-action/blob/main/docs/setup.md'
@@ -55,13 +55,12 @@ jobs:
 
 `
 
-export const PR_BODY = `## 🤖 Installing Claude Code GitHub App
+export const PR_BODY = `## Installing DuckHive GitHub workflow
 
-This PR adds a GitHub Actions workflow that enables Claude Code integration in our repository.
+This PR adds a GitHub Actions workflow installed through DuckHive. It uses the compatible Claude Code GitHub Action runtime so repository members can trigger assisted coding work from issues and pull requests.
 
-### What is Claude Code?
+### What this enables
 
-[Claude Code](https://claude.com/claude-code) is an AI coding agent that can help with:
 - Bug fixes and improvements  
 - Documentation updates
 - Implementing new features
@@ -71,29 +70,29 @@ This PR adds a GitHub Actions workflow that enables Claude Code integration in o
 
 ### How it works
 
-Once this PR is merged, we'll be able to interact with Claude by mentioning @claude in a pull request or issue comment.
-Once the workflow is triggered, Claude will analyze the comment and surrounding context, and execute on the request in a GitHub action.
+Once this PR is merged, repository members can trigger the workflow by mentioning @claude in a pull request or issue comment.
+The action analyzes the comment and surrounding repository context, then executes the request inside GitHub Actions.
 
 ### Important Notes
 
 - **This workflow won't take effect until this PR is merged**
 - **@claude mentions won't work until after the merge is complete**
-- The workflow runs automatically whenever Claude is mentioned in PR or issue comments
-- Claude gets access to the entire PR or issue context including files, diffs, and previous comments
+- The workflow runs automatically whenever @claude is mentioned in PR or issue comments
+- The action gets access to the entire PR or issue context including files, diffs, and previous comments
 
 ### Security
 
 - Our Anthropic API key is securely stored as a GitHub Actions secret
 - Only users with write access to the repository can trigger the workflow
-- All Claude runs are stored in the GitHub Actions run history
-- Claude's default tools are limited to reading/writing files and interacting with our repo by creating comments, branches, and commits.
+- All assisted runs are stored in the GitHub Actions run history
+- The action's default tools are limited to reading/writing files and interacting with our repo by creating comments, branches, and commits.
 - We can add more allowed tools by adding them to the workflow file like:
 
 \`\`\`
 allowed_tools: Bash(npm install),Bash(npm run build),Bash(npm run lint),Bash(npm run test)
 \`\`\`
 
-There's more information in the [Claude Code action repo](https://github.com/anthropics/claude-code-action).
+There's more information in the [Claude Code action repo](https://github.com/anthropics/claude-code-action), which is the compatible runtime this DuckHive setup flow installs.
 
 After merging this PR, let's try mentioning @claude in a comment on any PR to get started!`
 
