@@ -327,9 +327,107 @@ function formatGoal(goal: Goal, detailed = false): string {
   return output
 }
 
-async function createGoal(args: string[]): Promise<string> {
+async function stopActiveAutonomousGoal(
+  context?: ToolUseContext,
+): Promise<string> {
+  const goals = getGoals()
+  const active = goals.find(
+    g => g.autonomousMode === true && g.status === 'active',
+  )
+  if (!active) {
+    return listGoals([])
+  }
+  return stopAutonomousMode([active.id], context)
+}
+
+async function createGoalAndStartAutonomous(
+  args: string[],
+  context?: ToolUseContext,
+): Promise<string> {
   if (args.length === 0) {
-    return `Usage: /goal create <description>\nExample: /goal create Build user authentication system`
+    return `Usage: /goal "<task description>"
+
+Starts autonomous goal mode immediately. The agent works toward the goal
+across turns until you run /goal stop.
+
+Examples:
+  /goal "Fix the login bug"
+  /goal Write tests for auth module
+  /goal stop  (to cancel)
+  /goal status  (to check progress)`
+  }
+
+  const { goalId, message } = await createGoal(args)
+  if (!goalId) return message
+
+  const goals = getGoals()
+  const goal = goals.find(g => g.id === goalId)
+  if (!goal) return message
+
+  setActiveGoalId(goal.id)
+  getSystemContext.cache.clear?.()
+
+  enqueuePendingNotification({
+    value: `<goal_tick>Autonomous goal started. Work toward the active goal. Check system prompt for goal context.</goal_tick>`,
+    mode: 'prompt',
+    priority: 'next',
+    isMeta: true,
+  })
+
+  goal.autonomousMode = true
+  goal.status = 'active'
+  goal.updatedAt = new Date().toISOString()
+  goal.lastActivityAt = new Date().toISOString()
+
+  if (goal.steps.length === 0) {
+    goal.steps.push({
+      id: generateId(),
+      description: goal.description,
+      status: 'active',
+      createdAt: new Date().toISOString(),
+    })
+    goal.currentStepId = goal.steps[0].id
+  }
+
+  const step = getCurrentStep(goal)
+  const stepInfo = step ? `\nCurrent step: ${step.description}` : ''
+
+  await saveGoals(goals, { type: 'autonomous_started', goal })
+
+  let spawnInfo = ''
+  if (context) {
+    const spawnResult = await sessions_spawn({
+      label: `goal-${goal.id}`,
+      agentType: 'general-purpose',
+      mode: 'autonomous-goal',
+      task: buildAutonomousGoalTask(goal, step),
+      context,
+    })
+    const agentRunId = extractSpawnedAgentRunId(spawnResult)
+    if (agentRunId) {
+      goal.activeAgentRunId = agentRunId
+      spawnInfo = `\nBackground teammate started: ${agentRunId}`
+    } else if (spawnResult.includes('Failed to spawn subagent teammate')) {
+      goal.autonomousMode = false
+      goal.activeAgentRunId = undefined
+      await saveGoals(goals, { type: 'autonomous_failed', goal })
+      return `Failed to start autonomous goal mode.\n\n${spawnResult}`
+    } else if (spawnResult.trim()) {
+      spawnInfo = `\nSpawn result: ${spawnResult}`
+    }
+  } else {
+    spawnInfo = '\nCron-tick loop active — the 1s scheduler drives goal work each turn.'
+  }
+
+  return `Autonomous goal started.\n\n${formatGoal(goal, true)}${stepInfo}${spawnInfo}\n\nThe agent will work toward this goal continuously. Run /goal stop to cancel.`
+}
+
+async function createGoal(args: string[]): Promise<{ goalId: string; message: string }> {
+  if (args.length === 0) {
+    return {
+      goalId: '',
+      message: `Usage: /goal create <description>\nExample: /goal create Build user authentication system`,
+    }
   }
 
   const description = args.join(' ')
@@ -352,7 +450,10 @@ async function createGoal(args: string[]): Promise<string> {
   attachCurrentSessionToGoal(goals, goal)
   await saveGoals(goals, { type: 'created', goal })
 
-  return `Goal created successfully!\n\n${formatGoal(goal, true)}`
+  return {
+    goalId: goal.id,
+    message: `Goal created successfully!\n\n${formatGoal(goal, true)}`,
+  }
 }
 
 async function listGoals(args: string[]): Promise<string> {
@@ -766,54 +867,39 @@ async function attachToGoal(args: string[]): Promise<string> {
 
 function showHelp(): string {
   return `
-${bold('DuckHive /goal - Persisted Workflow Goals')}
+${bold('DuckHive /goal - Autonomous Goal Mode')}
 
-${bold('Terminal commands:')}
-  duckhive goal <description>          Create a new goal (Codex-style shorthand)
-  duckhive goal create <description>   Create a new goal
-  duckhive goal list [filter]          List goals (filter: all|active|paused|completed|failed)
-  duckhive goal status [id]            Show goal status or summary
-  duckhive goal pause [id]             Pause a goal
-  duckhive goal resume [id]            Resume a paused goal
-  duckhive goal pursue [id]            Start autonomous goal work
-  duckhive goal stop-autonomous [id]   Stop autonomous work and pause the goal
-  duckhive goal complete [id]          Mark goal as completed
-  duckhive goal fail [id]              Mark goal as failed
-  duckhive goal clear [id]             Delete a goal
-  duckhive goal attach [id]            Attach current session to goal
-  duckhive goal step add [id] <desc>   Add a step to a goal
+${bold('Simple usage:')}
+  /goal "<task>"    Create goal and start autonomous work immediately
+  /goal stop        Stop the active autonomous goal
+  /goal status      Show active goal progress
+  /goal list        List all goals
 
-${bold('REPL commands:')}
-  /goal <description>          Create a new goal (Codex-style shorthand)
-  /goal create <description>   Create a new goal
-  /goal list [filter]          List goals (filter: all|active|paused|completed|failed)
-  /goal status [id]            Show goal status or summary
-  /goal pause [id]             Pause a goal
-  /goal resume [id]            Resume a paused goal
-  /goal pursue [id]            Start autonomous goal work
-  /goal stop-autonomous [id]   Stop autonomous work and pause the goal
-  /goal complete [id]          Mark goal as completed
-  /goal fail [id]              Mark goal as failed
-  /goal clear [id]             Delete a goal
-  /goal attach [id]            Attach current session to goal
-  /goal step add [id] <desc>   Add a step to a goal
+${bold('Power-user subcommands (all still work):')}
+  /goal create <description>     Create a goal (does not start autonomous mode)
+  /goal pursue [id]               Start autonomous work on a goal
+  /goal stop-autonomous [id]       Stop autonomous work
+  /goal pause [id]                 Pause a goal
+  /goal resume [id]               Resume a paused goal
+  /goal complete [id]             Mark goal completed
+  /goal fail [id]                 Mark goal failed
+  /goal clear [id]                Delete a goal
+  /goal attach [id]               Attach current session to goal
+  /goal step add [id] <desc>      Add a step to a goal
 
 ${bold('Examples:')}
-  duckhive goal Build the user authentication system
-  duckhive goal list active
-  duckhive goal status goal_123
-  /goal Build the user authentication system
-  /goal create Build the user authentication system
+  /goal "Build user authentication system"
+  /goal Write tests for the auth module
+  /goal Fix the login bug on mobile
+  /goal stop
   /goal list active
   /goal status goal_123
   /goal pause goal_123
   /goal resume goal_123
   /goal pursue goal_123
   /goal stop-autonomous goal_123
-  /goal complete goal_123
-  /goal fail goal_123
 
-${italic('Goals persist across sessions and can be resumed later.')}
+${italic('Autonomous mode: the agent works toward the goal continuously across turns. Run /goal stop to cancel.')}
 `.trim()
 }
 
@@ -848,23 +934,59 @@ export default async function goalCommand(
   args: string[],
   context?: ToolUseContext,
 ): Promise<string> {
+  // Simplified one-shot interface:
+  //   /goal "do X"      → create + start autonomous work
+  //   /goal stop        → stop active autonomous goal
+  //   /goal list/status → management (same as before)
+  // All other subcommands still work for power users.
+
   const subcommand = args[0]?.toLowerCase()
+  const isKnownSubcommand = [
+    'create', 'new', 'list', 'ls', 'status', 'stat',
+    'pause', 'resume', 'continue', 'complete', 'done', 'finish',
+    'fail', 'failed', 'cancel', 'clear', 'delete', 'remove',
+    'attach', 'link', 'step',
+    'pursue', 'work', 'start',
+  ].includes(subcommand ?? '')
+
+  // /goal "do X" — single non-subcommand arg → create + start autonomous
+  if (args.length >= 1 && !isKnownSubcommand) {
+    const goalId = await createGoalAndStartAutonomous(args, context)
+    return goalId
+  }
 
   switch (subcommand) {
-    case 'create':
-    case 'new':
-      return createGoal(args.slice(1))
+    case undefined:
+    case 'status':
+    case 'stat':
+      return goalStatus(args.slice(1))
+
+    case 'stop':
+      return stopActiveAutonomousGoal(context)
 
     case 'list':
     case 'ls':
       return listGoals(args.slice(1))
 
-    case 'status':
-    case 'stat':
-      return goalStatus(args.slice(1))
+    case 'create':
+    case 'new': {
+      const result = await createGoal(args.slice(1))
+      // If goal was created successfully and REPL context available, start autonomous mode
+      if (result.goalId && context) {
+        return await pursueGoal([result.goalId], context)
+      }
+      return result.message
+    }
+
+    case 'pursue':
+    case 'work':
+    case 'start':
+      return pursueGoal(args.slice(1), context)
+
+    case 'stop-autonomous':
+      return stopAutonomousMode(args.slice(1), context)
 
     case 'pause':
-    case 'stop':
       return pauseGoal(args.slice(1))
 
     case 'resume':
@@ -893,28 +1015,11 @@ export default async function goalCommand(
     case 'step':
       return handleStepCommand(args.slice(1))
 
-    case 'pursue':
-    case 'work':
-    case 'start':
-      return pursueGoal(args.slice(1), context)
-
-    case 'stop-autonomous':
-      return stopAutonomousMode(args.slice(1), context)
-
     case 'help':
       return showHelp()
 
-    case undefined:
-      return goalStatus([])
-
     default:
-      if (subcommand.startsWith('goal_')) {
-        return goalStatus(args)
-      }
-      if (args.length === 1) {
-        return `Unknown goal command: ${subcommand}\nUse /goal help to see supported commands.`
-      }
-      return createGoal(args)
+      return goalStatus(args)
   }
 }
 
