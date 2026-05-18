@@ -1,5 +1,5 @@
 import { spawn, spawnSync } from 'node:child_process'
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { createServer, type IncomingMessage } from 'node:http'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
@@ -22,8 +22,11 @@ const tempDirs: string[] = []
 const bgControlConfigDir = mkdtempSync(join(tmpdir(), 'duckhive-cli-smoke-bg-'))
 const exportConfigDir = mkdtempSync(join(tmpdir(), 'duckhive-cli-smoke-export-config-'))
 const exportOutputDir = mkdtempSync(join(tmpdir(), 'duckhive-cli-smoke-export-output-'))
+const schemaSmokeDir = mkdtempSync(join(tmpdir(), 'duckhive-cli-smoke-schema-'))
+const badOutputSchemaPath = join(schemaSmokeDir, 'bad-output-schema.json')
 tempDirs.push(bgControlConfigDir)
-tempDirs.push(exportConfigDir, exportOutputDir)
+tempDirs.push(exportConfigDir, exportOutputDir, schemaSmokeDir)
+writeFileSync(badOutputSchemaPath, '{not json')
 
 async function readRequestBody(request: IncomingMessage): Promise<string> {
   const chunks: Buffer[] = []
@@ -181,7 +184,16 @@ const cases: SmokeCase[] = [
       '--output-schema',
       process.platform === 'win32'
         ? 'data on Windows'
-        : 'readable elsewhere',
+      : 'readable elsewhere',
+    ],
+  },
+  {
+    name: 'output schema file parse error',
+    args: ['--bare', '--print', 'schema smoke', '--output-schema', badOutputSchemaPath],
+    expectedStatus: 1,
+    includes: [
+      'Error: failed to parse JSON schema from file',
+      'bad-output-schema.json',
     ],
   },
   {

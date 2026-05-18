@@ -53,7 +53,7 @@ covers the named requirement.
 | OpenGateway partner model catalog must be current | The `gitlawb-opengateway` preset now routes through `https://opengateway.gitlawb.com/v1`, maps to the OpenAI-compatible vendor, and exposes Gemini 3.1 Flash Lite Preview plus GLM 5.1 FP8 catalog entries. | Verified |
 | Session search must stay local and provider-free | Inspired by Hermes `abf1af540193c30047ff3e7e759c330faf3a880f`, DuckHive's `agenticSessionSearch` now uses deterministic local scoring across tags, titles, branches, summaries, first prompts, and transcript excerpts instead of `sideQuery`; focused tests cover metadata ranking, quoted phrase transcript matching, and OR-style broad recall. | Verified |
 | Transcript metadata must not hide the latest assistant message | Inspired by OpenClaw `023e33cb07`, DuckHive now has a regression covering trailing transcript metadata after an assistant turn. `loadTranscriptFile` keeps the assistant message in the built conversation chain even when a `custom-title` row is appended after it. | Verified |
-| Codex-compatible structured-output schema files must work in headless/resumed flows | Inspired by Codex `af6ffb6eb`, DuckHive now accepts `--output-schema <file>` as a file-based alias for the existing `--json-schema` structured-output path. The loaded schema is parsed before the headless turn, conflicts with inline `--json-schema` are rejected, provider-startup command detection treats `--output-schema` as a global option with a value, and README documents use with `--resume ... -p`. | Verified |
+| Codex-compatible structured-output schema files must work in headless/resumed flows | Inspired by Codex `af6ffb6eb`, DuckHive now accepts `--output-schema <file>` as a file-based alias for the existing `--json-schema` structured-output path. The loaded schema is parsed before the headless turn, conflicts with inline `--json-schema` are rejected, provider-startup command detection treats `--output-schema` as a global option with a value, README documents use with `--resume ... -p`, and CLI smoke verifies top-level help plus malformed schema-file fail-fast behavior. | Verified |
 | Skill slash commands must load from symlinked skill directories | Inspired by Hermes `ff078738ea0108548fc9c147140942fbeab7c833`, `src\skills\loadSkillsDir.test.ts` verifies DuckHive discovers and loads a skill command from a symlinked `.claude\skills\<name>` directory while preserving the visible skill root. | Verified |
 | Other harnesses must be tracked for feature pulls | Live upstream probes on 2026-05-18 confirm Codex `main` at `7ee7fe239f8bd2f478a30c369c2566004769a3da`, OpenClaw `main` at `b823a5a26626ee4637975cd923dfd12df063baf0`, OpenClaude `main` at `f71e7692373a61d28c82fc3fadff3feaa4071ede`, and Hermes Agent `main` at `609c485fc6d0a0c24a023cd1349ebd6ddbf60315`. DuckHive is no longer behind `Gitlawb/openclaude:main`; `main..openclaude/main` is empty. The latest OpenClaw delta set was reviewed as CI/docs/xAI OAuth sidecar/release-stability internals with no direct DuckHive runtime port identified; the Hermes deliverable-mode slice now covers Telegram uploads and terminal AgentRun artifact visibility. | Tracked |
 | Windows TUI must be runnable | A local verified Go 1.25.4 toolchain built `tui\duckhive-tui.exe`; `duckhive tui --snapshot` renders the packaged Bubble Tea UI, `duckhive tui --input-smoke "typed after go rebuild"` verifies the rebuilt packaged input loop through the real launcher, and `duckhive tui --submit-smoke "submitted through cli wrapper"` verifies typing plus Enter submission. `node dist\cli.mjs runtime-doctor` and CLI smoke now cover `Terminal TUI - Ready`, `Terminal TUI input`, `duckhive tui --help`, snapshot, input smoke, and submit smoke through Node and Windows wrapper launch paths; current package dry-run includes `tui/duckhive-tui.exe` and TUI source files. | Verified binary, input, and submit readiness |
@@ -71,7 +71,7 @@ Latest continuation evidence from 2026-05-18:
 
 - `npm run build`
 - `npm run typecheck`
-- `npm run smoke` (`CLI smoke passed (80 commands plus Windows wrapper checks)`, including the mock OpenAI-compatible prompt-submission `_zod` regression and packaged TUI submit smoke)
+- `npm run smoke` / `bun run scripts\cli-smoke.ts` (`CLI smoke passed (81 commands plus Windows wrapper checks)`, including the mock OpenAI-compatible prompt-submission `_zod` regression, packaged TUI submit smoke, and malformed `--output-schema` fail-fast coverage)
 - `npm run verify:privacy`
 - `bun test` (`3369 pass`, `0 fail`, `8487 expect()` calls across 381 files)
 - `duckhive --version`, `duckhive --yolo --version`, `duckhive --dangerously-skip-permissions --version`, and `node dist\cli.mjs --version` (`0.13.6 (DuckHive)`)
@@ -90,6 +90,7 @@ Latest continuation evidence from 2026-05-18:
 - `node dist\cli.mjs checkpoint list` with isolated `CLAUDE_CONFIG_DIR`
 - `duckhive tui --input-smoke "typed text"`
 - `duckhive tui --submit-smoke "submitted text"`
+- `node dist\cli.mjs --help` includes `--output-schema`
 - `node dist\cli.mjs runtime-doctor`
 - `bun test src\utils\agenticSessionSearch.test.ts`
 - `bun test src\skills\loadSkillsDir.test.ts`
