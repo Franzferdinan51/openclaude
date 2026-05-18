@@ -67,8 +67,8 @@ export interface TelegramAdapterConfig extends ChannelAdapterConfig {
    */
   allowedChatIds?: Array<number | string>
   /**
-   * Timeout for long-polling getUpdates, in milliseconds.
-   * Defaults to 55000 (just under Telegram's 60s server timeout).
+   * Timeout for Telegram's server-side getUpdates long poll, in milliseconds.
+   * Defaults to 30000. The HTTP client abort window is kept above this value.
    */
   longPollTimeout?: number
   /**
@@ -88,8 +88,22 @@ export interface TelegramAdapterConfig extends ChannelAdapterConfig {
   webhookSecret?: string
 }
 
-const DEFAULT_LONG_POLL_TIMEOUT_MS = 55_000
+const DEFAULT_API_TIMEOUT_MS = 30_000
+const GET_UPDATES_API_TIMEOUT_MS = 45_000
+const DEFAULT_LONG_POLL_TIMEOUT_MS = 30_000
+const LONG_POLL_ABORT_MARGIN_MS = 5_000
 const DEFAULT_API_BASE = 'https://api.telegram.org'
+
+export function resolveTelegramAdapterLongPollSeconds(timeoutMs: number): number {
+  const maxLongPollMs = Math.max(
+    1_000,
+    GET_UPDATES_API_TIMEOUT_MS - LONG_POLL_ABORT_MARGIN_MS,
+  )
+  const configuredMs = Number.isFinite(timeoutMs)
+    ? Math.max(1_000, Math.floor(timeoutMs))
+    : DEFAULT_LONG_POLL_TIMEOUT_MS
+  return Math.max(1, Math.floor(Math.min(configuredMs, maxLongPollMs) / 1000))
+}
 
 // Adapter
 
@@ -225,12 +239,13 @@ export class TelegramAdapter implements ChannelAdapter {
   private async fetchUpdates(): Promise<TelegramUpdate[]> {
     try {
       const params: Record<string, unknown> = {
-        timeout: Math.floor(this.longPollTimeout / 1000),
+        timeout: resolveTelegramAdapterLongPollSeconds(this.longPollTimeout),
         offset: this.lastUpdateId > 0 ? this.lastUpdateId + 1 : undefined,
       }
       const result = await this.apiCall<{ ok: boolean; result: TelegramUpdate[] }>(
         'getUpdates',
         params,
+        GET_UPDATES_API_TIMEOUT_MS,
       )
       if (!result.ok || !result.result) return []
 
@@ -280,10 +295,14 @@ export class TelegramAdapter implements ChannelAdapter {
     })
   }
 
-  private async apiCall<T>(method: string, params: Record<string, unknown>): Promise<T> {
+  private async apiCall<T>(
+    method: string,
+    params: Record<string, unknown>,
+    timeoutMs = DEFAULT_API_TIMEOUT_MS,
+  ): Promise<T> {
     const url = `${this.apiBase}/bot${this.botToken}/${method}`
     const { signal, cleanup } = createCombinedAbortSignal(undefined, {
-      timeoutMs: 30_000,
+      timeoutMs,
     })
     const res = await fetch(url, {
       method: 'POST',

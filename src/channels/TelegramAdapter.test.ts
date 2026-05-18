@@ -1,5 +1,8 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test'
-import { TelegramAdapter } from './TelegramAdapter.js'
+import {
+  TelegramAdapter,
+  resolveTelegramAdapterLongPollSeconds,
+} from './TelegramAdapter.js'
 
 const originalFetch = globalThis.fetch
 const originalEnv = { ...process.env }
@@ -91,6 +94,31 @@ describe('TelegramAdapter', () => {
     expect(first?.content).toBe('first allowed')
     expect(second?.content).toBe('second allowed')
     expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  test('bounds getUpdates long-poll seconds below the adapter HTTP abort timeout', async () => {
+    expect(resolveTelegramAdapterLongPollSeconds(30_000)).toBe(30)
+    expect(resolveTelegramAdapterLongPollSeconds(55_000)).toBe(40)
+    expect(resolveTelegramAdapterLongPollSeconds(0)).toBe(1)
+  })
+
+  test('sends bounded getUpdates timeout in the adapter request body', async () => {
+    let requestBody: Record<string, unknown> | undefined
+    const fetchMock = mock(async (_url: string | URL | Request, init?: RequestInit) => {
+      requestBody = JSON.parse(String(init?.body ?? '{}')) as Record<string, unknown>
+      return telegramResponse({ ok: true, result: [] })
+    }) as unknown as typeof fetch
+    globalThis.fetch = fetchMock
+
+    const adapter = new TelegramAdapter({
+      botToken: '123:test-token',
+      allowedChatId: 42,
+      longPollTimeout: 55_000,
+    })
+
+    await adapter.receiveMessage()
+
+    expect(requestBody?.timeout).toBe(40)
   })
 
   test('filters inbound messages with comma-separated DuckHive allowlist env', async () => {

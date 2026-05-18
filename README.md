@@ -328,7 +328,7 @@ The old upstream `--bg`/`--background` spawning path no longer silently no-ops i
 
 Long Telegram responses are chunked, Markdown delivery falls back to plain text, `/approve` uses the same AgentRun approval path as the CLI/WebUI and can acknowledge one pending approval ID without clearing the rest, and `bun run doctor:runtime` reports the Agent Harness, Telegram, and computer-use readiness state.
 
-Telegram long polling follows the latest compatible OpenClaw timeout hardening: DuckHive keeps the Bot API `getUpdates` HTTP abort window longer than the Telegram long-poll body timeout, so quiet polls can finish normally instead of racing a client-side abort at the same 30-second boundary.
+Telegram long polling follows the latest compatible OpenClaw timeout hardening in both the Telegram service and channel adapter: DuckHive keeps the Bot API `getUpdates` HTTP abort window longer than the Telegram long-poll body timeout, so quiet polls can finish normally instead of racing a client-side abort at the same boundary.
 
 ### /init — Project Setup
 
