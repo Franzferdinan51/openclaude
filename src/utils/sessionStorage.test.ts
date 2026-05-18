@@ -260,3 +260,24 @@ test('loadTranscriptFile omits raw toolUseResult for persisted-output transcript
     (loaded?.message.content as Array<{ content: string }>)[0]?.content,
   ).toContain('Preview text')
 })
+
+test('loadTranscriptFile keeps the latest assistant message when metadata trails the transcript', async () => {
+  const firstUser = user(id(51), null, 'hello')
+  const latestAssistant = assistant(id(52), id(51), 'canonical answer')
+  const trailingTitle = {
+    type: 'custom-title',
+    sessionId,
+    customTitle: 'Updated after assistant',
+  }
+
+  const filePath = await writeJsonl([firstUser, latestAssistant, trailingTitle])
+  const { messages } = await loadTranscriptFile(filePath)
+
+  expect(messages.get(id(52))?.type).toBe('assistant')
+  const chain = buildConversationChain(messages, messages.get(id(52))!)
+  expect(chain.map(message => message.uuid)).toEqual([id(51), id(52)])
+  expect(
+    (messages.get(id(52)) as ReturnType<typeof assistant> | undefined)?.message
+      .content[0]?.text,
+  ).toBe('canonical answer')
+})
