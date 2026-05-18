@@ -824,6 +824,23 @@ const cases: SmokeCase[] = [
 
 const failures: string[] = []
 
+function checkBuiltBundleZodGuards(): void {
+  const bundle = readFileSync(cliPath, 'utf8')
+  const requiredGuards = [
+    "if (!schema || typeof schema !== 'object') return false",
+    "if (!schema || typeof schema !== 'object' || !('_zod' in schema)) { return; }",
+    "if (!input || typeof input !== 'object') { return null; }",
+  ]
+
+  for (const guard of requiredGuards) {
+    if (!bundle.includes(guard)) {
+      failures.push(
+        `built bundle is missing Zod crash guard: ${guard}`,
+      )
+    }
+  }
+}
+
 function checkSmokeCase(
   smokeCase: SmokeCase,
   run: () => ReturnType<typeof spawnSync>,
@@ -856,6 +873,8 @@ function checkSmokeCase(
     }
   }
 }
+
+checkBuiltBundleZodGuards()
 
 for (const smokeCase of cases) {
   checkSmokeCase(smokeCase, () => spawnSync(process.execPath, [cliPath, ...smokeCase.args], {

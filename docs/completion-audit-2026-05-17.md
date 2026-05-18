@@ -65,6 +65,7 @@ covers the named requirement.
 Latest continuation evidence from 2026-05-18:
 
 - `npm run build`
+- `npm run typecheck`
 - `npm run smoke` (`CLI smoke passed (75 commands plus Windows wrapper checks)`)
 - `npm run verify:privacy`
 - `bun test` (`3369 pass`, `0 fail`, `8487 expect()` calls across 381 files)
@@ -134,6 +135,5 @@ Historical broader gates from earlier audit passes:
 ## Open Work
 
 - Test full `duckhive tui` keyboard interaction manually from a real interactive PowerShell terminal. Non-interactive `duckhive tui --snapshot` now renders one TUI frame and exits for CI/log verification, `duckhive tui --input-smoke "typed text"` verifies packaged Bubble Tea input-loop delivery through the launcher, `runtime-doctor` verifies binary readiness, and local Go 1.25.4 now verifies `cd tui && go test ./...`.
-- Clean up repository-wide TypeScript strict-null/type-narrowing errors so `npm run typecheck` can become a green release gate again. The current failure is outside the checkpoint CLI slice and includes bridge, print, MCP, main REPL, session restore, and permission-handler paths.
 - Continue feature-by-feature upstream imports rather than merging upstream harnesses wholesale. DuckHive and OpenClaude histories are divergent, so release commits, branding changes, and unrelated upstream removals must be reviewed selectively.
 - Keep importing upstream features as independent, verified slices. The current tested state is green, but the product goal remains open-ended until each new upstream slice has its own impact analysis, implementation, and verification.
