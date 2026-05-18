@@ -47,6 +47,8 @@ test('skips provider startup for utility commands', () => {
   expect(shouldSkipProviderStartup(['provider', 'status'])).toBe(true)
   expect(shouldSkipProviderStartup(['permissions', 'profile', 'list'])).toBe(true)
   expect(shouldSkipProviderStartup(['allowed-tools', 'profile', 'status'])).toBe(true)
+  expect(shouldSkipProviderStartup(['checkpoint', 'list'])).toBe(true)
+  expect(shouldSkipProviderStartup(['checkpoints', 'save', 'before-refactor'])).toBe(true)
   expect(shouldSkipProviderStartup(['run', 'list'])).toBe(true)
   expect(shouldSkipProviderStartup(['runs', 'running'])).toBe(true)
   expect(shouldSkipProviderStartup(['agent-run', 'tail', 'run_123'])).toBe(true)

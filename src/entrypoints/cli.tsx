@@ -396,6 +396,20 @@ async function main(): Promise<void> {
     return;
   }
 
+  // Fast-path for checkpoint browsing/control outside the REPL.
+  if (cliCommand === 'checkpoint' || cliCommand === 'checkpoints') {
+    profileCheckpoint('cli_checkpoint_path');
+    const {
+      enableConfigs
+    } = await import('../utils/config.js');
+    enableConfigs();
+    const {
+      checkpointHandler
+    } = await import('../cli/checkpoint.js');
+    await checkpointHandler(cliCommandArgs);
+    return;
+  }
+
   // Fast-path for shared AgentRun inspection/control outside the REPL.
   if (cliCommand === 'run' || cliCommand === 'runs' || cliCommand === 'agent-run') {
     profileCheckpoint('cli_run_path');

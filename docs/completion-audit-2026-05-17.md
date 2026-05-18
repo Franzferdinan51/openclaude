@@ -56,6 +56,7 @@ covers the named requirement.
 | TUI backend slash commands must stay command-shaped | Argument-bearing backend commands such as `/goal Build the harness`, `/council Review this plan`, `/permissions profile list`, `/budget set minimax 5`, `/channel status telegram`, and `/computer-use tools` now dispatch through the bridge when connected, and fall back to local read-only cards when offline instead of being sent as normal chat. Focused Go tests cover bridged and offline routing, and the rebuilt packaged binary passes `duckhive tui --snapshot` plus `duckhive tui --input-smoke "backend command routing smoke"`. | Verified |
 | TUI tests must be verified | Current 2026-05-18 evidence: downloaded the official Go 1.25.4 Windows amd64 archive from `go.dev/dl`, verified SHA256 `6dad204d42719795f22067553b2b042c0e710b32c5a00f6c67892865167fdfd0`, extracted it to `.tmp\go-toolchain`, and ran `cd tui && go test ./...` successfully across `tui`, `tui/cmd/duckhive-tui`, `tui/model/bridge`, and `tui/model/components`. | Verified |
 | Harness state must be inspectable outside the TUI | `checkHarnessStateReadiness()` now adds a read-only `runtime-doctor` result for checkpoint count, budget state/log files, MCP, ACP, and permission readiness, with focused tests for current DuckHive config-home state and legacy OpenClaude checkpoint fallback. | Verified |
+| Checkpoint browsing and mutation must be reachable from the default CLI | `duckhive checkpoint list`, `duckhive checkpoints save <name>`, and `/checkpoint list` now run provider-free outside the interactive REPL. Focused checks cover isolated config-home list/save/list behavior, and CLI smoke rejects provider warnings plus non-interactive REPL guard output for top-level `checkpoint list`. | Verified |
 | MemoryTool must use DuckHive-owned storage | `MemoryTool` stores memories under DuckHive config-home `memory/memories.json`; focused tests cover config-home path selection and remember/recall/search/stats/forget behavior. | Verified |
 | Full repository test suite must be rerun after the latest prompt, branding, packaging, and TUI audit changes | Current 2026-05-18 evidence: `bun test` completed at `3369 pass`, `0 fail`, `8487 expect()` calls across 381 files after the Telegram 421 retry port, raw timeout signal guard, HybridOrchestrator AgentRunStore isolation fix, sponsored-tip default test alignment, GitHub setup branding, and agent-team prompt guidance coverage. | Verified |
 
@@ -63,9 +64,8 @@ covers the named requirement.
 
 Latest continuation evidence from 2026-05-18:
 
-- `npm run typecheck`
 - `npm run build`
-- `npm run smoke` (`CLI smoke passed (74 commands plus Windows wrapper checks)`)
+- `npm run smoke` (`CLI smoke passed (75 commands plus Windows wrapper checks)`)
 - `npm run verify:privacy`
 - `bun test` (`3369 pass`, `0 fail`, `8487 expect()` calls across 381 files)
 - `duckhive --version`, `duckhive --yolo --version`, `duckhive --dangerously-skip-permissions --version`, and `node dist\cli.mjs --version` (`0.13.5 (DuckHive)`)
@@ -81,6 +81,7 @@ Latest continuation evidence from 2026-05-18:
 - `node dist\cli.mjs --bare -p "/permissions profile safe --user"` with isolated `CLAUDE_CONFIG_DIR`
 - `node dist\cli.mjs permissions profile list`
 - `node dist\cli.mjs allowed-tools profile status`
+- `node dist\cli.mjs checkpoint list` with isolated `CLAUDE_CONFIG_DIR`
 - `duckhive tui --input-smoke "typed text"`
 - `node dist\cli.mjs runtime-doctor`
 - `bun test src\utils\agenticSessionSearch.test.ts`
@@ -133,5 +134,6 @@ Historical broader gates from earlier audit passes:
 ## Open Work
 
 - Test full `duckhive tui` keyboard interaction manually from a real interactive PowerShell terminal. Non-interactive `duckhive tui --snapshot` now renders one TUI frame and exits for CI/log verification, `duckhive tui --input-smoke "typed text"` verifies packaged Bubble Tea input-loop delivery through the launcher, `runtime-doctor` verifies binary readiness, and local Go 1.25.4 now verifies `cd tui && go test ./...`.
+- Clean up repository-wide TypeScript strict-null/type-narrowing errors so `npm run typecheck` can become a green release gate again. The current failure is outside the checkpoint CLI slice and includes bridge, print, MCP, main REPL, session restore, and permission-handler paths.
 - Continue feature-by-feature upstream imports rather than merging upstream harnesses wholesale. DuckHive and OpenClaude histories are divergent, so release commits, branding changes, and unrelated upstream removals must be reviewed selectively.
 - Keep importing upstream features as independent, verified slices. The current tested state is green, but the product goal remains open-ended until each new upstream slice has its own impact analysis, implementation, and verification.

@@ -25,6 +25,8 @@ const PROVIDER_FREE_COMMANDS = new Set([
   'provider',
   'permissions',
   'allowed-tools',
+  'checkpoint',
+  'checkpoints',
   'run',
   'runs',
   'agent-run',

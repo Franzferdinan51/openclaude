@@ -401,6 +401,20 @@ const cases: SmokeCase[] = [
     excludes: ['Warning: ignoring saved provider profile'],
   },
   {
+    name: 'top-level checkpoint list',
+    args: ['checkpoint', 'list'],
+    env: createIsolatedConfigEnv,
+    timeoutMs: 30000,
+    includes: [
+      'No saved checkpoints.',
+      '/checkpoint save [name]',
+    ],
+    excludes: [
+      'DuckHive is running without an interactive terminal',
+      'Warning: ignoring saved provider profile',
+    ],
+  },
+  {
     name: 'headless router list',
     args: ['--bare', '-p', '/router list'],
     timeoutMs: 30000,
