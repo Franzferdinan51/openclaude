@@ -522,6 +522,7 @@ const cases: SmokeCase[] = [
     includes: [
       'Agent Runs',
       'duckhive run list [status]',
+      'duckhive runs [status]',
       'duckhive run recover <id> [summary]',
       '/run list [status]',
       '/run recover <id> [summary]',
