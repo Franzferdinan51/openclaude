@@ -158,7 +158,7 @@ describe('checkCliInputMode', () => {
     )
 
     expect(result.ok).toBe(true)
-    expect(result.detail).toContain('OpenClaude-readable compatibility stdin')
+    expect(result.detail).toContain('DuckHive readable compatibility stdin')
     expect(result.detail).toContain('Windows data-event default')
   })
 

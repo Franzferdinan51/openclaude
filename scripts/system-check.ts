@@ -359,14 +359,14 @@ export function checkCliInputMode(
   if (runtime.platform === 'win32' && env.DUCKHIVE_STDIN_MODE === 'data') {
     return pass(
       'CLI input mode',
-      'Windows data-event stdin is active for this launch; use `duckhive --stdin-mode readable` only if you need to compare the OpenClaude-readable compatibility path.',
+      'Windows data-event stdin is active for this launch; use `duckhive --stdin-mode readable` only if you need to compare DuckHive\'s readable compatibility path.',
     )
   }
 
   if (runtime.platform === 'win32' && env.DUCKHIVE_STDIN_MODE === 'readable') {
     return pass(
       'CLI input mode',
-      'OpenClaude-readable compatibility stdin is explicitly active for this launch; remove `--stdin-mode readable` to return to the Windows data-event default.',
+      'DuckHive readable compatibility stdin is explicitly active for this launch; remove `--stdin-mode readable` to return to the Windows data-event default.',
     )
   }
 
@@ -383,7 +383,7 @@ export function checkCliInputMode(
 
   return pass(
     'CLI input mode',
-    'Windows data-event stdin is active by default so the REPL accepts typed characters after the UI paints. Use `duckhive --stdin-mode readable` to compare the OpenClaude-readable compatibility path. Early input capture remains disabled, no-args startup forces the classic REPL, inherited TUI handoff flags are ignored unless `duckhive tui` or DUCKHIVE_TUI_WINDOWS_EXPERIMENT=1 is used, startup-era dialogs cannot unmount the prompt before the first submission, and detached stdin falls back to CONIN$ only when stdout is still interactive.',
+    'Windows data-event stdin is active by default so the REPL accepts typed characters after the UI paints. Use `duckhive --stdin-mode readable` to compare DuckHive\'s readable compatibility path. Early input capture remains disabled, no-args startup forces the classic REPL, inherited TUI handoff flags are ignored unless `duckhive tui` or DUCKHIVE_TUI_WINDOWS_EXPERIMENT=1 is used, startup-era dialogs cannot unmount the prompt before the first submission, and detached stdin falls back to CONIN$ only when stdout is still interactive.',
   )
 }
 

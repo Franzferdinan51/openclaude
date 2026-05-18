@@ -10,7 +10,7 @@ Usage:
 Exercises DuckHive's terminal keyboard path without starting providers, the REPL, or the TUI.
 
 Type a short line and press Enter. Ctrl-C exits.
-Use \`duckhive --stdin-mode readable input-test\` to compare the OpenClaude-readable compatibility reader.
+Use \`duckhive --stdin-mode readable input-test\` to compare DuckHive's readable compatibility reader.
 `
 
 function hasHelpFlag(args: readonly string[]): boolean {

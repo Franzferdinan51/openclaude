@@ -14,7 +14,7 @@ describe('detectCliInputModeWarnings', () => {
 
     expect(warnings).toHaveLength(1)
     expect(warnings[0]?.issue).toContain('data stdin')
-    expect(warnings[0]?.fix).toContain('readable input path')
+    expect(warnings[0]?.fix).toContain('readable input compatibility path')
   })
 
   test('warns when Windows CONIN stdin diagnostics are forced', () => {

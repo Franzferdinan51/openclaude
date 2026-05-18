@@ -23,7 +23,7 @@ export function detectCliInputModeWarnings(
   ) {
     warnings.push({
       issue: 'Windows data stdin override is enabled',
-      fix: 'Remove DUCKHIVE_USE_DATA_STDIN=1/OPENCLAUDE_USE_DATA_STDIN=1 and DUCKHIVE_USE_READABLE_STDIN=0/OPENCLAUDE_USE_READABLE_STDIN=0 to restore DuckHive\'s OpenClaude-compatible readable input path.',
+      fix: 'Remove DUCKHIVE_USE_DATA_STDIN=1/OPENCLAUDE_USE_DATA_STDIN=1 and DUCKHIVE_USE_READABLE_STDIN=0/OPENCLAUDE_USE_READABLE_STDIN=0 to restore DuckHive\'s readable input compatibility path.',
     })
   }
 

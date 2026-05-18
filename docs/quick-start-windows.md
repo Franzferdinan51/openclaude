@@ -168,8 +168,8 @@ By default, Windows startup stays on the classic REPL and DuckHive applies the
 safe stdin settings before the UI loads. The renderer uses DuckHive's
 data-event stdin path by default so typed characters reach the prompt after the
 UI paints through PowerShell and npm shim launches. Use
-`duckhive --stdin-mode readable` only when comparing the older
-OpenClaude-readable compatibility path. The Go TUI is available with
+`duckhive --stdin-mode readable` only when comparing DuckHive's readable
+compatibility path. The Go TUI is available with
 `duckhive tui`, but automatic Windows TUI handoff remains opt-in with
 `DUCKHIVE_TUI_WINDOWS_EXPERIMENT=1`.
 

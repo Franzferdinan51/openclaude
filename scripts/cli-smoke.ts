@@ -724,7 +724,7 @@ const cases: SmokeCase[] = [
     args: ['--stdin-mode', 'readable', 'runtime-doctor'],
     includes: [
       '[PASS] CLI input mode',
-      'OpenClaude-readable compatibility stdin is explicitly active',
+      'DuckHive readable compatibility stdin is explicitly active',
     ],
   },
 ]
