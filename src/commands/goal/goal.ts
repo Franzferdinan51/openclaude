@@ -335,7 +335,9 @@ async function stopActiveAutonomousGoal(
     g => g.autonomousMode === true && g.status === 'active',
   )
   if (!active) {
-    return listGoals([])
+    // No active autonomous goal — fall back to pausing the current session goal
+    // or the single active goal (same behavior as the old /goal stop)
+    return pauseGoal([])
   }
   return stopAutonomousMode([active.id], context)
 }
