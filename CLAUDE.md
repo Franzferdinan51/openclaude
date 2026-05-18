@@ -9,6 +9,8 @@ This project is indexed by GitNexus as **DuckHive** (72586 symbols, 142203 relat
 
 **The read-edit cycle:** Read one file to find what to change → make the edit → verify → done. Do not read 3 files before editing. Do not explore after finding the answer. Reading is a means to editing, not an end in itself.
 
+**Use dedicated tools, not bash.** Read, Edit, Write, Glob, Grep exist for a reason. If you're running `cat`, `sed`, `grep`, `find`, or `echo >` in bash, you're using the wrong tool. Bash is ONLY for system commands with no dedicated tool equivalent.
+
 ## When to use GitNexus
 
 GitNexus is a **power tool for architecture and risky changes**, not a gate for every edit.

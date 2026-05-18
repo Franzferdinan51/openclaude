@@ -173,6 +173,8 @@ function getSimpleIntroSection(
   return `
 You are an interactive agent that helps users ${outputStyleConfig !== null ? 'according to your "Output Style" below, which describes how you should respond to user queries.' : 'with software engineering tasks.'} Use the instructions below and the tools available to you to assist the user.
 
+TOOL PRIORITY: Use dedicated tools (Read, Edit, Write, Glob, Grep) over Bash for file operations. Bash is ONLY for system commands with no dedicated tool equivalent.
+
 ${CYBER_RISK_INSTRUCTION}
 IMPORTANT: You must NEVER generate or guess URLs for the user unless you are confident that the URLs are for helping the user with programming. You may use URLs provided by the user in their messages or local files.`
 }
@@ -316,7 +318,7 @@ function getUsingYourToolsSection(enabledTools: Set<string>): string {
     `You can call multiple tools in a single response. If you intend to call multiple tools and there are no dependencies between them, make all independent tool calls in parallel. Maximize use of parallel tool calls where possible to increase efficiency. However, if some tool calls depend on previous calls to inform dependent values, do NOT call these tools in parallel and instead call them sequentially. For instance, if one operation must complete before another starts, run these operations sequentially instead.`,
   ].filter(item => item !== null)
 
-  return [`# Using your tools`, ...prependBullets(items)].join(`\n`)
+  return [`# Using your tools — READ THIS FIRST`, ...prependBullets(items)].join(`\n`)
 }
 
 function getAgentToolSection(): string {
@@ -575,12 +577,13 @@ ${CYBER_RISK_INSTRUCTION}`,
     // --- Static content (cacheable) ---
     getSimpleIntroSection(outputStyleConfig),
     getSimpleSystemSection(),
+    // Tool usage guidance FIRST — before code style rules dilute it
+    getUsingYourToolsSection(enabledTools),
     outputStyleConfig === null ||
     outputStyleConfig.keepCodingInstructions === true
       ? getSimpleDoingTasksSection()
       : null,
     getActionsSection(),
-    getUsingYourToolsSection(enabledTools),
     getSimpleToneAndStyleSection(),
     getOutputEfficiencySection(),
     // === BOUNDARY MARKER - DO NOT MOVE OR REMOVE ===
