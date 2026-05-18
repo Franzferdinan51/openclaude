@@ -202,6 +202,12 @@ func TestHandleLocalTUICommandUsesBackendForProviderCommands(t *testing.T) {
 		{name: "doctor manager", input: "/doctor", wantStatus: "opening doctor"},
 		{name: "computer-use manager", input: "/computer-use", wantStatus: "opening computer-use status"},
 		{name: "connect manager", input: "/connect", wantStatus: "opening connector status"},
+		{name: "goal create routes to backend", input: "/goal Build the harness", wantStatus: "opening goal status"},
+		{name: "council prompt routes to backend", input: "/council Review this plan", wantStatus: "opening council"},
+		{name: "permissions profile routes to backend", input: "/permissions profile list", wantStatus: "dispatching harness command"},
+		{name: "budget mutation routes to backend", input: "/budget set minimax 5", wantStatus: "dispatching harness command"},
+		{name: "channel status routes to backend", input: "/channel status telegram", wantStatus: "opening connector status"},
+		{name: "computer-use tools routes to backend", input: "/computer-use tools", wantStatus: "opening computer-use status"},
 	}
 
 	for _, tt := range tests {
@@ -250,6 +256,9 @@ func TestHandleLocalTUICommandFallsBackLocallyWhenBridgeIsUnavailable(t *testing
 		{name: "search fallback", input: "/search-provider", wantStatus: "bridge unavailable; showing local search card", wantSubstring: "Search providers"},
 		{name: "computer-use fallback", input: "/computer-use", wantStatus: "bridge unavailable; showing local computer-use card", wantSubstring: "Computer use"},
 		{name: "connect fallback", input: "/connect", wantStatus: "bridge unavailable; showing local connector card", wantSubstring: "Connectors"},
+		{name: "permissions profile fallback", input: "/permissions profile list", wantStatus: "bridge unavailable; showing local harness card", wantSubstring: "Harness state"},
+		{name: "budget mutation fallback", input: "/budget set minimax 5", wantStatus: "bridge unavailable; showing local harness card", wantSubstring: "Harness state"},
+		{name: "council prompt fallback", input: "/council Review this plan", wantStatus: "bridge unavailable; showing local council card", wantSubstring: "AI Council"},
 	}
 
 	for _, tt := range tests {

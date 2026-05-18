@@ -1,6 +1,6 @@
 # 🦆 DuckHive
 
-![DuckHive](https://img.shields.io/badge/DuckHive-v0.13.4-gold?style=for-the-badge&logo=buymeacoffee)
+![DuckHive](https://img.shields.io/badge/DuckHive-v0.13.5-gold?style=for-the-badge&logo=buymeacoffee)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue?style=for-the-badge&logo=typescript)](package.json)
 [![Bun](https://img.shields.io/badge/Bun-1.3-yellow?style=for-the-badge&logo=bun)](package.json)
@@ -1144,7 +1144,7 @@ Hermes-style autonomous skill creation and `SkillManageTool` now use the same sh
 ## Architecture
 
 ```
-DuckHive v0.13.4
+DuckHive v0.13.5
 ├── MiniMax M2.7 (default model)
 ├── DuckHive mmx (MiniMax CLI integration)
 │   ├── Image generation
@@ -1355,7 +1355,7 @@ duckhive config path
 ./bin/duckhive --version
 
 # Command ownership check
-duckhive --version      # 0.13.4 (DuckHive)
+duckhive --version      # 0.13.5 (DuckHive)
 openclaude --version    # upstream OpenClaude, if installed separately
 ```
 
@@ -1407,7 +1407,7 @@ When the installed CLI is run without an attached terminal and without
 cannot accept keyboard input. This protects PowerShell pipes, CI shells, and
 Codex-style subprocess checks from looking like a frozen startup screen.
 
-The Go TUI prompt and streaming markers use ASCII-safe `> ` and `|` indicators across the legacy and component input paths, avoiding mojibake in Windows terminals and plain log captures. Its standalone header now tracks the current DuckHive version and MiniMax M2.7 default model instead of stale OpenClaude/Claude-era labels. The Go TUI test suite now covers both direct key-message updates and a Bubble Tea program loop that reads typed bytes from its input stream, and `duckhive tui --input-smoke "typed text"` verifies that the packaged binary receives typed bytes through the real launcher path. Inspired by Codex's configurable terminal keymaps, the Go TUI now loads optional JSON overrides from `DUCKHIVE_TUI_KEYMAP_PATH` and `DUCKHIVE_TUI_KEYMAP`, for example `{"model":"ctrl+q","shell":"ctrl+s","undo":"ctrl+u"}`. Inline overrides win over the file, unknown actions warn and keep defaults, and the key resolver dispatches by action instead of hardcoded key strings so remapped model picker, shell mode, fast mode, external editor, undo, suspend, submit, history, confirmation, transcript, deck, search, exit, interrupt, and redraw actions still invoke the right backend behavior. `ctrl+p` opens the bridged backend `/model` selector when available and now falls back to a local model-picker panel with fast/coding/reasoning/vision route presets when offline, instead of dumping users into generic settings. When `/tui` is run from the classic REPL, DuckHive now waits for the child TUI to survive a short startup window before exiting the parent REPL; if the TUI fails immediately, the classic REPL stays usable and reports that `duckhive tui` can be run directly for the full startup message.
+The Go TUI prompt and streaming markers use ASCII-safe `> ` and `|` indicators across the legacy and component input paths, avoiding mojibake in Windows terminals and plain log captures. Its standalone header now tracks the current DuckHive version and MiniMax M2.7 default model instead of stale OpenClaude/Claude-era labels. The Go TUI test suite now covers both direct key-message updates and a Bubble Tea program loop that reads typed bytes from its input stream, and `duckhive tui --input-smoke "typed text"` verifies that the packaged binary receives typed bytes through the real launcher path. Inspired by Codex's configurable terminal keymaps, the Go TUI now loads optional JSON overrides from `DUCKHIVE_TUI_KEYMAP_PATH` and `DUCKHIVE_TUI_KEYMAP`, for example `{"model":"ctrl+q","shell":"ctrl+s","undo":"ctrl+u"}`. Inline overrides win over the file, unknown actions warn and keep defaults, and the key resolver dispatches by action instead of hardcoded key strings so remapped model picker, shell mode, fast mode, external editor, undo, suspend, submit, history, confirmation, transcript, deck, search, exit, interrupt, and redraw actions still invoke the right backend behavior. `ctrl+p` opens the bridged backend `/model` selector when available and now falls back to a local model-picker panel with fast/coding/reasoning/vision route presets when offline, instead of dumping users into generic settings. Argument-bearing backend slash commands now stay command-shaped in the TUI bridge too: `/goal Build...`, `/council <question>`, `/permissions profile ...`, `/budget set ...`, `/channel status ...`, and `/computer-use tools` dispatch through the backend when bridged, while offline sessions show the matching local status card instead of sending those commands as normal chat. When `/tui` is run from the classic REPL, DuckHive now waits for the child TUI to survive a short startup window before exiting the parent REPL; if the TUI fails immediately, the classic REPL stays usable and reports that `duckhive tui` can be run directly for the full startup message.
 
 Android and Vision terminal helpers now keep screenshot artifacts in the OS temp directory instead of Unix-only `/tmp` paths, and quote local ADB pull destinations so Windows temp paths with spaces remain valid. This applies to both the slash commands and the built-in `AndroidTool` / `VisionTool` entrypoints. The focused regressions cover screenshot output paths, escaped prompt text, tool-level screenshot paths, and no-exec rejection on unterminated quoted input.
 
@@ -1417,16 +1417,18 @@ The `/statusbar session` surface now reads the same public build version used by
 
 Recent verification snapshot:
 
-- `npm run typecheck`, `npm run build`, `npm run smoke`, `npm run verify:privacy`, and `node dist\cli.mjs runtime-doctor`: passing on Windows for `duckhive@0.13.4`
+- `npm run build`, `npm run smoke`, `npm run verify:privacy`, and `node dist\cli.mjs runtime-doctor`: passing on Windows for `duckhive@0.13.5`
 - `bun test src\utils\api.test.ts`: `7 pass`, `0 fail`, covering Zod schema conversion and every built-in tool schema
 - `npm run smoke`: `12 pass`, `0 fail`, plus `CLI smoke passed (74 commands plus Windows wrapper checks)`
-- focused 0.13.4 checks cover Zod 4 schema conversion, Windows stdin delivery, TextInput buffering, provider-free command surfaces, and packaged TUI input smoke
+- focused 0.13.5 checks cover Zod 4 schema conversion, Windows stdin delivery, TextInput buffering, provider-free command surfaces, TUI backend slash-command routing, and packaged TUI input smoke
 - `cd tui && go test ./...`: passing with local Go 1.25.4 from `.tmp\go-toolchain`; the packaged `tui\duckhive-tui.exe` was rebuilt from that tested source
-- `duckhive --version`: `0.13.4 (DuckHive)`
+- `duckhive --version`: `0.13.5 (DuckHive)`
 - `openclaude --version`: upstream OpenClaude remains separately owned when installed
-- package dry-run publishes as `duckhive@0.13.4`, includes the `duckhive` launcher, `duckhive/sdk`, `duckhive/harness`, `config/`, `tui\duckhive-tui.exe`, and the runtime `skills/newest-desktop-control/` skill files without test fixtures
+- package dry-run publishes as `duckhive@0.13.5`, includes the `duckhive` launcher, `duckhive/sdk`, `duckhive/harness`, `config/`, `tui\duckhive-tui.exe`, and the runtime `skills/newest-desktop-control/` skill files without test fixtures
 
 Known local limitation: `duckhive tui` is an interactive terminal app, so final keyboard verification in the exact user shell still requires a real PowerShell terminal. Use `duckhive tui --snapshot` for non-interactive CI/log rendering, `duckhive tui --input-smoke "typed text"` for the packaged Bubble Tea input-loop diagnostic, local Go 1.25.4 with `cd tui && go test ./...` for component-level regressions, and `duckhive tui --help` for launcher diagnostics.
+
+Current repository-wide TypeScript limitation: `npm run typecheck` still fails on pre-existing strict-null/type-narrowing errors outside the TUI routing slice, mainly in bridge, print, MCP, and main REPL paths. The build/smoke gates remain green because the bundled runtime path compiles through `scripts/build.ts`, but full typecheck cleanup remains open work.
 
 ---
 

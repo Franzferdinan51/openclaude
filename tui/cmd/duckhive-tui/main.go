@@ -1082,7 +1082,28 @@ func (m *MainModel) handleLocalTUICommand(text string) (bool, tea.Cmd) {
 }
 
 func bridgeBackedLocalCommand(text string) (string, bool) {
-	switch strings.ToLower(strings.TrimSpace(text)) {
+	trimmed := strings.TrimSpace(text)
+	fields := strings.Fields(trimmed)
+	if len(fields) == 0 {
+		return "", false
+	}
+
+	head := strings.ToLower(fields[0])
+	if len(fields) > 1 {
+		switch head {
+		case "/agents", "/council", "/run", "/runs", "/tasks", "/agent-runs",
+			"/goal", "/goals", "/provider", "/providers", "/model", "/models",
+			"/search-provider", "/search-providers", "/search", "/web",
+			"/computer-use", "/cu", "/connect", "/telegram", "/channel",
+			"/checkpoint", "/checkpoints", "/budget", "/mcp", "/dmcp", "/acp",
+			"/permission", "/permissions":
+			return trimmed, true
+		default:
+			return "", false
+		}
+	}
+
+	switch head {
 	case "/doctor":
 		return "/doctor", true
 	case "/agents":
@@ -1104,74 +1125,88 @@ func bridgeBackedLocalCommand(text string) (string, bool) {
 	}
 }
 
+func bridgeBackedCommandHead(command string) string {
+	fields := strings.Fields(strings.TrimSpace(command))
+	if len(fields) == 0 {
+		return ""
+	}
+	return strings.ToLower(fields[0])
+}
+
 func bridgeBackedLocalCommandStatus(command string) string {
-	switch command {
+	switch bridgeBackedCommandHead(command) {
 	case "/doctor":
 		return "opening doctor"
 	case "/agents":
 		return "opening agents"
 	case "/council":
 		return "opening council"
-	case "/run":
+	case "/run", "/runs", "/tasks", "/agent-runs":
 		return "opening agent runs"
-	case "/goal":
+	case "/goal", "/goals":
 		return "opening goal status"
-	case "/provider":
+	case "/provider", "/providers":
 		return "opening provider manager"
-	case "/model":
+	case "/model", "/models":
 		return "opening model manager"
-	case "/search-provider":
+	case "/search-provider", "/search-providers", "/search", "/web":
 		return "opening search-provider manager"
-	case "/computer-use":
+	case "/computer-use", "/cu":
 		return "opening computer-use status"
-	case "/connect":
+	case "/connect", "/telegram", "/channel":
 		return "opening connector status"
+	case "/checkpoint", "/checkpoints", "/budget", "/mcp", "/dmcp", "/acp", "/permission", "/permissions":
+		return "dispatching harness command"
 	default:
 		return "dispatching command"
 	}
 }
 
 func bridgeBackedLocalFallback(command string) (localTUICommand, bool) {
-	switch command {
+	switch bridgeBackedCommandHead(command) {
 	case "/agents":
 		return localTUICommandSuperAgent, true
 	case "/council":
 		return localTUICommandCouncil, true
-	case "/run":
+	case "/run", "/runs", "/tasks", "/agent-runs":
 		return localTUICommandRuns, true
-	case "/goal":
+	case "/goal", "/goals":
 		return localTUICommandGoal, true
-	case "/provider", "/model":
+	case "/provider", "/providers", "/model", "/models":
 		return localTUICommandProvider, true
-	case "/search-provider":
+	case "/search-provider", "/search-providers", "/search", "/web":
 		return localTUICommandSearch, true
-	case "/computer-use":
+	case "/computer-use", "/cu":
 		return localTUICommandComputer, true
-	case "/connect":
+	case "/connect", "/telegram", "/channel":
 		return localTUICommandConnect, true
+	case "/checkpoint", "/checkpoints", "/budget", "/mcp", "/dmcp", "/acp", "/permission", "/permissions":
+		return localTUICommandHarness, true
 	default:
 		return "", false
 	}
 }
 
 func bridgeBackedLocalFallbackStatus(command string) string {
-	switch command {
+	switch bridgeBackedCommandHead(command) {
 	case "/agents":
 		return "bridge unavailable; showing local agents card"
 	case "/council":
 		return "bridge unavailable; showing local council card"
-	case "/run":
+	case "/run", "/runs", "/tasks", "/agent-runs":
 		return "bridge unavailable; showing local run card"
-	case "/goal":
+	case "/goal", "/goals":
 		return "bridge unavailable; showing local goal card"
-	case "/provider", "/model":
+	case "/provider", "/providers", "/model", "/models":
 		return "bridge unavailable; showing local provider card"
-	case "/search-provider":
+	case "/search-provider", "/search-providers", "/search", "/web":
 		return "bridge unavailable; showing local search card"
-	case "/computer-use":
+	case "/computer-use", "/cu":
 		return "bridge unavailable; showing local computer-use card"
-	case "/connect":
+	case "/connect", "/telegram", "/channel":
 		return "bridge unavailable; showing local connector card"
+	case "/checkpoint", "/checkpoints", "/budget", "/mcp", "/dmcp", "/acp", "/permission", "/permissions":
+		return "bridge unavailable; showing local harness card"
 	default:
 		return "bridge unavailable"
 	}

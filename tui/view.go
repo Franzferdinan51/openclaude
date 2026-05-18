@@ -26,7 +26,7 @@ func (m *Model) View() string {
 // headerView renders the top bar with logo/title.
 func (m *Model) headerView() string {
 	title := "DuckHive"
-	version := "v0.13.4"
+	version := "v0.13.5"
 	status := ""
 	if m.isLoading {
 		status = " " + m.spinner.View()
@@ -81,7 +81,7 @@ func (m *Model) statusView() string {
 		width = 0
 	}
 
-	return Styles.StatusBar.Width(m.width).Render(padLeft(left, width) + right) + "\n"
+	return Styles.StatusBar.Width(m.width).Render(padLeft(left, width)+right) + "\n"
 }
 
 // inputView renders the text input area.
@@ -93,7 +93,7 @@ func (m *Model) inputView() string {
 
 	prompt := Styles.ModeIndicator.Render("> ")
 	input := m.input.View()
-	return Styles.InputArea.Width(m.width).Render(prompt + input) + "\n"
+	return Styles.InputArea.Width(m.width).Render(prompt+input) + "\n"
 }
 
 // renderMessage turns a Message into a rendered string.

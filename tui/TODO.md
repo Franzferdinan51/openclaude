@@ -13,7 +13,7 @@ This file started with the Go TUI work, but it now tracks harness-wide integrati
 
 ## Next
 
-- Extend the existing shared checkpoint, council, MCP, ACP, permission, budget, AgentRun, and artifact status surfaces with mutation flows that stay owned by the backend slash commands.
+- Extend the existing shared checkpoint, MCP, ACP, and artifact status surfaces with mutation flows that stay owned by the backend slash commands.
 - Add backend orchestration work from OpenClaw, hermes-agent, NemoClaw, duck-cli, and the AI Bot Council stack into reusable services and tools.
 - Keep the session/status layer for checkpoints, permissions, budgets, model routing, MCP, ACP, bridge health, and council health consistent across TUI, REPL, runtime-doctor, and automation.
 - Extend the current Kimi-style shell mode beyond local execution so session/task/approval state can be controlled through the shared AgentRun store.
@@ -52,3 +52,4 @@ This file started with the Go TUI work, but it now tracks harness-wide integrati
 - Hardened legacy Go TUI prompt and streaming markers to ASCII-safe output so Windows terminals and log captures do not show mojibake.
 - Added `duckhive tui --input-smoke` so the packaged Bubble Tea input loop is verified through the real launcher path without depending on the Python PTY helper.
 - Added Codex-style configurable TUI keymap overrides through `DUCKHIVE_TUI_KEYMAP_PATH` and `DUCKHIVE_TUI_KEYMAP`, and fixed the documented `ctrl+p` model-picker binding in the Go TUI key resolver.
+- Kept argument-bearing backend slash commands command-shaped in the TUI bridge: goal creation, council prompts, permission profiles, budget mutations, channel status, and computer-use tool listing now dispatch to the backend when connected and show local read-only cards when offline.
