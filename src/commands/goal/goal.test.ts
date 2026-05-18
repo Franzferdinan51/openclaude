@@ -113,6 +113,41 @@ describe('/goal command', () => {
     expect(getStoredGoals()[0]?.description).toBe('Build user authentication system')
   })
 
+  test('emits goal update events after persisted goal mutations', async () => {
+    const { default: goalCommand, goalUpdates } = await importFreshGoalModule()
+    const events: Array<{ type: string; goal?: GoalRecord; goals: GoalRecord[] }> = []
+    const unsubscribe = goalUpdates.subscribe(event => {
+      events.push(event as { type: string; goal?: GoalRecord; goals: GoalRecord[] })
+    })
+
+    await goalCommand(['create', 'Track', 'goal', 'events'])
+    await goalCommand(['pause'])
+
+    unsubscribe()
+
+    expect(events.map(event => event.type)).toEqual(['created', 'paused'])
+    expect(events[0]?.goal?.description).toBe('Track goal events')
+    expect(events[0]?.goals).toHaveLength(1)
+    expect(events[1]?.goal?.status).toBe('paused')
+  })
+
+  test('goal update event payloads are snapshots, not live config objects', async () => {
+    const { default: goalCommand, goalUpdates } = await importFreshGoalModule()
+    let captured: GoalRecord | undefined
+    const unsubscribe = goalUpdates.subscribe(event => {
+      captured = event.goal as GoalRecord | undefined
+    })
+
+    await goalCommand(['create', 'Snapshot', 'goal'])
+    unsubscribe()
+
+    captured!.description = 'mutated by subscriber'
+    captured!.steps.push({ description: 'subscriber step' })
+
+    expect(getStoredGoals()[0]?.description).toBe('Snapshot goal')
+    expect(getStoredGoals()[0]?.steps).toHaveLength(0)
+  })
+
   test('REPL /goal shorthand preserves escaped quotes in descriptions', async () => {
     const { call } = await importFreshGoalModule()
 

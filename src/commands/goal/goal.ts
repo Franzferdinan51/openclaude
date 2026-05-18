@@ -19,6 +19,7 @@ import { getSessionId } from '../../bootstrap/state.js'
 import { getGlobalConfig, saveGlobalConfig } from '../../utils/config.js'
 import { sessions_spawn } from '../../subagentSystem.js'
 import type { ToolUseContext } from '../../Tool.js'
+import { createSignal } from '../../utils/signal.js'
 
 // Goal states
 export type GoalStatus = 'active' | 'paused' | 'completed' | 'failed'
@@ -53,6 +54,27 @@ export interface Goal {
   activeAgentRunId?: string
   lastActivityAt?: string
 }
+
+export type GoalUpdateType =
+  | 'created'
+  | 'paused'
+  | 'resumed'
+  | 'completed'
+  | 'failed'
+  | 'step_added'
+  | 'autonomous_started'
+  | 'autonomous_failed'
+  | 'autonomous_stopped'
+  | 'cleared'
+  | 'attached'
+
+export type GoalUpdateEvent = {
+  type: GoalUpdateType
+  goal?: Goal
+  goals: Goal[]
+}
+
+export const goalUpdates = createSignal<[GoalUpdateEvent]>()
 
 // Storage key for goals
 const GOALS_STORAGE_KEY = 'duckhive.goals'
@@ -252,11 +274,29 @@ function formatStepStatusLabel(status: GoalStatus): string {
   return labels[status]
 }
 
-async function saveGoals(goals: Goal[]): Promise<void> {
+function cloneGoal(goal: Goal): Goal {
+  return {
+    ...goal,
+    steps: goal.steps.map(step => ({ ...step })),
+    metadata: goal.metadata ? { ...goal.metadata } : undefined,
+  }
+}
+
+async function saveGoals(
+  goals: Goal[],
+  event?: { type: GoalUpdateType; goal?: Goal },
+): Promise<void> {
   saveGlobalConfig(config => ({
     ...config,
     [GOALS_STORAGE_KEY]: goals,
   }))
+  if (event) {
+    goalUpdates.emit({
+      type: event.type,
+      goal: event.goal ? cloneGoal(event.goal) : undefined,
+      goals: goals.map(cloneGoal),
+    })
+  }
 }
 
 function formatGoal(goal: Goal, detailed = false): string {
@@ -308,7 +348,7 @@ async function createGoal(args: string[]): Promise<string> {
   const goals = getGoals()
   goals.unshift(goal)
   attachCurrentSessionToGoal(goals, goal)
-  await saveGoals(goals)
+  await saveGoals(goals, { type: 'created', goal })
 
   return `Goal created successfully!\n\n${formatGoal(goal, true)}`
 }
@@ -418,7 +458,7 @@ async function pauseGoal(args: string[]): Promise<string> {
     currentStep.status = 'paused'
   }
   goal.updatedAt = new Date().toISOString()
-  await saveGoals(goals)
+  await saveGoals(goals, { type: 'paused', goal })
 
   return `Goal paused.\n\n${formatGoal(goal)}`
 }
@@ -439,7 +479,7 @@ async function resumeGoal(args: string[]): Promise<string> {
     currentStep.status = 'active'
   }
   goal.updatedAt = new Date().toISOString()
-  await saveGoals(goals)
+  await saveGoals(goals, { type: 'resumed', goal })
 
   return `Goal resumed!\n\n${formatGoal(goal)}`
 }
@@ -462,7 +502,7 @@ async function completeGoal(args: string[]): Promise<string> {
   goal.currentStepId = undefined
   goal.completedAt = new Date().toISOString()
   goal.updatedAt = new Date().toISOString()
-  await saveGoals(goals)
+  await saveGoals(goals, { type: 'completed', goal })
 
   return `Goal completed.\n\n${formatGoal(goal)}`
 }
@@ -488,7 +528,7 @@ async function failGoal(args: string[]): Promise<string> {
   goal.currentStepId = undefined
   goal.completedAt = new Date().toISOString()
   goal.updatedAt = new Date().toISOString()
-  await saveGoals(goals)
+  await saveGoals(goals, { type: 'failed', goal })
 
   return `Goal marked failed.\n\n${formatGoal(goal)}`
 }
@@ -562,7 +602,7 @@ async function addStep(args: string[], goalId?: string): Promise<string> {
   goal.steps.push(step)
   goal.currentStepId = step.id
   goal.updatedAt = new Date().toISOString()
-  await saveGoals(goals)
+  await saveGoals(goals, { type: 'step_added', goal })
 
   return `Step added to goal.\n\n${formatGoal(goal, true)}`
 }
@@ -628,14 +668,14 @@ async function pursueGoal(args: string[], context?: ToolUseContext): Promise<str
     } else if (spawnResult.includes('Failed to spawn subagent teammate')) {
       goal.autonomousMode = false
       goal.activeAgentRunId = undefined
-      await saveGoals(goals)
+      await saveGoals(goals, { type: 'autonomous_failed', goal })
       return `Failed to start autonomous goal mode.\n\n${spawnResult}`
     } else {
       spawnInfo = `\nBackground teammate spawn result:\n${spawnResult}`
     }
   }
 
-  await saveGoals(goals)
+  await saveGoals(goals, { type: 'autonomous_started', goal })
 
   return `Autonomous goal mode activated for goal.\n\n${formatGoal(goal)}${stepInfo}${spawnInfo}\n\nUse /goal status to check progress or /goal stop-autonomous to cancel.`
 }
@@ -656,7 +696,7 @@ async function stopAutonomousMode(args: string[]): Promise<string> {
   }
   goal.updatedAt = new Date().toISOString()
   goal.lastActivityAt = new Date().toISOString()
-  await saveGoals(goals)
+  await saveGoals(goals, { type: 'autonomous_stopped', goal })
 
   return `Autonomous mode stopped for goal.\n\n${formatGoal(goal)}\n\nGoal is paused. Use /goal pursue to restart autonomous work or /goal status to check progress.`
 }
@@ -675,7 +715,7 @@ async function clearGoal(args: string[]): Promise<string> {
   const index = goals.indexOf(goal)
 
   const removed = goals.splice(index, 1)[0]
-  await saveGoals(goals)
+  await saveGoals(goals, { type: 'cleared', goal: removed })
 
   return `Goal "${removed.title}" has been removed.`
 }
@@ -693,7 +733,7 @@ async function attachToGoal(args: string[]): Promise<string> {
 
   attachCurrentSessionToGoal(goals, goal)
   goal.updatedAt = new Date().toISOString()
-  await saveGoals(goals)
+  await saveGoals(goals, { type: 'attached', goal })
 
   return `Current session attached to goal.\n\n${formatGoal(goal)}`
 }

@@ -154,6 +154,8 @@ Stable Codex `rust-v0.128.0` adds persisted goal workflows, configurable TUI key
 
 Codex `rust-v0.129.0-alpha.*` was treated as prerelease-only. Do not import alpha behavior into DuckHive `main` until the API and storage shapes settle.
 
+Follow-up Codex `main` probe on 2026-05-18 found `4ca60ef9fffe76fb4f86d606f7d4a2f727f6cd25`, including `Emit goal update events from goal extension tools (#23306)`. DuckHive ported the compatible behavior into the TypeScript `/goal` command by exporting an in-process `goalUpdates` signal and emitting cloned goal snapshots after successful persisted mutations. This preserves DuckHive's `duckhive.goals` storage shape while giving future REPL/TUI/backend listeners a Codex-style update hook instead of requiring config polling.
+
 ### OpenClaw
 
 OpenClaw `v2026.5.6` and the live `main` line checked on 2026-05-08 contain important Codex OAuth, fetch, agent, and Telegram fixes:
