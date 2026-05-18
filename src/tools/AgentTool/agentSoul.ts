@@ -6,13 +6,14 @@
  * learned about itself over time.
  *
  * Based on OpenClaw autonomy features and duck-cli's meta-agent patterns.
- * Lives at ~/.duckhive/agent-soul/<agentType>/
+ * Lives at <DuckHive config home>/agent-soul/<agentType>/
  */
 
 import { join } from 'path'
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs'
 import { logForDebugging } from '../../utils/debug.js'
 import { getCwd } from '../../utils/cwd.js'
+import { getClaudeConfigHomeDir } from '../../utils/envUtils.js'
 
 // ============================================================================
 // Types
@@ -81,8 +82,27 @@ export interface MetaLearnerInsight {
 // Paths
 // ============================================================================
 
-function getSoulBaseDir(): string {
-  return join(process.env.HOME ?? '~', '.duckhive', 'agent-soul')
+type AgentSoulDeps = {
+  getClaudeConfigHomeDir: () => string
+}
+
+let agentSoulTestDeps: Partial<AgentSoulDeps> | null = null
+
+function getAgentSoulDeps(): AgentSoulDeps {
+  return {
+    getClaudeConfigHomeDir,
+    ...agentSoulTestDeps,
+  }
+}
+
+export function setAgentSoulTestDeps(overrides: Partial<AgentSoulDeps> | null): void {
+  agentSoulTestDeps = overrides
+}
+
+export function getSoulBaseDir(
+  configHomeDir = getAgentSoulDeps().getClaudeConfigHomeDir(),
+): string {
+  return join(configHomeDir, 'agent-soul')
 }
 
 function getAgentSoulDir(agentType: string): string {
