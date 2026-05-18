@@ -2029,6 +2029,7 @@ export async function bridgeMain(args: string[]): Promise<void> {
       )
       // eslint-disable-next-line custom-rules/no-process-exit
       process.exit(1)
+      return
     }
   }
 
@@ -2072,6 +2073,7 @@ export async function bridgeMain(args: string[]): Promise<void> {
     )
     // eslint-disable-next-line custom-rules/no-process-exit
     process.exit(1)
+    return
   }
 
   // Set the bootstrap CWD so that trust checks, project config lookups, and
@@ -2089,6 +2091,7 @@ export async function bridgeMain(args: string[]): Promise<void> {
     )
     // eslint-disable-next-line custom-rules/no-process-exit
     process.exit(1)
+    return
   }
 
   // Resolve auth
@@ -2157,6 +2160,7 @@ export async function bridgeMain(args: string[]): Promise<void> {
       )
       // eslint-disable-next-line custom-rules/no-process-exit
       process.exit(1)
+      return
     }
     const { pointer, dir: pointerDir } = found
     const ageMin = Math.round(pointer.ageMs / 60_000)
@@ -2356,15 +2360,17 @@ export async function bridgeMain(args: string[]): Promise<void> {
   // undefined here in external builds — this guard is for tree-shaking.
   let reuseEnvironmentId: string | undefined
   if (feature('KAIROS') && resumeSessionId) {
+    const targetResumeSessionId = resumeSessionId
     try {
-      validateBridgeId(resumeSessionId, 'sessionId')
+      validateBridgeId(targetResumeSessionId, 'sessionId')
     } catch {
       // biome-ignore lint/suspicious/noConsole: intentional error output
       console.error(
-        `Error: Invalid session ID "${resumeSessionId}". Session IDs must not contain unsafe characters.`,
+        `Error: Invalid session ID "${targetResumeSessionId}". Session IDs must not contain unsafe characters.`,
       )
       // eslint-disable-next-line custom-rules/no-process-exit
       process.exit(1)
+      return
     }
     // Proactively refresh the OAuth token — getBridgeSession uses raw axios
     // without the withOAuthRetry 401-refresh logic. An expired-but-present
@@ -2372,7 +2378,7 @@ export async function bridgeMain(args: string[]): Promise<void> {
     await checkAndRefreshOAuthTokenIfNeeded()
     clearOAuthTokenCache()
     const { getBridgeSession } = await import('./createSession.js')
-    const session = await getBridgeSession(resumeSessionId, {
+    const session = await getBridgeSession(targetResumeSessionId, {
       baseUrl,
       getAccessToken: getBridgeAccessToken,
     })
@@ -2387,10 +2393,11 @@ export async function bridgeMain(args: string[]): Promise<void> {
       }
       // biome-ignore lint/suspicious/noConsole: intentional error output
       console.error(
-        `Error: Session ${resumeSessionId} not found. It may have been archived or expired, or your login may have lapsed (run \`duckhive /login\`).`,
+        `Error: Session ${targetResumeSessionId} not found. It may have been archived or expired, or your login may have lapsed (run \`duckhive /login\`).`,
       )
       // eslint-disable-next-line custom-rules/no-process-exit
       process.exit(1)
+      return
     }
     if (!session.environment_id) {
       if (resumePointerDir) {
@@ -2399,14 +2406,15 @@ export async function bridgeMain(args: string[]): Promise<void> {
       }
       // biome-ignore lint/suspicious/noConsole: intentional error output
       console.error(
-        `Error: Session ${resumeSessionId} has no environment_id. It may never have been attached to a bridge.`,
+        `Error: Session ${targetResumeSessionId} has no environment_id. It may never have been attached to a bridge.`,
       )
       // eslint-disable-next-line custom-rules/no-process-exit
       process.exit(1)
+      return
     }
     reuseEnvironmentId = session.environment_id
     logForDebugging(
-      `[bridge:init] Resuming session ${resumeSessionId} on environment ${reuseEnvironmentId}`,
+      `[bridge:init] Resuming session ${targetResumeSessionId} on environment ${reuseEnvironmentId}`,
     )
   }
 
@@ -2466,6 +2474,7 @@ export async function bridgeMain(args: string[]): Promise<void> {
   // Cleared on env mismatch so we gracefully fall back to a new session.
   let effectiveResumeSessionId: string | undefined
   if (feature('KAIROS') && resumeSessionId) {
+    const targetResumeSessionId = resumeSessionId
     if (reuseEnvironmentId && environmentId !== reuseEnvironmentId) {
       // Backend returned a different environment_id — the original env
       // expired or was reaped. Reconnect won't work against the new env
@@ -2490,11 +2499,11 @@ export async function bridgeMain(args: string[]): Promise<void> {
       // The pointer stores a session_* ID but /bridge/reconnect looks
       // sessions up by their infra tag (cse_*) when ccr_v2_compat_enabled
       // is on. Try both; the conversion is a no-op if already cse_*.
-      const infraResumeId = toInfraSessionId(resumeSessionId)
+      const infraResumeId = toInfraSessionId(targetResumeSessionId)
       const reconnectCandidates =
-        infraResumeId === resumeSessionId
-          ? [resumeSessionId]
-          : [resumeSessionId, infraResumeId]
+        infraResumeId === targetResumeSessionId
+          ? [targetResumeSessionId]
+          : [targetResumeSessionId, infraResumeId]
       let reconnected = false
       let lastReconnectErr: unknown
       for (const candidateId of reconnectCandidates) {
@@ -2503,7 +2512,7 @@ export async function bridgeMain(args: string[]): Promise<void> {
           logForDebugging(
             `[bridge:init] Session ${candidateId} re-queued via bridge/reconnect`,
           )
-          effectiveResumeSessionId = resumeSessionId
+          effectiveResumeSessionId = targetResumeSessionId
           reconnected = true
           break
         } catch (err) {
@@ -2535,6 +2544,7 @@ export async function bridgeMain(args: string[]): Promise<void> {
         )
         // eslint-disable-next-line custom-rules/no-process-exit
         process.exit(1)
+        return
       }
     }
   }
