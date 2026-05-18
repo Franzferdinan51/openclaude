@@ -84,6 +84,14 @@ test('detects utility commands after global options with values', () => {
     getCliCommandPosition(['--stdin-mode=data', 'goal', 'status']),
   ).toEqual({ command: 'goal', index: 1 })
   expect(
+    getCliCommandPosition([
+      '--output-schema',
+      'schema.json',
+      'resume',
+      'run_123',
+    ]),
+  ).toEqual({ command: 'resume', index: 2 })
+  expect(
     shouldSkipProviderStartup(['--stdin-mode', 'data', 'runtime-doctor']),
   ).toBe(true)
   expect(

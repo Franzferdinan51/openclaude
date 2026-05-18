@@ -94,6 +94,7 @@ const GLOBAL_OPTIONS_WITH_VALUE = new Set([
   '--model',
   '--name',
   '--output-format',
+  '--output-schema',
   '--permission-mode',
   '--provider',
   '--session-id',

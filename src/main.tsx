@@ -1873,11 +1873,23 @@ async function run(): Promise<CommanderCommand> {
       tools = applyCoordinatorToolFilter(tools);
     }
     profileCheckpoint('action_tools_loaded');
+    const outputSchemaPath = (options as typeof options & { outputSchema?: string }).outputSchema;
     let jsonSchema: ToolInputJSONSchema | undefined;
     if (isSyntheticOutputToolEnabled({
       isNonInteractiveSession
-    }) && options.jsonSchema) {
-      jsonSchema = jsonParse(options.jsonSchema) as ToolInputJSONSchema;
+    }) && (options.jsonSchema || outputSchemaPath)) {
+      if (options.jsonSchema && outputSchemaPath) {
+        writeToStderr(`Error: use only one of --json-schema or --output-schema.\n`);
+        process.exit(1);
+      }
+      try {
+        const schemaSource = outputSchemaPath ? readFileSync(outputSchemaPath, 'utf8') : options.jsonSchema!;
+        jsonSchema = jsonParse(schemaSource) as ToolInputJSONSchema;
+      } catch (error) {
+        const source = outputSchemaPath ? `file ${outputSchemaPath}` : '--json-schema';
+        writeToStderr(`Error: failed to parse JSON schema from ${source}: ${errorMessage(error)}\n`);
+        process.exit(1);
+      }
     }
     if (jsonSchema) {
       const syntheticOutputResult = createSyntheticOutputTool(jsonSchema);
@@ -3798,6 +3810,8 @@ async function run(): Promise<CommanderCommand> {
       }, renderAndRun);
     }
   }).version(`${MACRO.DISPLAY_VERSION ?? MACRO.VERSION} (${PRODUCT_DISPLAY_NAME})`, '-v, --version', 'Output the version number');
+
+  program.addOption(new Option('--output-schema <file>', 'Path to a JSON Schema file for structured output validation. Codex-compatible alias for file-based --json-schema.'));
 
   // Worktree flags
   program.option('-w, --worktree [name]', 'Create a new git worktree for this session (optionally specify a name)');

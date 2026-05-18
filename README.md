@@ -143,6 +143,12 @@ without `-p/--print`, it exits instead of painting a dead REPL. Use
 the terminal where typing fails, or run `duckhive runtime-doctor` for full
 terminal/runtime checks.
 
+Headless structured output supports DuckHive's inline `--json-schema '{"type":"object",...}'`
+form and Codex-compatible file input with `--output-schema schema.json`. The
+file form uses the same SyntheticOutput validation path as `--json-schema`, so
+it also works with resumed print sessions such as
+`duckhive --resume <session-id> -p "continue" --output-schema schema.json`.
+
 The default terminal CLI now advertises DuckHive's harness commands directly in
 `duckhive --help` instead of hiding them behind REPL-only slash command docs.
 Provider-free top-level surfaces include `goal`/`g`, `computer-use`/`cu`,

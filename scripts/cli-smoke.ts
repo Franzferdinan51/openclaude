@@ -178,6 +178,7 @@ const cases: SmokeCase[] = [
       'spawn',
       '--yolo',
       '--stdin-mode',
+      '--output-schema',
       process.platform === 'win32'
         ? 'data on Windows'
         : 'readable elsewhere',
