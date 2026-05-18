@@ -155,9 +155,12 @@ duckhive runtime-doctor
 ```
 
 `input-test` exercises raw keyboard input without starting providers, the REPL,
-or the TUI. `runtime-doctor` checks the Windows stdin mode, TUI fallback,
-provider routing, ClawHub skill hub, computer-use fallback, Telegram connector
-config, and harness command registry without starting the chat UI.
+or the TUI. It must be run directly from an interactive PowerShell or cmd
+window; redirected or automated shells will correctly refuse it because they do
+not have real terminal stdin/stdout. `runtime-doctor` checks the Windows stdin
+mode, TUI fallback, provider routing, ClawHub skill hub, computer-use fallback,
+Telegram connector config, and harness command registry without starting the
+chat UI.
 
 DuckHive also scans parent folders for `DUCK.md`, `AGENTS.md`, and related
 context files. That scan is now bounded by the real Windows filesystem root, so
