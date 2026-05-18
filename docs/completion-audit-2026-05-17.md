@@ -8,11 +8,11 @@ covers the named requirement.
 
 | Requirement | Current evidence | Status |
 | --- | --- | --- |
-| Default Windows CLI must start without freezing and accept typing | `npm run smoke` passes `TextInput` buffered typing, Windows data-event stdin selection, Ink stdin delivery tests, and 66 CLI smoke cases plus Windows wrapper checks. | Verified |
+| Default Windows CLI must start without freezing and accept typing | `npm run smoke` passes `TextInput` buffered typing, Windows data-event stdin selection, Ink stdin delivery tests, and 67 CLI smoke cases plus Windows wrapper checks. | Verified |
 | Prompt submission must not crash with `Cannot read properties of undefined (reading '_zod')` | Built-in tool-schema conversion regression was added in `src/utils/api.test.ts`; the prompt-schema fix was committed as `9ed65d9`. | Verified by focused regression in prior pass |
 | Repeated tool failures must not loop forever | DuckHive ports OpenClaude `f71e769237`'s repeated-tool-failure guard into `src/query.ts`; focused tests cover signature, category, path, ignored synthetic failures, threshold parsing, DuckHive env override, source ordering before optional follow-up work, and path-safe logging. | Verified |
-| `duckhive` command must resolve and report the DuckHive version | `node dist\cli.mjs runtime-doctor` reports `duckhive` on PATH targeting this checkout and version `0.13.1 (DuckHive)`. | Verified |
-| Version metadata and README must match the release | `package.json` and README now report `0.13.1`; `npm pack --dry-run --json` publishes `duckhive@0.13.1`; CLI smoke now checks `--version` and Windows wrapper version output against `package.json` instead of only checking for DuckHive branding. | Verified |
+| `duckhive` command must resolve and report the DuckHive version | `node dist\cli.mjs runtime-doctor` reports `duckhive` on PATH targeting this checkout and version `0.13.2 (DuckHive)`; `node dist\cli.mjs --version` also reports `0.13.2 (DuckHive)`. | Verified |
+| Version metadata and README must match the release | `package.json` and README now report `0.13.2`; `npm pack --dry-run --json` publishes `duckhive@0.13.2`; CLI smoke checks `--version` and Windows wrapper version output against `package.json` instead of only checking for DuckHive branding. | Verified |
 | Runtime diagnostics must not imply legacy OpenClaude/Anthropic defaults | `runtime-doctor` now mirrors DuckHive startup defaults by reporting MiniMax when no explicit provider env is active, while preserving Anthropic only for explicit DuckHive provider selection. | Verified |
 | Codex-compatible HTTP surfaces must not leak OpenClaude attribution | Codex Responses requests, Codex web search, Codex usage reads, `/cache-probe`, and runtime-doctor Codex probes now share `CODEX_HTTP_ORIGINATOR = "duckhive"`; OAuth keeps its separate protocol-required Codex originator. Focused tests assert the DuckHive HTTP originator constant. | Verified |
 | Quota/payment exhaustion must use configured fallback before failing | Inspired by Hermes auxiliary fallback safety nets, DuckHive now triggers `--fallback-model` on explicit 402/payment, credit, daily quota, and quota-exhausted 429 signals before showing the non-retryable quota guidance; focused `withRetry` tests cover configured fallback, no-fallback behavior, and generic 429 rate limits staying on the normal retry path. | Verified |
@@ -41,23 +41,31 @@ covers the named requirement.
 | Shared test mutation locks must fail instead of hanging indefinitely | `acquireSharedMutationLock` now applies a five-minute default timeout and reports scoped timeout errors; focused tests cover default timeout, override timeout, and release handoff. | Verified |
 | SDK mutex tests must not mutate the process-global env mutex | The SDK shared mutex now exposes an isolated test-only mutex factory, and `tests\sdk\shared-utils.test.ts` exercises timeout behavior without resetting the global mutex used by other tests. | Verified |
 | OpenGateway partner model catalog must be current | The `gitlawb-opengateway` preset now routes through `https://opengateway.gitlawb.com/v1`, maps to the OpenAI-compatible vendor, and exposes Gemini 3.1 Flash Lite Preview plus GLM 5.1 FP8 catalog entries. | Verified |
-| Other harnesses must be tracked for feature pulls | Live `git ls-remote` confirms Codex `main` at `e7bffc5a20e92cbc64d6c16a1b257d0b2e4cd5df`, OpenClaw `main` at `5434769e47e69a254456879c25a4f3fb60cf9eac`, OpenClaude `main` at `f71e7692373a61d28c82fc3fadff3feaa4071ede`, and Hermes Agent `main` at `43e566f77eaf01293086eb7cb99a21e240d60634`. | Tracked |
+| Other harnesses must be tracked for feature pulls | Live `git ls-remote` on 2026-05-18 confirms Codex `main` at `e7bffc5a20e92cbc64d6c16a1b257d0b2e4cd5df`, OpenClaw `main` at `bc4f27c89a3c5aa40b7fb9e507a91b6e6c753307`, OpenClaude `main` at `f71e7692373a61d28c82fc3fadff3feaa4071ede`, and Hermes Agent `main` at `43e566f77eaf01293086eb7cb99a21e240d60634`. | Tracked |
 | Windows TUI must be runnable | A local verified Go 1.26.3 toolchain built `tui\duckhive-tui.exe`; `node dist\cli.mjs runtime-doctor` now reports `Terminal TUI - Ready` and `Terminal TUI input`; CLI smoke covers `duckhive tui --help`, provider-free `duckhive tui --snapshot`, and `duckhive tui --input-smoke` through both Node and Windows wrapper launch paths. | Verified binary and input readiness |
-| TUI tests must be verified | Local Go 1.26.3 ran `cd tui && go test ./...` successfully after fixing the stale header version, header wrap, ASCII-safe empty-state/footer markers, adding a Bubble Tea program-loop input regression that types through the configured input stream, adding packaged `duckhive tui --input-smoke` coverage, adding local model-picker regressions for offline `ctrl+p`, preset rendering, and escape return, and adding local harness-state regressions for checkpoint, budget, MCP, ACP, and permission readiness. | Verified |
+| TUI tests must be verified | Historical audit evidence recorded local Go 1.26.3 running `cd tui && go test ./...`; as of the 2026-05-18 continuation, neither `go` nor `.tmp\go-toolchain\go\bin\go.exe` is available in this shell, so the current verified gate is the packaged `duckhive tui --input-smoke` path through `npm run smoke` plus `runtime-doctor` terminal TUI readiness. | Verified packaged binary/input; Go retest blocked by missing toolchain |
 | Harness state must be inspectable outside the TUI | `checkHarnessStateReadiness()` now adds a read-only `runtime-doctor` result for checkpoint count, budget state/log files, MCP, ACP, and permission readiness, with focused tests for current DuckHive config-home state and legacy OpenClaude checkpoint fallback. | Verified |
 | MemoryTool must use DuckHive-owned storage | `MemoryTool` stores memories under DuckHive config-home `memory/memories.json`; focused tests cover config-home path selection and remember/recall/search/stats/forget behavior. | Verified |
-| Full repository test suite must be rerun after the latest packaging/TUI audit changes | `bun test` now reports `3226 pass`, `0 fail`, `8002 expect()` calls across 368 files. | Verified |
+| Full repository test suite must be rerun after the latest packaging/TUI audit changes | Historical audit evidence recorded `bun test` at `3226 pass`, `0 fail`, `8002 expect()` calls across 368 files. The 2026-05-18 continuation verified focused memory/Council tests plus typecheck/build/runtime-doctor/smoke, but did not rerun the full `bun test` suite. | Historical full-suite evidence; latest continuation not fully rerun |
 
 ## Current Green Gates
 
+Latest continuation evidence from 2026-05-18:
+
 - `npm run typecheck`
-- `bun test`
 - `npm run build`
 - `npm run smoke` (`CLI smoke passed (67 commands plus Windows wrapper checks)`)
-- `npm run verify:privacy`
 - `node dist\cli.mjs runtime-doctor`
 - `npm pack --dry-run --json`
-- `cd tui && go test ./...` using local Go 1.26.3 from `.tmp\go-toolchain`
+- `node dist\cli.mjs --version` (`0.13.2 (DuckHive)`)
+- `node --check src\services\council-server\council-api-server.cjs`
+- `bun test src\memdir\bm25.test.ts src\memdir\fts5.test.ts src\tools\MemoryTool\MemoryTool.test.ts`
+
+Historical broader gates from earlier audit passes:
+
+- `bun test`
+- `npm run verify:privacy`
+- `cd tui && go test ./...` using local Go 1.26.3 from `.tmp\go-toolchain` (not available in the 2026-05-18 shell)
 - `bun test src\commands.test.ts scripts\system-check.test.ts`
 - `bun test src\tools\BashTool\bashPermissions.test.ts src\tools\WebSearchTool\WebSearchTool.test.ts`
 - `bun test src\commands.test.ts src\utils\processUserInput\processUserInput.test.ts src\utils\exportFormats.test.ts src\utils\exportRenderer.formats.test.ts src\entrypoints\providerStartupGate.test.ts`
@@ -82,6 +90,6 @@ covers the named requirement.
 
 ## Open Work
 
-- Test full `duckhive tui` keyboard interaction manually from a real interactive PowerShell terminal. Non-interactive `duckhive tui --snapshot` now renders one TUI frame and exits for CI/log verification, `duckhive tui --input-smoke "typed text"` verifies packaged Bubble Tea input-loop delivery through the launcher, `runtime-doctor` verifies binary readiness, and `cd tui && go test ./...` covers direct key-message input and component-level Bubble Tea input-stream delivery.
+- Test full `duckhive tui` keyboard interaction manually from a real interactive PowerShell terminal. Non-interactive `duckhive tui --snapshot` now renders one TUI frame and exits for CI/log verification, `duckhive tui --input-smoke "typed text"` verifies packaged Bubble Tea input-loop delivery through the launcher, and `runtime-doctor` verifies binary readiness. Re-run `cd tui && go test ./...` when Go is available again; in the 2026-05-18 shell, `go` is not on PATH and `.tmp\go-toolchain\go\bin\go.exe` is absent.
 - Continue feature-by-feature upstream imports rather than merging upstream harnesses wholesale. DuckHive and OpenClaude histories are divergent, so release commits, branding changes, and unrelated upstream removals must be reviewed selectively.
 - Keep importing upstream features as independent, verified slices. The current tested state is green, but the product goal remains open-ended until each new upstream slice has its own impact analysis, implementation, and verification.
