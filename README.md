@@ -1375,6 +1375,8 @@ The query loop also includes the upstream OpenClaude repeated-tool-failure guard
 
 The API retry path also applies the Hermes-style auxiliary fallback lesson to quota and payment exhaustion: when a primary model returns explicit 402/payment, credit, daily quota, or quota-exhausted 429 signals and `--fallback-model` is configured, DuckHive switches to the fallback model instead of failing immediately. Generic 429 rate limits still follow the normal retry path. If no fallback is configured, DuckHive still fails closed with explicit billing/provider guidance.
 
+Codex-compatible HTTP surfaces now keep DuckHive attribution instead of leaking the upstream OpenClaude originator. Runtime doctor Codex probes, Codex Responses requests, Codex web search, Codex usage reads, and `/cache-probe` share the `duckhive` originator header while preserving Codex's own OAuth originator where the login protocol requires it.
+
 For installed CLI diagnostics, use `duckhive runtime-doctor` or `duckhive doctor-runtime`. `duckhive doctor:runtime` is also accepted as a compatibility alias for users copying the npm script naming style, and it runs the same terminal-safe checks without starting the REPL.
 
 When the installed CLI is run without an attached terminal and without

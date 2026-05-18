@@ -6,6 +6,7 @@ import { createCombinedAbortSignal } from '../../utils/combinedAbortSignal.js'
 import { logForDebugging } from '../../utils/debug.js'
 import { isBareMode } from '../../utils/envUtils.js'
 import {
+  CODEX_HTTP_ORIGINATOR,
   DEFAULT_CODEX_BASE_URL,
   isCodexBaseUrl,
   resolveRuntimeCodexCredentials,
@@ -446,7 +447,7 @@ export async function fetchCodexUsage(): Promise<CodexUsageData> {
         Accept: 'application/json',
         Authorization: `Bearer ${credentials.apiKey}`,
         'chatgpt-account-id': credentials.accountId,
-        originator: 'openclaude',
+        originator: CODEX_HTTP_ORIGINATOR,
       },
       signal,
     })

@@ -4,6 +4,7 @@ import { homedir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { spawnSync } from 'node:child_process'
 import {
+  CODEX_HTTP_ORIGINATOR,
   resolveCodexApiCredentials,
   resolveProviderRequest,
   isLocalProviderUrl as isProviderLocalUrl,
@@ -1134,7 +1135,7 @@ async function checkBaseUrlReachability(): Promise<CheckResult> {
         headers['chatgpt-account-id'] = credentials.accountId
       }
       headers['Content-Type'] = 'application/json'
-      headers.originator = 'openclaude'
+      headers.originator = CODEX_HTTP_ORIGINATOR
       method = 'POST'
       body = JSON.stringify({
         model: request.resolvedModel,

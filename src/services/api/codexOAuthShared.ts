@@ -8,6 +8,7 @@ export const DEFAULT_CODEX_OAUTH_CALLBACK_HOST = 'localhost'
 export const CODEX_OAUTH_SCOPE =
   'openid profile email offline_access api.connectors.read api.connectors.invoke'
 export const CODEX_OAUTH_ORIGINATOR = 'codex_cli_rs'
+export const CODEX_HTTP_ORIGINATOR = 'duckhive'
 export const CODEX_API_KEY_TOKEN_NAME = 'openai-api-key'
 export const CODEX_ID_TOKEN_SUBJECT_TYPE =
   'urn:ietf:params:oauth:token-type:id_token'

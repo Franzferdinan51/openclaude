@@ -15,6 +15,7 @@ import {
   asTrimmedString,
   parseChatgptAccountId,
 } from './codexOAuthShared.js'
+export { CODEX_HTTP_ORIGINATOR } from './codexOAuthShared.js'
 import {
   DEFAULT_GEMINI_BASE_URL,
   DEFAULT_GEMINI_MODEL,

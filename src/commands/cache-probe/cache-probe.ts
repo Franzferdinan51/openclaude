@@ -1,5 +1,8 @@
 import { getSessionId } from '../../bootstrap/state.js'
-import { resolveProviderRequest } from '../../services/api/providerConfig.js'
+import {
+  CODEX_HTTP_ORIGINATOR,
+  resolveProviderRequest,
+} from '../../services/api/providerConfig.js'
 import type { LocalCommandCall } from '../../types/command.js'
 import { logForDebugging } from '../../utils/debug.js'
 import { isEnvTruthy } from '../../utils/envUtils.js'
@@ -216,7 +219,7 @@ export const call: LocalCommandCall = async (args) => {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     Authorization: `Bearer ${apiKey}`,
-    originator: 'openclaude',
+    originator: CODEX_HTTP_ORIGINATOR,
   }
   if (isGithub) {
     Object.assign(headers, COPILOT_HEADERS)

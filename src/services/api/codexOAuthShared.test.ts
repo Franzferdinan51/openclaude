@@ -1,11 +1,16 @@
 import { expect, test } from 'bun:test'
 
 import {
+  CODEX_HTTP_ORIGINATOR,
   DEFAULT_CODEX_OAUTH_CALLBACK_HOST,
   DEFAULT_CODEX_OAUTH_CALLBACK_PORT,
   getCodexOAuthCallbackHost,
   getCodexOAuthCallbackPort,
 } from './codexOAuthShared.js'
+
+test('Codex HTTP attribution uses DuckHive branding', () => {
+  expect(CODEX_HTTP_ORIGINATOR).toBe('duckhive')
+})
 
 test('getCodexOAuthCallbackPort falls back for zero', () => {
   expect(

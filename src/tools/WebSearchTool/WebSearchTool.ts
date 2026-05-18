@@ -12,6 +12,7 @@ import { queryModelWithStreaming } from '../../services/api/claude.js'
 import { collectCodexCompletedResponse } from '../../services/api/codexShim.js'
 import { fetchWithProxyRetry } from '../../services/api/fetchWithProxyRetry.js'
 import {
+  CODEX_HTTP_ORIGINATOR,
   resolveCodexApiCredentials,
   resolveProviderRequest,
 } from '../../services/api/providerConfig.js'
@@ -415,7 +416,7 @@ async function runCodexWebSearch(
       'Content-Type': 'application/json',
       Authorization: `Bearer ${credentials.apiKey}`,
       'chatgpt-account-id': credentials.accountId,
-      originator: 'openclaude',
+      originator: CODEX_HTTP_ORIGINATOR,
     },
     body: JSON.stringify(body),
     signal,

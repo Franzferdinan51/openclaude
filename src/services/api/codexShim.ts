@@ -8,6 +8,7 @@ import type {
   ResolvedCodexCredentials,
   ResolvedProviderRequest,
 } from './providerConfig.js'
+import { CODEX_HTTP_ORIGINATOR } from './providerConfig.js'
 import { sanitizeSchemaForOpenAICompat } from './openaiSchemaSanitizer.js'
 import {
   createThinkTagFilter,
@@ -617,7 +618,7 @@ export async function performCodexRequest(options: {
   if (options.credentials.accountId) {
     headers['chatgpt-account-id'] = options.credentials.accountId
   }
-  headers.originator ??= 'openclaude'
+  headers.originator ??= CODEX_HTTP_ORIGINATOR
 
   const response = await fetchWithProxyRetry(
     `${options.request.baseUrl}/responses`,
