@@ -1,6 +1,6 @@
 # DuckHive Harness Todo
 
-Last updated: 2026-05-16
+Last updated: 2026-05-18
 
 This file started with the Go TUI work, but it now tracks harness-wide integration requirements as well.
 
@@ -8,15 +8,15 @@ This file started with the Go TUI work, but it now tracks harness-wide integrati
 
 - Turn the requested upstream repos into concrete DuckHive workstreams instead of repo-by-repo copy-paste.
 - Shift imported feature work from TUI-only surfaces into shared harness layers first.
-- Add interactive model-routing controls backed by shared provider state.
-- Define the Crush-style shell pass so it improves the default `duckhive` UI without reintroducing noisy rails or status chrome.
+- Keep interactive model-routing controls aligned with the shared `/model` and `/provider` state.
+- Continue Crush-style shell polish without making no-args Windows startup depend on the experimental renderer.
 
 ## Next
 
-- Move checkpoint, council, media, MCP, ACP, permission, and budget state into shared harness services that every client can consume.
+- Extend the existing shared checkpoint, council, MCP, ACP, permission, budget, AgentRun, and artifact status surfaces with mutation flows that stay owned by the backend slash commands.
 - Add backend orchestration work from OpenClaw, hermes-agent, NemoClaw, duck-cli, and the AI Bot Council stack into reusable services and tools.
-- Add a session/status layer for checkpoints, permissions, budgets, model routing, MCP, ACP, bridge health, and council health that works in TUI, REPL, and automation.
-- Extend the current Kimi-style shell mode beyond local execution so session/task/approval state is shared with the rest of the harness.
+- Keep the session/status layer for checkpoints, permissions, budgets, model routing, MCP, ACP, bridge health, and council health consistent across TUI, REPL, runtime-doctor, and automation.
+- Extend the current Kimi-style shell mode beyond local execution so session/task/approval state can be controlled through the shared AgentRun store.
 - Rework the TUI into a more Crush-like shell layout without forcing transcript/session rails on by default.
 
 ## Later

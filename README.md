@@ -66,7 +66,7 @@ provider-free `duckhive tui --snapshot` render check, the
 path discoverable without making no-args Windows startup depend on the
 experimental renderer.
 
-Harness capability tracking currently lives in:
+Historical TUI planning and remaining harness backlog notes live in:
 
 - `tui/TODO.md`
 - `tui/KANBAN.md`
