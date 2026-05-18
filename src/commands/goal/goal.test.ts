@@ -7,6 +7,9 @@ type GoalRecord = {
   currentStepId?: string
   description?: string
   completedAt?: string
+  autonomousMode?: boolean
+  activeAgentRunId?: string
+  lastActivityAt?: string
   steps: Array<{
     description: string
     status?: string
@@ -16,6 +19,12 @@ type GoalRecord = {
 
 let configStore: Record<string, unknown>
 let sessionId = 'session-current'
+let spawnedTasks: Array<{
+  label?: string
+  task?: string
+  agentType?: string
+  mode?: string
+}> = []
 
 async function importFreshGoalCommand() {
   return (await import(`./goal.ts?goal-test=${Date.now()}-${Math.random()}`))
@@ -34,6 +43,7 @@ describe('/goal command', () => {
   beforeEach(() => {
     configStore = { 'duckhive.goals': [] }
     sessionId = 'session-current'
+    spawnedTasks = []
     mock.module('../../utils/config.js', () => ({
       getGlobalConfig: () => configStore,
       saveGlobalConfig: (
@@ -44,6 +54,23 @@ describe('/goal command', () => {
     }))
     mock.module('../../bootstrap/state.js', () => ({
       getSessionId: () => sessionId,
+    }))
+    mock.module('../../subagentSystem.js', () => ({
+      sessions_spawn: async (options: {
+        label?: string
+        task?: string
+        agentType?: string
+        mode?: string
+      }) => {
+        spawnedTasks.push(options)
+        return [
+          '## Deep Analysis',
+          'Subagent teammate **goal-worker** spawned successfully.',
+          'Agent ID: `agent_goal_123`',
+          'Team: duckhive-sessions',
+          'Model: default',
+        ].join('\n')
+      },
     }))
   })
 
@@ -169,8 +196,12 @@ describe('/goal command', () => {
     expect(result).toContain('DuckHive /goal - Persisted Workflow Goals')
     expect(result).toContain('duckhive goal <description>')
     expect(result).toContain('duckhive goal step add [id] <desc>')
+    expect(result).toContain('duckhive goal pursue [id]')
+    expect(result).toContain('duckhive goal stop-autonomous [id]')
     expect(result).toContain('/goal <description>')
     expect(result).toContain('/goal step add [id] <desc>')
+    expect(result).toContain('/goal pursue [id]')
+    expect(result).toContain('/goal stop-autonomous [id]')
   })
 
   test('adding a new step completes the previous current step', async () => {
@@ -331,6 +362,43 @@ describe('/goal command', () => {
     expect(resumed).toContain('Goal resumed!')
     expect(getStoredGoals()[0]?.status).toBe('active')
     expect(getStoredGoals()[0]?.steps[0]?.status).toBe('active')
+  })
+
+  test('pursue starts autonomous goal mode and creates an initial step', async () => {
+    const { call } = await importFreshGoalModule()
+    await (await importFreshGoalCommand())(['create', 'Stabilize', 'the', 'CLI'])
+
+    const result = await call('pursue', {} as never)
+
+    expect(result.value).toContain('Autonomous goal mode activated')
+    expect(result.value).toContain('Background teammate started: agent_goal_123')
+    expect(spawnedTasks).toHaveLength(1)
+    expect(spawnedTasks[0]?.agentType).toBe('general-purpose')
+    expect(spawnedTasks[0]?.mode).toBe('autonomous-goal')
+    expect(spawnedTasks[0]?.task).toContain('Stabilize the CLI')
+    const goal = getStoredGoals()[0]
+    expect(goal?.status).toBe('active')
+    expect(goal?.autonomousMode).toBe(true)
+    expect(goal?.activeAgentRunId).toBe('agent_goal_123')
+    expect(goal?.lastActivityAt).toBeTruthy()
+    expect(goal?.steps[0]?.description).toBe('Stabilize the CLI')
+    expect(goal?.steps[0]?.status).toBe('active')
+  })
+
+  test('stop-autonomous pauses the goal and active step', async () => {
+    const { call } = await importFreshGoalModule()
+    await (await importFreshGoalCommand())(['create', 'Stabilize', 'the', 'CLI'])
+    await call('pursue', {} as never)
+
+    const result = await call('stop-autonomous')
+
+    expect(result.value).toContain('Autonomous mode stopped')
+    expect(result.value).toContain('Goal is paused')
+    const goal = getStoredGoals()[0]
+    expect(goal?.status).toBe('paused')
+    expect(goal?.autonomousMode).toBe(false)
+    expect(goal?.activeAgentRunId).toBeUndefined()
+    expect(goal?.steps[0]?.status).toBe('paused')
   })
 
   test('resume without an id prefers the current session paused goal', async () => {

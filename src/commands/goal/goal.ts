@@ -567,7 +567,22 @@ async function addStep(args: string[], goalId?: string): Promise<string> {
   return `Step added to goal.\n\n${formatGoal(goal, true)}`
 }
 
-async function pursueGoal(args: string[]): Promise<string> {
+function buildAutonomousGoalTask(goal: Goal, currentStep: GoalStep | undefined): string {
+  return [
+    `Pursue DuckHive goal ${goal.id}: ${goal.title}`,
+    '',
+    `Goal description: ${goal.description}`,
+    currentStep ? `Current step: ${currentStep.description}` : 'Current step: define and execute the next concrete step.',
+    '',
+    'Work autonomously until the current goal step has a concrete result. Report progress through the team conversation and keep the final response concise.',
+  ].join('\n')
+}
+
+function extractSpawnedAgentRunId(spawnResult: string): string | undefined {
+  return spawnResult.match(/Agent ID:\s*`([^`]+)`/)?.[1]
+}
+
+async function pursueGoal(args: string[], context?: ToolUseContext): Promise<string> {
   const goals = getGoals()
   const { goal, error } = resolveGoalTarget(goals, args[0], ['active', 'paused'])
   if (!goal) {
@@ -592,14 +607,37 @@ async function pursueGoal(args: string[]): Promise<string> {
     goal.currentStepId = step.id
   }
 
-  await saveGoals(goals)
-
   const currentStep = getCurrentStep(goal)
   const stepInfo = currentStep
     ? `\nCurrent step: ${currentStep.description}`
     : '\nNo steps defined yet.'
 
-  return `Autonomous goal mode activated for goal.\n\n${formatGoal(goal)}${stepInfo}\n\nThe agent will now work toward this goal continuously. Use /goal status to check progress or /goal stop-autonomous to cancel.`
+  let spawnInfo = '\nNo live REPL context was available, so no background teammate was spawned. Open DuckHive and run /goal pursue from the REPL to start active autonomous work.'
+  if (context) {
+    const spawnResult = await sessions_spawn({
+      label: `goal-${goal.id}`,
+      agentType: 'general-purpose',
+      mode: 'autonomous-goal',
+      task: buildAutonomousGoalTask(goal, currentStep),
+      context,
+    })
+    const agentRunId = extractSpawnedAgentRunId(spawnResult)
+    if (agentRunId) {
+      goal.activeAgentRunId = agentRunId
+      spawnInfo = `\nBackground teammate started: ${agentRunId}`
+    } else if (spawnResult.includes('Failed to spawn subagent teammate')) {
+      goal.autonomousMode = false
+      goal.activeAgentRunId = undefined
+      await saveGoals(goals)
+      return `Failed to start autonomous goal mode.\n\n${spawnResult}`
+    } else {
+      spawnInfo = `\nBackground teammate spawn result:\n${spawnResult}`
+    }
+  }
+
+  await saveGoals(goals)
+
+  return `Autonomous goal mode activated for goal.\n\n${formatGoal(goal)}${stepInfo}${spawnInfo}\n\nUse /goal status to check progress or /goal stop-autonomous to cancel.`
 }
 
 async function stopAutonomousMode(args: string[]): Promise<string> {
@@ -611,7 +649,13 @@ async function stopAutonomousMode(args: string[]): Promise<string> {
 
   goal.autonomousMode = false
   goal.activeAgentRunId = undefined
+  goal.status = 'paused'
+  const currentStep = getCurrentStep(goal)
+  if (currentStep?.status === 'active') {
+    currentStep.status = 'paused'
+  }
   goal.updatedAt = new Date().toISOString()
+  goal.lastActivityAt = new Date().toISOString()
   await saveGoals(goals)
 
   return `Autonomous mode stopped for goal.\n\n${formatGoal(goal)}\n\nGoal is paused. Use /goal pursue to restart autonomous work or /goal status to check progress.`
@@ -665,6 +709,8 @@ ${bold('Terminal commands:')}
   duckhive goal status [id]            Show goal status or summary
   duckhive goal pause [id]             Pause a goal
   duckhive goal resume [id]            Resume a paused goal
+  duckhive goal pursue [id]            Start autonomous goal work
+  duckhive goal stop-autonomous [id]   Stop autonomous work and pause the goal
   duckhive goal complete [id]          Mark goal as completed
   duckhive goal fail [id]              Mark goal as failed
   duckhive goal clear [id]             Delete a goal
@@ -678,6 +724,8 @@ ${bold('REPL commands:')}
   /goal status [id]            Show goal status or summary
   /goal pause [id]             Pause a goal
   /goal resume [id]            Resume a paused goal
+  /goal pursue [id]            Start autonomous goal work
+  /goal stop-autonomous [id]   Stop autonomous work and pause the goal
   /goal complete [id]          Mark goal as completed
   /goal fail [id]              Mark goal as failed
   /goal clear [id]             Delete a goal
@@ -694,6 +742,8 @@ ${bold('Examples:')}
   /goal status goal_123
   /goal pause goal_123
   /goal resume goal_123
+  /goal pursue goal_123
+  /goal stop-autonomous goal_123
   /goal complete goal_123
   /goal fail goal_123
 
@@ -717,15 +767,21 @@ async function handleStepCommand(args: string[]): Promise<string> {
   }
 }
 
-export async function call(args: string): Promise<{ type: 'text'; value: string }> {
+export async function call(
+  args: string,
+  context?: ToolUseContext,
+): Promise<{ type: 'text'; value: string }> {
   const parsed = splitCommandArgs(args)
   if (parsed.error) {
     return { type: 'text', value: parsed.error }
   }
-  return { type: 'text', value: await goalCommand(parsed.args) }
+  return { type: 'text', value: await goalCommand(parsed.args, context) }
 }
 
-export default async function goalCommand(args: string[]): Promise<string> {
+export default async function goalCommand(
+  args: string[],
+  context?: ToolUseContext,
+): Promise<string> {
   const subcommand = args[0]?.toLowerCase()
 
   switch (subcommand) {
@@ -774,7 +830,7 @@ export default async function goalCommand(args: string[]): Promise<string> {
     case 'pursue':
     case 'work':
     case 'start':
-      return pursueGoal(args.slice(1))
+      return pursueGoal(args.slice(1), context)
 
     case 'stop-autonomous':
       return stopAutonomousMode(args.slice(1))
