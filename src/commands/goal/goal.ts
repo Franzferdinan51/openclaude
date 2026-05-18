@@ -64,6 +64,7 @@ export type GoalUpdateType =
   | 'completed'
   | 'failed'
   | 'step_added'
+  | 'step_completed'
   | 'autonomous_started'
   | 'autonomous_failed'
   | 'autonomous_stopped'
@@ -728,11 +729,12 @@ async function completeStep(args: string[]): Promise<string> {
   currentStep.completedAt = new Date().toISOString()
   goal.updatedAt = new Date().toISOString()
 
-  // Find next incomplete step
-  const nextStep = goal.steps.find(s => s.status !== 'completed' && s.id !== currentStep.id)
+  // Find next sequential step after current
+  const currentIdx = goal.steps.findIndex(s => s.id === currentStep.id)
+  const nextStep = currentIdx >= 0 ? goal.steps[currentIdx + 1] : undefined
   goal.currentStepId = nextStep?.id
 
-  await saveGoals(goals, { type: 'step_added', goal })
+  await saveGoals(goals, { type: 'step_completed', goal })
 
   return `Step completed: ${currentStep.description}${nextStep ? `\nNext step: ${nextStep.description}` : '\nAll steps completed!'}`
 }
@@ -1004,8 +1006,10 @@ export default async function goalCommand(
 
   // /goal do X — multi-word non-subcommand → create goal (Codex-style shorthand)
   // Single unknown words like /goal statue are rejected as unknown commands.
+  // Note: splitCommandArgs strips outer quotes, so /goal "Fix login" becomes
+  // ['Fix login'] — the quote check is unnecessary.
   if (args.length >= 1 && !isKnownSubcommand) {
-    if (args.length > 1 || (args[0]?.startsWith('"') && args[0]?.endsWith('"'))) {
+    if (args.length > 1) {
       const { message } = await createGoal(args)
       return message
     }
