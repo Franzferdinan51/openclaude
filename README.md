@@ -692,6 +692,8 @@ duckhive orchestrate "Build a REST API" --mode=deliberation
 
 `/senate` now accepts the bare shorthand form shown above in addition to `/senate issue ...`, and `/decree` strips wrapper quotes from the decree title/content instead of persisting the quote characters as part of the law text.
 
+Decrees issued without an explicit authority now default to `duckhive` across the shared Hive bridge and built-in Hive Senate tool, so governance payloads no longer inherit stale OpenClaude authority branding.
+
 > **Hive Nation runtime** — DuckHive’s governance commands target the Hive Nation / Council service on port 3007 by default, but that service is not auto-started by the current source checkout. Start the Council runtime separately or point DuckHive at a running service with `DUCKHIVE_COUNCIL_URL`.
 
 ### Continuous Self-Improvement

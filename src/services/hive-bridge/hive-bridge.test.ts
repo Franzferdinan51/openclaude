@@ -190,10 +190,12 @@ describe('HiveBridge', () => {
   })
 
   test('decree routes use the checked-in council runtime contract', async () => {
+    let postedBody: Record<string, unknown> | undefined
     globalThis.fetch = mock(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input)
       if (url.endsWith('/api/decree')) {
         expect(init?.method).toBe('POST')
+        postedBody = JSON.parse(String(init?.body ?? '{}')) as Record<string, unknown>
         return jsonResponse({
           success: true,
           decreeId: 'decree-123',
@@ -250,6 +252,7 @@ describe('HiveBridge', () => {
 
     expect(issued.success).toBe(true)
     expect(issued.decreeId).toBe('decree-123')
+    expect(postedBody?.authority).toBe('duckhive')
     expect(decrees).toHaveLength(1)
     expect(decree?.title).toBe('Secure Mode')
   })

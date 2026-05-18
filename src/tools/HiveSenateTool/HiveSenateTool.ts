@@ -57,7 +57,7 @@ export const HiveSenateTool = buildTool({
       }
       case 'issue': {
         if (!title || !content) return { data: { success: false, action: 'issue', error: 'title and content required' } }
-        const result = await hive.issueDecree(title, content, authority ?? 'openclaude', scope ?? 'agent', priority ?? 'medium')
+        const result = await hive.issueDecree(title, content, authority ?? 'duckhive', scope ?? 'agent', priority ?? 'medium')
         return { data: { success: result.success, action: 'issue', decreeId: result.decreeId, error: result.error } }
       }
       case 'show': {

@@ -499,7 +499,7 @@ export class HiveBridge {
   async issueDecree(
     title: string,
     content: string,
-    authority = 'openclaude',
+    authority = 'duckhive',
     scope: 'universal' | 'agent' | 'session' | 'project' = 'agent',
     priority: 'high' | 'medium' | 'low' = 'medium'
   ): Promise<{ success: boolean; decreeId?: string; error?: string }> {
