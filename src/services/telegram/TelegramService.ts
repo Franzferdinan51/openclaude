@@ -220,6 +220,7 @@ let offset = 0
 let registeredChatId: number | null = null
 let isConnected = false
 let lastInboundChatId: number | null = null
+let botUsername: string | null = null
 
 // Reconnection state
 let reconnectAttempts = 0
@@ -271,8 +272,21 @@ function getToken(): string | null {
   return data?.botToken ?? null
 }
 
-function normalizeTelegramCommand(rawCommand: string): string {
-  return rawCommand.split('@', 1)[0]?.toLowerCase() ?? ''
+function normalizeTelegramBotUsername(value: string | null | undefined): string | null {
+  const normalized = value?.replace(/^@/, '').trim().toLowerCase()
+  return normalized ? normalized : null
+}
+
+function parseTelegramCommand(rawCommand: string): string | null {
+  const [commandName = '', addressedBot] = rawCommand.split('@', 2)
+  const normalizedAddressedBot = normalizeTelegramBotUsername(addressedBot)
+  if (
+    normalizedAddressedBot &&
+    normalizedAddressedBot !== normalizeTelegramBotUsername(botUsername)
+  ) {
+    return null
+  }
+  return commandName.toLowerCase()
 }
 
 function formatTelegramFileSize(size: number | undefined): string {
@@ -353,7 +367,8 @@ async function pollLoop(): Promise<void> {
         // Handle commands
         if (text.startsWith('/')) {
           const parts = text.slice(1).split(' ')
-          const cmd = normalizeTelegramCommand(parts[0])
+          const cmd = parseTelegramCommand(parts[0])
+          if (cmd === null) continue
           const args = parts.slice(1).join(' ')
 
           const handler = commandHandlers.get(cmd)
@@ -430,6 +445,7 @@ export async function startTelegramService(): Promise<void> {
   try {
     api = new TelegramBotAPI(token)
     const me = await api.getMe()
+    botUsername = normalizeTelegramBotUsername(me.result.username)
     logForDebugging(
       `[telegram] bot username: @${redactTelegramDebugIdentifier(me.result.username)}`,
     )
@@ -472,6 +488,7 @@ export function stopTelegramService(): void {
     reconnectTimeout = null
   }
   api = null
+  botUsername = null
   offset = 0
   isConnected = false
   // NOTE: registeredChatId is kept in memory — it will be restored from storage on next start

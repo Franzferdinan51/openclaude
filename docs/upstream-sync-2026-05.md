@@ -47,6 +47,15 @@ DuckHive checked the live upstream repositories on May 7, 2026 and refreshed the
 | OpenClaw | `main`/`HEAD` at `491ce8b7535baadbb73191587453ac1124c9b6c2` | Ported the compatible Telegram-media lesson from `491ce8b753`: DuckHive now preserves Telegram photo/document captions and emits explicit media placeholders through both the polling service and `TelegramAdapter`. Remaining deltas are mostly gateway, native macOS, Telegram QA/spool internals, and native Codex task recovery; continue reviewing as independent slices. |
 | Hermes Agent | `main`/`HEAD` at `dadc8aa25580ac1ecc65d6185dfc6bd0e1d6d279` | Added DuckHive regression coverage for the compatible `ff078738` symlinked skill slash-command lesson: symlinked `.claude/skills/<name>` directories now stay covered by `src/skills/loadSkillsDir.test.ts`. Kanban/ACP changes remain under review for future slices. |
 
+## Refreshed Current May 18, 2026
+
+| Project | Current probe result | DuckHive follow-up |
+| --- | --- | --- |
+| OpenClaude | `main`/`HEAD` at `f71e7692373a61d28c82fc3fadff3feaa4071ede` | No new OpenClaude delta since the previous refresh. |
+| OpenAI Codex | `main`/`HEAD` at `22dd9ad3929253ed24d7ee4f10f238e95ab25f37` | No new Codex delta since the previous refresh. |
+| OpenClaw | `main`/`HEAD` at `1e5450f23e1c770912bc1eb0b4eaa7b6d1ba94e3` | Reviewed the new provider-owner harness commit; DuckHive does not have OpenClaw's plugin runtime loader, so there is no direct provider-owner port. Ported the compatible group-visible reply safety lesson by making DuckHive Telegram ignore slash commands addressed to a different bot username, preventing group replies to `/command@other_bot` turns. Focused `TelegramService` tests cover matching bot suffixes and quiet non-matching suffixes. |
+| Hermes Agent | `main`/`HEAD` at `dadc8aa25580ac1ecc65d6185dfc6bd0e1d6d279` | No new Hermes delta since the previous refresh. |
+
 ## Ported In 0.8.1
 
 ### OpenClaude effort fix

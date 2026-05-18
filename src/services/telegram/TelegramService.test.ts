@@ -540,6 +540,62 @@ describe('TelegramService polling', () => {
     expect(sentMessages.join('\n')).not.toContain('Unknown command')
   })
 
+  test('ignores Telegram group commands addressed to another bot', async () => {
+    const sentMessages: string[] = []
+    const deliveredMessages: string[] = []
+    let getUpdatesCalls = 0
+    const fetchMock = mock(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      if (url.endsWith('/getMe')) {
+        return telegramResponse({
+          ok: true,
+          result: { id: 1, is_bot: true, username: 'duckhive_test_bot' },
+        })
+      }
+      if (url.endsWith('/setMyCommands')) {
+        return telegramResponse({ ok: true, result: true })
+      }
+      if (url.endsWith('/sendMessage')) {
+        const body = JSON.parse(String(init?.body ?? '{}')) as { text?: string }
+        sentMessages.push(body.text ?? '')
+        return telegramResponse({ ok: true, result: true })
+      }
+      if (url.endsWith('/getUpdates')) {
+        getUpdatesCalls += 1
+        if (getUpdatesCalls > 1) {
+          return telegramResponse({ ok: true, result: [] })
+        }
+        return telegramResponse({
+          ok: true,
+          result: [
+            {
+              update_id: 36,
+              message: {
+                from: { id: 42, is_bot: false, first_name: 'Owner' },
+                chat: { id: 42, type: 'group' },
+                text: '/runs@other_bot',
+                date: 1,
+              },
+            },
+          ],
+        })
+      }
+      return telegramResponse({ ok: true, result: true })
+    }) as unknown as typeof fetch
+    globalThis.fetch = fetchMock
+
+    const service = await importFreshService()
+    service.onTelegramMessage((_chatId, text) => {
+      if (text) deliveredMessages.push(text)
+    })
+    await service.startTelegramService()
+    await waitFor(() => getUpdatesCalls > 1)
+    service.stopTelegramService()
+
+    expect(sentMessages).toEqual([])
+    expect(deliveredMessages).toEqual([])
+  })
+
   test('allows Telegram commands to pause, resume, and stop runs', async () => {
     const sentMessages: string[] = []
     const { resetAgentRunStoreForTesting } = await import(
