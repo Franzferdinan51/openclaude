@@ -1,4 +1,3 @@
-// @ts-nocheck
 // biome-ignore-all assist/source/organizeImports: internal-only import markers must not be reordered
 import type {
   ToolResultBlockParam,
@@ -223,7 +222,7 @@ type State = {
   continuationNudgeCount: number
   // Why the previous iteration continued. Undefined on first iteration.
   // Lets tests assert recovery paths fired without inspecting message contents.
-  transition: any | undefined
+  transition: Continue | undefined
 }
 
 export async function* query(
@@ -437,7 +436,7 @@ async function* queryLoop(
     let snipTokensFreed = 0
     if (feature('HISTORY_SNIP')) {
       queryCheckpoint('query_snip_start')
-      const snipResult = (snipModule as any).snipCompactIfNeeded(messagesForQuery)
+      const snipResult = snipModule!.snipCompactIfNeeded(messagesForQuery)
       messagesForQuery = snipResult.messages
       snipTokensFreed = snipResult.tokensFreed
       if (snipResult.boundaryMessage) {
@@ -882,13 +881,7 @@ async function* queryLoop(
             // rather than composed.
             let withheld = false
             if (feature('CONTEXT_COLLAPSE')) {
-              if (
-                contextCollapse?.isWithheldPromptTooLong(
-                  message,
-                  isPromptTooLongMessage,
-                  querySource,
-                )
-              ) {
+              if (contextCollapse?.isWithheldPromptTooLong()) {
                 withheld = true
               }
             }
@@ -1574,7 +1567,9 @@ async function* queryLoop(
       const { addMessageToTurn, addToolCallToTurn } = await import(
         './utils/multiTurnContext.js'
       )
-      addMessageToTurn(assistantMessage)
+      for (const assistantMessage of assistantMessages) {
+        addMessageToTurn(assistantMessage)
+      }
       for (const toolUse of toolUseBlocks) {
         addToolCallToTurn({
           id: toolUse.id,
@@ -1593,7 +1588,7 @@ async function* queryLoop(
       const { updateArcPhase, finalizeArcTurn } = await import(
         './utils/conversationArc.js'
       )
-      await updateArcPhase([assistantMessage])
+      await updateArcPhase(assistantMessages)
       await finalizeArcTurn()
     }
 
