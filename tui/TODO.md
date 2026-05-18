@@ -25,7 +25,7 @@ This file started with the Go TUI work, but it now tracks harness-wide integrati
 - Add full checkpoint restore/resume state hydration after the current metadata checkpoint shell grows into a restorable session snapshot format.
 - Add multi-agent and council execution views with task state plus shared orchestration APIs.
 - Add media workflow panels for image, video, speech, music, and search jobs on top of shared media job primitives.
-- Add voice, daemon, and channel controls inspired by OpenClaw, hermes-agent, NemoClaw, and mercury-agent.
+- Add full voice toggle panels, daemon controls, and richer channel controls inspired by OpenClaw, hermes-agent, NemoClaw, and mercury-agent.
 - Add Kanban-backed progress counters and richer task tracking in the rail.
 
 ## Done
@@ -43,6 +43,7 @@ This file started with the Go TUI work, but it now tracks harness-wide integrati
 - Fixed Windows shell-mode fallback and `SHELL` override handling for the Bubble Tea local shell path.
 - Treated shell interrupts as clean cancellations instead of generic failures in the Bubble Tea shell path.
 - Wired native Bubble Tea suspend/resume instead of leaving Ctrl+Z as placeholder status text.
+- Exposed provider-free voice readiness through `/voice status`, `/voice --help`, and `duckhive voice status` so terminal diagnostics do not start provider auth or microphone tooling.
 - Added real external-editor round-trip support for `ctrl+x ctrl+e`, including temp-file cleanup and Windows quoted editor paths.
 - Added composer undo for typed input, canceled input, history replacement, and external-editor apply.
 - Wired `ctrl+p` to the real backend `/model` command when a bridge is live, with an honest local model-picker fallback when offline.

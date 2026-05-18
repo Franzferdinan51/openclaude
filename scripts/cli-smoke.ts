@@ -600,6 +600,28 @@ const cases: SmokeCase[] = [
     ],
   },
   {
+    name: 'headless voice status',
+    args: ['--bare', '-p', '/voice status'],
+    env: createIsolatedConfigEnv,
+    timeoutMs: 30000,
+    includes: ['Voice mode status', 'Ready:'],
+    excludes: [
+      'Unknown skill: voice',
+      'Warning: ignoring saved provider profile',
+    ],
+  },
+  {
+    name: 'top-level voice status',
+    args: ['voice', 'status'],
+    env: createIsolatedConfigEnv,
+    timeoutMs: 30000,
+    includes: ['Voice mode status', 'Ready:'],
+    excludes: [
+      'Usage: duckhive',
+      'Warning: ignoring saved provider profile',
+    ],
+  },
+  {
     name: 'top-level provider help',
     args: ['provider', '--help'],
     includes: [

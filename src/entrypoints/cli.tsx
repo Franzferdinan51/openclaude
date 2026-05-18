@@ -368,6 +368,20 @@ async function main(): Promise<void> {
     return;
   }
 
+  // Fast-path for voice readiness outside the REPL.
+  if (cliCommand === 'voice') {
+    profileCheckpoint('cli_voice_path');
+    const {
+      enableConfigs
+    } = await import('../utils/config.js');
+    enableConfigs();
+    const {
+      voiceHandler
+    } = await import('../cli/voice.js');
+    await voiceHandler(cliCommandArgs);
+    return;
+  }
+
   // Fast-path for provider profile diagnostics outside the REPL.
   if (cliCommand === 'provider') {
     profileCheckpoint('cli_provider_path');

@@ -84,6 +84,7 @@ import teleport from './commands/teleport/index.js'
 import spawn from './commands/spawn/index.js'
 import trusted from './commands/trusted-folders/index.js'
 import tui from './commands/tui/index.js'
+import voiceCommand from './commands/voice/index.js'
 /* eslint-disable @typescript-eslint/no-require-imports */
 const agentsPlatform =
   process.env.USER_TYPE === 'ant'
@@ -120,9 +121,6 @@ const remoteControlServerCommand =
   feature('DAEMON') && feature('BRIDGE_MODE')
     ? require('./commands/remoteControlServer/index.js').default
     : null
-const voiceCommand = feature('VOICE_MODE')
-  ? require('./commands/voice/index.js').default
-  : null
 const forceSnip = feature('HISTORY_SNIP')
   ? require('./commands/force-snip.js').default
   : null

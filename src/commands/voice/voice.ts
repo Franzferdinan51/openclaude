@@ -9,11 +9,74 @@ import {
   getInitialSettings,
   updateSettingsForSource,
 } from '../../utils/settings/settings.js'
-import { isVoiceModeEnabled } from '../../voice/voiceModeEnabled.js'
+import {
+  hasVoiceAuth,
+  isVoiceGrowthBookEnabled,
+  isVoiceModeEnabled,
+} from '../../voice/voiceModeEnabled.js'
 
 const LANG_HINT_MAX_SHOWS = 2
 
-export const call: LocalCommandCall = async () => {
+function usage(): string {
+  return [
+    'Voice Command',
+    '-'.repeat(50),
+    '/voice          - Toggle interactive push-to-talk voice mode',
+    '/voice status   - Show voice readiness without changing settings',
+    '/voice --help   - Show this help',
+    '',
+    'Top-level:',
+    '  duckhive voice status',
+    '',
+    'Voice mode requires Claude.ai OAuth voice-stream support and local microphone tooling.',
+  ].join('\n')
+}
+
+function voiceStatus(): string {
+  const currentSettings = getInitialSettings()
+  const growthBookEnabled = isVoiceGrowthBookEnabled()
+  const hasAuth = hasVoiceAuth()
+  const enabled = currentSettings.voiceEnabled === true
+  const ready = growthBookEnabled && hasAuth
+
+  return [
+    'Voice mode status',
+    '-'.repeat(50),
+    `Configured: ${enabled ? 'enabled' : 'disabled'}`,
+    `Feature gate: ${growthBookEnabled ? 'available' : 'disabled'}`,
+    `Claude.ai OAuth: ${hasAuth ? 'available' : 'not available'}`,
+    `Ready: ${ready ? 'yes' : 'no'}`,
+    '',
+    ready
+      ? 'Run /voice in the interactive REPL to toggle push-to-talk mode.'
+      : 'Voice mode needs Claude.ai OAuth voice-stream support. Run /login with a compatible account, then use /voice in the REPL.',
+  ].join('\n')
+}
+
+export const call: LocalCommandCall = async (args = '', context) => {
+  const subcommand = args.trim().toLowerCase()
+  if (subcommand === 'status') {
+    return { type: 'text' as const, value: voiceStatus() }
+  }
+  if (subcommand === '--help' || subcommand === '-h' || subcommand === 'help') {
+    return { type: 'text' as const, value: usage() }
+  }
+  if (subcommand) {
+    return {
+      type: 'text' as const,
+      value: `${usage()}\n\nUnknown voice command: ${args.trim()}`,
+    }
+  }
+  if (
+    (
+      context as {
+        options?: { isNonInteractiveSession?: boolean }
+      }
+    ).options?.isNonInteractiveSession === true
+  ) {
+    return { type: 'text' as const, value: voiceStatus() }
+  }
+
   // Check auth and kill-switch before allowing voice mode
   if (!isVoiceModeEnabled()) {
     // Differentiate: OAuth-less users get an auth hint, everyone else
