@@ -31,10 +31,12 @@ covers the named requirement.
 | Telegram must recover from transient Bot API misdirected responses | DuckHive ports the compatible OpenClaw `63b728de43` HTTP 421/Misdirected Request retry behavior into both the Telegram service and channel adapter with a single fresh request retry; focused tests cover startup recovery, adapter send recovery, and no retry for unrelated HTTP 500 failures. | Verified |
 | Channel message commands must preserve user text safely | `/channel` now parses quoted arguments with escaped quotes and rejects unterminated quoted strings instead of silently sending malformed messages; focused tests cover console send and Telegram rejection. | Verified |
 | Agent Teams and AI Council CLI arguments must preserve user text safely | `/team`, `/council`, `/orchestrate`, `/spawn`, `/swarm`, `/senate`, and `/decree` now preserve escaped quotes, reject unterminated quoted input before spawning/starting/executing/issuing, and accept separated flag values where applicable; CLI smoke covers provider-free headless `/spawn --help`, `/swarm --help`, `/senate --help`, and `/decree --help`. | Verified |
+| Agent/team/council guidance must be visible to model-facing prompts | `src/constants/promptIdentity.test.ts` verifies the normal system prompt tells DuckHive to use subagents, `/council`, `/team`, `/spawn`, and `/skills` when they genuinely help, and verifies `DEFAULT_AGENT_PROMPT` carries subagent, `/council`, and `/spawn` guidance. | Verified |
 | AI Council runtime must be inspectable from the terminal | `runtime-doctor` checks the local `council:serve` source/script, probes `DUCKHIVE_COUNCIL_URL` or default `/api/health`, and verifies `/api/councilors` returns a usable councilor catalog; focused tests cover live, offline guidance, missing source, and empty catalog paths. | Verified |
 | Runtime-doctor HTTP timeouts must clean up promptly | `checkCouncilRuntimeReadiness()` now uses `createCombinedAbortSignal(..., { timeoutMs: 1500 })` instead of raw `AbortSignal.timeout`; `scripts\no-raw-abort-signal-timeout.test.ts` guards against reintroducing raw timeout signals across source files. | Verified |
 | OpenClaude upstream refresh must be handled safely | Live `git ls-remote` confirms OpenClaude `main` at `f71e7692373a61d28c82fc3fadff3feaa4071ede`; DuckHive selectively ported the safe repeated-tool-failure loop guard from that delta while keeping DuckHive code, branding, and provider defaults intact. | Verified |
 | OpenClaude conversation export formats must be available without a wholesale merge | `/export` now supports text, Markdown, and JSON via filename inference or `--format`/`-f`; focused tests cover argument parsing and Markdown/JSON rendering, and CLI smoke covers provider-free headless `/export --help` plus a real JSON file write. | Verified |
+| GitHub workflow setup artifacts must be DuckHive-facing while keeping compatible runtime templates | `src/utils/openclaudeUiSurfaces.test.ts` verifies the setup dialog, existing-workflow warnings, generated PR title/body, and workflow-file commit messages use DuckHive wording while the underlying Claude GitHub Action template and `@claude` trigger remain compatible. | Verified |
 | Gemini/OpenGateway tool calls must remain executable | The OpenAI-compatible shim converts Gemini `Tool calls requested:` raw-text fallbacks back into `tool_use` blocks for streaming and non-streaming responses; focused `openaiShim` regressions cover Write and Agent raw-tool forms. | Verified |
 | Shadow Git command arguments must fail safely | `/shadow` now preserves escaped quotes in checkpoint messages and rejects unterminated quoted input before creating checkpoints or restoring files. | Verified |
 | Scheduled loop command must match documented behavior and fail safely | `/loop status` now works as documented, creation accepts separated option values, invalid options reject before storing loops, lifecycle commands reject ambiguous partial IDs, and all command splitters under `src\commands` have been moved off the old regex splitter. | Verified |
@@ -48,7 +50,7 @@ covers the named requirement.
 | TUI tests must be verified | Historical audit evidence recorded local Go 1.26.3 running `cd tui && go test ./...`; as of the 2026-05-18 continuation, neither `go` nor `.tmp\go-toolchain\go\bin\go.exe` is available in this shell, so the current verified gate is the packaged `duckhive tui --input-smoke` path through `npm run smoke` plus `runtime-doctor` terminal TUI readiness. | Verified packaged binary/input; Go retest blocked by missing toolchain |
 | Harness state must be inspectable outside the TUI | `checkHarnessStateReadiness()` now adds a read-only `runtime-doctor` result for checkpoint count, budget state/log files, MCP, ACP, and permission readiness, with focused tests for current DuckHive config-home state and legacy OpenClaude checkpoint fallback. | Verified |
 | MemoryTool must use DuckHive-owned storage | `MemoryTool` stores memories under DuckHive config-home `memory/memories.json`; focused tests cover config-home path selection and remember/recall/search/stats/forget behavior. | Verified |
-| Full repository test suite must be rerun after the latest packaging/TUI audit changes | Current 2026-05-18 evidence: `bun test` completed at `3365 pass`, `0 fail`, `8459 expect()` calls across 380 files after the Telegram 421 retry port, raw timeout signal guard, and HybridOrchestrator AgentRunStore isolation fixes. | Verified |
+| Full repository test suite must be rerun after the latest prompt, branding, packaging, and TUI audit changes | Current 2026-05-18 evidence: `bun test` completed at `3369 pass`, `0 fail`, `8487 expect()` calls across 381 files after the Telegram 421 retry port, raw timeout signal guard, HybridOrchestrator AgentRunStore isolation fix, sponsored-tip default test alignment, GitHub setup branding, and agent-team prompt guidance coverage. | Verified |
 
 ## Current Green Gates
 
@@ -58,11 +60,14 @@ Latest continuation evidence from 2026-05-18:
 - `npm run build`
 - `npm run smoke` (`CLI smoke passed (67 commands plus Windows wrapper checks)`)
 - `npm run verify:privacy`
-- `bun test` (`3365 pass`, `0 fail`, `8459 expect()` calls across 380 files)
+- `bun test` (`3369 pass`, `0 fail`, `8487 expect()` calls across 381 files)
 - `node dist\cli.mjs runtime-doctor`
 - `bun test scripts\postbuild-patch.test.ts`
 - `bun test scripts\no-raw-abort-signal-timeout.test.ts scripts\system-check.test.ts src\orchestrator\hybrid\hybrid-orchestrator.test.ts`
 - `bun test src\channels\TelegramAdapter.test.ts src\services\telegram\TelegramService.test.ts` (`24 pass`)
+- `bun test src\constants\promptIdentity.test.ts`
+- `bun test src\services\tips\sponsoredTips.test.ts src\services\tips\tipScheduler.test.ts`
+- `bun test src\utils\openclaudeUiSurfaces.test.ts`
 - `npm pack --dry-run --json`
 - `node dist\cli.mjs --version` (`0.13.2 (DuckHive)`)
 - `node --check src\services\council-server\council-api-server.cjs`

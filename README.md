@@ -1387,7 +1387,11 @@ Tool schema conversion is also hardened against malformed nested Zod schemas. If
 
 The API retry path also applies the Hermes-style auxiliary fallback lesson to quota and payment exhaustion: when a primary model returns explicit 402/payment, credit, daily quota, or quota-exhausted 429 signals and `--fallback-model` is configured, DuckHive switches to the fallback model instead of failing immediately. Generic 429 rate limits still follow the normal retry path. If no fallback is configured, DuckHive still fails closed with explicit billing/provider guidance.
 
+The model-facing prompts now explicitly point DuckHive at its integrated team surfaces instead of leaving them as hidden commands. The normal system prompt tells the agent to use subagents for independent parallel work and to reach for `/council`, `/team`, `/spawn`, and `/skills` when those tools genuinely simplify the task; `DEFAULT_AGENT_PROMPT` carries the same subagent, `/council`, and `/spawn` guidance for spawned agents.
+
 Codex-compatible HTTP surfaces now keep DuckHive attribution instead of leaking the upstream OpenClaude originator. Runtime doctor Codex probes, Codex Responses requests, Codex web search, Codex usage reads, and `/cache-probe` share the `duckhive` originator header while preserving Codex's own OAuth originator where the login protocol requires it.
+
+GitHub workflow setup is DuckHive-facing while preserving compatible Claude GitHub Action runtime templates. The setup dialog, existing-workflow warning, generated PR title/body, and workflow-file commit messages now describe DuckHive PR assistant/code-review workflows; the underlying workflow filenames, Anthropic action URL, and `@claude` trigger remain unchanged for compatibility.
 
 For installed CLI diagnostics, use `duckhive runtime-doctor` or `duckhive doctor-runtime`. `duckhive doctor:runtime` is also accepted as a compatibility alias for users copying the npm script naming style, and it runs the same terminal-safe checks without starting the REPL.
 
@@ -1407,9 +1411,9 @@ The `/statusbar session` surface now reads the same public build version used by
 Recent verification snapshot:
 
 - `npm run typecheck`, `npm run build`, `npm run smoke`, `npm run verify:privacy`, and `node dist\cli.mjs runtime-doctor`: passing on Windows for `duckhive@0.13.2`
-- `bun test`: `3362 pass`, `0 fail`, `8455 expect()` calls across 380 files
+- `bun test`: `3369 pass`, `0 fail`, `8487 expect()` calls across 381 files
 - `npm run smoke`: `12 pass`, `0 fail`, plus `CLI smoke passed (67 commands plus Windows wrapper checks)`
-- focused upstream-sync regression tests for Bash sandbox fanout and WebSearch adapter diagnostics: `17 pass`, `0 fail`
+- focused prompt, tips, Telegram, and UI branding regressions cover agent-team/council prompt guidance, disabled sponsored-tip behavior, Telegram 421 retry handling, and DuckHive-facing GitHub setup artifacts
 - `cd tui && go test ./...`: historical pass with local Go 1.26.3 from `.tmp\go-toolchain`; current shell has no Go toolchain, so retest is blocked until Go is restored
 - `duckhive --version`: `0.13.2 (DuckHive)`
 - `openclaude --version`: upstream OpenClaude remains separately owned when installed
