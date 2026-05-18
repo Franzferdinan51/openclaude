@@ -1,8 +1,38 @@
 // @ts-nocheck
 import { z } from 'zod/v4'
+import { tmpdir } from 'os'
+import { join } from 'path'
+import type { ExecSyncOptions } from 'child_process'
 import { buildTool, type ToolDef } from '../../Tool.js'
 import { lazySchema } from '../../utils/lazySchema.js'
 import { execSync } from 'child_process'
+
+type VisionToolDeps = {
+  exec: (command: string, options?: ExecSyncOptions) => string | Buffer
+  tmpdir: typeof tmpdir
+}
+
+let visionToolTestDeps: Partial<VisionToolDeps> | null = null
+
+function getVisionToolDeps(): VisionToolDeps {
+  return {
+    exec: execSync,
+    tmpdir,
+    ...visionToolTestDeps,
+  }
+}
+
+export function setVisionToolTestDeps(overrides: Partial<VisionToolDeps> | null): void {
+  visionToolTestDeps = overrides
+}
+
+function shellQuote(value: string): string {
+  return `"${value.replace(/"/g, '\\"')}"`
+}
+
+function getVisionToolScreenshotPath(deps = getVisionToolDeps()): string {
+  return join(deps.tmpdir(), 'duckhive-vision-screenshot.png')
+}
 
 const inputSchema = lazySchema(() =>
   z.strictObject({
@@ -34,22 +64,24 @@ export const VisionTool = buildTool({
   isReadOnly() { return true },
   async call(input, context, canUseTool, parentMessage) {
     const { action, target = 'phone', prompt: analysisPrompt } = input
+    const deps = getVisionToolDeps()
 
     try {
       if (action === 'capture' || action === 'phone_screenshot') {
         const device = '192.168.1.251:40835'
-        execSync(`adb -s ${device} shell screencap /sdcard/scr.png 2>/dev/null || true`, { timeout: 10000 })
-        execSync(`adb -s ${device} pull /sdcard/scr.png /tmp/vision_screenshot.png 2>/dev/null || true`, { timeout: 10000 })
-        return { data: { success: true, action: 'phone_screenshot', image_path: '/tmp/vision_screenshot.png' } }
+        const screenshotPath = getVisionToolScreenshotPath(deps)
+        deps.exec(`adb -s ${device} shell screencap /sdcard/scr.png`, { timeout: 10000 })
+        deps.exec(`adb -s ${device} pull /sdcard/scr.png ${shellQuote(screenshotPath)}`, { timeout: 10000 })
+        return { data: { success: true, action: 'phone_screenshot', image_path: screenshotPath } }
       }
       if (action === 'analyze') {
-        return { data: { success: true, action: 'analyze', analysis: analysisPrompt ?? 'Image analysis requested', image_path: '/tmp/vision_screenshot.png' } }
+        return { data: { success: true, action: 'analyze', analysis: analysisPrompt ?? 'Image analysis requested', image_path: getVisionToolScreenshotPath(deps) } }
       }
       if (action === 'phone_tap') {
         const { x, y } = input
         if (x === undefined || y === undefined) return { data: { success: false, action: 'phone_tap', error: 'x and y required' } }
         const device = '192.168.1.251:40835'
-        execSync(`adb -s ${device} shell input tap ${x} ${y}`, { timeout: 5000 })
+        deps.exec(`adb -s ${device} shell input tap ${x} ${y}`, { timeout: 5000 })
         return { data: { success: true, action: 'phone_tap' } }
       }
       return { data: { success: false, action, error: `Unknown action: ${action}` } }

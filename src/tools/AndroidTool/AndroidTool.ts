@@ -1,5 +1,8 @@
 // @ts-nocheck
 import { z } from 'zod/v4'
+import { tmpdir } from 'os'
+import { join } from 'path'
+import type { ExecSyncOptionsWithStringEncoding } from 'child_process'
 import { buildTool, type ToolDef } from '../../Tool.js'
 import { lazySchema } from '../../utils/lazySchema.js'
 import { execSync_DEPRECATED } from '../../utils/execSyncWrapper.js'
@@ -7,6 +10,25 @@ import { DESCRIPTION } from './prompt.js'
 
 const PHONE_IP = '192.168.1.251'
 const DEFAULT_PORT = '40835'
+
+type AndroidToolDeps = {
+  exec: (command: string, options: ExecSyncOptionsWithStringEncoding) => string
+  tmpdir: typeof tmpdir
+}
+
+let androidToolTestDeps: Partial<AndroidToolDeps> | null = null
+
+function getAndroidToolDeps(): AndroidToolDeps {
+  return {
+    exec: execSync_DEPRECATED,
+    tmpdir,
+    ...androidToolTestDeps,
+  }
+}
+
+export function setAndroidToolTestDeps(overrides: Partial<AndroidToolDeps> | null): void {
+  androidToolTestDeps = overrides
+}
 
 const inputSchema = lazySchema(() =>
   z.strictObject({
@@ -37,9 +59,17 @@ const outputSchema = lazySchema(() =>
 type OutputSchema = ReturnType<typeof outputSchema>
 type Output = z.infer<OutputSchema>
 
-function getPhoneDevice(): string {
+function shellQuote(value: string): string {
+  return `"${value.replace(/"/g, '\\"')}"`
+}
+
+function getAndroidToolScreenshotPath(deps = getAndroidToolDeps()): string {
+  return join(deps.tmpdir(), 'duckhive-android-screenshot.png')
+}
+
+function getPhoneDevice(exec = getAndroidToolDeps().exec): string {
   try {
-    const out = execSync_DEPRECATED('adb devices -l', { encoding: 'utf8', timeout: 5000 })
+    const out = exec('adb devices -l', { encoding: 'utf8', timeout: 5000 })
     const match = out.match(/192\.168\.1\.251:(\d+)/)
     if (match) return `192.168.1.251:${match[1]}`
   } catch {}
@@ -55,27 +85,29 @@ export const AndroidTool = buildTool({
   isConcurrencySafe() { return true },
   isReadOnly(input) { return !['shell', 'tap', 'swipe', 'type', 'launch'].includes(input.action) },
   async call(input, context, canUseTool, parentMessage) {
-    const device = getPhoneDevice()
+    const deps = getAndroidToolDeps()
+    const device = getPhoneDevice(deps.exec)
     const { action, x, y, text, direction, package: pkg, command, duration } = input
 
     const adb = (args: string[]) =>
-      execSync_DEPRECATED(['adb', '-s', device, ...args].join(' '), { encoding: 'utf8', timeout: 20000 })
+      deps.exec(['adb', '-s', device, ...args].join(' '), { encoding: 'utf8', timeout: 20000 })
 
     try {
       switch (action) {
         case 'devices': {
-          const out = execSync_DEPRECATED('adb devices -l', { encoding: 'utf8', timeout: 5000 })
+          const out = deps.exec('adb devices -l', { encoding: 'utf8', timeout: 5000 })
           return { data: { success: true, action: 'devices', output: out } }
         }
         case 'screenshot': {
-          execSync_DEPRECATED(`adb -s ${device} shell screencap /sdcard/scr.png`, { encoding: 'utf8', timeout: 10000 })
-          const out = execSync_DEPRECATED(`adb -s ${device} shell "cat /sdcard/scr.png | base64"`, { encoding: 'utf8', timeout: 10000 })
+          deps.exec(`adb -s ${device} shell screencap /sdcard/scr.png`, { encoding: 'utf8', timeout: 10000 })
+          const out = deps.exec(`adb -s ${device} shell "cat /sdcard/scr.png | base64"`, { encoding: 'utf8', timeout: 10000 })
           return { data: { success: true, action: 'screenshot', image_base64: out.trim() } }
         }
         case 'screenshot_pull': {
-          execSync_DEPRECATED(`adb -s ${device} shell screencap /sdcard/scr.png`, { encoding: 'utf8', timeout: 10000 })
-          execSync_DEPRECATED(`adb -s ${device} pull /sdcard/scr.png /tmp/android_screenshot.png`, { encoding: 'utf8', timeout: 10000 })
-          return { data: { success: true, action: 'screenshot_pull', image_path: '/tmp/android_screenshot.png' } }
+          const screenshotPath = getAndroidToolScreenshotPath(deps)
+          deps.exec(`adb -s ${device} shell screencap /sdcard/scr.png`, { encoding: 'utf8', timeout: 10000 })
+          deps.exec(`adb -s ${device} pull /sdcard/scr.png ${shellQuote(screenshotPath)}`, { encoding: 'utf8', timeout: 10000 })
+          return { data: { success: true, action: 'screenshot_pull', image_path: screenshotPath } }
         }
         case 'tap': {
           if (x === undefined || y === undefined) return { data: { success: false, action: 'tap', error: 'x and y required' } }
