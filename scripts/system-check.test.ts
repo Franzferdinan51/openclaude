@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 
 import {
   checkCliLauncherPath,
@@ -399,29 +399,83 @@ describe('checkOpenAIEnv', () => {
 
 describe('checkHarnessCommandSurfaces', () => {
   test('verifies the terminal-first harness command set is registered', () => {
-    const result = checkHarnessCommandSurfaces()
+    const root = mkdtempSync(join(tmpdir(), 'duckhive-harness-commands-'))
+    const commandFiles = [
+      'src/commands/goal/index.ts',
+      'src/commands/loop/index.ts',
+      'src/commands/run/index.ts',
+      'src/commands/computer-use/index.ts',
+      'src/commands/mmx/index.ts',
+      'src/commands/voice/index.ts',
+      'src/commands/provider/index.ts',
+      'src/commands/permissions/index.ts',
+      'src/commands/checkpoint/index.ts',
+      'src/commands/channel/index.ts',
+      'src/commands/connect/index.ts',
+      'src/commands/skill/index.ts',
+      'src/commands/skills/index.ts',
+      'src/commands/spawn/index.ts',
+      'src/commands/hive-orchestrate/index.ts',
+      'src/commands/hive-team/index.ts',
+      'src/commands/hive-council/index.ts',
+      'src/commands/hive-senate/index.ts',
+      'src/commands/hive-decree/index.ts',
+      'src/commands/hive-swarm/index.ts',
+      'src/commands/tui/index.ts',
+      'src/commands/doctor/index.ts',
+      'src/commands/android/index.ts',
+      'src/commands/vision/index.ts',
+      'src/commands/shadow/index.ts',
+      'src/commands/router/index.ts',
+      'src/commands/budget/index.ts',
+      'src/commands/cache/index.ts',
+      'src/commands/export/index.ts',
+    ]
+    for (const relativePath of commandFiles) {
+      const fullPath = join(root, relativePath)
+      mkdirSync(dirname(fullPath), { recursive: true })
+      writeFileSync(fullPath, '')
+    }
+
+    const result = checkHarnessCommandSurfaces({ cwd: root })
 
     expect(result.ok).toBe(true)
     expect(result.detail).toContain('goal')
     expect(result.detail).toContain('loop')
     expect(result.detail).toContain('run')
     expect(result.detail).toContain('computer-use')
+    expect(result.detail).toContain('voice')
+    expect(result.detail).toContain('permissions')
+    expect(result.detail).toContain('checkpoint')
     expect(result.detail).toContain('channel')
     expect(result.detail).toContain('council')
     expect(result.detail).toContain('decree')
     expect(result.detail).toContain('swarm')
     expect(result.detail).toContain('tui')
-    expect(result.detail).toContain('Required slash-only surfaces declared')
+    expect(result.detail).toContain('Required slash-only command files found')
     expect(result.detail).toContain('android')
     expect(result.detail).toContain('vision')
     expect(result.detail).toContain('shadow')
     expect(result.detail).toContain('router')
     expect(result.detail).toContain('budget')
     expect(result.detail).toContain('cache')
-    expect(result.detail).toContain('Key aliases declared')
+    expect(result.detail).toContain('Key aliases tracked')
     expect(result.detail).toContain('g')
     expect(result.detail).toContain('subagent')
     expect(result.detail).toContain('cu')
+  })
+
+  test('fails when required command implementation files are missing', () => {
+    const root = mkdtempSync(join(tmpdir(), 'duckhive-harness-missing-'))
+
+    const result = checkHarnessCommandSurfaces({ cwd: root })
+
+    expect(result.ok).toBe(false)
+    expect(result.detail).toContain('Missing core command files')
+    expect(result.detail).toContain('goal')
+    expect(result.detail).toContain('src/commands/goal/index.ts')
+    expect(result.detail).toContain('Missing slash-only command files')
+    expect(result.detail).toContain('android')
   })
 })
 

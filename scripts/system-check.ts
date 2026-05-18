@@ -470,45 +470,49 @@ const GEMINI_DEFAULT_BASE_URL = 'https://generativelanguage.googleapis.com/v1bet
 const MISTRAL_DEFAULT_BASE_URL = 'https://api.mistral.ai/v1'
 const GITHUB_COPILOT_BASE = 'https://api.githubcopilot.com'
 
-const REQUIRED_HARNESS_COMMANDS = [
-  'goal',
-  'loop',
-  'run',
-  'computer-use',
-  'mmx',
-  'provider',
-  'channel',
-  'connect',
-  'skill',
-  'skills',
-  'spawn',
-  'orchestrate',
-  'team',
-  'council',
-  'senate',
-  'decree',
-  'swarm',
-  'tui',
-  'doctor',
-] as const
+const REQUIRED_HARNESS_COMMANDS = {
+  goal: 'src/commands/goal/index.ts',
+  loop: 'src/commands/loop/index.ts',
+  run: 'src/commands/run/index.ts',
+  'computer-use': 'src/commands/computer-use/index.ts',
+  mmx: 'src/commands/mmx/index.ts',
+  voice: 'src/commands/voice/index.ts',
+  provider: 'src/commands/provider/index.ts',
+  permissions: 'src/commands/permissions/index.ts',
+  checkpoint: 'src/commands/checkpoint/index.ts',
+  channel: 'src/commands/channel/index.ts',
+  connect: 'src/commands/connect/index.ts',
+  skill: 'src/commands/skill/index.ts',
+  skills: 'src/commands/skills/index.ts',
+  spawn: 'src/commands/spawn/index.ts',
+  orchestrate: 'src/commands/hive-orchestrate/index.ts',
+  team: 'src/commands/hive-team/index.ts',
+  council: 'src/commands/hive-council/index.ts',
+  senate: 'src/commands/hive-senate/index.ts',
+  decree: 'src/commands/hive-decree/index.ts',
+  swarm: 'src/commands/hive-swarm/index.ts',
+  tui: 'src/commands/tui/index.ts',
+  doctor: 'src/commands/doctor/index.ts',
+} as const
 
-const REQUIRED_SLASH_ONLY_COMMANDS = [
-  'android',
-  'vision',
-  'shadow',
-  'checkpoint',
-  'router',
-  'budget',
-  'cache',
-  'export',
-] as const
+const REQUIRED_SLASH_ONLY_COMMANDS = {
+  android: 'src/commands/android/index.ts',
+  vision: 'src/commands/vision/index.ts',
+  shadow: 'src/commands/shadow/index.ts',
+  router: 'src/commands/router/index.ts',
+  budget: 'src/commands/budget/index.ts',
+  cache: 'src/commands/cache/index.ts',
+  export: 'src/commands/export/index.ts',
+} as const
 
-const REQUIRED_HARNESS_ALIASES = [
-  'g',
-  'subagent',
-  'cu',
-  'minimax',
-] as const
+const REQUIRED_HARNESS_ALIASES = {
+  g: 'goal',
+  subagent: 'spawn',
+  cu: 'computer-use',
+  minimax: 'mmx',
+  'allowed-tools': 'permissions',
+  checkpoints: 'checkpoint',
+} as const
 
 const REQUIRED_AGENT_RUN_CLI_CONTROLS = [
   'ps',
@@ -557,10 +561,45 @@ const REQUIRED_CONNECTOR_STATUS_COMMANDS = [
   ['channel', 'status', 'telegram'],
 ] as const
 
-export function checkHarnessCommandSurfaces(): CheckResult {
+function missingCommandFiles(
+  cwd: string,
+  commands: Record<string, string>,
+): string[] {
+  return Object.entries(commands)
+    .filter(([, relativePath]) => !existsSync(join(cwd, relativePath)))
+    .map(([command, relativePath]) => `${command} (${relativePath})`)
+}
+
+export function checkHarnessCommandSurfaces(options: {
+  cwd?: string
+} = {}): CheckResult {
+  const cwd = options.cwd ?? process.cwd()
+  const missingCore = missingCommandFiles(cwd, REQUIRED_HARNESS_COMMANDS)
+  const missingSlashOnly = missingCommandFiles(cwd, REQUIRED_SLASH_ONLY_COMMANDS)
+
+  if (missingCore.length > 0 || missingSlashOnly.length > 0) {
+    return fail(
+      'Harness command surfaces',
+      [
+        missingCore.length > 0
+          ? `Missing core command files: ${missingCore.join(', ')}.`
+          : '',
+        missingSlashOnly.length > 0
+          ? `Missing slash-only command files: ${missingSlashOnly.join(', ')}.`
+          : '',
+      ]
+        .filter(Boolean)
+        .join(' '),
+    )
+  }
+
+  const coreCommands = Object.keys(REQUIRED_HARNESS_COMMANDS)
+  const slashOnlyCommands = Object.keys(REQUIRED_SLASH_ONLY_COMMANDS)
+  const aliases = Object.keys(REQUIRED_HARNESS_ALIASES)
+
   return pass(
     'Harness command surfaces',
-    `${REQUIRED_HARNESS_COMMANDS.length} required core commands declared: ${REQUIRED_HARNESS_COMMANDS.join(', ')}. Required slash-only surfaces declared: ${REQUIRED_SLASH_ONLY_COMMANDS.join(', ')}. Key aliases declared: ${REQUIRED_HARNESS_ALIASES.join(', ')}.`,
+    `${coreCommands.length} required core command files found: ${coreCommands.join(', ')}. Required slash-only command files found: ${slashOnlyCommands.join(', ')}. Key aliases tracked: ${aliases.join(', ')}.`,
   )
 }
 
