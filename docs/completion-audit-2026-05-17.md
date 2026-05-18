@@ -56,6 +56,7 @@ Latest continuation evidence from 2026-05-18:
 - `npm run typecheck`
 - `npm run build`
 - `npm run smoke` (`CLI smoke passed (67 commands plus Windows wrapper checks)`)
+- `npm run verify:privacy`
 - `bun test` (`3362 pass`, `0 fail`, `8455 expect()` calls across 380 files)
 - `node dist\cli.mjs runtime-doctor`
 - `bun test scripts\postbuild-patch.test.ts`
@@ -67,7 +68,6 @@ Latest continuation evidence from 2026-05-18:
 
 Historical broader gates from earlier audit passes:
 
-- `npm run verify:privacy`
 - `cd tui && go test ./...` using local Go 1.26.3 from `.tmp\go-toolchain` (not available in the 2026-05-18 shell)
 - `bun test src\commands.test.ts scripts\system-check.test.ts`
 - `bun test src\tools\BashTool\bashPermissions.test.ts src\tools\WebSearchTool\WebSearchTool.test.ts`
