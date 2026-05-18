@@ -9,7 +9,7 @@ covers the named requirement.
 | Requirement | Current evidence | Status |
 | --- | --- | --- |
 | Default Windows CLI must start without freezing and accept typing | `npm run smoke` passes `TextInput` buffered typing, Windows data-event stdin selection, Ink stdin delivery tests, and 67 CLI smoke cases plus Windows wrapper checks. | Verified |
-| Prompt submission must not crash with `Cannot read properties of undefined (reading '_zod')` | Built-in tool-schema conversion regression was added in `src/utils/api.test.ts`; the prompt-schema fix was committed as `9ed65d9`; `scripts/postbuild-patch.mjs` now fails the build if any required Zod v4 bundle patch target disappears, with `scripts/postbuild-patch.test.ts` covering both successful patching and fail-closed behavior. | Verified |
+| Prompt submission must not crash with `Cannot read properties of undefined (reading '_zod')` | Built-in tool-schema conversion regression was added in `src/utils/api.test.ts`; the prompt-schema fix was committed as `9ed65d9`; `scripts/postbuild-patch.mjs` now fails the build if any required Zod v4 bundle patch target disappears, with `scripts/postbuild-patch.test.ts` covering both successful patching and fail-closed behavior. CLI smoke now also submits a real `--bare -p` prompt against an in-process OpenAI-compatible `/v1/chat/completions` mock and rejects the `_zod` crash string, so the prompt path itself is covered by the release smoke gate. | Verified |
 | Repeated tool failures must not loop forever | DuckHive ports OpenClaude `f71e769237`'s repeated-tool-failure guard into `src/query.ts`; focused tests cover signature, category, path, ignored synthetic failures, threshold parsing, DuckHive env override, source ordering before optional follow-up work, and path-safe logging. | Verified |
 | `duckhive` command must resolve and report the DuckHive version | 2026-05-18 live PowerShell evidence after the 0.13.6 bump: `Get-Command duckhive` resolves through `C:\Users\franz\AppData\Roaming\npm\duckhive.ps1`; `where.exe duckhive` finds the npm shims; `duckhive --version`, `duckhive --yolo --version`, `duckhive --dangerously-skip-permissions --version`, and `node dist\cli.mjs --version` all report `0.13.6 (DuckHive)`. | Verified |
 | Version metadata and README must match the release | `package.json`, README, and Go TUI header now report `0.13.6`; `npm pack --dry-run --json` publishes `duckhive@0.13.6`; CLI smoke checks `--version` and Windows wrapper version output against `package.json` instead of only checking for DuckHive branding. | Verified |
@@ -67,7 +67,7 @@ Latest continuation evidence from 2026-05-18:
 
 - `npm run build`
 - `npm run typecheck`
-- `npm run smoke` (`CLI smoke passed (79 commands plus Windows wrapper checks)`)
+- `npm run smoke` (`CLI smoke passed (79 commands plus Windows wrapper checks)`, including the mock OpenAI-compatible prompt-submission `_zod` regression)
 - `npm run verify:privacy`
 - `bun test` (`3369 pass`, `0 fail`, `8487 expect()` calls across 381 files)
 - `duckhive --version`, `duckhive --yolo --version`, `duckhive --dangerously-skip-permissions --version`, and `node dist\cli.mjs --version` (`0.13.6 (DuckHive)`)
