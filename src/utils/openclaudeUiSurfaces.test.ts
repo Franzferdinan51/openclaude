@@ -251,6 +251,27 @@ describe('DuckHive provider and GitHub setup surfaces', () => {
     expect(apiKeyStep).not.toContain('Use your existing Claude Code API key')
     expect(apiKeyStep).not.toContain('Create a long-lived token with your Claude subscription')
   })
+
+  test('GitHub workflow setup labels use DuckHive-facing wording', () => {
+    const workflowDialog = readFileSync(
+      join(repoRoot, 'src', 'components', 'WorkflowMultiselectDialog.tsx'),
+      'utf8',
+    )
+    const setupActions = readFileSync(
+      join(repoRoot, 'src', 'commands', 'install-github-app', 'setupGitHubActions.ts'),
+      'utf8',
+    )
+    const combined = [workflowDialog, setupActions].join('\n')
+
+    expect(combined).toContain('DuckHive PR assistant')
+    expect(combined).toContain('DuckHive code review')
+    expect(combined).toContain('DuckHive PR assistant workflow')
+    expect(combined).toContain('DuckHive code review workflow')
+    expect(combined).not.toContain('@Claude Code - Tag @claude')
+    expect(combined).not.toContain('Claude Code Review - Automated code review')
+    expect(combined).not.toContain('Claude PR Assistant workflow')
+    expect(combined).not.toContain('Claude Code Review workflow')
+  })
 })
 
 describe('DuckHive active terminal UI copy', () => {
