@@ -1027,6 +1027,43 @@ test('buildStartupEnvFromProfile defaults first-run startup to MiniMax when no p
   assert.equal(env.CHATGPT_ACCOUNT_ID, undefined)
 })
 
+test('buildStartupEnvFromProfile preserves explicit first-run OpenAI provider selection', async () => {
+  const processEnv: NodeJS.ProcessEnv = {
+    CLAUDE_CODE_USE_OPENAI: '1',
+    OPENAI_BASE_URL: 'http://127.0.0.1:12345/v1',
+    OPENAI_API_KEY: 'local-test-key',
+    OPENAI_MODEL: 'mock-model',
+  }
+
+  const env = await buildStartupEnvFromProfile({
+    persisted: null,
+    processEnv,
+  })
+
+  assert.strictEqual(env, processEnv)
+  assert.equal(env.OPENAI_BASE_URL, 'http://127.0.0.1:12345/v1')
+  assert.equal(env.OPENAI_API_KEY, 'local-test-key')
+  assert.equal(env.OPENAI_MODEL, 'mock-model')
+  assert.equal(env.MINIMAX_MODEL, undefined)
+  assert.equal(env.MINIMAX_BASE_URL, undefined)
+})
+
+test('buildStartupEnvFromProfile treats OpenAI API key as concrete first-run provider intent', async () => {
+  const processEnv: NodeJS.ProcessEnv = {
+    CLAUDE_CODE_USE_OPENAI: '1',
+    OPENAI_API_KEY: 'sk-live',
+  }
+
+  const env = await buildStartupEnvFromProfile({
+    persisted: null,
+    processEnv,
+  })
+
+  assert.strictEqual(env, processEnv)
+  assert.equal(env.OPENAI_API_KEY, 'sk-live')
+  assert.equal(env.MINIMAX_MODEL, undefined)
+})
+
 test('buildStartupEnvFromProfile reuses MiniMax credentials on first-run startup when available', async () => {
   const env = await buildStartupEnvFromProfile({
     persisted: null,

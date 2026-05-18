@@ -1046,7 +1046,8 @@ function hasConcreteProviderSelection(
       sanitizeProviderConfigValue(processEnv.OPENAI_API_BASE) !== undefined ||
       normalizeProfileModel(
         sanitizeProviderConfigValue(processEnv.OPENAI_MODEL),
-      ) !== undefined
+      ) !== undefined ||
+      sanitizeApiKey(processEnv.OPENAI_API_KEY) !== undefined
     )
   }
 
@@ -1623,6 +1624,10 @@ export async function buildStartupEnvFromProfile(options?: {
   }
 
   if (!persisted) {
+    if (hasConcreteProviderSelection(processEnv)) {
+      return processEnv
+    }
+
     // No saved profile: default to DuckHive's MiniMax route instead of
     // falling back to legacy ChatGPT/OpenAI/Codex startup defaults.
     const miniMaxEnv = buildMiniMaxProfileEnv({ processEnv })
