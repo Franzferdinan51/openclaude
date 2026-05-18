@@ -183,6 +183,7 @@ Additional OpenClaude fixes ported in this sync:
 - Brave web search auth, Google custom search query params, and Exa highlights
 - interactive/plugin startup cycle fix by lazily initializing DuckHive orchestration
 - command ownership cleanup so DuckHive owns `duckhive` only and no longer ships an `openclaude` wrapper
+- OpenClaude `c53ef18` bash permission hardening was rechecked on 2026-05-18. DuckHive already caps legacy subcommand fanout at 50 when AST parsing is unavailable, preserves the AST-verified path, and has focused regression coverage in `src/tools/BashTool/bashPermissions.test.ts`.
 
 Historical verification highlights from the SDKv2 sync:
 
