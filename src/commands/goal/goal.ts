@@ -909,35 +909,42 @@ async function attachToGoal(args: string[]): Promise<string> {
 
 function showHelp(): string {
   return `
-${bold('DuckHive /goal - Autonomous Goal Mode')}
+${bold('DuckHive /goal - Persisted Workflow Goals')}
 
-${bold('Simple usage:')}
-  /goal "<task>"    Create goal and start autonomous work immediately
-  /goal stop        Stop the active autonomous goal
-  /goal status      Show active goal progress
-  /goal list        List all goals
-
-${bold('Power-user subcommands (all still work):')}
+${bold('REPL commands:')}
+  /goal <description>            Create goal and start autonomous work
   /goal create <description>     Create a goal (does not start autonomous mode)
-  /goal pursue [id]               Start autonomous work on a goal
-  /goal stop-autonomous [id]       Stop autonomous work
-  /goal pause [id]                 Pause a goal
-  /goal resume [id]               Resume a paused goal
-  /goal complete [id]             Mark goal completed
-  /goal fail [id]                 Mark goal failed
-  /goal clear [id]                Delete a goal
-  /goal attach [id]               Attach current session to goal
-  /goal step add [id] <desc>      Add a step to a goal
+  /goal list                     List all goals
+  /goal status                   Show active goal progress
+  /goal pursue [id]              Start autonomous work on a goal
+  /goal stop-autonomous [id]     Stop autonomous work
+  /goal pause [id]               Pause a goal
+  /goal resume [id]              Resume a paused goal
+  /goal complete [id]            Mark goal completed
+  /goal fail [id]                Mark goal failed
+  /goal clear [id]               Delete a goal
+  /goal attach [id]              Attach current session to goal
+  /goal step add [id] <desc>     Add a step to a goal
+
+${bold('Terminal commands:')}
+  duckhive goal <description>            Create goal and start autonomous work
+  duckhive goal create <description>     Create a goal
+  duckhive goal list                     List all goals
+  duckhive goal status                   Show goal status
+  duckhive goal pursue [id]              Start autonomous work
+  duckhive goal stop-autonomous [id]     Stop autonomous work
+  duckhive goal pause [id]               Pause a goal
+  duckhive goal resume [id]              Resume a paused goal
+  duckhive goal complete [id]            Mark goal completed
+  duckhive goal fail [id]                Mark goal failed
+  duckhive goal clear [id]               Delete a goal
+  duckhive goal step add [id] <desc>     Add a step to a goal
 
 ${bold('Examples:')}
   /goal "Build user authentication system"
   /goal Write tests for the auth module
-  /goal Fix the login bug on mobile
   /goal stop
   /goal list active
-  /goal status goal_123
-  /goal pause goal_123
-  /goal resume goal_123
   /goal pursue goal_123
   /goal stop-autonomous goal_123
 
@@ -992,12 +999,17 @@ export default async function goalCommand(
     'fail', 'failed', 'cancel', 'clear', 'delete', 'remove',
     'attach', 'link', 'step',
     'pursue', 'work', 'start',
+    'stop', 'stop-autonomous', 'help',
   ].includes(subcommand ?? '')
 
-  // /goal "do X" — single non-subcommand arg → create + start autonomous
+  // /goal do X — multi-word non-subcommand → create goal (Codex-style shorthand)
+  // Single unknown words like /goal statue are rejected as unknown commands.
   if (args.length >= 1 && !isKnownSubcommand) {
-    const goalId = await createGoalAndStartAutonomous(args, context)
-    return goalId
+    if (args.length > 1 || (args[0]?.startsWith('"') && args[0]?.endsWith('"'))) {
+      const { message } = await createGoal(args)
+      return message
+    }
+    return `Unknown goal command: ${args[0]}. Run /goal help for available commands.`
   }
 
   switch (subcommand) {
