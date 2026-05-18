@@ -1,6 +1,6 @@
 # Upstream Sync - May 2026
 
-DuckHive checked the live upstream repositories on May 7, 2026 and refreshed the live heads on May 9, 2026 before the hardening pass. Follow-up probes on May 17, 2026 refreshed the current heads/tags for the named harnesses before the context-collapse recovery fix and again before the CLI/TUI completion audit. The safest high-value fixes from the earlier check were ported into `0.8.1` and the SDKv2 sync line.
+DuckHive checked the live upstream repositories on May 7, 2026 and refreshed the live heads on May 9, 2026 before the hardening pass. Follow-up probes on May 17, 2026 refreshed the current heads/tags for the named harnesses before the context-collapse recovery fix and again before the CLI/TUI completion audit. A May 18, 2026 probe refreshed the live HEADs again before further feature-port triage. The safest high-value fixes from the earlier check were ported into `0.8.1` and the SDKv2 sync line.
 
 ## Repositories Checked
 
@@ -19,6 +19,15 @@ DuckHive checked the live upstream repositories on May 7, 2026 and refreshed the
 | OpenAI Codex | `main`/`HEAD` at `e7bffc5a20e92cbc64d6c16a1b257d0b2e4cd5df`; latest stable tag observed `rust-v0.130.0`; latest observed prerelease line `rust-v0.131.0-alpha.22` | Kept `/goal` as the current stable Codex-inspired slice; no alpha-only behavior imported. |
 | OpenClaw | `main`/`HEAD` at `5434769e47e69a254456879c25a4f3fb60cf9eac`; latest observed stable `v2026.5.7`, latest observed beta `v2026.5.9-beta.1` | Existing channel/Telegram/ClawHub hardening remains the DuckHive-shaped slice; after reviewing the newer Telegram delivery and doctor-health commits, DuckHive tightened Telegram command output to ASCII-safe help/run/event lines and ported the latest compatible long-poll timeout bounding across both the Telegram service and channel adapter so quiet Telegram polls are not aborted at the same second as the server-side long-poll timeout. The reviewed OpenClaw `5434769e` cron announce fix targets OpenClaw's isolated-agent source-reply delivery mode; DuckHive has local cron/scheduled task plumbing but no matching isolated-agent announce source-reply path, so no direct runtime port was applied. DuckHive's applicable branding follow-up was to remove leaked OpenClaude HTTP originator headers from Codex-compatible DuckHive request surfaces. |
 | Hermes Agent | `main`/`HEAD` at `43e566f77eaf01293086eb7cb99a21e240d60634`; latest observed tag `v2026.5.16` | Closed a local long-session harness gap by making context-collapse subscriptions real and preventing `/context` projection crashes when the collapse gate is enabled; then ported the compatible auxiliary-fallback lesson by letting DuckHive's API retry path use a configured fallback model on explicit 402/payment, credit, daily quota, and quota-exhausted 429 signals before surfacing the non-retryable quota guidance. |
+
+## Refreshed May 18, 2026
+
+| Project | Current probe result | DuckHive follow-up |
+| --- | --- | --- |
+| OpenAI Codex | `main`/`HEAD` at `e7bffc5a20e92cbc64d6c16a1b257d0b2e4cd5df` | Keep `/goal` as the current stable Codex-inspired slice; continue feature-by-feature review rather than importing prerelease behavior wholesale. |
+| OpenClaw | `main`/`HEAD` at `1b5bc33161112529abb053242a6493a256b27022` | Existing Telegram/channel/ClawHub/OpenClaw config hardening remains the DuckHive-shaped slice. Further gateway-specific OpenClaw changes still need separate review before porting. |
+| OpenClaude | `main`/`HEAD` at `f71e7692373a61d28c82fc3fadff3feaa4071ede` | DuckHive already carries the repeated-tool-failure guard and the recent Gemini raw tool-call/TaskList label-preservation behavior; keep future OpenClaude imports selective. |
+| Hermes Agent | `main`/`HEAD` at `43e566f77eaf01293086eb7cb99a21e240d60634` | No new Hermes-specific follow-up slice identified beyond the already-ported auxiliary fallback and existing self-improvement/memory surfaces. |
 
 ## Ported In 0.8.1
 
