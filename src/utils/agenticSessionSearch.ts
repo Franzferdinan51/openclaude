@@ -2,54 +2,12 @@ import type { LogOption, SerializedMessage } from '../types/logs.js'
 import { count } from './array.js'
 import { logForDebugging } from './debug.js'
 import { getLogDisplayTitle, logError } from './log.js'
-import { getSmallFastModel } from './model/model.js'
 import { isLiteLog, loadFullLog } from './sessionStorage.js'
-import { sideQuery } from './sideQuery.js'
-import { jsonParse } from './slowOperations.js'
 
 // Limits for transcript extraction
 const MAX_TRANSCRIPT_CHARS = 2000 // Max chars of transcript per session
 const MAX_MESSAGES_TO_SCAN = 100 // Max messages to scan from start/end
 const MAX_SESSIONS_TO_SEARCH = 100 // Max sessions to send to the API
-
-const SESSION_SEARCH_SYSTEM_PROMPT = `Your goal is to find relevant sessions based on a user's search query.
-
-You will be given a list of sessions with their metadata and a search query. Identify which sessions are most relevant to the query.
-
-Each session may include:
-- Title (display name or custom title)
-- Tag (user-assigned category, shown as [tag: name] - users tag sessions with /tag command to categorize them)
-- Branch (git branch name, shown as [branch: name])
-- Summary (AI-generated summary)
-- First message (beginning of the conversation)
-- Transcript (excerpt of conversation content)
-
-IMPORTANT: Tags are user-assigned labels that indicate the session's topic or category. If the query matches a tag exactly or partially, those sessions should be highly prioritized.
-
-For each session, consider (in order of priority):
-1. Exact tag matches (highest priority - user explicitly categorized this session)
-2. Partial tag matches or tag-related terms
-3. Title matches (custom titles or first message content)
-4. Branch name matches
-5. Summary and transcript content matches
-6. Semantic similarity and related concepts
-
-CRITICAL: Be VERY inclusive in your matching. Include sessions that:
-- Contain the query term anywhere in any field
-- Are semantically related to the query (e.g., "testing" matches sessions about "tests", "unit tests", "QA", etc.)
-- Discuss topics that could be related to the query
-- Have transcripts that mention the concept even in passing
-
-When in doubt, INCLUDE the session. It's better to return too many results than too few. The user can easily scan through results, but missing relevant sessions is frustrating.
-
-Return sessions ordered by relevance (most relevant first). If truly no sessions have ANY connection to the query, return an empty array - but this should be rare.
-
-Respond with ONLY the JSON object, no markdown formatting:
-{"relevant_indices": [2, 5, 0]}`
-
-type AgenticSearchResult = {
-  relevant_indices: number[]
-}
 
 /**
  * Extracts searchable text content from a message.
@@ -108,40 +66,79 @@ function extractTranscript(messages: SerializedMessage[]): string {
 }
 
 /**
- * Checks if a log contains the query term in any searchable field.
+ * Splits user search text into literal terms without treating FTS-style
+ * operators as required words. Quoted phrases remain searchable as a unit.
  */
-function logContainsQuery(log: LogOption, queryLower: string): boolean {
-  // Check title
-  const title = getLogDisplayTitle(log).toLowerCase()
-  if (title.includes(queryLower)) return true
+function tokenizeQuery(query: string): string[] {
+  const terms: string[] = []
+  const pattern = /"([^"]+)"|(\S+)/g
+  let match: RegExpExecArray | null
 
-  // Check custom title
-  if (log.customTitle?.toLowerCase().includes(queryLower)) return true
-
-  // Check tag
-  if (log.tag?.toLowerCase().includes(queryLower)) return true
-
-  // Check branch
-  if (log.gitBranch?.toLowerCase().includes(queryLower)) return true
-
-  // Check summary
-  if (log.summary?.toLowerCase().includes(queryLower)) return true
-
-  // Check first prompt
-  if (log.firstPrompt?.toLowerCase().includes(queryLower)) return true
-
-  // Check transcript (more expensive, do last)
-  if (log.messages && log.messages.length > 0) {
-    const transcript = extractTranscript(log.messages).toLowerCase()
-    if (transcript.includes(queryLower)) return true
+  while ((match = pattern.exec(query)) !== null) {
+    const raw = (match[1] ?? match[2] ?? '')
+      .replace(/^[()+-]+|[()+-]+$/g, '')
+      .replace(/\*+$/g, '')
+      .trim()
+      .toLowerCase()
+    if (!raw || raw === 'and' || raw === 'or' || raw === 'not') continue
+    terms.push(raw)
   }
 
-  return false
+  return [...new Set(terms)]
+}
+
+function scoreText(text: string | undefined, terms: string[], weight: number): number {
+  if (!text) return 0
+  const lower = text.toLowerCase()
+  let score = 0
+  for (const term of terms) {
+    if (lower.includes(term)) score += weight
+  }
+  return score
+}
+
+function scoreLog(log: LogOption, terms: string[], fullQuery: string): number {
+  const title = getLogDisplayTitle(log)
+  const transcript =
+    log.messages && log.messages.length > 0 ? extractTranscript(log.messages) : ''
+  const combined = [
+    title,
+    log.customTitle,
+    log.tag,
+    log.gitBranch,
+    log.summary,
+    log.firstPrompt,
+    transcript,
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase()
+
+  let score = 0
+  score += scoreText(log.tag, terms, 90)
+  score += scoreText(log.customTitle, terms, 70)
+  const titleDuplicatesKnownField =
+    title === log.customTitle || title === log.summary || title === log.firstPrompt
+  if (!titleDuplicatesKnownField) {
+    score += scoreText(title, terms, 60)
+  }
+  score += scoreText(log.gitBranch, terms, 35)
+  score += scoreText(log.summary, terms, 30)
+  score += scoreText(log.firstPrompt, terms, 30)
+  score += scoreText(transcript, terms, 12)
+
+  if (fullQuery && combined.includes(fullQuery)) score += 50
+  if (terms.length > 1 && terms.every(term => combined.includes(term))) {
+    score += 25
+  }
+
+  return score
 }
 
 /**
- * Performs an agentic search using Claude to find relevant sessions
- * based on semantic understanding of the query.
+ * Performs deterministic local session search over metadata and transcript
+ * excerpts. This intentionally avoids an auxiliary model call: resume search
+ * should stay fast, provider-free, and grounded in actual transcript text.
  */
 export async function agenticSessionSearch(
   query: string,
@@ -152,36 +149,18 @@ export async function agenticSessionSearch(
     return []
   }
 
-  const queryLower = query.toLowerCase()
+  const terms = tokenizeQuery(query)
+  if (terms.length === 0) return []
 
-  // Pre-filter: find sessions that contain the query term
-  // This ensures we search relevant sessions, not just recent ones
-  const matchingLogs = logs.filter(log => logContainsQuery(log, queryLower))
+  const logsToSearch = logs.slice(0, MAX_SESSIONS_TO_SEARCH)
 
-  // Take up to MAX_SESSIONS_TO_SEARCH matching logs
-  // If fewer matches, fill remaining slots with recent non-matching logs for context
-  let logsToSearch: LogOption[]
-  if (matchingLogs.length >= MAX_SESSIONS_TO_SEARCH) {
-    logsToSearch = matchingLogs.slice(0, MAX_SESSIONS_TO_SEARCH)
-  } else {
-    const nonMatchingLogs = logs.filter(
-      log => !logContainsQuery(log, queryLower),
-    )
-    const remainingSlots = MAX_SESSIONS_TO_SEARCH - matchingLogs.length
-    logsToSearch = [
-      ...matchingLogs,
-      ...nonMatchingLogs.slice(0, remainingSlots),
-    ]
-  }
-
-  // Debug: log what data we have
   logForDebugging(
     `Agentic search: ${logsToSearch.length}/${logs.length} logs, query="${query}", ` +
-      `matching: ${matchingLogs.length}, with messages: ${count(logsToSearch, l => l.messages?.length > 0)}`,
+      `terms=${terms.join('|')}, with messages: ${count(logsToSearch, l => l.messages?.length > 0)}`,
   )
 
-  // Load full logs for lite logs to get transcript content
   const logsWithTranscriptsPromises = logsToSearch.map(async log => {
+    if (signal?.aborted) return log
     if (isLiteLog(log)) {
       try {
         return await loadFullLog(log)
@@ -199,109 +178,24 @@ export async function agenticSessionSearch(
     `Agentic search: loaded ${count(logsWithTranscripts, l => l.messages?.length > 0)}/${logsToSearch.length} logs with transcripts`,
   )
 
-  // Build session list for the prompt with all searchable metadata
-  const sessionList = logsWithTranscripts
-    .map((log, index) => {
-      const parts: string[] = [`${index}:`]
-
-      // Title (display title, may be custom or from first prompt)
-      const displayTitle = getLogDisplayTitle(log)
-      parts.push(displayTitle)
-
-      // Custom title if different from display title
-      if (log.customTitle && log.customTitle !== displayTitle) {
-        parts.push(`[custom title: ${log.customTitle}]`)
-      }
-
-      // Tag
-      if (log.tag) {
-        parts.push(`[tag: ${log.tag}]`)
-      }
-
-      // Git branch
-      if (log.gitBranch) {
-        parts.push(`[branch: ${log.gitBranch}]`)
-      }
-
-      // Summary
-      if (log.summary) {
-        parts.push(`- Summary: ${log.summary}`)
-      }
-
-      // First prompt content (truncated)
-      if (log.firstPrompt && log.firstPrompt !== 'No prompt') {
-        parts.push(`- First message: ${log.firstPrompt.slice(0, 300)}`)
-      }
-
-      // Transcript excerpt (if messages are available)
-      if (log.messages && log.messages.length > 0) {
-        const transcript = extractTranscript(log.messages)
-        if (transcript) {
-          parts.push(`- Transcript: ${transcript}`)
-        }
-      }
-
-      return parts.join(' ')
+  const fullQuery = query.trim().toLowerCase()
+  const scored = logsWithTranscripts
+    .map((log, index) => ({
+      log,
+      index,
+      score: scoreLog(log, terms, fullQuery),
+    }))
+    .filter(result => result.score > 0)
+    .sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score
+      const modified = b.log.modified.getTime() - a.log.modified.getTime()
+      if (modified !== 0) return modified
+      return a.index - b.index
     })
-    .join('\n')
 
-  const userMessage = `Sessions:
-${sessionList}
-
-Search query: "${query}"
-
-Find the sessions that are most relevant to this query.`
-
-  // Debug: log first part of the session list
   logForDebugging(
-    `Agentic search prompt (first 500 chars): ${userMessage.slice(0, 500)}...`,
+    `Agentic search found ${scored.length} relevant sessions without auxiliary model calls`,
   )
 
-  try {
-    const model = getSmallFastModel()
-    logForDebugging(`Agentic search using model: ${model}`)
-
-    const response = await sideQuery({
-      model,
-      system: SESSION_SEARCH_SYSTEM_PROMPT,
-      messages: [{ role: 'user', content: userMessage }],
-      signal,
-      querySource: 'session_search',
-    })
-
-    // Extract the text content from the response
-    const textContent = response.content.find(block => block.type === 'text')
-    if (!textContent || textContent.type !== 'text') {
-      logForDebugging('No text content in agentic search response')
-      return []
-    }
-
-    // Debug: log the response
-    logForDebugging(`Agentic search response: ${textContent.text}`)
-
-    // Parse the JSON response
-    const jsonMatch = textContent.text.match(/\{[\s\S]*\}/)
-    if (!jsonMatch) {
-      logForDebugging('Could not find JSON in agentic search response')
-      return []
-    }
-
-    const result: AgenticSearchResult = jsonParse(jsonMatch[0])
-    const relevantIndices = result.relevant_indices || []
-
-    // Map indices back to logs (indices are relative to logsWithTranscripts)
-    const relevantLogs = relevantIndices
-      .filter(index => index >= 0 && index < logsWithTranscripts.length)
-      .map(index => logsWithTranscripts[index]!)
-
-    logForDebugging(
-      `Agentic search found ${relevantLogs.length} relevant sessions`,
-    )
-
-    return relevantLogs
-  } catch (error) {
-    logError(error as Error)
-    logForDebugging(`Agentic search error: ${error}`)
-    return []
-  }
+  return scored.map(result => result.log)
 }

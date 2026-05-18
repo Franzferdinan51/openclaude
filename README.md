@@ -868,6 +868,7 @@ Output: `XS` (trivial), `S` (small), `M` (medium), `L` (large), `XL` (massive)
 ### Session Search — Literal + Keyword Search Across Sessions
 
 Search past sessions by scanning persisted session message logs. The tool supports both longer keyword queries and short literal strings such as `UI`, `v2`, or punctuation-heavy searches.
+Inspired by Hermes Agent's no-LLM session search rewrite, DuckHive's resume/search UI now ranks matches locally across tags, titles, branches, summaries, first prompts, and transcript excerpts instead of sending session lists to an auxiliary model. Quoted phrases and broad `OR` queries stay literal and provider-free, so searching old sessions remains fast even when no model is configured.
 
 ```bash
 # Via /memory or context tools

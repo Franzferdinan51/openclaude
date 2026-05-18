@@ -29,6 +29,15 @@ DuckHive checked the live upstream repositories on May 7, 2026 and refreshed the
 | OpenClaude | `main`/`HEAD` at `f71e7692373a61d28c82fc3fadff3feaa4071ede` | DuckHive already carries the repeated-tool-failure guard and the recent Gemini raw tool-call/TaskList label-preservation behavior; keep future OpenClaude imports selective. |
 | Hermes Agent | `main`/`HEAD` at `43e566f77eaf01293086eb7cb99a21e240d60634` | No new Hermes-specific follow-up slice identified beyond the already-ported auxiliary fallback and existing self-improvement/memory surfaces. |
 
+## Refreshed Later May 18, 2026
+
+| Project | Current probe result | DuckHive follow-up |
+| --- | --- | --- |
+| OpenClaude | `main`/`HEAD` at `f71e7692373a61d28c82fc3fadff3feaa4071ede` | No new OpenClaude delta beyond the already-reviewed repeated-tool-failure and Gemini/TaskList behavior. |
+| OpenAI Codex | `main`/`HEAD` at `64ead6a83a6ed348229bc98a9b5d8b0c550d8305` | No new Codex delta beyond the already-reviewed `/goal` and exec-server websocket keepalive notes. |
+| OpenClaw | `main`/`HEAD` at `2696f2576d3e9abac4678af871960b0fc1aceb90` | New deltas are mostly updater/plugin/QA/browser/gateway/Telegram service changes. Reviewed for follow-up after the Hermes no-LLM session search port; no DuckHive runtime port was applied in this slice. |
+| Hermes Agent | `main`/`HEAD` at `abf1af540193c30047ff3e7e759c330faf3a880f` | Ported the compatible no-LLM session-search lesson into DuckHive's resume/session search path: `agenticSessionSearch` now scores local tags, titles, branches, summaries, first prompts, and transcript excerpts directly, including quoted phrase and OR-style literal recall, instead of calling an auxiliary model. |
+
 ## Ported In 0.8.1
 
 ### OpenClaude effort fix
