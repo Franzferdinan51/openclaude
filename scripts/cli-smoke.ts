@@ -275,6 +275,15 @@ const cases: SmokeCase[] = [
     ],
   },
   {
+    name: 'top-level goal short alias help',
+    args: ['g', '--help'],
+    includes: [
+      'DuckHive /goal - Persisted Workflow Goals',
+      'duckhive goal <description>',
+      '/goal <description>',
+    ],
+  },
+  {
     name: 'top-level goal command',
     args: ['goal', 'Build', 'top-level', 'smoke', 'goal'],
     env: createIsolatedConfigEnv,
