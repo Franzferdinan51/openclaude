@@ -152,7 +152,8 @@ describe('HybridOrchestrator AgentRun integration', () => {
         taskIds: run.taskIds,
       }))
 
-    expect(childRuns).toEqual([
+    // Sort by id since parallel spawns have non-deterministic completion order
+    expect(childRuns.sort((a, b) => a.id.localeCompare(b.id))).toEqual([
       { id: 'worker-1-id', selectedAgent: 'worker-1', taskIds: ['worker-1-id'] },
       { id: 'worker-2-id', selectedAgent: 'worker-2', taskIds: ['worker-2-id'] },
     ])
