@@ -41,3 +41,47 @@ test('NEW_INIT prompt preserves existing root CLAUDE.md by default', async () =>
     'update the existing root `CLAUDE.md` in place by default',
   )
 })
+
+test('NEW_INIT prompt uses DuckHive branding for generated guidance', async () => {
+  process.env.CLAUDE_CODE_NEW_INIT = '1'
+
+  mock.module('../projectOnboardingState.js', () => ({
+    maybeMarkProjectOnboardingComplete: () => {},
+  }))
+  mock.module('./initMode.js', () => ({
+    isNewInitEnabled: () => true,
+  }))
+
+  const command = await importInitCommand()
+  const blocks = await command.getPromptForCommand()
+  const prompt = String(blocks[0]?.text)
+
+  expect(prompt).toContain('loaded into every DuckHive session')
+  expect(prompt).toContain(
+    'This file provides guidance to DuckHive when working with code in this repository.',
+  )
+  expect(prompt).not.toContain('Claude Code')
+  expect(prompt).not.toContain('claude.ai/code')
+})
+
+test('legacy init prompt uses DuckHive branding', async () => {
+  delete process.env.CLAUDE_CODE_NEW_INIT
+
+  mock.module('../projectOnboardingState.js', () => ({
+    maybeMarkProjectOnboardingComplete: () => {},
+  }))
+  mock.module('./initMode.js', () => ({
+    isNewInitEnabled: () => false,
+  }))
+
+  const command = await importInitCommand()
+  const blocks = await command.getPromptForCommand()
+  const prompt = String(blocks[0]?.text)
+
+  expect(prompt).toContain('future instances of DuckHive')
+  expect(prompt).toContain(
+    'This file provides guidance to DuckHive when working with code in this repository.',
+  )
+  expect(prompt).not.toContain('Claude Code')
+  expect(prompt).not.toContain('claude.ai/code')
+})
