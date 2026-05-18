@@ -9,7 +9,7 @@ covers the named requirement.
 | Requirement | Current evidence | Status |
 | --- | --- | --- |
 | Default Windows CLI must start without freezing and accept typing | `npm run smoke` passes `TextInput` buffered typing, Windows data-event stdin selection, Ink stdin delivery tests, and 67 CLI smoke cases plus Windows wrapper checks. | Verified |
-| Prompt submission must not crash with `Cannot read properties of undefined (reading '_zod')` | Built-in tool-schema conversion regression was added in `src/utils/api.test.ts`; the prompt-schema fix was committed as `9ed65d9`. | Verified by focused regression in prior pass |
+| Prompt submission must not crash with `Cannot read properties of undefined (reading '_zod')` | Built-in tool-schema conversion regression was added in `src/utils/api.test.ts`; the prompt-schema fix was committed as `9ed65d9`; `scripts/postbuild-patch.mjs` now fails the build if any required Zod v4 bundle patch target disappears, with `scripts/postbuild-patch.test.ts` covering both successful patching and fail-closed behavior. | Verified |
 | Repeated tool failures must not loop forever | DuckHive ports OpenClaude `f71e769237`'s repeated-tool-failure guard into `src/query.ts`; focused tests cover signature, category, path, ignored synthetic failures, threshold parsing, DuckHive env override, source ordering before optional follow-up work, and path-safe logging. | Verified |
 | `duckhive` command must resolve and report the DuckHive version | `node dist\cli.mjs runtime-doctor` reports `duckhive` on PATH targeting this checkout and version `0.13.2 (DuckHive)`; `node dist\cli.mjs --version` also reports `0.13.2 (DuckHive)`. | Verified |
 | Version metadata and README must match the release | `package.json` and README now report `0.13.2`; `npm pack --dry-run --json` publishes `duckhive@0.13.2`; CLI smoke checks `--version` and Windows wrapper version output against `package.json` instead of only checking for DuckHive branding. | Verified |
@@ -56,6 +56,7 @@ Latest continuation evidence from 2026-05-18:
 - `npm run build`
 - `npm run smoke` (`CLI smoke passed (67 commands plus Windows wrapper checks)`)
 - `node dist\cli.mjs runtime-doctor`
+- `bun test scripts\postbuild-patch.test.ts`
 - `npm pack --dry-run --json`
 - `node dist\cli.mjs --version` (`0.13.2 (DuckHive)`)
 - `node --check src\services\council-server\council-api-server.cjs`
