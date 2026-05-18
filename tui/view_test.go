@@ -26,7 +26,7 @@ func TestHeaderUsesDuckHiveDefaults(t *testing.T) {
 	if !strings.Contains(view, "DuckHive") {
 		t.Fatalf("header missing DuckHive branding: %q", view)
 	}
-	if !strings.Contains(view, "v0.13.2") {
+	if !strings.Contains(view, "v0.13.3") {
 		t.Fatalf("header missing current version: %q", view)
 	}
 	if !strings.Contains(view, "MiniMax-M2.7") {

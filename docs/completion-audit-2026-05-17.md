@@ -11,8 +11,8 @@ covers the named requirement.
 | Default Windows CLI must start without freezing and accept typing | `npm run smoke` passes `TextInput` buffered typing, Windows data-event stdin selection, Ink stdin delivery tests, and 67 CLI smoke cases plus Windows wrapper checks. | Verified |
 | Prompt submission must not crash with `Cannot read properties of undefined (reading '_zod')` | Built-in tool-schema conversion regression was added in `src/utils/api.test.ts`; the prompt-schema fix was committed as `9ed65d9`; `scripts/postbuild-patch.mjs` now fails the build if any required Zod v4 bundle patch target disappears, with `scripts/postbuild-patch.test.ts` covering both successful patching and fail-closed behavior. | Verified |
 | Repeated tool failures must not loop forever | DuckHive ports OpenClaude `f71e769237`'s repeated-tool-failure guard into `src/query.ts`; focused tests cover signature, category, path, ignored synthetic failures, threshold parsing, DuckHive env override, source ordering before optional follow-up work, and path-safe logging. | Verified |
-| `duckhive` command must resolve and report the DuckHive version | 2026-05-18 live PowerShell evidence: `Get-Command duckhive` resolves through `C:\Users\franz\AppData\Roaming\npm\duckhive.ps1`; `duckhive --version`, `duckhive --yolo --version`, `duckhive --dangerously-skip-permissions --version`, and `node bin\duckhive --version` all report `0.13.2 (DuckHive)`; `duckhive runtime-doctor` reports the launcher on PATH targeting this checkout. | Verified |
-| Version metadata and README must match the release | `package.json` and README now report `0.13.2`; current `npm pack --dry-run --json` publishes `duckhive@0.13.2`; CLI smoke checks `--version` and Windows wrapper version output against `package.json` instead of only checking for DuckHive branding. | Verified |
+| `duckhive` command must resolve and report the DuckHive version | 2026-05-18 live PowerShell evidence after the 0.13.3 bump: `Get-Command duckhive` resolves through `C:\Users\franz\AppData\Roaming\npm\duckhive.ps1`; `duckhive --version`, `duckhive --yolo --version`, `duckhive --dangerously-skip-permissions --version`, and `node dist\cli.mjs --version` all report `0.13.3 (DuckHive)`. | Verified |
+| Version metadata and README must match the release | `package.json`, `package-lock.json`, README, and Go TUI header now report `0.13.3`; `npm pack --dry-run --json` publishes `duckhive@0.13.3`; CLI smoke checks `--version` and Windows wrapper version output against `package.json` instead of only checking for DuckHive branding. | Verified |
 | Runtime diagnostics must not imply legacy OpenClaude/Anthropic defaults | `runtime-doctor` now mirrors DuckHive startup defaults by reporting MiniMax when no explicit provider env is active, while preserving Anthropic only for explicit DuckHive provider selection. | Verified |
 | Codex-compatible HTTP surfaces must not leak OpenClaude attribution | Codex Responses requests, Codex web search, Codex usage reads, `/cache-probe`, and runtime-doctor Codex probes now share `CODEX_HTTP_ORIGINATOR = "duckhive"`; OAuth keeps its separate protocol-required Codex originator. Focused tests assert the DuckHive HTTP originator constant. | Verified |
 | Quota/payment exhaustion must use configured fallback before failing | Inspired by Hermes auxiliary fallback safety nets, DuckHive now triggers `--fallback-model` on explicit 402/payment, credit, daily quota, and quota-exhausted 429 signals before showing the non-retryable quota guidance; focused `withRetry` tests cover configured fallback, no-fallback behavior, and generic 429 rate limits staying on the normal retry path. | Verified |
@@ -63,7 +63,7 @@ Latest continuation evidence from 2026-05-18:
 - `npm run smoke` (`CLI smoke passed (67 commands plus Windows wrapper checks)`)
 - `npm run verify:privacy`
 - `bun test` (`3369 pass`, `0 fail`, `8487 expect()` calls across 381 files)
-- `duckhive --version`, `duckhive --yolo --version`, and `duckhive --dangerously-skip-permissions --version` (`0.13.2 (DuckHive)`)
+- `duckhive --version`, `duckhive --yolo --version`, and `duckhive --dangerously-skip-permissions --version` (`0.13.3 (DuckHive)`)
 - `duckhive runtime-doctor` (PATH launcher, Windows data-event stdin, packaged TUI input smoke, ClawHub, connector controls, provider readiness, AI Council, harness command surfaces)
 - `node dist\cli.mjs runtime-doctor`
 - `bun test src\utils\agenticSessionSearch.test.ts`
@@ -75,7 +75,7 @@ Latest continuation evidence from 2026-05-18:
 - `bun test src\services\tips\sponsoredTips.test.ts src\services\tips\tipScheduler.test.ts`
 - `bun test src\utils\openclaudeUiSurfaces.test.ts`
 - `npm pack --dry-run --json`
-- `node dist\cli.mjs --version` (`0.13.2 (DuckHive)`)
+- `node dist\cli.mjs --version` (`0.13.3 (DuckHive)`)
 - `node --check src\services\council-server\council-api-server.cjs`
 - `bun test src\memdir\bm25.test.ts src\memdir\fts5.test.ts src\tools\MemoryTool\MemoryTool.test.ts`
 
