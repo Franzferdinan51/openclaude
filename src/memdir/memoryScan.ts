@@ -5,7 +5,7 @@
  */
 
 import { readdir } from 'fs/promises'
-import { basename, join } from 'path'
+import { basename, join, sep as pathSep } from 'path'
 import { parseFrontmatter } from '../utils/frontmatterParser.js'
 import { readFileInRange } from '../utils/readFileInRange.js'
 import { type MemoryType, parseMemoryType } from './memoryTypes.js'
@@ -40,13 +40,12 @@ export async function scanMemoryFiles(
     const entries = await readdir(memoryDir, { recursive: true })
     // Limit depth to 3 levels to prevent DoS from deep/symlinked directory trees.
     // Relative paths from readdir use the OS separator, so count separators.
-    const sep = require('path').sep as string
     const MAX_DEPTH = 3
     const mdFiles = entries.filter(
       f =>
         f.endsWith('.md') &&
         basename(f) !== 'MEMORY.md' &&
-        (f.split(sep).length - 1) < MAX_DEPTH,
+        (f.split(pathSep).length - 1) < MAX_DEPTH,
     )
 
     const headerResults = await Promise.allSettled(
