@@ -319,6 +319,24 @@ const cases: SmokeCase[] = [
     ],
   },
   {
+    name: 'top-level computer-use short alias tools',
+    args: ['cu', 'tools'],
+    includes: [
+      'DuckHive Computer Use Tools',
+      'newest-desktop-control fallback tools',
+      'computer_use_keyboard',
+    ],
+  },
+  {
+    name: 'top-level computer-use typo alias tools',
+    args: ['comput-use', 'tools'],
+    includes: [
+      'DuckHive Computer Use Tools',
+      'newest-desktop-control fallback tools',
+      'computer_use_keyboard',
+    ],
+  },
+  {
     name: 'headless loop help',
     args: ['--bare', '-p', '/loop help'],
     timeoutMs: 30000,
