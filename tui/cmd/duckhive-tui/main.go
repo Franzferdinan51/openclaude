@@ -117,6 +117,7 @@ const (
 	localTUICommandComputer   localTUICommand = "computer-use"
 	localTUICommandConnect    localTUICommand = "connect"
 	localTUICommandHarness    localTUICommand = "harness"
+	localTUICommandExit       localTUICommand = "exit"
 )
 
 func main() {
@@ -1011,6 +1012,11 @@ func parseLocalTUICommand(text string) (localTUICommand, bool) {
 			return "", false
 		}
 		return localTUICommandHarness, true
+	case "/exit", "/quit":
+		if hasArgs {
+			return "", false
+		}
+		return localTUICommandExit, true
 	default:
 		return "", false
 	}
@@ -1049,6 +1055,11 @@ func (m *MainModel) handleLocalTUICommand(text string) (bool, tea.Cmd) {
 	command, handled := parseLocalTUICommand(text)
 	if !handled {
 		return false, nil
+	}
+
+	if command == localTUICommandExit {
+		m.state.StatusMsg = "exiting"
+		return true, m.quitCmd()
 	}
 
 	content := m.localCommandContent(command)

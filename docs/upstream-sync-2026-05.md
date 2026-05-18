@@ -56,6 +56,12 @@ DuckHive checked the live upstream repositories on May 7, 2026 and refreshed the
 | OpenClaw | `main`/`HEAD` at `1e5450f23e1c770912bc1eb0b4eaa7b6d1ba94e3` | Reviewed the new provider-owner harness commit; DuckHive does not have OpenClaw's plugin runtime loader, so there is no direct provider-owner port. Ported the compatible group-visible reply safety lesson by making DuckHive Telegram ignore slash commands addressed to a different bot username, preventing group replies to `/command@other_bot` turns. Focused `TelegramService` tests cover matching bot suffixes and quiet non-matching suffixes. |
 | Hermes Agent | `main`/`HEAD` at `dadc8aa25580ac1ecc65d6185dfc6bd0e1d6d279` | No new Hermes delta since the previous refresh. |
 
+## Refreshed TUI Follow-up May 18, 2026
+
+| Project | Current probe result | DuckHive follow-up |
+| --- | --- | --- |
+| OpenClaw | `main`/`HEAD` at `3553aa3763eba95b4d0d1dc94b67c426657a7730` | Reviewed OpenClaw's standalone TUI exit guard. DuckHive's TUI is a standalone Go binary, so the Node post-return process-exit guard does not apply directly. The compatible bug class did exist locally: typed `/exit` or `/quit` in DuckHive's TUI could fall through to backend dispatch or a no-bridge error instead of exiting. DuckHive now handles those commands locally with `tea.Quit`, and Go tests cover `/exit` without backend dispatch. |
+
 ## Ported In 0.8.1
 
 ### OpenClaude effort fix

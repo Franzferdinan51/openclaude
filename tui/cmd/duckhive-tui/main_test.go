@@ -677,6 +677,30 @@ func TestInterruptExitsWhenIdleEvenWithBridge(t *testing.T) {
 	}
 }
 
+func TestLocalExitCommandQuitsWithoutBackendDispatch(t *testing.T) {
+	m := &MainModel{
+		state:      model.NewAppState(),
+		bridge:     bridge.NewSubprocessAdapter("duckhive"),
+		msgList:    components.NewMessageList(80, 20),
+		input:      components.NewInputArea(80, 3),
+		transcript: screens.NewTranscriptPanel(),
+	}
+
+	handled, cmd := m.handleLocalTUICommand("/exit")
+	if !handled {
+		t.Fatal("/exit was not handled locally")
+	}
+	if !commandReturnsQuit(cmd) {
+		t.Fatal("/exit did not return tea.Quit")
+	}
+	if m.state.StatusMsg != "exiting" {
+		t.Fatalf("StatusMsg = %q, want exiting", m.state.StatusMsg)
+	}
+	if len(m.state.Messages) != 0 {
+		t.Fatalf("/exit should not append local messages, got %d", len(m.state.Messages))
+	}
+}
+
 func TestSuspendReturnsBubbleTeaSuspendCommand(t *testing.T) {
 	m := &MainModel{
 		state:      model.NewAppState(),
