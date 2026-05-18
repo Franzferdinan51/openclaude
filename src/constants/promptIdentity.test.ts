@@ -47,8 +47,24 @@ test('simple mode identity describes DuckHive instead of Claude Code', async () 
   expect(prompt[0]).not.toContain("Anthropic's official CLI for Claude")
 })
 
+test('normal system prompt encourages useful agent-team and council surfaces', async () => {
+  delete process.env.CLAUDE_CODE_SIMPLE
+
+  const prompt = await getSystemPrompt([], 'gpt-4o')
+  const combined = prompt.join('\n')
+
+  expect(combined).toContain('Use subagents to parallelize independent work')
+  expect(combined).toContain('/council to consult multiple agents')
+  expect(combined).toContain('/team to coordinate multi-agent workflows')
+  expect(combined).toContain('/spawn for background tasks')
+  expect(combined).toContain('/skills to find specialized capabilities')
+})
+
 test('built-in agent prompts describe DuckHive instead of Claude Code', () => {
   expect(DEFAULT_AGENT_PROMPT).toContain('DuckHive')
+  expect(DEFAULT_AGENT_PROMPT).toContain('Use subagents to parallelize independent work')
+  expect(DEFAULT_AGENT_PROMPT).toContain('/council')
+  expect(DEFAULT_AGENT_PROMPT).toContain('/spawn')
   expect(DEFAULT_AGENT_PROMPT).not.toContain('Claude Code')
   expect(DEFAULT_AGENT_PROMPT).not.toContain("Anthropic's official CLI for Claude")
 
