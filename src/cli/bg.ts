@@ -2,6 +2,7 @@ import {
   AGENT_RUN_STATUSES,
   getAgentRunStore,
   type AgentRun,
+  type AgentRunArtifact,
   type AgentRunStatus,
   type AgentRunStore,
 } from '../agent-runs/index.js'
@@ -102,6 +103,12 @@ function formatRunEventLine(
   return `${new Date(event.timestamp).toLocaleTimeString()} ${event.type}${payload}`
 }
 
+function formatRunArtifact(artifact: AgentRunArtifact): string {
+  const target = artifact.path ?? artifact.url ?? '(no path or url)'
+  const label = artifact.label ? ` ${artifact.label}` : ''
+  return `[${artifact.kind}]${label} ${target}`.trim()
+}
+
 function renderRunList(store: AgentRunStore, status?: AgentRunStatus): string {
   const runs = store.listRuns(status ? { status } : {})
   if (runs.length === 0) {
@@ -132,6 +139,10 @@ function renderRunDetail(store: AgentRunStore, runId: string, tailLimit = 20): s
     lines.push(`Pending approvals: ${run.permissionState.pendingApprovalIds.join(', ')}`)
   }
   if (run.childRunIds.length) lines.push(`Children: ${run.childRunIds.join(', ')}`)
+  if (run.artifacts.length) {
+    lines.push('', 'Artifacts:')
+    lines.push(...run.artifacts.map(artifact => `  ${formatRunArtifact(artifact)}`))
+  }
   const events = store.tailEvents(runId, tailLimit)
   lines.push('', `Recent events (${events.length}/${tailLimit}):`)
   if (events.length === 0) {

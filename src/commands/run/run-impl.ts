@@ -2,6 +2,7 @@ import type { LocalCommandCall } from '../../types/command.js'
 import {
   AGENT_RUN_STATUSES,
   getAgentRunStore,
+  type AgentRunArtifact,
   type AgentRunStatus,
   type AgentRunStore,
 } from '../../agent-runs/index.js'
@@ -154,6 +155,12 @@ function renderRunList(store: AgentRunStore, status?: AgentRunStatus): string {
   return lines.join('\n')
 }
 
+function formatRunArtifact(artifact: AgentRunArtifact): string {
+  const target = artifact.path ?? artifact.url ?? '(no path or url)'
+  const label = artifact.label ? ` ${artifact.label}` : ''
+  return `[${artifact.kind}]${label} ${target}`.trim()
+}
+
 function renderRunDetail(store: AgentRunStore, runId: string): string {
   const run = store.getRun(runId)
   if (!run) return `Run not found: ${runId}`
@@ -177,6 +184,10 @@ function renderRunDetail(store: AgentRunStore, runId: string): string {
     lines.push(`Pending approvals: ${run.permissionState.pendingApprovalIds.join(', ')}`)
   }
   if (run.childRunIds.length) lines.push(`Children: ${run.childRunIds.join(', ')}`)
+  if (run.artifacts.length) {
+    lines.push('', 'Artifacts:')
+    lines.push(...run.artifacts.map(artifact => `  ${formatRunArtifact(artifact)}`))
+  }
   return lines.join('\n')
 }
 

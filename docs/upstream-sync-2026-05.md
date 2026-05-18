@@ -66,7 +66,16 @@ DuckHive checked the live upstream repositories on May 7, 2026 and refreshed the
 
 | Project | Current probe result | DuckHive follow-up |
 | --- | --- | --- |
-| Hermes Agent | `main`/`HEAD` at `f2fdb9a178a0b646d0803ab0789914657dc8c361` | Ported the compatible deliverable-mode behavior into DuckHive's Telegram surface. Outbound Telegram messages now scan for existing absolute local artifact paths and upload supported images as `sendPhoto` and documents/spreadsheets/presentations/archives/audio/video/text/html as `sendDocument`. Telegram `/run <id>` now lists run artifacts and uploads existing local artifact files after the run detail response. |
+| Hermes Agent | `main`/`HEAD` at `f2fdb9a178a0b646d0803ab0789914657dc8c361` | Ported the compatible deliverable-mode behavior into DuckHive's Telegram and terminal AgentRun surfaces. Outbound Telegram messages now scan for existing absolute local artifact paths and upload supported images as `sendPhoto` and documents/spreadsheets/presentations/archives/audio/video/text/html as `sendDocument`. Telegram `/run <id>` lists run artifacts and uploads existing local artifact files after the run detail response, while `/run <id>` and `duckhive attach <id>` now expose stored artifact paths/URLs in terminal detail output. |
+
+## Refreshed Current Upstream Probe May 18, 2026
+
+| Project | Current probe result | DuckHive follow-up |
+| --- | --- | --- |
+| OpenClaude | `main`/`HEAD` at `f71e7692373a61d28c82fc3fadff3feaa4071ede` | DuckHive is no longer behind `Gitlawb/openclaude:main`; `main..openclaude/main` is empty after refresh. |
+| OpenAI Codex | `main`/`HEAD` at `22dd9ad3929253ed24d7ee4f10f238e95ab25f37` | No new Codex delta beyond the already-ported `/goal` and session-memory densification slices. |
+| OpenClaw | `main`/`HEAD` at `0f4eccefd4f39e9198fe5319e51752e8c8f1d042` | Latest deltas are CI, docs, xAI OAuth sidecar cleanup, and release-stability internals. No direct DuckHive runtime port was identified in this pass. |
+| Hermes Agent | `main`/`HEAD` at `f2fdb9a178a0b646d0803ab0789914657dc8c361` | Extended the already-ported deliverable-mode slice from Telegram-only visibility to the terminal AgentRun detail surfaces so stored artifacts are visible from `/run <id>` and `duckhive attach <id>`. |
 
 ## Refreshed OpenClaw Queue Media Follow-up May 18, 2026
 

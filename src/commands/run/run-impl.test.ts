@@ -57,6 +57,10 @@ describe('/run command', () => {
       provider: 'minimax',
       model: 'MiniMax-M2.7',
       progress: { summary: 'Reading files' },
+      artifacts: [
+        { kind: 'transcript', path: 'C:\\Users\\franz\\runs\\run_1.jsonl', label: 'transcript' },
+        { kind: 'image', url: 'https://example.test/preview.png' },
+      ],
     })
     setRunTestDeps({ getAgentRunStore: () => store })
 
@@ -67,6 +71,9 @@ describe('/run command', () => {
     expect(result.value).toContain('Run: run_1')
     expect(result.value).toContain('Status: running')
     expect(result.value).toContain('Progress: Reading files')
+    expect(result.value).toContain('Artifacts:')
+    expect(result.value).toContain('[transcript] transcript C:\\Users\\franz\\runs\\run_1.jsonl')
+    expect(result.value).toContain('[image] https://example.test/preview.png')
   })
 
   test('tails recent events', async () => {

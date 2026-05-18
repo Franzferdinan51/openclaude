@@ -85,6 +85,10 @@ describe('background AgentRun CLI handlers', () => {
       status: 'awaiting_approval',
       permissionState: { pendingApprovalIds: ['approval-1'] },
       progress: { summary: 'Waiting for approval' },
+      artifacts: [
+        { kind: 'file', path: 'C:\\Users\\franz\\reports\\run.pdf', label: 'run.pdf' },
+        { kind: 'other', url: 'https://example.test/result' },
+      ],
     })
     store.emitEvent('message_delta', {
       runId: 'run_bg',
@@ -99,6 +103,9 @@ describe('background AgentRun CLI handlers', () => {
 
     expect(stdout.text()).toContain('Run: run_bg')
     expect(stdout.text()).toContain('Pending approvals: approval-1')
+    expect(stdout.text()).toContain('Artifacts:')
+    expect(stdout.text()).toContain('[file] run.pdf C:\\Users\\franz\\reports\\run.pdf')
+    expect(stdout.text()).toContain('[other] https://example.test/result')
     expect(stdout.text()).toContain('Recent events (2/2):')
     expect(stdout.text()).toContain('run_started')
     expect(stdout.text()).toContain('message_delta')
