@@ -26,7 +26,7 @@ func (m *Model) View() string {
 // headerView renders the top bar with logo/title.
 func (m *Model) headerView() string {
 	title := "DuckHive"
-	version := "v0.13.3"
+	version := "v0.13.4"
 	status := ""
 	if m.isLoading {
 		status = " " + m.spinner.View()
