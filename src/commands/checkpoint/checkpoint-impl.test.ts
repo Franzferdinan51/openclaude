@@ -42,6 +42,10 @@ describe('/checkpoint command', () => {
     expect(loaded.value).toContain('Loaded: "release-ready"')
     expect(/[^\x00-\x7F]/.test(loaded.value)).toBe(false)
 
+    const resumed = await call('resume release-ready', {} as never)
+    expect(resumed.value).toContain('Loaded: "release-ready"')
+    expect(/[^\x00-\x7F]/.test(resumed.value)).toBe(false)
+
     const deleted = await call('delete release-ready', {} as never)
     expect(deleted.value).toContain('Deleted: "release-ready"')
     expect(/[^\x00-\x7F]/.test(deleted.value)).toBe(false)
@@ -58,6 +62,7 @@ describe('/checkpoint command', () => {
     const missing = await call('load missing', {} as never)
 
     expect(usage.value).toContain('Checkpoint Command')
+    expect(usage.value).toContain('/checkpoint resume <name>')
     expect(missing.value).toContain('Checkpoint not found: "missing"')
     expect(/[^\x00-\x7F]/.test(`${usage.value}\n${missing.value}`)).toBe(false)
   })

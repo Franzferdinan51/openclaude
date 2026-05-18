@@ -384,7 +384,7 @@ func TestHarnessStateSnapshotSurfacesSharedState(t *testing.T) {
 		"ACP bridge: detected",
 		"Permissions: bypass",
 		"Budget spend: $1.2500 this session",
-		"/checkpoint save|list|load|delete",
+		"/checkpoint save|list|load|resume|delete",
 		"/budget set <provider|global> <usd>",
 		"/acp status",
 		"read-only",

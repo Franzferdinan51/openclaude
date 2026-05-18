@@ -22,7 +22,7 @@ This file started with the Go TUI work, but it now tracks harness-wide integrati
 ## Later
 
 - Make the local model picker mutate shared provider state safely, but keep `/models` and `/provider` authoritative.
-- Add checkpoint resume flows across TUI, slash commands, and print mode.
+- Add full checkpoint restore/resume state hydration after the current metadata checkpoint shell grows into a restorable session snapshot format.
 - Add multi-agent and council execution views with task state plus shared orchestration APIs.
 - Add media workflow panels for image, video, speech, music, and search jobs on top of shared media job primitives.
 - Add voice, daemon, and channel controls inspired by OpenClaw, hermes-agent, NemoClaw, and mercury-agent.
@@ -54,3 +54,4 @@ This file started with the Go TUI work, but it now tracks harness-wide integrati
 - Added Codex-style configurable TUI keymap overrides through `DUCKHIVE_TUI_KEYMAP_PATH` and `DUCKHIVE_TUI_KEYMAP`, and fixed the documented `ctrl+p` model-picker binding in the Go TUI key resolver.
 - Kept argument-bearing backend slash commands command-shaped in the TUI bridge: goal creation, council prompts, permission profiles, budget mutations, channel status, and computer-use tool listing now dispatch to the backend when connected and show local read-only cards when offline.
 - Exposed provider-free top-level `duckhive checkpoint` / `duckhive checkpoints` list/save/load/delete flows so checkpoint browsing and mutation no longer require `--bare -p "/checkpoint ..."`.
+- Added `/checkpoint resume <name>` and `duckhive checkpoint resume <name>` as provider-free aliases for checkpoint load, with TUI command guidance and smoke coverage for slash-print plus top-level CLI paths.

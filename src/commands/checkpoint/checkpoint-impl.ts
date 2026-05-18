@@ -78,7 +78,7 @@ export const call: LocalCommandCall = async (args: string) => {
     }
   }
 
-  if (subcommand === 'load' || subcommand === 'restore') {
+  if (subcommand === 'load' || subcommand === 'restore' || subcommand === 'resume') {
     const path = join(CHECKPOINT_DIR, `${name}.json`)
     if (!existsSync(path)) return { type: 'text', value: `Checkpoint not found: "${name}"` }
     try {
@@ -104,6 +104,7 @@ export const call: LocalCommandCall = async (args: string) => {
       '/checkpoint save [name]   - Save session',
       '/checkpoint list          - List checkpoints',
       '/checkpoint load <name>   - Load checkpoint',
+      '/checkpoint resume <name> - Resume checkpoint alias',
       '/checkpoint delete <name> - Delete checkpoint',
     ].join('\n'),
   }

@@ -1433,7 +1433,7 @@ func (m *MainModel) harnessStateSnapshot() string {
 		fmt.Sprintf("Budget spend: $%.4f this session", m.state.TotalCostUSD),
 		"",
 		"Backend commands:",
-		"  /checkpoint save|list|load|delete",
+		"  /checkpoint save|list|load|resume|delete",
 		"  /budget, /budget set <provider|global> <usd>, /budget reset",
 		"  /mcp or duckhive dmcp list|add|remove|health",
 		"  /acp, /acp status, /acp stop",

@@ -401,6 +401,16 @@ const cases: SmokeCase[] = [
     excludes: ['Warning: ignoring saved provider profile'],
   },
   {
+    name: 'headless checkpoint resume alias',
+    args: ['--bare', '-p', '/checkpoint resume missing'],
+    env: createIsolatedConfigEnv,
+    timeoutMs: 30000,
+    includes: [
+      'Checkpoint not found: "missing"',
+    ],
+    excludes: ['Warning: ignoring saved provider profile'],
+  },
+  {
     name: 'top-level checkpoint list',
     args: ['checkpoint', 'list'],
     env: createIsolatedConfigEnv,
@@ -408,6 +418,19 @@ const cases: SmokeCase[] = [
     includes: [
       'No saved checkpoints.',
       '/checkpoint save [name]',
+    ],
+    excludes: [
+      'DuckHive is running without an interactive terminal',
+      'Warning: ignoring saved provider profile',
+    ],
+  },
+  {
+    name: 'top-level checkpoint resume alias',
+    args: ['checkpoint', 'resume', 'missing'],
+    env: createIsolatedConfigEnv,
+    timeoutMs: 30000,
+    includes: [
+      'Checkpoint not found: "missing"',
     ],
     excludes: [
       'DuckHive is running without an interactive terminal',
