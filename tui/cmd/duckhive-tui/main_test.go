@@ -675,6 +675,59 @@ func TestBridgeDisconnectClearsLoadingThinkingAndTaskState(t *testing.T) {
 	}
 }
 
+func TestBridgeDisconnectFinalizesActiveStream(t *testing.T) {
+	m := &MainModel{
+		state:      model.NewAppState(),
+		msgList:    components.NewMessageList(80, 20),
+		transcript: screens.NewTranscriptPanel(),
+	}
+
+	m.handleBridgeMessage(model.MsgStreamDelta{
+		MessageID: "assistant-1",
+		Delta:     "```diff\n+ streamed patch\n```\n",
+	})
+	m.handleBridgeMessage(model.MsgBridgeDisconnected{Err: context.Canceled})
+
+	messages := m.msgList.Messages()
+	if len(messages) == 0 {
+		t.Fatal("expected streamed assistant message")
+	}
+	if messages[0].IsStreaming {
+		t.Fatal("expected bridge disconnect to finalize streamed assistant message")
+	}
+	if !strings.Contains(messages[0].Content, "streamed patch") {
+		t.Fatalf("streamed content was lost: %#v", messages[0])
+	}
+}
+
+func TestErrorFinalizesActiveStream(t *testing.T) {
+	m := &MainModel{
+		state:      model.NewAppState(),
+		msgList:    components.NewMessageList(80, 20),
+		transcript: screens.NewTranscriptPanel(),
+	}
+
+	m.handleBridgeMessage(model.MsgStreamDelta{
+		MessageID: "assistant-1",
+		Delta:     "<svg><text>partial</text></svg>",
+	})
+	m.handleBridgeMessage(model.MsgError{Err: context.Canceled})
+
+	messages := m.msgList.Messages()
+	if len(messages) < 2 {
+		t.Fatalf("expected stream plus error messages, got %d", len(messages))
+	}
+	if messages[0].IsStreaming {
+		t.Fatal("expected error path to finalize streamed assistant message")
+	}
+	if !strings.Contains(messages[0].Content, "partial") {
+		t.Fatalf("streamed content was lost: %#v", messages[0])
+	}
+	if !messages[1].IsError {
+		t.Fatalf("expected second message to be error: %#v", messages[1])
+	}
+}
+
 func TestCtrlCQuitsFromSettingsScreen(t *testing.T) {
 	m := &MainModel{
 		state:      model.NewAppState(),

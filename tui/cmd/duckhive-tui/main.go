@@ -638,6 +638,7 @@ func (m *MainModel) handleBridgeMessage(msg model.InMsg) (tea.Model, tea.Cmd) {
 		m.state.BridgeConnected = false
 		m.state.IsLoading = false
 		m.state.IsThinking = false
+		m.msgList.FinalizeStreaming()
 		m.state.DialogOpen = false
 		m.state.PendingPermission = nil
 		m.dialog = nil
@@ -714,6 +715,7 @@ func (m *MainModel) handleBridgeMessage(msg model.InMsg) (tea.Model, tea.Cmd) {
 
 	case model.MsgError:
 		m.state.IsLoading = false
+		m.msgList.FinalizeStreaming()
 		if msg.Err != nil {
 			m.appendMessage(model.Message{
 				ID:        messageID("error"),

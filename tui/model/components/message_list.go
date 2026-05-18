@@ -108,6 +108,21 @@ func (m *MessageListModel) Finalize(id string) {
 	}
 }
 
+// FinalizeStreaming marks every active streaming message as complete.
+func (m *MessageListModel) FinalizeStreaming() bool {
+	changed := false
+	for i := range m.messages {
+		if m.messages[i].IsStreaming {
+			m.messages[i].IsStreaming = false
+			changed = true
+		}
+	}
+	if changed {
+		m.update()
+	}
+	return changed
+}
+
 // SetSelected highlights the given message ID.
 func (m *MessageListModel) SetSelected(id string) {
 	m.selectedID = id

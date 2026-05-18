@@ -116,6 +116,15 @@ DuckHive checked the live upstream repositories on May 7, 2026 and refreshed the
 | --- | --- | --- |
 | OpenClaude | `main`/`HEAD` at `f71e7692373a61d28c82fc3fadff3feaa4071ede` after fetch; `main..openclaude/main` is empty and `main...openclaude/main` is `700 0`. | DuckHive remains ahead of OpenClaude with no pending upstream commits to merge. Added a real CLI smoke prompt-submission gate against an in-process OpenAI-compatible mock so the `_zod` prompt crash path is covered by the release smoke suite rather than only by lower-level bundle-patch tests. |
 
+## Refreshed Upstream Head Follow-up May 18, 2026
+
+| Upstream | Current state | DuckHive action |
+| --- | --- | --- |
+| OpenClaude | `main`/`HEAD` at `f71e7692373a61d28c82fc3fadff3feaa4071ede` after `git fetch openclaude main`; `openclaude/main` is an ancestor of DuckHive `main`; `main...openclaude/main` is `705 0`. | The GitHub "behind" signal is stale for this checkout: there are no OpenClaude commits pending in `openclaude/main..main` reverse. The latest OpenClaude repeated-tool-failure loop fix is already present locally, with DuckHive's `DUCKHIVE_TOOL_FAILURE_LOOP_THRESHOLD` compatibility override preserved. |
+| OpenAI Codex | `main`/`HEAD` observed at `deb159d9ffb848b60a9c63ab9d2ce014d7093b0f`. | Ported the compatible TUI stream-cleanup lesson into DuckHive's Bubble Tea TUI: backend errors and bridge disconnects now finalize active streamed assistant messages before rendering the error/disconnect note, preventing a partial markdown/XML stream from staying in the transient streaming state after a failed turn. |
+| OpenClaw | `main`/`HEAD` observed at `9657b8e8cee05f707d7f23b8cacf6bf8a2b68997`. | Latest reviewed deltas target OpenClaw-specific image-generation task accounting and LM Studio extension env-template API keys. DuckHive does not have matching image-generation task-status or LM Studio extension-runtime symbols, so no direct runtime port was applied in this pass. |
+| Hermes Agent | `main`/`HEAD` at `16abb74eab2d0bd34efc0e94a17846507a0c952c`. | Latest deltas are dashboard/kanban/web-config presentation fixes. User priority remains terminal CLI/TUI, so no direct DuckHive runtime port was applied in this pass. |
+
 ## Ported In 0.8.1
 
 ### OpenClaude effort fix
