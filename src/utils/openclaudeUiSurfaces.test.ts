@@ -265,17 +265,25 @@ describe('DuckHive active terminal UI copy', () => {
       join(repoRoot, 'src', 'components', 'FeedbackSurvey', 'TranscriptSharePrompt.tsx'),
       'utf8',
     )
-    const combined = [passes, ideOnboarding, repl, transcriptShare].join('\n')
+    const thinkback = readFileSync(
+      join(repoRoot, 'src', 'commands', 'thinkback', 'thinkback.tsx'),
+      'utf8',
+    )
+    const combined = [passes, ideOnboarding, repl, transcriptShare, thinkback].join('\n')
 
     expect(passes).toContain(' ) DH ')
     expect(combined).toContain('Share a free week of DuckHive')
     expect(combined).toContain("Review DuckHive's changes")
     expect(combined).toContain('DuckHive is waiting for your input')
     expect(combined).toContain('help us improve DuckHive')
+    expect(combined).toContain('Think Back on 2025 with DuckHive')
+    expect(combined).toContain('DuckHive year in review animation')
     expect(combined).not.toContain('Share a free week of Claude Code')
     expect(combined).not.toContain("Review Claude Code's changes")
     expect(combined).not.toContain('Claude is waiting for your input')
     expect(combined).not.toContain('help us improve Claude Code')
+    expect(combined).not.toContain('Think Back on 2025 with Claude Code')
+    expect(combined).not.toContain('Claude Code year in review animation')
   })
 
   test('/passes command metadata uses DuckHive wording', () => {
