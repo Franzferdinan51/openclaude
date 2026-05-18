@@ -38,6 +38,15 @@ DuckHive checked the live upstream repositories on May 7, 2026 and refreshed the
 | OpenClaw | `main`/`HEAD` at `2696f2576d3e9abac4678af871960b0fc1aceb90` | New deltas are mostly updater/plugin/QA/browser/gateway/Telegram service changes. The gateway hot-reload/isolated-ingress Telegram fix targets OpenClaw-specific channel manager and worker code that DuckHive does not have. Ported the compatible privacy lesson from the raw-update redaction delta by redacting DuckHive Telegram debug chat IDs and bot usernames, and mirrored the Codex session-spawn routing lesson by teaching DuckHive prompts to prefer native subagent/spawn surfaces while keeping DuckHive `/spawn`, Agent Tool, ACP, and team delegation available for explicit team work. |
 | Hermes Agent | `main`/`HEAD` at `abf1af540193c30047ff3e7e759c330faf3a880f` | Ported the compatible no-LLM session-search lesson into DuckHive's resume/session search path: `agenticSessionSearch` now scores local tags, titles, branches, summaries, first prompts, and transcript excerpts directly, including quoted phrase and OR-style literal recall, instead of calling an auxiliary model. |
 
+## Refreshed Latest May 18, 2026
+
+| Project | Current probe result | DuckHive follow-up |
+| --- | --- | --- |
+| OpenClaude | `main`/`HEAD` at `f71e7692373a61d28c82fc3fadff3feaa4071ede` | No new OpenClaude delta since the previous refresh. |
+| OpenAI Codex | `main`/`HEAD` at `22dd9ad3929253ed24d7ee4f10f238e95ab25f37` | New delta is memory-summary densification/versioning. No direct DuckHive port yet; keep under review when touching memory summary generation. |
+| OpenClaw | `main`/`HEAD` at `491ce8b7535baadbb73191587453ac1124c9b6c2` | New deltas are mostly gateway, native macOS, Telegram QA/spool/image handling, and native Codex task recovery. Continue reviewing as independent slices; no wholesale merge applied. |
+| Hermes Agent | `main`/`HEAD` at `dadc8aa25580ac1ecc65d6185dfc6bd0e1d6d279` | Added DuckHive regression coverage for the compatible `ff078738` symlinked skill slash-command lesson: symlinked `.claude/skills/<name>` directories now stay covered by `src/skills/loadSkillsDir.test.ts`. Kanban/ACP changes remain under review for future slices. |
+
 ## Ported In 0.8.1
 
 ### OpenClaude effort fix
