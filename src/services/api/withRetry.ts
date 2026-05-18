@@ -135,6 +135,72 @@ function isQuotaExhausted(error: any): boolean {
   )
 }
 
+function readErrorName(error: unknown): string | undefined {
+  return error && typeof error === 'object'
+    ? String((error as { name?: unknown }).name ?? '')
+    : undefined
+}
+
+function hasLocalSessionCoordinationError(
+  error: unknown,
+  seen = new Set<object>(),
+): boolean {
+  if (!error || typeof error !== 'object') {
+    return false
+  }
+
+  if (seen.has(error)) {
+    return false
+  }
+  seen.add(error)
+
+  const name = readErrorName(error)
+  const message = error instanceof Error ? error.message.toLowerCase() : ''
+  if (
+    name === 'SessionWriteLockTimeoutError' ||
+    name === 'EmbeddedAttemptSessionTakeoverError' ||
+    message.includes('session write-lock') ||
+    message.includes('session write lock') ||
+    message.includes('session file changed while embedded prompt lock was released')
+  ) {
+    return true
+  }
+
+  const nested = error as { cause?: unknown; error?: unknown; reason?: unknown }
+  return (
+    hasLocalSessionCoordinationError(nested.cause, seen) ||
+    hasLocalSessionCoordinationError(nested.error, seen) ||
+    hasLocalSessionCoordinationError(nested.reason, seen)
+  )
+}
+
+function isProviderFailureEnvelope(error: unknown): boolean {
+  if (!error || typeof error !== 'object') {
+    return false
+  }
+
+  const candidate = error as {
+    status?: unknown
+    status_code?: unknown
+    code?: unknown
+    type?: unknown
+  }
+  return (
+    error instanceof APIError ||
+    typeof candidate.status === 'number' ||
+    typeof candidate.status_code === 'number' ||
+    typeof candidate.code === 'string' ||
+    typeof candidate.type === 'string'
+  )
+}
+
+export function isNonProviderRuntimeCoordinationError(error: unknown): boolean {
+  return (
+    hasLocalSessionCoordinationError(error) &&
+    !isProviderFailureEnvelope(error)
+  )
+}
+
 function isTransientCapacityError(error: unknown): boolean {
   return (
     is529Error(error) || (error instanceof APIError && error.status === 429)
@@ -313,6 +379,9 @@ export async function* withRetry<T>(
           ),
           retryContext,
         )
+      }
+      if (isNonProviderRuntimeCoordinationError(error)) {
+        throw new CannotRetryError(error, retryContext)
       }
       // Fast mode fallback: on 429/529, either wait and retry (short delays)
       // or fall back to standard speed (long delays) to avoid cache thrashing.

@@ -174,6 +174,7 @@ DuckHive now ports the compatible pieces that fit its architecture:
 - `src/channels/TelegramAdapter.ts` buffers all updates from a batch and continues past filtered/non-text updates instead of dropping later valid messages.
 - `src/agent-runs/*` adds DuckHive's AgentRun control plane and experimental `duckhive/harness` split: DuckHive core owns provider/model/session/tool/channel policy, while a harness only claims and executes a prepared attempt.
 - Telegram now exposes AgentRun control commands (`/runs`, `/run`, `/tail`, `/pause`, `/resume`, `/stop`, `/approve`) with chunked replies, Markdown fallback, and optional `DUCKHIVE_TELEGRAM_ALLOWED_CHAT_ID` filtering.
+- Follow-up OpenClaw `6a5a1353c7` showed that local session coordination errors should not consume model fallback attempts. DuckHive ported the compatible guard in `src/services/api/withRetry.ts`: session write-lock timeouts and embedded session takeover errors now abort the retry/fallback chain immediately, while provider quota envelopes that merely nest a local lock still keep their configured fallback behavior.
 
 The deeper OpenClaw Codex OAuth doctor route-repair and guarded Undici dispatcher lifecycle are still larger gateway/plugin slices. DuckHive already carries adjacent provider profile and WebFetch SSRF surfaces, but those should be ported as separate runtime-backed changes rather than copied wholesale from OpenClaw's gateway-specific stack.
 

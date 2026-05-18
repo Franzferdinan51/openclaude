@@ -319,4 +319,111 @@ describe('withRetry quota fallback', () => {
     expect(thrown).toBeInstanceOf(CannotRetryError)
     expect((thrown as Error).message).toContain('API quota exhausted')
   })
+
+  test('does not use model fallback for local session write-lock coordination errors', async () => {
+    const { withRetry, CannotRetryError, FallbackTriggeredError } =
+      await importFreshWithRetryModule('openai')
+    const lockError = new Error(
+      'Timed out acquiring session write-lock for transcript append',
+    )
+    lockError.name = 'SessionWriteLockTimeoutError'
+    const operation = mock(async () => {
+      throw lockError
+    })
+    const generator = withRetry(
+      async () => ({} as never),
+      operation,
+      {
+        maxRetries: 10,
+        model: 'primary-model',
+        fallbackModel: 'fallback-model',
+        thinkingConfig: { type: 'disabled' } as never,
+      },
+    )
+
+    let thrown: unknown
+    try {
+      for await (const _message of generator) {
+        // no-op
+      }
+    } catch (error) {
+      thrown = error
+    }
+
+    expect(thrown).toBeInstanceOf(CannotRetryError)
+    expect(thrown).not.toBeInstanceOf(FallbackTriggeredError)
+    expect(operation).toHaveBeenCalledTimes(1)
+  })
+
+  test('does not use model fallback for embedded session takeover errors', async () => {
+    const { withRetry, CannotRetryError, FallbackTriggeredError } =
+      await importFreshWithRetryModule('openai')
+    const takeoverError = new Error(
+      'session file changed while embedded prompt lock was released: session.jsonl',
+    )
+    takeoverError.name = 'EmbeddedAttemptSessionTakeoverError'
+    const operation = mock(async () => {
+      throw takeoverError
+    })
+    const generator = withRetry(
+      async () => ({} as never),
+      operation,
+      {
+        maxRetries: 10,
+        model: 'primary-model',
+        fallbackModel: 'fallback-model',
+        thinkingConfig: { type: 'disabled' } as never,
+      },
+    )
+
+    let thrown: unknown
+    try {
+      for await (const _message of generator) {
+        // no-op
+      }
+    } catch (error) {
+      thrown = error
+    }
+
+    expect(thrown).toBeInstanceOf(CannotRetryError)
+    expect(thrown).not.toBeInstanceOf(FallbackTriggeredError)
+    expect(operation).toHaveBeenCalledTimes(1)
+  })
+
+  test('keeps provider quota fallback authoritative when a provider envelope nests a session lock', async () => {
+    const { withRetry, FallbackTriggeredError } =
+      await importFreshWithRetryModule('openai')
+    const lockError = new Error(
+      'Timed out acquiring session write-lock for transcript append',
+    )
+    lockError.name = 'SessionWriteLockTimeoutError'
+    const providerError = {
+      status: 429,
+      message: 'resource exhausted upstream quota',
+      cause: lockError,
+    }
+    const generator = withRetry(
+      async () => ({} as never),
+      async () => {
+        throw providerError
+      },
+      {
+        maxRetries: 0,
+        model: 'primary-model',
+        fallbackModel: 'fallback-model',
+        thinkingConfig: { type: 'disabled' } as never,
+      },
+    )
+
+    let thrown: unknown
+    try {
+      for await (const _message of generator) {
+        // no-op
+      }
+    } catch (error) {
+      thrown = error
+    }
+
+    expect(thrown).toBeInstanceOf(FallbackTriggeredError)
+  })
 })
