@@ -147,7 +147,7 @@ func main() {
 		bridge:        adapter,
 		msgList:       components.NewMessageList(80, 20),
 		input:         components.NewInputArea(80, 3),
-		keys:          tui.DefaultKeyMap(),
+		keys:          loadTUIKeyMap(),
 		welcome:       screens.NewWelcomeModel(),
 		transcript:    screens.NewTranscriptPanel(),
 		showInspector: false,
@@ -213,7 +213,7 @@ func runInputSmoke(text string) error {
 		state:      model.NewAppState(),
 		msgList:    components.NewMessageList(80, 20),
 		input:      components.NewInputArea(80, 3),
-		keys:       tui.DefaultKeyMap(),
+		keys:       loadTUIKeyMap(),
 		welcome:    screens.NewWelcomeModel(),
 		transcript: screens.NewTranscriptPanel(),
 		width:      80,
@@ -266,7 +266,7 @@ func runSnapshot() {
 		state:         model.NewAppState(),
 		msgList:       components.NewMessageList(100, 28),
 		input:         components.NewInputArea(100, 3),
-		keys:          tui.DefaultKeyMap(),
+		keys:          loadTUIKeyMap(),
 		welcome:       screens.NewWelcomeModel(),
 		transcript:    screens.NewTranscriptPanel(),
 		showInspector: false,
@@ -276,6 +276,14 @@ func runSnapshot() {
 	m.settings = screens.NewSettingsScreen(&m.state)
 	_ = m.Init()
 	fmt.Print(m.View())
+}
+
+func loadTUIKeyMap() tui.KeyMap {
+	keys, errs := tui.LoadKeyMapFromEnv()
+	for _, err := range errs {
+		fmt.Fprintf(os.Stderr, "warning: TUI keymap: %v\n", err)
+	}
+	return keys
 }
 
 // Init implements tea.Model.
