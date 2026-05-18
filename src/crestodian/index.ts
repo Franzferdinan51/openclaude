@@ -54,3 +54,18 @@ export {
   probeGit,
   probeNode,
 } from './probes.js';
+
+export {
+  resolveDuckCustodianOperation,
+  duckCustodianApprovalQuestion,
+  isYes,
+  formatDuckCustodianAssistantPlan,
+  type DuckCustodianAssistantPlan,
+  type DuckCustodianAssistantPlanner,
+} from './dialogue.js';
+
+export {
+  resolveDuckCustodianRescuePolicy,
+  type DuckCustodianRescueDecision,
+  type DuckCustodianRescuePolicyInput,
+} from './rescue-policy.js';
