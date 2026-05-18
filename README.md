@@ -1373,6 +1373,8 @@ that toolchain.
 
 The query loop also includes the upstream OpenClaude repeated-tool-failure guard. If the same tool, error category, or file path fails repeatedly without an intervening successful tool result, DuckHive stops the loop with a path-safe diagnostic instead of burning turns forever. The default threshold is `3`; set `DUCKHIVE_TOOL_FAILURE_LOOP_THRESHOLD=0` to disable it, or set a higher integer when intentionally debugging repeated failures. `CLAUDE_CODE_TOOL_FAILURE_LOOP_THRESHOLD` remains supported as an upstream compatibility fallback.
 
+The API retry path also applies the Hermes-style auxiliary fallback lesson to quota exhaustion: when a primary model returns a quota-exhausted 429 and `--fallback-model` is configured, DuckHive switches to the fallback model instead of failing immediately. If no fallback is configured, DuckHive still fails closed with explicit billing/provider guidance.
+
 For installed CLI diagnostics, use `duckhive runtime-doctor` or `duckhive doctor-runtime`. `duckhive doctor:runtime` is also accepted as a compatibility alias for users copying the npm script naming style, and it runs the same terminal-safe checks without starting the REPL.
 
 When the installed CLI is run without an attached terminal and without

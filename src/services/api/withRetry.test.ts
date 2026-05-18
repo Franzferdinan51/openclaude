@@ -14,6 +14,16 @@ function makeError(headers: Record<string, string>): APIError {
   } as unknown as APIError
 }
 
+function makeQuotaError(): APIError {
+  return {
+    headers: new Headers(),
+    status: 429,
+    message: 'You exceeded your current quota, please check your plan and billing details.',
+    name: 'APIError',
+    error: {},
+  } as unknown as APIError
+}
+
 // Save/restore env vars between tests
 const originalEnv = { ...process.env }
 
@@ -63,6 +73,9 @@ async function importFreshWithRetryModule(
   mock.module('src/utils/model/providers.js', () => ({
     getAPIProvider: () => provider,
     getAPIProviderForStatsig: () => provider,
+    isFirstPartyAnthropicBaseUrl: () => provider === 'firstParty',
+    isGithubNativeAnthropicMode: () => provider === 'github',
+    usesAnthropicAccountFlow: () => provider === 'firstParty',
   }))
   return import(`./withRetry.js?ts=${Date.now()}-${Math.random()}`)
 }
@@ -194,5 +207,69 @@ describe('getRateLimitResetDelayMs - providers without reset headers', () => {
       await importFreshWithRetryModule('vertex')
     const error = makeError({})
     expect(getRateLimitResetDelayMs(error)).toBeNull()
+  })
+})
+
+describe('withRetry quota fallback', () => {
+  test('triggers the configured fallback model on quota exhaustion', async () => {
+    const { withRetry, FallbackTriggeredError } =
+      await importFreshWithRetryModule('openai')
+    const generator = withRetry(
+      async () => ({} as never),
+      async () => {
+        throw makeQuotaError()
+      },
+      {
+        maxRetries: 0,
+        model: 'primary-model',
+        fallbackModel: 'fallback-model',
+        thinkingConfig: { type: 'disabled' } as never,
+      },
+    )
+
+    let thrown: unknown
+    try {
+      for await (const _message of generator) {
+        // no-op
+      }
+    } catch (error) {
+      thrown = error
+    }
+
+    expect(thrown).toBeInstanceOf(FallbackTriggeredError)
+    expect((thrown as { originalModel: string }).originalModel).toBe(
+      'primary-model',
+    )
+    expect((thrown as { fallbackModel: string }).fallbackModel).toBe(
+      'fallback-model',
+    )
+  })
+
+  test('keeps quota exhaustion non-retryable when no fallback model is configured', async () => {
+    const { withRetry, CannotRetryError } =
+      await importFreshWithRetryModule('openai')
+    const generator = withRetry(
+      async () => ({} as never),
+      async () => {
+        throw makeQuotaError()
+      },
+      {
+        maxRetries: 0,
+        model: 'primary-model',
+        thinkingConfig: { type: 'disabled' } as never,
+      },
+    )
+
+    let thrown: unknown
+    try {
+      for await (const _message of generator) {
+        // no-op
+      }
+    } catch (error) {
+      thrown = error
+    }
+
+    expect(thrown).toBeInstanceOf(CannotRetryError)
+    expect((thrown as Error).message).toContain('API quota exhausted')
   })
 })

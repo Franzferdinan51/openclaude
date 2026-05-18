@@ -266,16 +266,30 @@ export async function* withRetry<T>(
         `API error (attempt ${attempt}/${maxRetries + 1}): ${error instanceof APIError ? `${error.status} ${error.message}` : errorMessage(error)}`,
         { level: 'error' },
       )
-        if (isQuotaExhausted(error)) {
-          throw new CannotRetryError(
-            new Error(
-              'API quota exhausted or not enabled.\n' +
-              'Fix:\n' +
-              '- Enable billing for your provider\n' +
-              '- Or switch provider via /provider',
-            ),
-            retryContext,
-          );
+      if (isQuotaExhausted(error)) {
+        if (options.fallbackModel) {
+          logEvent('tengu_api_quota_fallback_triggered', {
+            original_model:
+              options.model as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
+            fallback_model:
+              options.fallbackModel as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
+            provider: getAPIProviderForStatsig(),
+          })
+          throw new FallbackTriggeredError(
+            options.model,
+            options.fallbackModel,
+          )
+        }
+
+        throw new CannotRetryError(
+          new Error(
+            'API quota exhausted or not enabled.\n' +
+            'Fix:\n' +
+            '- Enable billing for your provider\n' +
+            '- Or switch provider via /provider',
+          ),
+          retryContext,
+        )
       }
       // Fast mode fallback: on 429/529, either wait and retry (short delays)
       // or fall back to standard speed (long delays) to avoid cache thrashing.
