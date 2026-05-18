@@ -104,11 +104,34 @@ function isPersistentRetryEnabled(): boolean {
 }
 
 function isQuotaExhausted(error: any): boolean {
-  const msg = (error?.message || '').toLowerCase()
+  const status = error?.status ?? error?.status_code
+  const msg = String(
+    error?.message ?? error?.error?.message ?? '',
+  ).toLowerCase()
+  if (status === 402) {
+    return true
+  }
+
+  const quotaKeywords = [
+    'limit: 0',
+    'exceeded your current quota',
+    'credits',
+    'insufficient funds',
+    'can only afford',
+    'billing',
+    'payment required',
+    'quota exceeded',
+    'quota_exceeded',
+    'too many tokens per day',
+    'daily limit',
+    'tokens per day',
+    'daily quota',
+    'resource exhausted',
+  ]
 
   return (
-    error?.status === 429 &&
-    (msg.includes('limit: 0') || msg.includes('exceeded your current quota'))
+    (status === 429 || status === null || status === undefined) &&
+    quotaKeywords.some(keyword => msg.includes(keyword))
   )
 }
 
