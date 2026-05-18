@@ -1420,7 +1420,7 @@ Recent verification snapshot:
 
 - `npm run typecheck`, `npm run build`, `npm run smoke`, `npm run verify:privacy`, and `node dist\cli.mjs runtime-doctor`: passing on Windows for `duckhive@0.13.4`
 - `bun test src\utils\api.test.ts`: `7 pass`, `0 fail`, covering Zod schema conversion and every built-in tool schema
-- `npm run smoke`: `12 pass`, `0 fail`, plus `CLI smoke passed (67 commands plus Windows wrapper checks)`
+- `npm run smoke`: `12 pass`, `0 fail`, plus `CLI smoke passed (71 commands plus Windows wrapper checks)`
 - focused 0.13.4 checks cover Zod 4 schema conversion, Windows stdin delivery, TextInput buffering, provider-free command surfaces, and packaged TUI input smoke
 - `cd tui && go test ./...`: passing with local Go 1.25.4 from `.tmp\go-toolchain`; the packaged `tui\duckhive-tui.exe` was rebuilt from that tested source
 - `duckhive --version`: `0.13.4 (DuckHive)`

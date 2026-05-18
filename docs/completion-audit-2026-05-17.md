@@ -62,7 +62,7 @@ Latest continuation evidence from 2026-05-18:
 
 - `npm run typecheck`
 - `npm run build`
-- `npm run smoke` (`CLI smoke passed (68 commands plus Windows wrapper checks)`)
+- `npm run smoke` (`CLI smoke passed (71 commands plus Windows wrapper checks)`)
 - `npm run verify:privacy`
 - `bun test` (`3369 pass`, `0 fail`, `8487 expect()` calls across 381 files)
 - `duckhive --version`, `duckhive --yolo --version`, `duckhive --dangerously-skip-permissions --version`, and `node dist\cli.mjs --version` (`0.13.4 (DuckHive)`)
