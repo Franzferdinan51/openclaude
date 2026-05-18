@@ -68,6 +68,12 @@ DuckHive checked the live upstream repositories on May 7, 2026 and refreshed the
 | --- | --- | --- |
 | Hermes Agent | `main`/`HEAD` at `f2fdb9a178a0b646d0803ab0789914657dc8c361` | Ported the compatible deliverable-mode behavior into DuckHive's Telegram surface. Outbound Telegram messages now scan for existing absolute local artifact paths and upload supported images as `sendPhoto` and documents/spreadsheets/presentations/archives/audio/video/text/html as `sendDocument`. Telegram `/run <id>` now lists run artifacts and uploads existing local artifact files after the run detail response. |
 
+## Refreshed OpenClaw Queue Media Follow-up May 18, 2026
+
+| Project | Current probe result | DuckHive follow-up |
+| --- | --- | --- |
+| OpenClaw | `main`/`HEAD` at `8725364cf0be867b040469dfe68e83a3a0d3436a` | Reviewed OpenClaw's queued inbound image hydration fix. DuckHive already restores queued pasted images and embedded base64 image blocks through `popAllEditable`; added focused regression tests so queued prompt input cannot silently lose current-turn images when pulled back into the REPL input buffer. |
+
 ## Ported In 0.8.1
 
 ### OpenClaude effort fix
