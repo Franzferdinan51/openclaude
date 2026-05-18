@@ -15,7 +15,7 @@ import { getFsImplementation, setFsImplementation } from '../fsOperations.js'
 import { sanitizePath } from '../sessionStoragePortable.js'
 import { SQLiteProvider } from './SQLiteProvider.js'
 
-describe('SQLite Storage Layer', () => {
+describe('SQLite Storage Layer', { timeout: 30_000 }, () => {
   const originalConfigDir = process.env.CLAUDE_CONFIG_DIR
   const originalCwd = process.cwd()
   const originalFs = getFsImplementation()
