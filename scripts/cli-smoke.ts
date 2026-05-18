@@ -1,5 +1,6 @@
-import { spawnSync } from 'node:child_process'
+import { spawn, spawnSync } from 'node:child_process'
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import { createServer, type IncomingMessage } from 'node:http'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 
@@ -23,6 +24,111 @@ const exportConfigDir = mkdtempSync(join(tmpdir(), 'duckhive-cli-smoke-export-co
 const exportOutputDir = mkdtempSync(join(tmpdir(), 'duckhive-cli-smoke-export-output-'))
 tempDirs.push(bgControlConfigDir)
 tempDirs.push(exportConfigDir, exportOutputDir)
+
+async function readRequestBody(request: IncomingMessage): Promise<string> {
+  const chunks: Buffer[] = []
+  for await (const chunk of request) {
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk))
+  }
+  return Buffer.concat(chunks).toString('utf8')
+}
+
+async function startMockOpenAIServer(): Promise<{
+  baseUrl: string
+  close: () => Promise<void>
+}> {
+  const server = createServer(async (request, response) => {
+    if (request.url === '/v1/models') {
+      response.writeHead(200, { 'content-type': 'application/json' })
+      response.end(JSON.stringify({ data: [{ id: 'gpt-4o-mini' }] }))
+      return
+    }
+
+    if (request.url !== '/v1/chat/completions' || request.method !== 'POST') {
+      response.writeHead(404, { 'content-type': 'application/json' })
+      response.end(JSON.stringify({ error: { message: 'not found' } }))
+      return
+    }
+
+    let stream = false
+    try {
+      const body = JSON.parse(await readRequestBody(request)) as { stream?: boolean }
+      stream = body.stream === true
+    } catch {
+      stream = false
+    }
+
+    if (stream) {
+      response.writeHead(200, { 'content-type': 'text/event-stream' })
+      response.write(
+        `data: ${JSON.stringify({
+          id: 'chatcmpl-smoke',
+          object: 'chat.completion.chunk',
+          choices: [
+            {
+              index: 0,
+              delta: { role: 'assistant', content: 'mock prompt ok' },
+              finish_reason: null,
+            },
+          ],
+        })}\n\n`,
+      )
+      response.write(
+        `data: ${JSON.stringify({
+          id: 'chatcmpl-smoke',
+          object: 'chat.completion.chunk',
+          choices: [
+            {
+              index: 0,
+              delta: {},
+              finish_reason: 'stop',
+            },
+          ],
+        })}\n\n`,
+      )
+      response.end('data: [DONE]\n\n')
+      return
+    }
+
+    response.writeHead(200, { 'content-type': 'application/json' })
+    response.end(
+      JSON.stringify({
+        id: 'chatcmpl-smoke',
+        object: 'chat.completion',
+        choices: [
+          {
+            index: 0,
+            message: { role: 'assistant', content: 'mock prompt ok' },
+            finish_reason: 'stop',
+          },
+        ],
+      }),
+    )
+  })
+
+  await new Promise<void>((resolveListen, rejectListen) => {
+    server.once('error', rejectListen)
+    server.listen(0, '127.0.0.1', () => {
+      server.off('error', rejectListen)
+      resolveListen()
+    })
+  })
+
+  const address = server.address()
+  if (!address || typeof address === 'string') {
+    throw new Error('Mock OpenAI smoke server did not bind to a TCP port')
+  }
+
+  return {
+    baseUrl: `http://127.0.0.1:${address.port}/v1`,
+    close: () =>
+      new Promise<void>(resolveClose => {
+        server.close(() => resolveClose())
+      }),
+  }
+}
+
+const mockOpenAI = await startMockOpenAIServer()
 
 function createIsolatedConfigEnv(): Record<string, string> {
   const configDir = mkdtempSync(join(tmpdir(), 'duckhive-cli-smoke-'))
@@ -924,7 +1030,79 @@ function checkSmokeCase(
   }
 }
 
+async function checkMockPromptSubmission(): Promise<void> {
+  const smokeCase: SmokeCase = {
+    name: 'mock prompt submission avoids zod crash',
+    args: ['--bare', '-p', 'test prompt'],
+    env: () => ({
+      ...createIsolatedConfigEnv(),
+      DUCKHIVE_PROVIDER: 'openai',
+      CLAUDE_CODE_USE_OPENAI: '1',
+      OPENAI_API_KEY: 'sk-smoke-test',
+      OPENAI_API_FORMAT: 'chat_completions',
+      OPENAI_BASE_URL: mockOpenAI.baseUrl,
+      OPENAI_MODEL: 'gpt-4o-mini',
+    }),
+    timeoutMs: 60000,
+    includes: ['mock prompt ok'],
+    excludes: [
+      "Cannot read properties of undefined (reading '_zod')",
+      'Warning: ignoring saved provider profile',
+    ],
+  }
+
+  await new Promise<void>(resolveCase => {
+    const child = spawn(process.execPath, [cliPath, ...smokeCase.args], {
+      cwd: process.cwd(),
+      env: {
+        ...process.env,
+        DUCKHIVE_DISABLE_STARTUP_SCREEN: '1',
+        ...smokeCase.env?.(),
+      },
+      stdio: ['pipe', 'pipe', 'pipe'],
+    })
+
+    let stdout = ''
+    let stderr = ''
+    let timedOut = false
+    const timeout = setTimeout(() => {
+      timedOut = true
+      child.kill('SIGTERM')
+    }, smokeCase.timeoutMs ?? 60000)
+
+    child.stdout.setEncoding('utf8')
+    child.stderr.setEncoding('utf8')
+    child.stdout.on('data', chunk => {
+      stdout += chunk
+    })
+    child.stderr.on('data', chunk => {
+      stderr += chunk
+    })
+    child.on('error', error => {
+      clearTimeout(timeout)
+      failures.push(`${smokeCase.name}: failed to start\n${String(error)}`)
+      resolveCase()
+    })
+    child.on('close', code => {
+      clearTimeout(timeout)
+      if (timedOut) {
+        failures.push(`${smokeCase.name}: timed out\n${stdout}${stderr}`)
+        resolveCase()
+        return
+      }
+
+      checkSmokeCase(smokeCase, () => ({
+        status: code,
+        stdout,
+        stderr,
+      } as ReturnType<typeof spawnSync>))
+      resolveCase()
+    })
+  })
+}
+
 checkBuiltBundleZodGuards()
+await checkMockPromptSubmission()
 
 for (const smokeCase of cases) {
   checkSmokeCase(smokeCase, () => spawnSync(process.execPath, [cliPath, ...smokeCase.args], {
@@ -1025,6 +1203,8 @@ if (process.platform === 'win32') {
 for (const tempDir of tempDirs) {
   rmSync(tempDir, { recursive: true, force: true })
 }
+
+await mockOpenAI.close()
 
 if (failures.length > 0) {
   console.error(`CLI smoke failed:\n${failures.join('\n\n')}`)
