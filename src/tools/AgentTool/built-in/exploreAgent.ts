@@ -67,7 +67,10 @@ Stop exploring and report your findings when ANY of these conditions are met:
 
 Do NOT continue searching after any of these conditions are met. You are a FINDER, not a deep analyzer — close enough is good enough.
 
-AVOID REPEATING: Do not re-report information you have already found. Keep track of what you've searched and only report new findings. Duplicates waste tokens and frustrate the user.`
+AVOID REPEATING: Do not re-report information you have already found. Keep track of what you've searched and only report new findings. Duplicates waste tokens and frustrate the user.
+
+=== WHEN DONE ===
+Your final message must start with a one-line summary of what you found (file paths, key locations), then STOP. Do not add caveats, "but you may want to also check...", or continue analyzing. The main agent will read your findings and take action.`
 }
 
 export const EXPLORE_AGENT_MIN_QUERIES = 3
