@@ -62,6 +62,12 @@ DuckHive checked the live upstream repositories on May 7, 2026 and refreshed the
 | --- | --- | --- |
 | OpenClaw | `main`/`HEAD` at `3553aa3763eba95b4d0d1dc94b67c426657a7730` | Reviewed OpenClaw's standalone TUI exit guard. DuckHive's TUI is a standalone Go binary, so the Node post-return process-exit guard does not apply directly. The compatible bug class did exist locally: typed `/exit` or `/quit` in DuckHive's TUI could fall through to backend dispatch or a no-bridge error instead of exiting. DuckHive now handles those commands locally with `tea.Quit`, and Go tests cover `/exit` without backend dispatch. |
 
+## Refreshed Hermes Deliverable Follow-up May 18, 2026
+
+| Project | Current probe result | DuckHive follow-up |
+| --- | --- | --- |
+| Hermes Agent | `main`/`HEAD` at `f2fdb9a178a0b646d0803ab0789914657dc8c361` | Ported the compatible deliverable-mode behavior into DuckHive's Telegram surface. Outbound Telegram messages now scan for existing absolute local artifact paths and upload supported images as `sendPhoto` and documents/spreadsheets/presentations/archives/audio/video/text/html as `sendDocument`. Telegram `/run <id>` now lists run artifacts and uploads existing local artifact files after the run detail response. |
+
 ## Ported In 0.8.1
 
 ### OpenClaude effort fix

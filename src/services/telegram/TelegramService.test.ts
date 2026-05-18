@@ -1,4 +1,7 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test'
+import { mkdtempSync, rmSync, writeFileSync } from 'fs'
+import { join } from 'path'
+import { tmpdir } from 'os'
 
 const originalFetch = globalThis.fetch
 const originalEnv = { ...process.env }
@@ -32,6 +35,30 @@ afterEach(() => {
 })
 
 describe('TelegramService polling', () => {
+  test('extracts supported local deliverables from outbound text', async () => {
+    const tempDir = mkdtempSync(join(tmpdir(), 'duckhive-telegram-deliverables-'))
+    try {
+      const reportPath = join(tempDir, 'report.pdf')
+      const imagePath = join(tempDir, 'chart.png')
+      const ignoredPath = join(tempDir, 'scratch.bin')
+      writeFileSync(reportPath, 'pdf')
+      writeFileSync(imagePath, 'png')
+      writeFileSync(ignoredPath, 'bin')
+
+      const service = await importFreshService()
+      const deliverables = service.extractTelegramDeliverablePaths(
+        `Artifacts ready: "${reportPath}" and ${imagePath} plus ${ignoredPath}`,
+      )
+
+      expect(deliverables).toEqual([
+        { path: reportPath, kind: 'document' },
+        { path: imagePath, kind: 'photo' },
+      ])
+    } finally {
+      rmSync(tempDir, { recursive: true, force: true })
+    }
+  })
+
   test('redacts Telegram chat and bot identifiers in debug logs', async () => {
     const debugLogs: string[] = []
     mock.module('../../utils/debug.js', () => ({
@@ -797,6 +824,151 @@ describe('TelegramService polling', () => {
     expect(sentMessages.join('\n')).toContain(
       'Run run-approval approval acknowledged (approval-a).',
     )
+  })
+
+  test('uploads local deliverables mentioned in outbound Telegram messages', async () => {
+    const tempDir = mkdtempSync(join(tmpdir(), 'duckhive-telegram-send-'))
+    try {
+      const reportPath = join(tempDir, 'worker-report.pdf')
+      const imagePath = join(tempDir, 'worker-chart.png')
+      writeFileSync(reportPath, 'pdf')
+      writeFileSync(imagePath, 'png')
+
+      const uploadMethods: string[] = []
+      let deliveredInitialChat = false
+      const fetchMock = mock(async (input: RequestInfo | URL) => {
+        const url = String(input)
+        if (url.endsWith('/getMe')) {
+          return telegramResponse({
+            ok: true,
+            result: { id: 1, is_bot: true, username: 'duckhive_test_bot' },
+          })
+        }
+        if (url.endsWith('/setMyCommands')) {
+          return telegramResponse({ ok: true, result: true })
+        }
+        if (url.endsWith('/sendPhoto')) {
+          uploadMethods.push('sendPhoto')
+          return telegramResponse({ ok: true, result: true })
+        }
+        if (url.endsWith('/sendDocument')) {
+          uploadMethods.push('sendDocument')
+          return telegramResponse({ ok: true, result: true })
+        }
+        if (url.endsWith('/getUpdates')) {
+          if (deliveredInitialChat) {
+            return telegramResponse({ ok: true, result: [] })
+          }
+          deliveredInitialChat = true
+          return telegramResponse({
+            ok: true,
+            result: [
+              {
+                update_id: 80,
+                message: {
+                  from: { id: 42, is_bot: false, first_name: 'Owner' },
+                  chat: { id: 42, type: 'private' },
+                  text: 'register chat',
+                  date: 1,
+                },
+              },
+            ],
+          })
+        }
+        return telegramResponse({ ok: true, result: true })
+      }) as unknown as typeof fetch
+      globalThis.fetch = fetchMock
+
+      const service = await importFreshService()
+      await service.startTelegramService()
+      await waitFor(() => deliveredInitialChat && service.getRegisteredChatId() === 42)
+
+      const sent = await service.sendTelegramMessage(
+        `Deliverables ready: ${reportPath}\n${imagePath}`,
+      )
+      service.stopTelegramService()
+
+      expect(sent).toBe(true)
+      expect(uploadMethods).toEqual(['sendDocument', 'sendPhoto'])
+    } finally {
+      rmSync(tempDir, { recursive: true, force: true })
+    }
+  })
+
+  test('uploads run artifacts after Telegram /run detail responses', async () => {
+    const tempDir = mkdtempSync(join(tmpdir(), 'duckhive-telegram-run-artifacts-'))
+    try {
+      const reportPath = join(tempDir, 'run-report.pdf')
+      writeFileSync(reportPath, 'pdf')
+
+      const sentMessages: string[] = []
+      const uploadMethods: string[] = []
+      const { resetAgentRunStoreForTesting } = await import(
+        '../../agent-runs/AgentRunStore.js'
+      )
+      const store = resetAgentRunStoreForTesting({ persist: false })
+      store.createRun({
+        id: 'run-artifact',
+        title: 'Artifact run',
+        status: 'completed',
+        artifacts: [{ kind: 'file', path: reportPath, label: 'report.pdf' }],
+      })
+
+      let deliveredCommand = false
+      const fetchMock = mock(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input)
+        if (url.endsWith('/getMe')) {
+          return telegramResponse({
+            ok: true,
+            result: { id: 1, is_bot: true, username: 'duckhive_test_bot' },
+          })
+        }
+        if (url.endsWith('/setMyCommands')) {
+          return telegramResponse({ ok: true, result: true })
+        }
+        if (url.endsWith('/sendMessage')) {
+          const body = JSON.parse(String(init?.body ?? '{}')) as { text?: string }
+          sentMessages.push(body.text ?? '')
+          return telegramResponse({ ok: true, result: true })
+        }
+        if (url.endsWith('/sendDocument')) {
+          uploadMethods.push('sendDocument')
+          return telegramResponse({ ok: true, result: true })
+        }
+        if (url.endsWith('/getUpdates')) {
+          if (deliveredCommand) {
+            return telegramResponse({ ok: true, result: [] })
+          }
+          deliveredCommand = true
+          return telegramResponse({
+            ok: true,
+            result: [
+              {
+                update_id: 81,
+                message: {
+                  from: { id: 42, is_bot: false, first_name: 'Owner' },
+                  chat: { id: 42, type: 'private' },
+                  text: '/run run-artifact',
+                  date: 1,
+                },
+              },
+            ],
+          })
+        }
+        return telegramResponse({ ok: true, result: true })
+      }) as unknown as typeof fetch
+      globalThis.fetch = fetchMock
+
+      const service = await importFreshService()
+      await service.startTelegramService()
+      await waitFor(() => uploadMethods.includes('sendDocument'))
+      service.stopTelegramService()
+
+      expect(sentMessages.join('\n')).toContain('Artifacts: report.pdf')
+      expect(uploadMethods).toEqual(['sendDocument'])
+    } finally {
+      rmSync(tempDir, { recursive: true, force: true })
+    }
   })
 })
 

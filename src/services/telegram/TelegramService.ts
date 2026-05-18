@@ -14,8 +14,10 @@ import { logForDebugging } from '../../utils/debug.js'
 import { createCombinedAbortSignal } from '../../utils/combinedAbortSignal.js'
 import { getSecureStorage } from '../../utils/secureStorage/index.js'
 import { getAgentRunStore } from '../../agent-runs/AgentRunStore.js'
-import type { AgentRun, AgentRunStatus } from '../../agent-runs/types.js'
+import type { AgentRun, AgentRunArtifact, AgentRunStatus } from '../../agent-runs/types.js'
 import { isTelegramMisdirectedResponse } from '../../utils/telegramRetry.js'
+import { basename, extname, isAbsolute, resolve } from 'path'
+import { existsSync, readFileSync, statSync } from 'fs'
 
 // ============================================================================
 // Types
@@ -61,6 +63,53 @@ const TELEGRAM_GET_UPDATES_REQUEST_TIMEOUT_MS = 45_000
 const TELEGRAM_DEFAULT_LONG_POLL_TIMEOUT_SECONDS = 30
 const TELEGRAM_LONG_POLL_ABORT_MARGIN_SECONDS = 5
 const TELEGRAM_DEBUG_REDACTED = '[redacted]'
+const TELEGRAM_DELIVERABLE_IMAGE_EXTENSIONS = new Set([
+  '.jpg',
+  '.jpeg',
+  '.png',
+  '.gif',
+  '.webp',
+])
+const TELEGRAM_DELIVERABLE_DOCUMENT_EXTENSIONS = new Set([
+  '.pdf',
+  '.doc',
+  '.docx',
+  '.xls',
+  '.xlsx',
+  '.csv',
+  '.json',
+  '.yaml',
+  '.yml',
+  '.ppt',
+  '.pptx',
+  '.zip',
+  '.tar',
+  '.gz',
+  '.tgz',
+  '.txt',
+  '.md',
+  '.html',
+  '.htm',
+  '.mp3',
+  '.wav',
+  '.m4a',
+  '.mp4',
+  '.mov',
+  '.webm',
+])
+const TELEGRAM_DELIVERABLE_EXTENSION_PATTERN = Array.from(
+  new Set([
+    ...TELEGRAM_DELIVERABLE_IMAGE_EXTENSIONS,
+    ...TELEGRAM_DELIVERABLE_DOCUMENT_EXTENSIONS,
+  ]),
+)
+  .map(extension => extension.slice(1).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+  .join('|')
+
+type TelegramDeliverable = {
+  path: string
+  kind: 'photo' | 'document'
+}
 
 export function resolveTelegramLongPollTimeoutSeconds(timeoutSeconds: number): number {
   const maxLongPollTimeoutSeconds = Math.max(
@@ -76,6 +125,64 @@ export function resolveTelegramLongPollTimeoutSeconds(timeoutSeconds: number): n
 
 function redactTelegramDebugIdentifier(_value: number | string | null | undefined): string {
   return TELEGRAM_DEBUG_REDACTED
+}
+
+function createTelegramUploadForm(
+  chatId: number,
+  fieldName: 'photo' | 'document',
+  filePath: string,
+): FormData {
+  const form = new FormData()
+  const fileBytes = readFileSync(filePath)
+  const blob = new Blob([fileBytes])
+  form.set('chat_id', String(chatId))
+  form.set(fieldName, blob, basename(filePath))
+  return form
+}
+
+function getTelegramDeliverableKind(filePath: string): TelegramDeliverable['kind'] | null {
+  const extension = extname(filePath).toLowerCase()
+  if (TELEGRAM_DELIVERABLE_IMAGE_EXTENSIONS.has(extension)) return 'photo'
+  if (TELEGRAM_DELIVERABLE_DOCUMENT_EXTENSIONS.has(extension)) return 'document'
+  return null
+}
+
+function toExistingTelegramDeliverable(filePath: string): TelegramDeliverable | null {
+  const normalizedPath = resolve(filePath)
+  if (!isAbsolute(filePath) || !existsSync(normalizedPath)) return null
+  const stats = statSync(normalizedPath)
+  if (!stats.isFile()) return null
+  const kind = getTelegramDeliverableKind(normalizedPath)
+  return kind ? { path: normalizedPath, kind } : null
+}
+
+export function extractTelegramDeliverablePaths(text: string): TelegramDeliverable[] {
+  const candidates = new Set<string>()
+  for (const match of text.matchAll(/(?:"([^"]+)"|'([^']+)')/g)) {
+    const value = match[1] ?? match[2]
+    if (value) candidates.add(value)
+  }
+  const unquotedPathPattern = new RegExp(
+    `[A-Za-z]:\\\\[^\\r\\n\`"'<>|]*?\\.(?:${TELEGRAM_DELIVERABLE_EXTENSION_PATTERN})(?=$|[\\s),.;:])|\\/[^\\s\`"'<>|]*?\\.(?:${TELEGRAM_DELIVERABLE_EXTENSION_PATTERN})(?=$|[\\s),.;:])`,
+    'gi',
+  )
+  for (const match of text.matchAll(unquotedPathPattern)) {
+    candidates.add(match[0].trim().replace(/[),.;:]+$/, ''))
+  }
+  return Array.from(candidates)
+    .map(toExistingTelegramDeliverable)
+    .filter((deliverable): deliverable is TelegramDeliverable => deliverable !== null)
+}
+
+function extractTelegramRunDeliverables(run: AgentRun): TelegramDeliverable[] {
+  return run.artifacts
+    .map(artifactToTelegramDeliverable)
+    .filter((deliverable): deliverable is TelegramDeliverable => deliverable !== null)
+}
+
+function artifactToTelegramDeliverable(artifact: AgentRunArtifact): TelegramDeliverable | null {
+  if (!artifact.path) return null
+  return toExistingTelegramDeliverable(artifact.path)
 }
 
 // ============================================================================
@@ -105,6 +212,32 @@ class TelegramBotAPI {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: body ? JSON.stringify(body) : undefined,
+        signal,
+      }).finally(cleanup)
+      if (response.ok) {
+        return response.json() as Promise<T>
+      }
+      const responseText = await response.text().catch(() => '')
+      if (
+        attempt === 0 &&
+        isTelegramMisdirectedResponse(response.status, response.statusText, responseText)
+      ) {
+        continue
+      }
+      throw new Error(`Telegram API error: ${response.status} ${response.statusText}`)
+    }
+    throw new Error(`Telegram API error: retry exhausted for ${method}`)
+  }
+
+  private async requestForm<T>(method: string, form: FormData): Promise<T> {
+    const url = `${this.baseUrl}${this.token}/${method}`
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const { signal, cleanup } = createCombinedAbortSignal(undefined, {
+        timeoutMs: this.timeoutMs,
+      })
+      const response = await fetch(url, {
+        method: 'POST',
+        body: form,
         signal,
       }).finally(cleanup)
       if (response.ok) {
@@ -152,6 +285,16 @@ class TelegramBotAPI {
 
   async sendMarkdown(chatId: number, text: string): Promise<unknown> {
     return this.sendMessage(chatId, text, 'Markdown')
+  }
+
+  async sendLocalPhoto(chatId: number, filePath: string): Promise<unknown> {
+    const form = createTelegramUploadForm(chatId, 'photo', filePath)
+    return this.requestForm('sendPhoto', form)
+  }
+
+  async sendLocalDocument(chatId: number, filePath: string): Promise<unknown> {
+    const form = createTelegramUploadForm(chatId, 'document', filePath)
+    return this.requestForm('sendDocument', form)
   }
 
   async setCommands(commands: Array<{ command: string; description: string }>): Promise<unknown> {
@@ -506,6 +649,7 @@ export async function sendTelegramMessage(text: string): Promise<boolean> {
     for (const chunk of chunkTelegramMessage(text)) {
       await api.sendMarkdown(chatId, chunk)
     }
+    await sendTelegramDeliverables(chatId, extractTelegramDeliverablePaths(text))
     logForDebugging(
       `[telegram] sent message to ${redactTelegramDebugIdentifier(chatId)}`,
     )
@@ -516,9 +660,31 @@ export async function sendTelegramMessage(text: string): Promise<boolean> {
       for (const chunk of chunkTelegramMessage(stripMarkdown(text))) {
         await api.sendMessage(chatId, chunk)
       }
+      await sendTelegramDeliverables(chatId, extractTelegramDeliverablePaths(text))
       return true
     } catch {
       return false
+    }
+  }
+}
+
+async function sendTelegramDeliverables(
+  chatId: number,
+  deliverables: TelegramDeliverable[],
+): Promise<void> {
+  if (!api) return
+  const unique = new Map(deliverables.map(deliverable => [deliverable.path, deliverable]))
+  for (const deliverable of unique.values()) {
+    try {
+      if (deliverable.kind === 'photo') {
+        await api.sendLocalPhoto(chatId, deliverable.path)
+      } else {
+        await api.sendLocalDocument(chatId, deliverable.path)
+      }
+    } catch (err) {
+      logForDebugging(
+        `[telegram] deliverable upload failed: ${err instanceof Error ? err.message : String(err)}`,
+      )
     }
   }
 }
@@ -612,7 +778,13 @@ registerCommand('runs', (chatId) => {
 registerCommand('run', (chatId, args) => {
   const runId = args.trim()
   const run = runId ? getAgentRunStore().getRun(runId) : undefined
-  api?.sendMarkdown(chatId, run ? formatRunDetail(run) : `Run not found: ${runId || '(missing id)'}`).catch(() => {})
+  if (!run) {
+    api?.sendMarkdown(chatId, `Run not found: ${runId || '(missing id)'}`).catch(() => {})
+    return
+  }
+  api?.sendMarkdown(chatId, formatRunDetail(run))
+    .then(() => sendTelegramDeliverables(chatId, extractTelegramRunDeliverables(run)))
+    .catch(() => {})
 })
 
 registerCommand('tail', (chatId, args) => {
@@ -669,6 +841,9 @@ function formatRunLine(run: AgentRun): string {
 }
 
 function formatRunDetail(run: AgentRun): string {
+  const artifacts = run.artifacts.length > 0
+    ? `\nArtifacts: ${run.artifacts.map(formatRunArtifact).join(', ')}`
+    : ''
   return `*DuckHive Run ${run.id}*
 
 Title: ${run.title}
@@ -679,7 +854,11 @@ Provider: ${run.provider ?? 'default'}
 Model: ${run.model ?? 'default'}
 Tasks: ${run.taskIds.length}
 Children: ${run.childRunIds.length}
-Updated: ${new Date(run.updatedAt).toISOString()}`
+Updated: ${new Date(run.updatedAt).toISOString()}${artifacts}`
+}
+
+function formatRunArtifact(artifact: AgentRunArtifact): string {
+  return artifact.label ?? artifact.path ?? artifact.url ?? artifact.kind
 }
 
 function isTerminalRunStatus(status: AgentRunStatus): boolean {
