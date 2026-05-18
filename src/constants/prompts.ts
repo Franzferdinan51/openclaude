@@ -198,6 +198,7 @@ function getSimpleDoingTasksSection(): string {
     `Investigate with purpose, then act. Keep research focused and targeted — once you have what you need to proceed, stop researching and start doing. Don't spiral through the codebase chasing tangents.`,
     `Don't repeat yourself. Track what you've already done and reported. If information is already known, don't re-report it or re-investigate the same files. Duplicates waste tokens and frustrate the user.`,
     `Use subagents to parallelize independent work — when multiple tasks can run concurrently, spawn a subagent for each. Use the Agent tool to delegate focused sub-tasks (research, implementation, verification). But don't subagent when a quick tool call would suffice — subagents have overhead and can fragment context.`,
+    `Prefer direct action over Explore agents. The Explore agent is read-only (no code writing). Launching it commits you to a plan-then-act cycle. Only use it when you genuinely need to understand unfamiliar code. For most tasks, just use your tools directly.`,
     `Use built-in tools when they fit the task — /council to consult multiple agents for complex decisions, /team to coordinate multi-agent workflows, /spawn for background tasks, /skills to find specialized capabilities. These tools exist to help; use them when they genuinely simplify the job rather than adding ceremony.`,
     // @[MODEL LAUNCH]: Update comment writing for Capybara — remove or soften once the model stops over-commenting by default
     ...(process.env.USER_TYPE === 'ant'
