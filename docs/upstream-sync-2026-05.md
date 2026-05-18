@@ -110,6 +110,12 @@ DuckHive checked the live upstream repositories on May 7, 2026 and refreshed the
 | --- | --- | --- |
 | Codex | Stable Codex tracks permission profiles and sandbox profile selection as first-class terminal workflows. | Ported the compatible terminal workflow into DuckHive's existing permissions command: `/permissions profile list/status/<name>` and top-level `duckhive permissions profile list/status/<name>` now work provider-free, apply named `safe`, `balanced`, `edit`, `yolo`, and `off` presets, write local project settings by default, support `--project` and `--user`, and pair `permissions.defaultMode` with matching sandbox settings. Provider startup now skips `/permissions` and `/allowed-tools` just like other local slash commands, and `duckhive allowed-tools profile status` is a direct compatibility alias, so automation can inspect or apply profiles without provider-auth warnings or the interactive REPL guard. |
 
+## Refreshed Prompt Harness Follow-up May 18, 2026
+
+| Upstream | Current state | DuckHive action |
+| --- | --- | --- |
+| OpenClaude | `main`/`HEAD` at `f71e7692373a61d28c82fc3fadff3feaa4071ede` after fetch; `main..openclaude/main` is empty and `main...openclaude/main` is `697 0`. | DuckHive remains ahead of OpenClaude with no pending upstream commits to merge. Added a real CLI smoke prompt-submission gate against an in-process OpenAI-compatible mock so the `_zod` prompt crash path is covered by the release smoke suite rather than only by lower-level bundle-patch tests. |
+
 ## Ported In 0.8.1
 
 ### OpenClaude effort fix
