@@ -11,6 +11,7 @@ import {
   getMemoryFiles,
 } from './utils/claudemd.js'
 import { getCombinedDuckContext } from './utils/contextLoader.js'
+import { getGlobalConfig } from './utils/config.js'
 import { logForDiagnosticsNoPII } from './utils/diagLogs.js'
 import { isBareMode, isEnvTruthy } from './utils/envUtils.js'
 import { execFileNoThrow } from './utils/execFileNoThrow.js'
@@ -22,6 +23,66 @@ const MAX_STATUS_CHARS = 2000
 
 // System prompt injection for cache breaking (internal-only, ephemeral debugging state)
 let systemPromptInjection: string | null = null
+
+// Storage key for goals (must match goal.ts)
+const GOALS_STORAGE_KEY = '***'
+
+/**
+ * Build the goal system prompt section when a goal has active autonomous mode.
+ * This is called on every getSystemContext refresh so the active goal is
+ * always surfaced to the model regardless of which tick/timer supplies the
+ * next user turn.
+ */
+function buildGoalPromptSection(): Record<string, string> | null {
+  try {
+    const config = getGlobalConfig()
+    const goals: Array<{
+      id: string
+      title: string
+      description: string
+      status: string
+      autonomousMode?: boolean
+      currentStepId?: string
+      steps: Array<{
+        id: string
+        description: string
+        status: string
+      }>
+    }> = (config as Record<string, unknown>)[GOALS_STORAGE_KEY] as typeof goals || []
+
+    const activeGoal = goals.find(
+      g => g.autonomousMode === true && (g.status === 'active' || g.status === 'paused'),
+    )
+    if (!activeGoal) return null
+
+    const currentStep = activeGoal.currentStepId
+      ? activeGoal.steps.find(s => s.id === activeGoal.currentStepId)
+      : activeGoal.steps.find(s => s.status === 'active') ?? activeGoal.steps[0]
+
+    return {
+      goalContext: [
+        `## Active Goal (Autonomous Mode)`,
+        ``,
+        `**Goal**: ${activeGoal.title}`,
+        `**Description**: ${activeGoal.description}`,
+        `**Status**: ${activeGoal.status}`,
+        ``,
+        currentStep
+          ? `**Current focus**: ${currentStep.description} [${currentStep.status}]`
+          : `**No steps defined yet** — work toward: "${activeGoal.description}"`,
+        ``,
+        `Remaining steps:`,
+        ...activeGoal.steps
+          .filter(s => s.status !== 'completed' && s.id !== currentStep?.id)
+          .map((s, i) => `  ${i + 1}. ${s.description} [${s.status}]`),
+        ``,
+        `You are in autonomous goal mode. The user is not actively watching — work continuously toward this goal. After each step, update the goal step status and progress to the next step. Use /goal status to check your progress.`,
+      ].join('\n'),
+    }
+  } catch {
+    return null
+  }
+}
 
 export function getSystemPromptInjection(): string | null {
   return systemPromptInjection
@@ -180,6 +241,7 @@ export const getSystemContext = memoize(
             cacheBreaker: `[CACHE_BREAKER: ${injection}]`,
           }
         : {}),
+      ...(buildGoalPromptSection()),
     }
   },
 )

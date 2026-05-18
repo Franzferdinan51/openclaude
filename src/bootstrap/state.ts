@@ -499,6 +499,11 @@ export function switchSession(
 
 const sessionSwitched = createSignal<[id: SessionId]>()
 
+const activeGoalId = createSignal<string | null>(null)
+
+export const getActiveGoalId = () => activeGoalId[0].peek()
+export const setActiveGoalId = (id: string | null) => activeGoalId[1].set(id)
+
 /**
  * Register a callback that fires when switchSession changes the active
  * sessionId. bootstrap can't import listeners directly (DAG leaf), so

@@ -15,9 +15,11 @@
  */
 
 import { bold, italic } from '../../components/styles.js'
-import { getSessionId } from '../../bootstrap/state.js'
+import { getSessionId, setActiveGoalId } from '../../bootstrap/state.js'
 import { getGlobalConfig, saveGlobalConfig } from '../../utils/config.js'
 import { sessions_spawn } from '../../subagentSystem.js'
+import { enqueuePendingNotification } from '../../utils/messageQueueManager.js'
+import { getSystemContext } from '../../context.js'
 import type { ToolUseContext } from '../../Tool.js'
 import { createSignal } from '../../utils/signal.js'
 
@@ -647,12 +649,33 @@ async function pursueGoal(args: string[], context?: ToolUseContext): Promise<str
     goal.currentStepId = step.id
   }
 
+  // Set active goal in global state so buildGoalPromptSection picks it up
+  setActiveGoalId(goal.id)
+  // Clear system context cache so the goal section appears immediately
+  getSystemContext.cache.clear?.()
+
+  // Trigger first autonomous tick — injects a goal-aware prompt on the next
+  // turn so the model immediately starts working without waiting for a cron
+  // timer or user message. The REPL's 1s cron scheduler processes this via
+  // processQueueIfReady → executeQueuedInput → handlePromptSubmit.
+  enqueuePendingNotification({
+    value: `<goal_tick>Autonomous goal started. Work toward the active goal. Check system prompt for goal context.</goal_tick>`,
+    mode: 'prompt',
+    priority: 'next',
+    isMeta: true,
+  })
+
+  await saveGoals(goals, { type: 'autonomous_started', goal })
+
   const currentStep = getCurrentStep(goal)
   const stepInfo = currentStep
     ? `\nCurrent step: ${currentStep.description}`
     : '\nNo steps defined yet.'
 
-  let spawnInfo = '\nNo live REPL context was available, so no background teammate was spawned. Open DuckHive and run /goal pursue from the REPL to start active autonomous work.'
+  // If REPL context is available, spawn a background teammate for live
+  // autonomous work. Otherwise the cron scheduler's 1s tick loop drives
+  // progress via the enqueued goal_tick prompt above.
+  let spawnInfo = '\nNo REPL context — running in cron-tick loop mode. The 1s scheduler will fire goal-aware prompts each turn.'
   if (context) {
     const spawnResult = await sessions_spawn({
       label: `goal-${goal.id}`,
@@ -675,12 +698,10 @@ async function pursueGoal(args: string[], context?: ToolUseContext): Promise<str
     }
   }
 
-  await saveGoals(goals, { type: 'autonomous_started', goal })
-
-  return `Autonomous goal mode activated for goal.\n\n${formatGoal(goal)}${stepInfo}${spawnInfo}\n\nUse /goal status to check progress or /goal stop-autonomous to cancel.`
+  return `Autonomous goal mode activated for goal.\n\n${formatGoal(goal)}${stepInfo}${spawnInfo}\n\nThe agent will now work toward this goal continuously. Use /goal status to check progress or /goal stop-autonomous to cancel.`
 }
 
-async function stopAutonomousMode(args: string[]): Promise<string> {
+async function stopAutonomousMode(args: string[], context?: ToolUseContext): Promise<string> {
   const goals = getGoals()
   const { goal, error } = resolveGoalTarget(goals, args[0], ['active', 'paused'])
   if (!goal) {
@@ -697,6 +718,11 @@ async function stopAutonomousMode(args: string[]): Promise<string> {
   goal.updatedAt = new Date().toISOString()
   goal.lastActivityAt = new Date().toISOString()
   await saveGoals(goals, { type: 'autonomous_stopped', goal })
+
+  // Clear active goal from global state so buildGoalPromptSection returns null
+  setActiveGoalId(null)
+  // Clear system context cache so the goal section disappears immediately
+  getSystemContext.cache.clear?.()
 
   return `Autonomous mode stopped for goal.\n\n${formatGoal(goal)}\n\nGoal is paused. Use /goal pursue to restart autonomous work or /goal status to check progress.`
 }
@@ -873,7 +899,7 @@ export default async function goalCommand(
       return pursueGoal(args.slice(1), context)
 
     case 'stop-autonomous':
-      return stopAutonomousMode(args.slice(1))
+      return stopAutonomousMode(args.slice(1), context)
 
     case 'help':
       return showHelp()
