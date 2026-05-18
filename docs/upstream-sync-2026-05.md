@@ -89,6 +89,15 @@ DuckHive checked the live upstream repositories on May 7, 2026 and refreshed the
 | --- | --- | --- |
 | Codex | `main`/`HEAD` at `22dd9ad3929253ed24d7ee4f10f238e95ab25f37` | Ported the compatible memory-summary densification idea into DuckHive's session-memory prompt layer. The default session-memory template now starts with `v1`, update prompts preserve that version line, oversized notes are pushed toward a dense routing/index layer, and the total reminder budget was lowered from 12k to 6k estimated tokens. |
 
+## Refreshed Harness Probe May 18, 2026
+
+| Project | Current probe result | DuckHive follow-up |
+| --- | --- | --- |
+| OpenClaude | `main`/`HEAD` at `f71e7692373a61d28c82fc3fadff3feaa4071ede` | DuckHive remains ahead of OpenClaude with no upstream commits pending; `main..openclaude/main` is empty after fetch. |
+| OpenAI Codex | `main`/`HEAD` at `da14dd2adde31b7eaf2301c20f29c17d29e33898` | Reviewed Codex's installed-plugin mention API. It targets the Rust app-server protocol and core-plugin manager; DuckHive's current plugin surface is the TypeScript `/plugin` marketplace and installed-plugin manager with local-source component inspection, so no direct runtime port was applied in this pass. |
+| OpenClaw | `main`/`HEAD` at `d831b8e7bd2f9dcdf4905c758f2dbe352c240683` | Reviewed the new non-interactive prompter dedupe, TTS-before-message-tool send, unsupported video/audio reference hiding, autoreview, and CI deltas. These target OpenClaw-specific prompter/message-action/media-plugin/autoreview stacks; no direct DuckHive runtime port was identified. |
+| Hermes Agent | `main`/`HEAD` at `f2fdb9a178a0b646d0803ab0789914657dc8c361` | No new Hermes delta since the deliverable-mode terminal/Telegram artifact visibility slice. |
+
 ## Ported In 0.8.1
 
 ### OpenClaude effort fix
