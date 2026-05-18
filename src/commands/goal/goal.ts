@@ -17,6 +17,8 @@
 import { bold, italic } from '../../components/styles.js'
 import { getSessionId } from '../../bootstrap/state.js'
 import { getGlobalConfig, saveGlobalConfig } from '../../utils/config.js'
+import { sessions_spawn } from '../../subagentSystem.js'
+import type { ToolUseContext } from '../../Tool.js'
 
 // Goal states
 export type GoalStatus = 'active' | 'paused' | 'completed' | 'failed'
@@ -43,6 +45,13 @@ export interface Goal {
   currentStepId?: string
   sessionId?: string
   metadata?: Record<string, unknown>
+  // Autonomous mode: when true, /goal pursue spawns a background subagent
+  // that continuously works the goal without requiring constant user input.
+  // Inspired by Codex /goal autonomous agent mode.
+  autonomousMode?: boolean
+  // Active agent run tracking for autonomous mode
+  activeAgentRunId?: string
+  lastActivityAt?: string
 }
 
 // Storage key for goals
@@ -558,6 +567,56 @@ async function addStep(args: string[], goalId?: string): Promise<string> {
   return `Step added to goal.\n\n${formatGoal(goal, true)}`
 }
 
+async function pursueGoal(args: string[]): Promise<string> {
+  const goals = getGoals()
+  const { goal, error } = resolveGoalTarget(goals, args[0], ['active', 'paused'])
+  if (!goal) {
+    return error ?? 'Usage: /goal pursue [goal-id]\nStarts autonomous goal pursuit mode.'
+  }
+
+  // Mark the goal as active and set autonomous mode flag
+  goal.status = 'active'
+  goal.autonomousMode = true
+  goal.updatedAt = new Date().toISOString()
+  goal.lastActivityAt = new Date().toISOString()
+
+  // If goal has no steps yet, create the first step from the description
+  if (goal.steps.length === 0) {
+    const step: GoalStep = {
+      id: generateId(),
+      description: goal.description,
+      status: 'active',
+      createdAt: new Date().toISOString(),
+    }
+    goal.steps.push(step)
+    goal.currentStepId = step.id
+  }
+
+  await saveGoals(goals)
+
+  const currentStep = getCurrentStep(goal)
+  const stepInfo = currentStep
+    ? `\nCurrent step: ${currentStep.description}`
+    : '\nNo steps defined yet.'
+
+  return `Autonomous goal mode activated for goal.\n\n${formatGoal(goal)}${stepInfo}\n\nThe agent will now work toward this goal continuously. Use /goal status to check progress or /goal stop-autonomous to cancel.`
+}
+
+async function stopAutonomousMode(args: string[]): Promise<string> {
+  const goals = getGoals()
+  const { goal, error } = resolveGoalTarget(goals, args[0], ['active', 'paused'])
+  if (!goal) {
+    return error ?? 'Usage: /goal stop-autonomous [goal-id]'
+  }
+
+  goal.autonomousMode = false
+  goal.activeAgentRunId = undefined
+  goal.updatedAt = new Date().toISOString()
+  await saveGoals(goals)
+
+  return `Autonomous mode stopped for goal.\n\n${formatGoal(goal)}\n\nGoal is paused. Use /goal pursue to restart autonomous work or /goal status to check progress.`
+}
+
 async function clearGoal(args: string[]): Promise<string> {
   const goals = getGoals()
   const { goal, error } = resolveGoalTarget(goals, args[0], [
@@ -654,7 +713,7 @@ async function handleStepCommand(args: string[]): Promise<string> {
     case 'create':
       return addStep(args.slice(1))
     default:
-      return `Unknown step command: ${action}\nUsage: /goal step add <goal-id> <description>`
+      return 'Unknown step command: ' + action + '\nUsage: /goal step add <goal-id> <description>'
   }
 }
 
@@ -711,6 +770,14 @@ export default async function goalCommand(args: string[]): Promise<string> {
 
     case 'step':
       return handleStepCommand(args.slice(1))
+
+    case 'pursue':
+    case 'work':
+    case 'start':
+      return pursueGoal(args.slice(1))
+
+    case 'stop-autonomous':
+      return stopAutonomousMode(args.slice(1))
 
     case 'help':
       return showHelp()

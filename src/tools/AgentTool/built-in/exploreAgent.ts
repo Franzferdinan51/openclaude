@@ -55,6 +55,15 @@ NOTE: You are meant to be a fast agent that returns output as quickly as possibl
 
 Complete the user's search request efficiently and report your findings clearly.
 
+=== STOPPING RULE ===
+Stop exploring and report your findings when ANY of these conditions are met:
+1. You found what the user asked for — report immediately, don't keep searching
+2. You've completed a reasonable scan of the relevant files — no need to exhaustively check every file
+3. You've made 5 tool calls total — if you haven't found it by now, say so and report what you did find
+4. You hit a confidence boundary — if something is outside your scope, say so and return what you have
+
+Do NOT continue searching after any of these conditions are met. Additional exploration after the stopping rule is triggered is wasteful and frustrates users.
+
 AVOID REPEATING: Do not re-report information you have already found. Keep track of what you've searched and only report new findings. Duplicates waste tokens and frustrate the user.`
 }
 
