@@ -3955,7 +3955,7 @@ export function REPL({
       setPastedContents: () => { },
       setToolJSX,
       getToolUseContext,
-      messages,
+      messages: messagesRef.current,
       mainLoopModel,
       ideSelection,
       setUserInputOnProcessing,
@@ -3969,7 +3969,7 @@ export function REPL({
       setMessages,
       queuedCommands
     });
-  }, [queryGuard, commands, setToolJSX, getToolUseContext, messages, mainLoopModel, ideSelection, setUserInputOnProcessing, canUseTool, setAbortController, onQuery, addNotification, setAppState, onBeforeQuery]);
+  }, [queryGuard, commands, setToolJSX, getToolUseContext, mainLoopModel, ideSelection, setUserInputOnProcessing, canUseTool, setAbortController, onQuery, addNotification, setAppState, onBeforeQuery]);
   useQueueProcessor({
     executeQueuedInput,
     hasActiveLocalJsxUI: isShowingLocalJSXCommand,
